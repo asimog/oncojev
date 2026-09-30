@@ -31,6 +31,22 @@ def main() -> None:
     if any("science.admission" in path.read_text(encoding="utf-8") for path in director.glob("*.py")):
         raise SystemExit("Director must not import Science admission.")
 
+    for package in ("persistence", "application", "api"):
+        for path in (SOURCE / package).rglob("*.py"):
+            text = path.read_text(encoding="utf-8")
+            if "science.admission" in text or "admit_scientific_evidence" in text:
+                raise SystemExit(f"{package} must not bypass evidence admission: {path}")
+
+    web = ROOT / "web"
+    if web.exists():
+        forbidden = ("admit_scientific_evidence", "FrontierPolicy", "src.science", "src.runtime")
+        for path in (*web.rglob("*.ts"), *web.rglob("*.tsx")):
+            if "node_modules" in path.parts or ".next" in path.parts:
+                continue
+            text = path.read_text(encoding="utf-8")
+            if any(token in text for token in forbidden):
+                raise SystemExit(f"frontend must stay presentation-only: {path.relative_to(ROOT)}")
+
     required = (
         ROOT / "src" / "oncolab" / "README.md",
         ROOT / ".upstream" / "manifest.yaml",

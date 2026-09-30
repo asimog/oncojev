@@ -63,6 +63,7 @@ def _build(
             researcher_model, name="oncojev-researcher", instructions=RESEARCHER_INSTRUCTIONS,
             deps_type=ResearcherDeps, model_settings=researcher_settings,
             capabilities=_runtime_capabilities(workspace, max_tool_calls),
+            defer_model_check=True,
         )
         register_researcher_tools(researcher)
         return researcher
@@ -71,6 +72,7 @@ def _build(
         director_model, name="oncojev-director", instructions=DIRECTOR_INSTRUCTIONS,
         deps_type=DirectorDeps, model_settings=director_settings,
         capabilities=_runtime_capabilities(workspace, max_tool_calls),
+        defer_model_check=True,
     )
     register_director_tools(director)
     return OncoJevAgents(director=director, researcher=build_researcher(), _fresh_researcher=build_researcher)

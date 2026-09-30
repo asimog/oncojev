@@ -1,0 +1,38 @@
+"""Evaluation contracts.
+
+A report compares observable outcomes across capability conditions. It carries
+no `best`/`winner` field: which condition is preferable is a research question,
+not a hardcoded expectation.
+"""
+
+from enum import StrEnum
+
+from pydantic import BaseModel, Field
+
+
+class EvaluationCondition(StrEnum):
+    SCIENCE_ONLY = "science_only"
+    SCIENCE_REASONER = "science_reasoner"
+    SCIENCE_JEV_REASONER = "science_jev_reasoner"
+
+
+class ConditionMetrics(BaseModel, frozen=True):
+    condition: EvaluationCondition
+    blocks: int = 0
+    measurements: int = 0
+    evidence: int = 0
+    deterministic_evidence: bool = True
+    jev_executions: int = 0
+    reasoner_outputs: int = 0
+    dossiers: int = 0
+    hypotheses: int = 0
+    proposed_new_blocks: int = 0
+    has_preferred_continuation: bool = False
+    records: int = 0
+
+
+class EvaluationReport(BaseModel, frozen=True):
+    direction: str
+    mode: str
+    conditions: tuple[ConditionMetrics, ...] = Field(min_length=1)
+    provenance: tuple[str, ...] = ("evals-v1",)

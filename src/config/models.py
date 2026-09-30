@@ -1,4 +1,8 @@
+from enum import StrEnum
 from pydantic import BaseModel, Field
+class RuntimeMode(StrEnum):
+    DETERMINISTIC = "deterministic"
+    LIVE = "live"
 class ReasoningConfig(BaseModel, frozen=True):
     effort: str | None = None
     budget_tokens: int | None = None
@@ -23,5 +27,6 @@ class SandboxConfig(BaseModel, frozen=True):
     memory_mb: int = Field(default=4096, ge=512, le=32768)
     timeout_seconds: int = Field(default=300, ge=10, le=1800)
 class RuntimeConfig(BaseModel, frozen=True):
+    mode: RuntimeMode = RuntimeMode.DETERMINISTIC
     block: dict[str, int | None]
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)

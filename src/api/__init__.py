@@ -1,0 +1,1 @@
+"""Thin application API package."""

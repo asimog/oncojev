@@ -3,6 +3,10 @@
 import os
 from pathlib import Path
 
+from src.config.authentication import provider_credentials_present
+
+__all__ = ("load_local_environment", "provider_credentials_present")
+
 
 def load_local_environment(root: Path | None = None) -> None:
     """Load ignored `.env.local` for local runs; Railway injects runtime variables."""
@@ -15,8 +19,3 @@ def load_local_environment(root: Path | None = None) -> None:
             continue
         key, value = line.split("=", 1)
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
-
-
-def provider_credentials_present() -> dict[str, bool]:
-    """Safe readiness signal: never return or log secret values."""
-    return {"openrouter": bool(os.environ.get("OPENROUTER_API_KEY")), "typesafe": bool(os.environ.get("TYPESAFE_API_KEY"))}

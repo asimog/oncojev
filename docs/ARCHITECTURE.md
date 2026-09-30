@@ -55,10 +55,18 @@ Researcher procedural skills are selected locally and afresh per JevBlock. They 
 
 Inside a JevBlock, the canonical pattern is deterministic candidate generation, bounded Jev questions, complete distributions, deterministic local frontier policy, then Researcher action or a proposal to Director. A Choice winner is not suitability proof; preserve a beam when ambiguity has material recall risk. Jev failures remain operational failures.
 
+## Live and deterministic modes
+
+One composition point, `src/runtime/pydantic_ai/factory.py`, chooses services from `config/models.yaml` and `config/runtime.yaml`. Deterministic mode needs no credential. Live mode requires both model-provider and Jev credentials; a live request without them degrades to deterministic rather than producing a partial live run. The Reasoner is an independent Pydantic AI sub-agent, and TypeSafe failures are operational (`JevOperationalFailure`), never decisions. Model-provider authentication and scientific-data authentication are disjoint domains (`src/config/authentication.py`).
+
+## Persistence and application API
+
+`src/persistence/` stores typed record adapters in an append-only SQLite store whose triggers reject updates and deletes; domain contracts remain canonical and reconstruction returns typed views. `src/application/service.py` assembles read models, and `src/api/server.py` exposes them read-only. Neither persistence nor the API can admit evidence: `admit_scientific_evidence` remains reachable only from Science, and the architecture check enforces this.
+
+## Observability and evaluation
+
+`web/` is a Next.js App Router interface that renders a generated snapshot and visually separates observation, measurement, evidence, Jev judgment, hypothesis, and agent action; it contains no orchestration or admission logic. `src/evals/` compares science-only, science+Reasoner, and science+Jev+Reasoner conditions under the same broad directions and reports outcomes without declaring a winner.
+
 ## Evolution
 
-Scientific and Jev capabilities begin local. Only repeat use, validation, provenance, and evaluation justify a reusable registry entry. Skills explain when and how to approach work; registries contain contracts for executable or evaluated artifacts.
-
-## Deferred until a vertical slice needs them
-
-Persistence/API, GDC, scientific sandboxing, capability catalogues, evaluation corpora, and the Next.js observability UI are intentionally deferred. The TypeSafe adapter is present behind `jev.client`; the synthetic vertical slice uses its deterministic test implementation so no credential is required. See [UPSTREAM.md](UPSTREAM.md) and [JEV.md](JEV.md).
+Scientific and Jev capabilities begin local. Only repeat use, validation, provenance, and evaluation justify a reusable registry entry. Skills explain when and how to approach work; registries contain contracts for executable or evaluated artifacts. See [UPSTREAM.md](UPSTREAM.md), [JEV.md](JEV.md), and [FRONTEND.md](FRONTEND.md).

@@ -1,0 +1,407 @@
+{
+  "generated_at": "2026-09-30T14:14:58.889533+00:00",
+  "conditions": [
+    "science_only",
+    "science_reasoner",
+    "science_jev_reasoner"
+  ],
+  "overview": {
+    "records": 21,
+    "blocks": 1,
+    "cycles": 1,
+    "dossiers": 1,
+    "evidence": 2,
+    "latest_cycle": {
+      "block_ids": [
+        "a92dd249-2cfc-48f8-b46f-05461f3639a6"
+      ],
+      "direction": "Investigate a public oncology direction relevant to the project thesis.",
+      "mode": "deterministic"
+    }
+  },
+  "research_memory": [
+    {
+      "provenance": [
+        "run-cycle-v1",
+        "Investigate a public oncology direction relevant to the project thesis."
+      ],
+      "summary": "Director allocated one bounded block and launched the Researcher."
+    }
+  ],
+  "blocks": [
+    {
+      "summary": {
+        "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+        "block": {
+          "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+          "deadline": "2026-09-30T14:24:58.827180Z",
+          "start": {
+            "allocation": {
+              "seconds": 600
+            },
+            "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+            "candidate_directions": [],
+            "constraints": [],
+            "deadline": "2026-09-30T14:24:58.827180Z",
+            "known_uncertainties": [],
+            "objective": "Assess a public treatment-resistance signal",
+            "relevant_evidence_refs": [],
+            "why_now": "No admitted evidence addresses the direction."
+          },
+          "started_at": "2026-09-30T14:14:58.827180Z",
+          "status": "complete",
+          "termination_reason": "researcher_complete"
+        },
+        "has_dossier": true
+      },
+      "reconstruction": {
+        "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+        "block": {
+          "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+          "deadline": "2026-09-30T14:24:58.827180Z",
+          "start": {
+            "allocation": {
+              "seconds": 600
+            },
+            "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+            "candidate_directions": [],
+            "constraints": [],
+            "deadline": "2026-09-30T14:24:58.827180Z",
+            "known_uncertainties": [],
+            "objective": "Assess a public treatment-resistance signal",
+            "relevant_evidence_refs": [],
+            "why_now": "No admitted evidence addresses the direction."
+          },
+          "started_at": "2026-09-30T14:14:58.827180Z",
+          "status": "complete",
+          "termination_reason": "researcher_complete"
+        },
+        "state_revisions": [
+          {
+            "acquisitions": [],
+            "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+            "candidates": [
+              {
+                "fragment_id": "candidate",
+                "kind": "candidate",
+                "provenance": [
+                  "researcher"
+                ],
+                "summary": "synthetic subgroup signal"
+              }
+            ],
+            "evidence_ids": [
+              "bd21ffc4-a168-41a9-b51e-83fbf4933707",
+              "51386489-7cca-4056-ae95-2dccf835f5b5"
+            ],
+            "measurements": [
+              {
+                "analysis_id": "summary",
+                "deterministic": true,
+                "provenance": [
+                  "pandas.Series",
+                  "summary"
+                ],
+                "values": {
+                  "mean": 2.5,
+                  "median": 2.5,
+                  "missing": 0,
+                  "n": 4,
+                  "standard_deviation": 1.2909944487358056
+                }
+              },
+              {
+                "analysis_id": "ols",
+                "deterministic": true,
+                "provenance": [
+                  "statsmodels.OLS",
+                  "ols"
+                ],
+                "values": {
+                  "intercept": 0.15000000000000013,
+                  "n": 4,
+                  "p_value": 0.0021716702451389834,
+                  "r_squared": 0.9956613756613757,
+                  "slope": 1.9399999999999995
+                }
+              }
+            ],
+            "objective": "Assess a public treatment-resistance signal",
+            "observations": [],
+            "prior_actions": [],
+            "provenance": [
+              "research-state-v1"
+            ],
+            "uncertainties": []
+          }
+        ],
+        "capability_invocations": [],
+        "measurements": [
+          {
+            "analysis_id": "summary",
+            "deterministic": true,
+            "provenance": [
+              "pandas.Series",
+              "summary"
+            ],
+            "values": {
+              "mean": 2.5,
+              "median": 2.5,
+              "missing": 0,
+              "n": 4,
+              "standard_deviation": 1.2909944487358056
+            }
+          },
+          {
+            "analysis_id": "ols",
+            "deterministic": true,
+            "provenance": [
+              "statsmodels.OLS",
+              "ols"
+            ],
+            "values": {
+              "intercept": 0.15000000000000013,
+              "n": 4,
+              "p_value": 0.0021716702451389834,
+              "r_squared": 0.9956613756613757,
+              "slope": 1.9399999999999995
+            }
+          }
+        ],
+        "evidence": [
+          {
+            "admitted_at": "2026-09-30T14:14:58.865260Z",
+            "evidence_id": "bd21ffc4-a168-41a9-b51e-83fbf4933707",
+            "measurement": {
+              "analysis_id": "summary",
+              "deterministic": true,
+              "provenance": [
+                "pandas.Series",
+                "summary"
+              ],
+              "values": {
+                "mean": 2.5,
+                "median": 2.5,
+                "missing": 0,
+                "n": 4,
+                "standard_deviation": 1.2909944487358056
+              }
+            }
+          },
+          {
+            "admitted_at": "2026-09-30T14:14:58.867339Z",
+            "evidence_id": "51386489-7cca-4056-ae95-2dccf835f5b5",
+            "measurement": {
+              "analysis_id": "ols",
+              "deterministic": true,
+              "provenance": [
+                "statsmodels.OLS",
+                "ols"
+              ],
+              "values": {
+                "intercept": 0.15000000000000013,
+                "n": 4,
+                "p_value": 0.0021716702451389834,
+                "r_squared": 0.9956613756613757,
+                "slope": 1.9399999999999995
+              }
+            }
+          }
+        ],
+        "jev_outputs": [
+          {
+            "decisions": [
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "candidate-v1-904c147d81d1675d",
+                "question_id": "candidate-relevance",
+                "question_version": "1"
+              },
+              {
+                "confidence": 0.56,
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "probabilities": {
+                  "ADVANCE": 0.56,
+                  "DEFER": 0.44
+                },
+                "projection_id": "candidate-v1-904c147d81d1675d",
+                "question_id": "candidate-action",
+                "question_version": "1",
+                "selected_option": "ADVANCE"
+              }
+            ]
+          }
+        ],
+        "jev_failures": [],
+        "artifacts": [],
+        "ledger": [
+          {
+            "event_id": "6ce6df82-5c72-40a8-8d99-44853ffc988f",
+            "event_type": "DirectorBlockAllocated",
+            "occurred_at": "2026-09-30T14:14:58.827180Z",
+            "payload": {
+              "deadline": "2026-09-30T14:24:58.827180+00:00",
+              "objective": "Assess a public treatment-resistance signal"
+            }
+          },
+          {
+            "event_id": "bf653689-a3d0-439e-b1c4-343a75ae8f19",
+            "event_type": "ResearcherRunStarted",
+            "occurred_at": "2026-09-30T14:14:58.828225Z",
+            "payload": {
+              "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6"
+            }
+          },
+          {
+            "event_id": "34026596-18ac-4d81-9d7d-4f706f89bfc2",
+            "event_type": "ScienceMeasurement",
+            "occurred_at": "2026-09-30T14:14:58.864737Z",
+            "payload": {
+              "analysis_id": "summary",
+              "method": "descriptive_summary"
+            }
+          },
+          {
+            "event_id": "1fd5afe9-0e9c-45b1-bac3-dae0bc2f82c5",
+            "event_type": "EvidenceAdmission",
+            "occurred_at": "2026-09-30T14:14:58.865260Z",
+            "payload": {
+              "analysis_id": "summary",
+              "evidence_id": "bd21ffc4-a168-41a9-b51e-83fbf4933707"
+            }
+          },
+          {
+            "event_id": "b072c417-bfdb-4a0c-95a0-02cdc6d0f96e",
+            "event_type": "ScienceMeasurement",
+            "occurred_at": "2026-09-30T14:14:58.866818Z",
+            "payload": {
+              "analysis_id": "ols",
+              "method": "ordinary_least_squares"
+            }
+          },
+          {
+            "event_id": "07700a3f-8340-4ded-85a6-76f5baf6b23a",
+            "event_type": "EvidenceAdmission",
+            "occurred_at": "2026-09-30T14:14:58.867339Z",
+            "payload": {
+              "analysis_id": "ols",
+              "evidence_id": "51386489-7cca-4056-ae95-2dccf835f5b5"
+            }
+          },
+          {
+            "event_id": "fad12fcc-83a4-472d-876b-c7537c9935ee",
+            "event_type": "JevExecution",
+            "occurred_at": "2026-09-30T14:14:58.868384Z",
+            "payload": {
+              "projection_id": "candidate-v1-904c147d81d1675d",
+              "question_ids": [
+                "candidate-relevance",
+                "candidate-action"
+              ]
+            }
+          },
+          {
+            "event_id": "e73c6566-bdac-46eb-bb70-142f048e8c4c",
+            "event_type": "FrontierDecision",
+            "occurred_at": "2026-09-30T14:14:58.868384Z",
+            "payload": {
+              "action": "keep_alive",
+              "candidate_id": "candidate",
+              "provenance": [
+                "candidate"
+              ],
+              "rationale": "close choice distribution preserves beam"
+            }
+          },
+          {
+            "event_id": "217427cd-8de3-4e15-851e-8df5d6266fa0",
+            "event_type": "ReasonerOutput",
+            "occurred_at": "2026-09-30T14:14:58.868905Z",
+            "payload": {
+              "hypotheses": [
+                {
+                  "hypothesis_id": "within",
+                  "proposed_test": "replicate cohort",
+                  "statement": "Replicate the association.",
+                  "within_scope": true
+                },
+                {
+                  "hypothesis_id": "beyond",
+                  "proposed_test": "mechanistic experiment",
+                  "statement": "Test a causal mechanism.",
+                  "within_scope": false
+                }
+              ],
+              "interpretation": "Measured association with a modest effect",
+              "uncertainty": "Replication needed."
+            }
+          },
+          {
+            "event_id": "ca4166a4-8227-4c1c-808d-a4636499ea6b",
+            "event_type": "ResearcherCompletion",
+            "occurred_at": "2026-09-30T14:14:58.869955Z",
+            "payload": {
+              "reason": "researcher_complete",
+              "status": "complete"
+            }
+          },
+          {
+            "event_id": "66a824e7-fe45-472e-85a1-d4d9392c7490",
+            "event_type": "ResearcherRunCompleted",
+            "occurred_at": "2026-09-30T14:14:58.878985Z",
+            "payload": {
+              "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6"
+            }
+          }
+        ],
+        "dossier": {
+          "analyses_performed": [
+            "summary",
+            "ols"
+          ],
+          "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+          "evidence_refs": [
+            "bd21ffc4-a168-41a9-b51e-83fbf4933707",
+            "51386489-7cca-4056-ae95-2dccf835f5b5"
+          ],
+          "frontier_decisions": [
+            "keep_alive"
+          ],
+          "hypotheses": [
+            "Replicate the association.",
+            "Test a causal mechanism."
+          ],
+          "important_jev_measurements": [
+            "candidate-relevance",
+            "candidate-action"
+          ],
+          "objective": "Assess a public treatment-resistance signal",
+          "positive_findings": [
+            "summary",
+            "ols"
+          ],
+          "preferred_continuation": "replicate cohort",
+          "preferred_continuation_reason": "Within-scope continuation derived deterministically from recorded events.",
+          "recommended_next_blocks": [
+            "mechanistic experiment"
+          ],
+          "resource_usage": {
+            "evidence": 2,
+            "jev_calls": 1,
+            "reasoner_calls": 1,
+            "sandbox_calls": 0,
+            "source_calls": 0
+          },
+          "termination_reason": "researcher_complete",
+          "unresolved_uncertainties": [
+            "Replication needed."
+          ]
+        },
+        "complete": true
+      }
+    }
+  ]
+}

@@ -17,9 +17,11 @@ from src.oncolab.catalogue import initial_oncolab_index
 from src.oncolab.registry import OncoLabIndex, OncoLabVerificationRecord
 from src.oncolab.models import OncoLabKind
 from src.director.models import ResourceAllocation
+from src.evidence.models import ScientificEvidence
 from src.jev.client import JevClient
+from src.jev.failure import JevOperationalFailure
 from src.jev.frontier import FrontierPolicy
-from src.jev.models import JevQuestionSpec
+from src.jev.models import JevDecision, JevQuestionSpec
 from src.ledger.events import LedgerEvent
 from src.reasoner.service import DeterministicReasoner
 from src.science.admission import admit_scientific_evidence
@@ -27,6 +29,7 @@ from src.science.execution import ScienceExecutor
 from src.science.models import AnalysisSpec, MeasuredResult
 from src.science.sandbox import DockerScientificSandbox, GithubMethodRequest, SandboxMeasurementCandidate, validate_sandbox_candidate
 from src.sources.public import GdcPublicSource, PublicLiteratureSource, XenaPublicSource
+from src.visualization.models import FigureArtifact
 from src.visualization.service import line_figure
 from src.researcher.state import ProjectionSpec, ResearchStateStore, StateFragment, project_state
 from src.oncolab.labskills import BlockSkillStore
@@ -47,12 +50,17 @@ class HarnessRuntime:
     xena: XenaPublicSource = field(default_factory=XenaPublicSource)
     literature: PublicLiteratureSource = field(default_factory=PublicLiteratureSource)
     measurements: dict[str, MeasuredResult] = field(default_factory=dict)
+    evidence: dict[str, "ScientificEvidence"] = field(default_factory=dict)
+    artifacts: dict[str, FigureArtifact] = field(default_factory=dict)
+    jev_history: list[JevDecision] = field(default_factory=list)
     research_state: ResearchStateStore = field(default_factory=ResearchStateStore)
     skills: BlockSkillStore = field(default_factory=BlockSkillStore)
     sandbox: DockerScientificSandbox = field(default_factory=DockerScientificSandbox)
     sandbox_candidates: dict[str, SandboxMeasurementCandidate] = field(default_factory=dict)
     researcher: Agent["ResearcherDeps", str] | None = None
     researcher_factory: Callable[[], Agent["ResearcherDeps", str]] | None = None
+    enable_jev: bool = True
+    enable_reasoner: bool = True
     _counts: dict[str, int] = field(default_factory=dict)
 
     def claim(self, resource: str, limit: int) -> None:
@@ -290,6 +298,7 @@ def register_researcher_tools(
         """Admit only a deterministic result previously produced by run_statistics or run_science."""
         result = ctx.deps.runtime.measurements[analysis_id]
         evidence = admit_scientific_evidence(result)
+        ctx.deps.runtime.evidence[evidence.evidence_id] = evidence
         save(ctx, state(ctx).add_evidence(evidence.evidence_id))
         ctx.deps.runtime.oncolab.record_verification(OncoLabVerificationRecord(capability_id="science." + result.provenance[0], verification_id=evidence.evidence_id, execution_reference=analysis_id, evidence=("MeasuredResult", evidence.evidence_id)))
         append(ctx, "EvidenceAdmission", {"evidence_id": evidence.evidence_id, "analysis_id": analysis_id})
@@ -299,6 +308,7 @@ def register_researcher_tools(
     async def create_line_figure(ctx: RunContext[ResearcherDeps], title: str, x: list[float], y: list[float]) -> dict[str, Any]:
         """Create a deterministic SVG FigureArtifact; visual artifacts are never scientific evidence."""
         artifact = line_figure(title, x, y)
+        ctx.deps.runtime.artifacts[artifact.artifact_id] = artifact
         ctx.deps.runtime.oncolab.record_verification(OncoLabVerificationRecord(capability_id="visualization.scientific", verification_id=artifact.sha256, execution_reference=artifact.artifact_id, evidence=("FigureArtifact", artifact.sha256)))
         append(ctx, "CapabilityResult", {"capability_id": "visualization.scientific", "artifact_id": artifact.artifact_id, "sha256": artifact.sha256})
         return artifact.model_dump(mode="json")
@@ -319,6 +329,8 @@ def register_researcher_tools(
     ) -> dict[str, Any]:
         """Run bounded Jev measurements, then deterministic FrontierPolicy."""
         runtime = ctx.deps.runtime
+        if not runtime.enable_jev:
+            raise RuntimeError("Jev measurement is disabled in this evaluation condition")
         runtime.claim("jev", runtime.max_jev_calls)
         questions = (
             JevQuestionSpec(
@@ -346,7 +358,12 @@ def register_researcher_tools(
             save(ctx, current)
         projection = project_state(current, ProjectionSpec(projection_name="candidate", candidate_id=candidate_id))
         questions = tuple(question.model_copy(update={"projection_id": projection.projection_id}) for question in questions)
-        decisions = runtime.jev.evaluate(projection.payload, questions)
+        try:
+            decisions = runtime.jev.evaluate(projection.payload, questions)
+        except JevOperationalFailure as error:
+            append(ctx, "JevExecutionFailure", {"question_ids": [failure.question_id for failure in error.failures], "categories": [failure.category.value for failure in error.failures]})
+            raise
+        runtime.jev_history.extend(decisions)
         frontier = FrontierPolicy().decide(candidate_id, decisions, (candidate_id,))
         append(ctx, "JevExecution", {"question_ids": [question.question_id for question in questions], "projection_id": projection.projection_id})
         append(ctx, "FrontierDecision", frontier.model_dump(mode="json"))
@@ -387,8 +404,14 @@ def register_researcher_tools(
     ) -> dict[str, Any]:
         """Generate alternatives; beyond-scope hypotheses become proposals, never new scope."""
         runtime = ctx.deps.runtime
+        if not runtime.enable_reasoner:
+            raise RuntimeError("Reasoner is disabled in this evaluation condition")
         runtime.claim("reasoner", runtime.max_reasoner_calls)
-        output = runtime.reasoner.generate(block_for(ctx).objective, finding)
+        try:
+            output = runtime.reasoner.generate(block_for(ctx).objective, finding)
+        except Exception as error:
+            append(ctx, "ReasonerFailure", {"error_type": type(error).__name__})
+            raise
         append(ctx, "ReasonerOutput", output.model_dump(mode="json"))
         return output.model_dump(mode="json")
 

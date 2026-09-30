@@ -1,3 +1,4 @@
+mode: deterministic
 block:
   default_seconds: 600
   handoff_reserve_seconds: 60
@@ -5,6 +6,7 @@ block:
   max_source_calls: 20
   max_jev_calls: 100
   max_reasoner_calls: 5
+  max_sandbox_calls: 2
   max_download_bytes: 100000000
   max_cost: null
 director:

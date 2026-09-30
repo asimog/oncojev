@@ -27,6 +27,10 @@ OncoJev is an autonomous computational oncology research system, not a fixed ana
 - `src/oncolab/`: the single shared OncoLab Index, its typed contracts, and bundled verification records.
 - `src/oncolab/proven/`: durable verification records; they do not automatically promote local work into reusable capability.
 - `src/oncolab/labskills/`: block-selected procedural guidance; it is not executable capability code or standing agent context.
+- `src/runtime/pydantic_ai/`: the only place Pydantic AI is integrated; `factory.py` is the single deterministic/live composition point.
+- `src/persistence/`, `src/application/`, `src/api/`: append-only typed records, application read models, and the read-only API. None may admit evidence.
+- `src/evals/`: research-evaluation harness; it reports outcomes and never declares a winning condition.
+- `web/`: observability UI only; it renders records and contains no orchestration or admission logic.
 - `skills/`: instructions and domain knowledge; they do not execute work.
 - A local `JevQuestionSpec` or local capability is not automatically reusable or promoted.
 
@@ -38,6 +42,6 @@ Never begin by recursively reading, searching, indexing, testing, or summarizing
 
 ## Boundaries and done
 
-Backend code belongs in `src/`; future UI code belongs in `web/` and is observability only. Keep Pydantic AI integration behind `src/runtime/pydantic_ai/`.
+Backend code belongs in `src/`; UI code belongs in `web/` and is observability only. Keep Pydantic AI integration behind `src/runtime/pydantic_ai/`. Model-provider authentication and scientific-data authentication are separate domains (`src/config/authentication.py`).
 
 For a change to be done: update the nearest durable documentation/configuration if needed, preserve the boundaries above, add a behavior-level test only when it protects a credible regression, run the focused tests and `scripts/check_architecture.py`, and report exact results.
