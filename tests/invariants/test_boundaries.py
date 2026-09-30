@@ -6,7 +6,7 @@ import pytest
 import httpx
 from pydantic import ValidationError
 from pydantic_ai.messages import ModelResponse,TextPart,ToolCallPart
-from pydantic_ai.models.function import FunctionModel
+from pydantic_ai.models.function import DeltaToolCall,FunctionModel
 from src.block.manager import BlockManager
 from src.block.models import BlockStatus
 from src.oncolab.catalogue import initial_oncolab_index
@@ -34,6 +34,17 @@ from src.researcher.state import ProjectionSpec,ResearchState,StateFragment,proj
 from src.oncolab.labskills import BlockSkillStore
 from src.science.sandbox import DockerScientificSandbox,GithubMethodRequest,SandboxError,SandboxInvocation,SandboxMeasurementCandidate,SandboxReceipt,validate_sandbox_candidate
 ROOT=Path(__file__).resolve().parents[2]
+def scripted(function):
+ """Coder bundles RepoContext, so POSIX runs stream; adapt a scripted response for both paths."""
+ async def stream(messages,info):
+  response=await function(messages,info)
+  tool_calls={index:part for index,part in enumerate(response.parts) if isinstance(part,ToolCallPart)}
+  if tool_calls:
+   yield {index:DeltaToolCall(name=part.tool_name,json_args=part.args_as_json_str(),tool_call_id=part.tool_call_id) for index,part in tool_calls.items()}
+   return
+  text=''.join(part.content for part in response.parts if isinstance(part,TextPart))
+  if text:yield text
+ return FunctionModel(function=function,stream_function=stream)
 def test_local_credentials_are_loaded_without_overriding_host_environment(tmp_path,monkeypatch):
  monkeypatch.delenv('OPENROUTER_API_KEY',raising=False);monkeypatch.delenv('TYPESAFE_API_KEY',raising=False)
  (tmp_path/'.env.local').write_text('OPENROUTER_API_KEY=local-openrouter\nTYPESAFE_API_KEY=local-typesafe\n',encoding='utf-8')
@@ -119,7 +130,7 @@ def test_researcher_can_use_sandbox_tool_without_promoting_method():
    return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await load_research_skills(need="github reproducibility")\ncandidate = await acquire_github_scientific_method(capability_need="novel method", why_existing_capabilities_are_inadequate="no installed method fits", repository_url="https://github.com/example/public-method", requested_ref="main", install_command=["python", "-m", "pip", "install", "."], test_command=["python", "-m", "pytest"], execute_command=["python", "method.py", "/input/request.json"], input_json={"x": [1]})\nawait validate_sandbox_measurement(candidate_id=candidate["candidate_id"], analysis_id="sandbox-analysis")\nawait admit_measurement(analysis_id="sandbox-analysis")\ncandidate'},tool_call_id='sandbox-code')])
   return ModelResponse(parts=[TextPart('sandbox complete')])
  researcher=agents.fresh_researcher()
- with researcher.override(model=FunctionModel(model)):
+ with researcher.override(model=scripted(model)):
   result=researcher.run_sync('use the sandbox',deps=ResearcherDeps(runtime=runtime,block_id=block.block_id))
  assert result.output=='sandbox complete'
  events={event.event_type for event in manager.ledger(block.block_id).history()}
@@ -157,7 +168,7 @@ def test_harness_code_mode_runs_contract_tools_and_director_delegates():
    assert 'run_code' in tools
    return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await search_oncolab(query="regression", kinds=["statistical_method"], limit=3)\nawait describe_oncolab(capability_id="stat.statsmodels")\nawait acquire_gdc(endpoint="files", filters={"op":"in", "content":{"field":"files.data_type", "value":["Gene Expression Quantification"]}}, fields=["file_id"], size=1)\nawait search_xena(query="TCGA", limit=1)\nawait search_public_literature(query="oncology", limit=1)\nawait run_statistics(analysis_id="analysis", question="synthetic", estimand="difference", method="independent_t_test", inputs={"group_a":[1.0, 2.0, 3.0], "group_b":[4.0, 5.0, 6.0]})\nawait admit_measurement(analysis_id="analysis")\nawait create_line_figure(title="synthetic", x=[1.0, 2.0, 3.0], y=[1.0, 4.0, 9.0])\nawait block_status()\nawait evaluate_candidate(candidate_id="candidate", candidate_summary="synthetic subgroup")\nhypotheses = await generate_hypotheses(finding="effect found")\nawait request_scope_escalation(proposed_test="mechanistic experiment", rationale="beyond scope")\nawait complete_block(reason="researcher complete")\nhypotheses'},tool_call_id='researcher-code')])
   return ModelResponse(parts=[TextPart('researcher complete')])
- with agents.director.override(model=FunctionModel(director_model)),agents.researcher.override(model=FunctionModel(researcher_model)):
+ with agents.director.override(model=scripted(director_model)),agents.researcher.override(model=scripted(researcher_model)):
   result=agents.director.run_sync('allocate and investigate',deps=DirectorDeps(runtime))
  assert result.output=='director complete'
  block=manager.blocks()[0];assert manager.status(block) is BlockStatus.COMPLETE

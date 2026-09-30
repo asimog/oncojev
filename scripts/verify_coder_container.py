@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
-from pydantic_ai.models.function import FunctionModel
+from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 
 from src.block.manager import BlockManager
 from src.director.models import ResourceAllocation
@@ -14,6 +14,27 @@ from src.reasoner.service import DeterministicReasoner
 from src.runtime.pydantic_ai.agents import create_agents
 from src.runtime.pydantic_ai.contracts import DirectorDeps, HarnessRuntime, ResearcherDeps
 from src.science.execution import ScienceExecutor
+
+
+def _as_stream(respond):
+    """Coder bundles RepoContext, so runs are streamed; adapt a scripted response."""
+
+    async def stream(messages, info):
+        response = await respond(messages, info)
+        tool_calls = {
+            index: part for index, part in enumerate(response.parts) if isinstance(part, ToolCallPart)
+        }
+        if tool_calls:
+            yield {
+                index: DeltaToolCall(name=part.tool_name, json_args=part.args_as_json_str(), tool_call_id=part.tool_call_id)
+                for index, part in tool_calls.items()
+            }
+            return
+        text = "".join(part.content for part in response.parts if isinstance(part, TextPart))
+        if text:
+            yield text
+
+    return stream
 
 
 def _model(role: str):
@@ -38,7 +59,7 @@ def _model(role: str):
             )
         return ModelResponse(parts=[TextPart(f"{role} complete")])
 
-    return FunctionModel(respond)
+    return FunctionModel(function=respond, stream_function=_as_stream(respond))
 
 
 def main() -> None:
@@ -57,8 +78,9 @@ def main() -> None:
 
     with agents.director.override(model=_model("director")):
         director = agents.director.run_sync("Inspect the workspace and OncoLab Index.", deps=DirectorDeps(runtime))
-    with agents.fresh_researcher().override(model=_model("researcher")):
-        researcher = agents.fresh_researcher().run_sync(
+    researcher_agent = agents.fresh_researcher()
+    with researcher_agent.override(model=_model("researcher")):
+        researcher = researcher_agent.run_sync(
             "Inspect the workspace and OncoLab Index.", deps=ResearcherDeps(runtime, block.block_id)
         )
 
