@@ -1,0 +1,40 @@
+# OncoJev agent map
+
+## What this is
+
+OncoJev is an autonomous computational oncology research system, not a fixed analysis pipeline. Its canonical architecture is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); its non-negotiable epistemic rules are [docs/EPISTEMIC_CONSTITUTION.md](docs/EPISTEMIC_CONSTITUTION.md).
+
+## Read in this order
+
+1. This file and `README.md`.
+2. The task-relevant document in `docs/`.
+3. `config/` and the smallest relevant package in `src/oncojev/`.
+4. Relevant registry, skill, and test files.
+5. `web/` only for UI work.
+
+## Durable boundaries
+
+- Science deterministically measures and is the only evidence-admission authority.
+- Jev measures bounded semantic properties; it is not an agent, evidence source, or action authority.
+- Reasoner generates possibilities, never evidence.
+- Director allocates global scope; Researcher investigates inside one block.
+- `BlockManager` is deterministic and owns all deadlines. A Researcher cannot extend one.
+- Ledger history is append-only. Dossiers are summaries, not evidence.
+- Preserve uncertainty: missing is not zero, source failure is not absence, and Jev failure is not a negative judgment.
+
+## Taxonomy
+
+- `registries/capabilities/`: deterministic executable science.
+- `registries/jev/`: evaluated reusable semantic measurements.
+- `skills/`: instructions and domain knowledge; they do not execute work.
+- A local `JevQuestionSpec` or local capability is not automatically reusable or promoted.
+
+## `.upstream/` rule
+
+Never begin by recursively reading, searching, indexing, testing, or summarizing `.upstream/`. Do not import it from application code. For a concrete upstream question only: read `.upstream/manifest.yaml`, select one repository and the smallest relevant path, inspect it, then stop.
+
+## Boundaries and done
+
+Backend code belongs in `src/oncojev/`; future UI code belongs in `web/` and is observability only. Keep Pydantic AI integration behind `src/oncojev/runtime/pydantic_ai/`.
+
+For a change to be done: update the nearest durable documentation/configuration if needed, preserve the boundaries above, add a behavior-level test only when it protects a credible regression, run the focused tests and `scripts/check_architecture.py`, and report exact results.

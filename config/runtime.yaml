@@ -1,0 +1,20 @@
+block:
+  default_seconds: 600
+  handoff_reserve_seconds: 60
+  max_tool_calls: 100
+  max_source_calls: 20
+  max_jev_calls: 100
+  max_reasoner_calls: 5
+  max_download_bytes: 100000000
+  max_cost: null
+director:
+  retrieval_k: 20
+  semantic_frontier_k: 8
+capabilities:
+  search_k: 20
+jev:
+  search_k: 20
+sandbox:
+  provider: local
+  cpu: 2
+  memory_mb: 4096

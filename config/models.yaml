@@ -1,0 +1,26 @@
+# Role-specific provider choices belong here, not in source.
+director:
+  provider: openrouter
+  model: openrouter:deepseek/deepseek-v4.1-flash
+  reasoning: { effort: high, budget_tokens: null }
+  max_output_tokens: 12000
+  timeout_seconds: 120
+  fallbacks: [openrouter:openrouter/free]
+researcher:
+  provider: openrouter
+  model: openrouter:deepseek/deepseek-v4.1-flash
+  reasoning: { effort: medium, budget_tokens: null }
+  max_output_tokens: 16000
+  timeout_seconds: 120
+  fallbacks: [openrouter:openrouter/free]
+reasoner:
+  provider: openrouter
+  model: openrouter:deepseek/deepseek-v4.1-flash
+  reasoning: { effort: high, budget_tokens: null }
+  max_output_tokens: 12000
+  timeout_seconds: 120
+  fallbacks: [openrouter:openrouter/free]
+jev:
+  provider: typesafe
+  model: jev-1.13.0
+  http2: true

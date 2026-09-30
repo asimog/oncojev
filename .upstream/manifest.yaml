@@ -1,0 +1,13 @@
+# Direct architectural/scientific references. Runtime code must not import this directory.
+# Pinned from the local clone log/SOURCES.lock where available on 2026-09-30.
+upstreams:
+  - { name: pydantic-ai, repository: https://github.com/pydantic/pydantic-ai, commit: 348b6952531d035a681fcf6c14c861284f46adbc, tag_or_version: main, purpose: Pydantic AI runtime substrate and TypeSafe provider reference, license: MIT, last_sync: 2026-09-30 }
+  - { name: typesafe-sdk-python, repository: https://github.com/typesafe-ai/typesafe-sdk-python, commit: f078f1e208a0d885154dc758344ae4fce77ac168, tag_or_version: main, purpose: TypeSafe/Jev SDK reference, license: MIT, last_sync: 2026-09-30 }
+  - { name: openai-plugins, repository: https://github.com/openai/plugins, commit: 5fd93af4cd0c623e020d0cc7e9ce178b4ac1f70f, tag_or_version: main, purpose: Agent plugin and skill reference, license: NOASSERTION, last_sync: 2026-09-30 }
+  - { name: gdcdictionary, repository: https://github.com/NCI-GDC/gdcdictionary, commit: 88d66b0fe361aa638977850c180bd9130d705924, tag_or_version: develop, purpose: GDC data dictionary reference, license: Apache-2.0, last_sync: 2026-09-30 }
+  - { name: gdcdatamodel2, repository: https://github.com/NCI-GDC/gdcdatamodel2, commit: 9c6a046b96c130ea131d2ce2c9160381edd2fcc1, tag_or_version: develop, purpose: GDC data model reference, license: Apache-2.0, last_sync: 2026-09-25 }
+  - { name: gdc-models, repository: https://github.com/NCI-GDC/gdc-models, commit: f568d785915761b9c5902f9ce4d05e4aa9bbb11c, tag_or_version: main, purpose: GDC model reference, license: NOASSERTION, last_sync: 2026-09-30 }
+  - { name: gdc-workflow-overview, repository: https://github.com/NCI-GDC/gdc-workflow-overview, commit: 2412e93b3d7de8afb74ad6e28566e5a6b2e0ad1e, tag_or_version: master, purpose: GDC workflow reference, license: Apache-2.0, last_sync: 2026-09-25 }
+  - { name: gdc-docs, repository: https://github.com/NCI-GDC/gdc-docs, commit: 157cef9dac084ce30720f0ad507cd54017263be7, tag_or_version: develop, purpose: GDC documentation and release-note reference, license: Apache-2.0, last_sync: 2026-09-25 }
+  - { name: gdc-client, repository: https://github.com/NCI-GDC/gdc-client, commit: 0602ecbccb9f31e37d720347e58ea3eaef981f85, tag_or_version: develop, purpose: GDC transfer-client reference, license: Apache-2.0, last_sync: 2026-09-25 }
+  - { name: gdan-public-methods, repository: https://www.cancer.gov/ccg/research/computational-genomics/genomic-data-analysis-network, commit: snapshot-2026-09-25, tag_or_version: snapshot, purpose: GDAN method discovery; implementations require explicit selection and validation, license: varies-by-repository, last_sync: 2026-09-25 }
