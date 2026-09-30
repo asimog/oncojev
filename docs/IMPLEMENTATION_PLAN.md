@@ -16,19 +16,19 @@ This is OncoJev’s only implementation-phase and status tracker.
 
 **Completion evidence:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/CAPABILITIES.md`, `skills/statistical-methods/README.md`, `.upstream/INDEX.md`, and `.upstream/manifest.yaml` updated; focused test suite and architecture check pass.
 
-## 2. Capability Index and wrapper contracts
+## 2. OncoLab Index and wrapper contracts
 
 **Status:** DONE
 
-**Goal:** Define a large, bounded-retrieval Capability Index and wrapper contracts.
+**Goal:** Define a large, bounded-retrieval OncoLab Index and wrapper contracts.
 
 **Scope:** One typed metadata index, bounded deterministic retrieval, initial descriptors, and Director/Researcher index-access tools. No scientific execution wrappers.
 
-**Acceptance criteria:** Indexed existence remains distinct from executable, validated, and reusable capability state; both roles can search/describe the same bounded catalogue without receiving it wholesale.
+**Acceptance criteria:** Indexed existence remains distinct from executable, validated, and reusable capability state; both roles can search/describe the same bounded OncoLab catalogue without receiving it wholesale.
 
 **Dependencies:** Phase 1.
 
-**Completion evidence:** `CapabilityDescriptor`, `CapabilityIndex`, and 100+ initial descriptors implemented; Director and Researcher Code Mode integration exercised with `FunctionModel`; `pytest`, the synthetic slice, and architecture checks pass.
+**Completion evidence:** `OncoLabDescriptor`, `OncoLabIndex`, and 100+ initial descriptors implemented; Director and Researcher Code Mode integration exercised with `FunctionModel`; `pytest`, the synthetic slice, and architecture checks pass.
 
 ## 3. Initial executable scientific capabilities
 
@@ -38,7 +38,7 @@ This is OncoJev’s only implementation-phase and status tracker.
 
 **Scope:** Typed public GDC/Xena/literature wrappers, a small deterministic NumPy/pandas/SciPy/statsmodels surface, matplotlib SVG artifacts, and their bounded Researcher Code Mode tools. No fixed scientific workflow, controlled-data support, sandbox filesystem/shell access, database/API, or UI.
 
-**Acceptance criteria:** A Researcher can discover and invoke independent source, literature, statistics, and visualization capabilities through the bounded Capability Index; sources cannot receive credentials; acquisition is not evidence; deterministic measurements require explicit evidence admission; all tool activity is recorded in the block ledger.
+**Acceptance criteria:** A Researcher can discover and invoke independent source, literature, statistics, and visualization methods through the bounded OncoLab Index; sources cannot receive credentials; acquisition is not evidence; deterministic measurements require explicit evidence admission; all tool activity is recorded in the block ledger.
 
 **Dependencies:** Phase 2.
 
@@ -60,17 +60,17 @@ This is OncoJev’s only implementation-phase and status tracker.
 
 ## 5. Skills and scientific sandbox
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 **Goal:** Add progressive skills, a scientific sandbox, and GitHub method acquisition.
 
-**Scope:** Controlled procedural use and external software acquisition.
+**Scope:** Controlled procedural use and external software acquisition. Local labskills under `src/oncolab/labskills/` adapt relevant procedural guidance from the pinned K-Dense Scientific Agent Skills and ClawBio repositories without vendoring their code or automatically trusting their skills. Both agent roles use the Pydantic AI Coder harness in the non-root Railway/Linux container; external scientific execution remains Docker-only because WSL alone is not a sufficient isolation boundary.
 
-**Acceptance criteria:** Sandboxed work cannot bypass evidence, provenance, or promotion rules.
+**Acceptance criteria:** Public GitHub code can run only in an isolated sandbox; `.upstream` is never executable runtime software; sandbox processes receive no provider, SSH, or browser credentials; repository URL, resolved commit, environment, commands, input/output hashes, and exit status are captured; raw output cannot become evidence; and successful execution does not promote a new method to reusable capability.
 
 **Dependencies:** Phases 2–4.
 
-**Completion evidence:** Not started.
+**Completion evidence:** Pending sandbox integration and focused invariant verification.
 
 ## 6. Live agent and Jev execution
 

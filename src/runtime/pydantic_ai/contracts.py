@@ -4,6 +4,7 @@ The harness is allowed to orchestrate these operations, but deterministic Python
 remains the authority for deadlines, frontier policy, and evidence admission.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -12,9 +13,9 @@ from pydantic_ai import Agent, RunContext
 
 from src.block.manager import BlockManager
 from src.block.models import BlockStatus
-from src.capabilities.catalogue import initial_capability_registry
-from src.capabilities.registry import CapabilityRegistry, ProvenCapabilityRecord
-from src.capabilities.models import CapabilityKind
+from src.oncolab.catalogue import initial_oncolab_index
+from src.oncolab.registry import OncoLabIndex, OncoLabVerificationRecord
+from src.oncolab.models import OncoLabKind
 from src.director.models import ResourceAllocation
 from src.jev.client import JevClient
 from src.jev.frontier import FrontierPolicy
@@ -24,9 +25,11 @@ from src.reasoner.service import DeterministicReasoner
 from src.science.admission import admit_scientific_evidence
 from src.science.execution import ScienceExecutor
 from src.science.models import AnalysisSpec, MeasuredResult
+from src.science.sandbox import DockerScientificSandbox, GithubMethodRequest, SandboxMeasurementCandidate, validate_sandbox_candidate
 from src.sources.public import GdcPublicSource, PublicLiteratureSource, XenaPublicSource
 from src.visualization.service import line_figure
 from src.researcher.state import ProjectionSpec, ResearchStateStore, StateFragment, project_state
+from src.oncolab.labskills import BlockSkillStore
 
 
 @dataclass
@@ -38,13 +41,18 @@ class HarnessRuntime:
     max_jev_calls: int
     max_reasoner_calls: int
     max_source_calls: int = 20
-    capabilities: CapabilityRegistry = field(default_factory=initial_capability_registry)
+    max_sandbox_calls: int = 2
+    oncolab: OncoLabIndex = field(default_factory=initial_oncolab_index)
     gdc: GdcPublicSource = field(default_factory=GdcPublicSource)
     xena: XenaPublicSource = field(default_factory=XenaPublicSource)
     literature: PublicLiteratureSource = field(default_factory=PublicLiteratureSource)
     measurements: dict[str, MeasuredResult] = field(default_factory=dict)
     research_state: ResearchStateStore = field(default_factory=ResearchStateStore)
+    skills: BlockSkillStore = field(default_factory=BlockSkillStore)
+    sandbox: DockerScientificSandbox = field(default_factory=DockerScientificSandbox)
+    sandbox_candidates: dict[str, SandboxMeasurementCandidate] = field(default_factory=dict)
     researcher: Agent["ResearcherDeps", str] | None = None
+    researcher_factory: Callable[[], Agent["ResearcherDeps", str]] | None = None
     _counts: dict[str, int] = field(default_factory=dict)
 
     def claim(self, resource: str, limit: int) -> None:
@@ -69,18 +77,17 @@ def register_director_tools(
     agent: Agent[DirectorDeps, str],
 ) -> None:
     @agent.tool
-    async def search_capabilities(
-        ctx: RunContext[DirectorDeps], query: str = "", kinds: list[CapabilityKind] = [], tags: list[str] = [], limit: int = 8
+    async def search_oncolab(
+        ctx: RunContext[DirectorDeps], query: str = "", kinds: list[OncoLabKind] = [], tags: list[str] = [], limit: int = 8
     ) -> list[dict[str, Any]]:
         """Search bounded capability planning metadata; this never executes science."""
-        matches = ctx.deps.runtime.capabilities.search(query, kinds=kinds, tags=tags, limit=limit)
+        matches = ctx.deps.runtime.oncolab.search(query, kinds=kinds, tags=tags, limit=limit)
         return [match.model_dump(mode="json") for match in matches]
 
     @agent.tool
-    async def describe_capability(ctx: RunContext[DirectorDeps], capability_id: str) -> dict[str, Any] | None:
-        """Describe one capability; descriptor presence never grants execution authority."""
-        match = ctx.deps.runtime.capabilities.describe(capability_id)
-        return None if match is None else match.model_dump(mode="json")
+    async def describe_oncolab(ctx: RunContext[DirectorDeps], capability_id: str) -> dict[str, Any] | None:
+        """Describe one capability and bounded verification history; neither grants execution authority."""
+        return ctx.deps.runtime.oncolab.describe_with_verification(capability_id)
 
     @agent.tool
     async def allocate_block(
@@ -91,6 +98,7 @@ def register_director_tools(
             objective, why_now, ResourceAllocation(seconds=seconds)
         )
         ctx.deps.runtime.research_state.start(block.block_id, block.objective)
+        ctx.deps.runtime.skills.start(block.block_id)
         ctx.deps.runtime.manager.ledger(block.block_id).append(
             LedgerEvent(
                 event_type="DirectorBlockAllocated",
@@ -123,12 +131,13 @@ def register_director_tools(
         block = runtime.manager.block(block_id)
         if runtime.manager.status(block) is not BlockStatus.ACTIVE:
             raise RuntimeError("cannot launch a non-active block")
-        if runtime.researcher is None:
+        researcher = runtime.researcher_factory() if runtime.researcher_factory else runtime.researcher
+        if researcher is None:
             raise RuntimeError("Researcher agent is not configured")
         ledger = runtime.manager.ledger(block_id)
         ledger.append(LedgerEvent(event_type="ResearcherRunStarted", occurred_at=datetime.now(UTC), payload={"block_id": block_id}))
         try:
-            result = await runtime.researcher.run(
+            result = await researcher.run(
                 f"Investigate block {block_id}: {block.objective}",
                 deps=ResearcherDeps(runtime=runtime, block_id=block_id),
                 usage=ctx.usage,
@@ -157,6 +166,13 @@ def register_researcher_tools(
     def save(ctx: RunContext[ResearcherDeps], value): return ctx.deps.runtime.research_state.put(value)
 
     @agent.tool
+    async def load_research_skills(ctx: RunContext[ResearcherDeps], need: str, limit: int = 3) -> list[dict[str, Any]]:
+        """Select short procedural skills for this block only; prior Researcher runs are never reused."""
+        selected = ctx.deps.runtime.skills.select(ctx.deps.block_id, need, limit)
+        append(ctx, "ResearchSkillsLoaded", {"skill_ids": [skill.skill_id for skill in selected]})
+        return [skill.model_dump(mode="json") for skill in selected]
+
+    @agent.tool
     async def inspect_research_state(ctx: RunContext[ResearcherDeps]) -> dict[str, Any]:
         """Read this block's immutable provider-agnostic state, not raw provider responses."""
         return state(ctx).model_dump(mode="json")
@@ -168,18 +184,17 @@ def register_researcher_tools(
         save(ctx, updated); return updated.model_dump(mode="json")
 
     @agent.tool
-    async def search_capabilities(
-        ctx: RunContext[ResearcherDeps], query: str = "", kinds: list[CapabilityKind] = [], tags: list[str] = [], limit: int = 8
+    async def search_oncolab(
+        ctx: RunContext[ResearcherDeps], query: str = "", kinds: list[OncoLabKind] = [], tags: list[str] = [], limit: int = 8
     ) -> list[dict[str, Any]]:
         """Search the same bounded global index for local block planning; this never executes a result."""
-        matches = ctx.deps.runtime.capabilities.search(query, kinds=kinds, tags=tags, limit=limit)
+        matches = ctx.deps.runtime.oncolab.search(query, kinds=kinds, tags=tags, limit=limit)
         return [match.model_dump(mode="json") for match in matches]
 
     @agent.tool
-    async def describe_capability(ctx: RunContext[ResearcherDeps], capability_id: str) -> dict[str, Any] | None:
-        """Describe one global capability before choosing a typed local wrapper."""
-        match = ctx.deps.runtime.capabilities.describe(capability_id)
-        return None if match is None else match.model_dump(mode="json")
+    async def describe_oncolab(ctx: RunContext[ResearcherDeps], capability_id: str) -> dict[str, Any] | None:
+        """Describe one global capability and its verification history before choosing a typed wrapper."""
+        return ctx.deps.runtime.oncolab.describe_with_verification(capability_id)
 
     @agent.tool
     async def acquire_gdc(
@@ -229,6 +244,37 @@ def register_researcher_tools(
         return result.model_dump(mode="json")
 
     @agent.tool
+    async def acquire_github_scientific_method(
+        ctx: RunContext[ResearcherDeps], capability_need: str, why_existing_capabilities_are_inadequate: str,
+        repository_url: str, requested_ref: str, install_command: list[str], test_command: list[str],
+        execute_command: list[str], input_json: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Acquire public GitHub code only through the credential-free Docker sandbox; no stdout or files are returned."""
+        if not why_existing_capabilities_are_inadequate.strip():
+            raise ValueError("an explicit inadequacy rationale is required before external acquisition")
+        installed = [item.capability_id for item in ctx.deps.runtime.oncolab.search(capability_need, limit=20) if item.availability.value == "installed"]
+        if installed:
+            raise ValueError(f"existing installed capabilities must be considered first: {installed}")
+        runtime = ctx.deps.runtime
+        runtime.claim("sandbox", runtime.max_sandbox_calls)
+        request = GithubMethodRequest(repository_url=repository_url, requested_ref=requested_ref, install_command=tuple(install_command), test_command=tuple(test_command), execute_command=tuple(execute_command), input_json=input_json)
+        append(ctx, "GithubAcquisitionStarted", {"repository_url": request.repository_url, "requested_ref": request.requested_ref, "capability_need": capability_need})
+        candidate = runtime.sandbox.acquire_and_execute(request)
+        runtime.sandbox_candidates[candidate.candidate_id] = candidate
+        append(ctx, "GithubAcquisitionCompleted", {"candidate_id": candidate.candidate_id, "repository_url": candidate.receipt.repository_url, "commit_sha": candidate.receipt.commit_sha, "input_sha256": candidate.receipt.input_sha256, "output_sha256": candidate.receipt.first_run.stdout_sha256, "exit_status": candidate.receipt.first_run.exit_status})
+        return {"candidate_id": candidate.candidate_id, "receipt": candidate.receipt.model_dump(mode="json"), "values": candidate.values}
+
+    @agent.tool
+    async def validate_sandbox_measurement(ctx: RunContext[ResearcherDeps], candidate_id: str, analysis_id: str) -> dict[str, Any]:
+        """Turn a replay-stable sandbox candidate into a deterministic MeasuredResult; this is not evidence admission."""
+        candidate = ctx.deps.runtime.sandbox_candidates[candidate_id]
+        measurement = validate_sandbox_candidate(candidate, analysis_id)
+        ctx.deps.runtime.measurements[analysis_id] = measurement
+        save(ctx, state(ctx).add_measurement(measurement))
+        append(ctx, "SandboxMeasurementValidated", {"candidate_id": candidate_id, "analysis_id": analysis_id, "commit_sha": candidate.receipt.commit_sha})
+        return measurement.model_dump(mode="json")
+
+    @agent.tool
     async def run_statistics(
         ctx: RunContext[ResearcherDeps], analysis_id: str, question: str, estimand: str, method: str, inputs: dict[str, list[float]]
     ) -> dict[str, Any]:
@@ -245,7 +291,7 @@ def register_researcher_tools(
         result = ctx.deps.runtime.measurements[analysis_id]
         evidence = admit_scientific_evidence(result)
         save(ctx, state(ctx).add_evidence(evidence.evidence_id))
-        ctx.deps.runtime.capabilities.record_proven(ProvenCapabilityRecord(capability_id="science." + result.provenance[0], verification_id=evidence.evidence_id, execution_reference=analysis_id, evidence=("MeasuredResult", evidence.evidence_id)))
+        ctx.deps.runtime.oncolab.record_verification(OncoLabVerificationRecord(capability_id="science." + result.provenance[0], verification_id=evidence.evidence_id, execution_reference=analysis_id, evidence=("MeasuredResult", evidence.evidence_id)))
         append(ctx, "EvidenceAdmission", {"evidence_id": evidence.evidence_id, "analysis_id": analysis_id})
         return evidence.model_dump(mode="json")
 
@@ -253,7 +299,7 @@ def register_researcher_tools(
     async def create_line_figure(ctx: RunContext[ResearcherDeps], title: str, x: list[float], y: list[float]) -> dict[str, Any]:
         """Create a deterministic SVG FigureArtifact; visual artifacts are never scientific evidence."""
         artifact = line_figure(title, x, y)
-        ctx.deps.runtime.capabilities.record_proven(ProvenCapabilityRecord(capability_id="visualization.scientific", verification_id=artifact.sha256, execution_reference=artifact.artifact_id, evidence=("FigureArtifact", artifact.sha256)))
+        ctx.deps.runtime.oncolab.record_verification(OncoLabVerificationRecord(capability_id="visualization.scientific", verification_id=artifact.sha256, execution_reference=artifact.artifact_id, evidence=("FigureArtifact", artifact.sha256)))
         append(ctx, "CapabilityResult", {"capability_id": "visualization.scientific", "artifact_id": artifact.artifact_id, "sha256": artifact.sha256})
         return artifact.model_dump(mode="json")
 

@@ -32,13 +32,14 @@ def main() -> None:
         raise SystemExit("Director must not import Science admission.")
 
     required = (
-        ROOT / "registries" / "capabilities" / "README.md",
-        ROOT / "registries" / "jev" / "README.md",
+        ROOT / "src" / "oncolab" / "README.md",
         ROOT / ".upstream" / "manifest.yaml",
     )
     missing = [path.relative_to(ROOT) for path in required if not path.is_file()]
     if missing:
         raise SystemExit(f"missing architecture records: {missing}")
+    if (ROOT / "registries").exists():
+        raise SystemExit("capability records must live under src/oncolab, not registries/")
     print("architecture checks passed")
 
 

@@ -16,5 +16,12 @@ class ModelsConfig(BaseModel, frozen=True):
     researcher: ModelRoleConfig
     reasoner: ModelRoleConfig
     jev: ModelRoleConfig
+class SandboxConfig(BaseModel, frozen=True):
+    provider: str = "docker"
+    image: str = "python:3.12-slim"
+    cpu: int = Field(default=2, ge=1, le=8)
+    memory_mb: int = Field(default=4096, ge=512, le=32768)
+    timeout_seconds: int = Field(default=300, ge=10, le=1800)
 class RuntimeConfig(BaseModel, frozen=True):
     block: dict[str, int | None]
+    sandbox: SandboxConfig = Field(default_factory=SandboxConfig)

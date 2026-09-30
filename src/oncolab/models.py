@@ -3,7 +3,7 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 
 
-class CapabilityKind(StrEnum):
+class OncoLabKind(StrEnum):
     SOURCE = "source"
     SCIENTIFIC_METHOD = "scientific_method"
     STATISTICAL_METHOD = "statistical_method"
@@ -14,7 +14,7 @@ class CapabilityKind(StrEnum):
     JEV = "jev"
 
 
-class CapabilityAvailability(StrEnum):
+class OncoLabAvailability(StrEnum):
     KNOWN = "known"
     AVAILABLE = "available"
     INSTALLED = "installed"
@@ -25,13 +25,13 @@ class CapabilityAvailability(StrEnum):
     FORBIDDEN = "forbidden"
 
 
-class CapabilityValidationState(StrEnum):
+class OncoLabValidationState(StrEnum):
     UNVALIDATED = "unvalidated"
     VALIDATED = "validated"
     REUSABLE = "reusable"
 
 
-class CapabilityExecutionMode(StrEnum):
+class OncoLabExecutionMode(StrEnum):
     METADATA_ONLY = "metadata_only"
     LOCAL_PYTHON = "local_python"
     REMOTE_API = "remote_api"
@@ -40,7 +40,7 @@ class CapabilityExecutionMode(StrEnum):
     SEMANTIC_MEASUREMENT = "semantic_measurement"
 
 
-class CapabilityAccessPolicy(StrEnum):
+class OncoLabAccessPolicy(StrEnum):
     PUBLIC = "public"
     LOCAL_ONLY = "local_only"
     CREDENTIALS_REQUIRED = "credentials_required"
@@ -48,19 +48,19 @@ class CapabilityAccessPolicy(StrEnum):
     FORBIDDEN = "forbidden"
 
 
-class ResourceClass(StrEnum):
+class OncoLabResourceClass(StrEnum):
     TRIVIAL = "trivial"
     SMALL = "small"
     MEDIUM = "medium"
     LARGE = "large"
 
 
-class CapabilityDescriptor(BaseModel, frozen=True):
+class OncoLabDescriptor(BaseModel, frozen=True):
     """Planning metadata only; descriptor presence never grants execution authority."""
 
     capability_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
-    kind: CapabilityKind
+    kind: OncoLabKind
     purpose: str = Field(min_length=1)
     tags: tuple[str, ...] = ()
     input_contract: str
@@ -69,17 +69,17 @@ class CapabilityDescriptor(BaseModel, frozen=True):
     limitations: tuple[str, ...] = ()
     assumptions: tuple[str, ...] = ()
     missingness_semantics: str
-    availability: CapabilityAvailability
-    execution_mode: CapabilityExecutionMode
-    access_policy: CapabilityAccessPolicy
+    availability: OncoLabAvailability
+    execution_mode: OncoLabExecutionMode
+    access_policy: OncoLabAccessPolicy
     implementation_or_source: str
     version: str | None = None
-    resource_class: ResourceClass = ResourceClass.SMALL
-    validation_state: CapabilityValidationState = CapabilityValidationState.UNVALIDATED
+    resource_class: OncoLabResourceClass = OncoLabResourceClass.SMALL
+    validation_state: OncoLabValidationState = OncoLabValidationState.UNVALIDATED
     provenance: tuple[str, ...] = Field(min_length=1)
 
 
-class CapabilityStatus(StrEnum):
+class OncoLabCapabilityStatus(StrEnum):
     LOCAL = "local"
     CANDIDATE = "candidate"
     VALIDATED = "validated"
@@ -98,7 +98,7 @@ class ScientificCapability(BaseModel, frozen=True):
     implementation_reference: str
     version: str
     provenance: tuple[str, ...]
-    validation_state: CapabilityStatus = CapabilityStatus.LOCAL
+    validation_state: OncoLabCapabilityStatus = OncoLabCapabilityStatus.LOCAL
 
 
 class JevCapability(BaseModel, frozen=True):
@@ -111,4 +111,4 @@ class JevCapability(BaseModel, frozen=True):
     criteria: object
     known_exclusions: tuple[str, ...] = ()
     failure_semantics: str = "operational failure is not judgment"
-    status: CapabilityStatus = CapabilityStatus.LOCAL
+    status: OncoLabCapabilityStatus = OncoLabCapabilityStatus.LOCAL

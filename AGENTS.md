@@ -24,8 +24,9 @@ OncoJev is an autonomous computational oncology research system, not a fixed ana
 
 ## Taxonomy
 
-- `registries/capabilities/`: deterministic executable science.
-- `registries/jev/`: evaluated reusable semantic measurements.
+- `src/oncolab/`: the single shared OncoLab Index, its typed contracts, and bundled verification records.
+- `src/oncolab/proven/`: durable verification records; they do not automatically promote local work into reusable capability.
+- `src/oncolab/labskills/`: block-selected procedural guidance; it is not executable capability code or standing agent context.
 - `skills/`: instructions and domain knowledge; they do not execute work.
 - A local `JevQuestionSpec` or local capability is not automatically reusable or promoted.
 

@@ -10,7 +10,7 @@ OncoJev searches large biological information spaces under bounded research allo
 flowchart TD
   H[Human direction] --> D[Director]
   D --> C[Control]
-  D --> CI[Capability Index]
+  D --> CI[OncoLab Index]
   D --> RM[Research Memory]
   C --> B[BlockManager]
   B --> JB[JevBlock]
@@ -28,15 +28,17 @@ flowchart TD
   DOS --> RM
 ```
 
-The global scope contains only Director Control, the Capability Index, and Research Memory. Control includes global allocation and deterministic block lifecycle. Director and Researcher are separate Pydantic AI agents. `BlockManager` is plain deterministic Python, owns hard deadlines and budgets, and is the only lifecycle authority.
+The global scope contains only Director Control, the OncoLab Index, and Research Memory. Control includes global allocation and deterministic block lifecycle. Director and Researcher are separate Pydantic AI agents. `BlockManager` is plain deterministic Python, owns hard deadlines and budgets, and is the only lifecycle authority.
 
 Each JevBlock is the Researcher’s local scope. It contains capability discovery/use, acquisition, deterministic science, deterministic ResearchState, Jev projections/measurement, local deterministic frontier policy, Reasoner, optional sandboxed software, visualization, and dossier construction. There are no separate global Science, source, Jev, visualization, or sandbox planes.
 
 ## Agent harness
 
-Both agents use Pydantic AI Harness `CodeMode(tools="all")`. Model-written Python runs in Monty and can orchestrate typed role-specific contract tools. Both also receive raw workspace file and shell tools on this Windows checkout; those tools are workspace-contained and cannot read `.env*`. The Director allocates, inspects, and launches bounded JevBlocks. The Researcher operates the block-local facilities. There is no deadline-extension tool.
+In the Railway/Linux deployment, both agents compose Pydantic AI Harness `Coder` with `CodeMode`. Coder supplies repository tools in the non-root container workspace with a scrubbed child-command environment; Code Mode runs typed role-specific contract orchestration in Monty. Coder tools are not a path around typed acquisition, Science, evidence admission, or the credential-free scientific sandbox. Windows local development retains Monty Code Mode because Pydantic AI's `LocalWorkspace` backend is POSIX-only; validate Coder behavior through the Docker image. The Director allocates, inspects, and launches bounded JevBlocks. The Researcher operates block-local facilities. There is no deadline-extension tool.
 
-Every block begins with a fresh immutable `ResearchState`. Public-provider records are reduced into typed summaries before state update. Jev receives only a deterministic JSON projection of that state, identified by a content-derived projection ID; it never receives provider JSON, dataframes, or shell output. Proven executions are recorded separately under `registries/capabilities/proven/`; this does not promote a broad Capability Index descriptor into a reusable capability.
+Every block begins with a fresh immutable `ResearchState`. Public-provider records are reduced into typed summaries before state update. Jev receives only a deterministic JSON projection of that state, identified by a content-derived projection ID; it never receives provider JSON, dataframes, or shell output. Proven executions are bundled under `src/oncolab/proven/` and loaded by the shared OncoLab Index; this does not promote a broad OncoLab descriptor into a reusable capability.
+
+Researcher procedural skills are selected locally and afresh per JevBlock. They are short guidance, not executable capabilities or standing prompt context. When a missing method requires public GitHub software, the repository is resolved to a commit and run only in a credential-free Docker sandbox. The sandbox captures command, environment, input/output hashes, and exit status; raw stdout and files cannot become evidence.
 
 ## Boundaries
 
@@ -46,7 +48,7 @@ Every block begins with a fresh immutable `ResearchState`. Public-provider recor
 | Jev | Block-local typed semantic measurements after retrieval and before frontier policy | Evidence admission or agent control |
 | Reasoner | Block-local hypotheses, interpretations, possible tests | Evidence admission |
 | Researcher | Local investigation and facilities inside one JevBlock | Extend its block or allocate new global scope |
-| Director | Global Control, Capability Index search, and Research Memory use | Direct science, source, Jev, visualization, or sandbox operation |
+| Director | Global Control, OncoLab Index search, and Research Memory use | Direct science, source, Jev, visualization, or sandbox operation |
 | Python policy | Lifecycle, provenance, admission, composition, frontier | Treat uncertainty as a negative result |
 
 ## Search policy

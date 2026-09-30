@@ -1,4 +1,5 @@
 import os
+import subprocess
 from datetime import UTC,datetime,timedelta
 from pathlib import Path
 import pytest
@@ -8,8 +9,8 @@ from pydantic_ai.messages import ModelResponse,TextPart,ToolCallPart
 from pydantic_ai.models.function import FunctionModel
 from src.block.manager import BlockManager
 from src.block.models import BlockStatus
-from src.capabilities.catalogue import initial_capability_registry
-from src.capabilities.models import CapabilityKind
+from src.oncolab.catalogue import initial_oncolab_index
+from src.oncolab.models import OncoLabKind
 from src.config.loader import load_models_config
 from src.director.models import ResourceAllocation
 from src.dossier.models import Dossier
@@ -20,7 +21,7 @@ from src.ledger.events import LedgerEvent
 from src.ledger.store import Ledger
 from src.reasoner.models import Hypothesis,ReasonerOutput
 from src.runtime.pydantic_ai.agents import create_agents
-from src.runtime.pydantic_ai.contracts import DirectorDeps,HarnessRuntime
+from src.runtime.pydantic_ai.contracts import DirectorDeps,HarnessRuntime,ResearcherDeps
 from src.science.execution import ScienceExecutor
 from src.science.models import AnalysisSpec
 from src.reasoner.service import DeterministicReasoner
@@ -30,6 +31,8 @@ from src.science.execution import GeneratedAnalysisCode
 from src.service import run_synthetic_vertical_slice
 from src.config.environment import load_local_environment
 from src.researcher.state import ProjectionSpec,ResearchState,StateFragment,project_state
+from src.oncolab.labskills import BlockSkillStore
+from src.science.sandbox import DockerScientificSandbox,GithubMethodRequest,SandboxError,SandboxInvocation,SandboxMeasurementCandidate,SandboxReceipt,validate_sandbox_candidate
 ROOT=Path(__file__).resolve().parents[2]
 def test_local_credentials_are_loaded_without_overriding_host_environment(tmp_path,monkeypatch):
  monkeypatch.delenv('OPENROUTER_API_KEY',raising=False);monkeypatch.delenv('TYPESAFE_API_KEY',raising=False)
@@ -67,12 +70,61 @@ def test_deterministic_science_methods_produce_measurements_before_admission():
  assert summary.values['mean']==2.0 and regression.values['slope']==pytest.approx(2.0)
  assert summary.provenance[0]=='pandas.Series' and regression.provenance[0]=='statsmodels.OLS'
 def test_capability_index_is_bounded_and_distinguishes_metadata_from_execution():
- index=initial_capability_registry();matches=index.search('GDC cancer',kinds=(CapabilityKind.SOURCE,),limit=3)
+ index=initial_oncolab_index();matches=index.search('GDC cancer',kinds=(OncoLabKind.SOURCE,),limit=3)
  assert matches[0].capability_id=='source.gdc' and matches[0].availability.value=='available'
  assert index.count()>=100
+ assert index.verification_records('source.gdc')
+ assert index.describe_with_verification('source.gdc')['verification']
  assert index.describe('jev.choice').validation_state.value=='unvalidated'
- assert CapabilityKind.JEV in index.list_kinds()
+ assert OncoLabKind.JEV in index.list_kinds()
  with pytest.raises(ValueError):index.search(limit=21)
+def test_github_sandbox_is_commit_pinned_credential_free_and_replay_validated():
+ seen=[]
+ def runner(arguments,**kwargs):
+  seen.append((arguments,kwargs))
+  if arguments[:2]==('git','ls-remote'):return subprocess.CompletedProcess(arguments,0,'a'*40+'\tHEAD\n','')
+  if arguments[0]=='docker':
+   command=arguments[arguments.index('python:3.12-slim')+1:]
+   output='{"values":{"effect":1.25}}\n' if command==('python','method.py','/input/request.json') else 'ok\n'
+   return subprocess.CompletedProcess(arguments,0,output,'')
+  return subprocess.CompletedProcess(arguments,0,'','')
+ sandbox=DockerScientificSandbox(runner=runner)
+ request=GithubMethodRequest(repository_url='https://github.com/example/public-method',requested_ref='main',test_command=('python','-m','pytest'),execute_command=('python','method.py','/input/request.json'),input_json={'x':[1,2,3]})
+ candidate=sandbox.acquire_and_execute(request);measurement=validate_sandbox_candidate(candidate,'sandbox-analysis')
+ assert candidate.receipt.commit_sha=='a'*40 and measurement.values=={'effect':1.25}
+ assert candidate.receipt.first_run.stdout_sha256==candidate.receipt.replay_run.stdout_sha256
+ assert all('OPENROUTER_API_KEY' not in kwargs['env'] and 'TYPESAFE_API_KEY' not in kwargs['env'] for _,kwargs in seen)
+ docker_calls=[arguments for arguments,_ in seen if arguments[0]=='docker'];assert '--network' in docker_calls[0] and docker_calls[0][docker_calls[0].index('--network')+1]=='bridge'
+ assert '/input/request.json:ro' not in docker_calls[0]
+ assert all(call[call.index('--network')+1]=='none' for call in docker_calls[1:])
+ with pytest.raises(ValidationError):GithubMethodRequest(repository_url='git@github.com:example/public-method.git',test_command=('python','-m','pytest'),execute_command=('python','method.py'),input_json={})
+def test_researcher_instances_and_skill_selections_are_fresh_per_block():
+ agents=create_agents('test','test');assert agents.fresh_researcher() is not agents.researcher
+ skills=BlockSkillStore();skills.start('first');assert skills.select('first','statistics')
+ skills.start('second');assert skills.selected('second')==()
+ first_index=initial_oncolab_index();second_index=initial_oncolab_index();assert first_index is not second_index
+def test_researcher_can_use_sandbox_tool_without_promoting_method():
+ class FakeSandbox:
+  def acquire_and_execute(self,request):
+   invocation=SandboxInvocation(command=('python','method.py'),exit_status=0,stdout_sha256='o',stderr_sha256='e')
+   receipt=SandboxReceipt(repository_url=request.repository_url,commit_sha='a'*40,environment={'image':'test'},environment_sha256='environment',input_sha256='input',install=invocation,test=invocation,first_run=invocation,replay_run=invocation)
+   return SandboxMeasurementCandidate(candidate_id='candidate',receipt=receipt,values={'effect':1.0})
+ manager=BlockManager();block=manager.create('sandbox objective','test',ResourceAllocation(seconds=60));runtime=HarnessRuntime(manager=manager,jev=DeterministicJevClient(),science=ScienceExecutor(),reasoner=DeterministicReasoner(),max_jev_calls=2,max_reasoner_calls=1,sandbox=FakeSandbox())
+ runtime.research_state.start(block.block_id,block.objective);runtime.skills.start(block.block_id)
+ agents=create_agents('test','test');calls=0
+ async def model(messages,info):
+  nonlocal calls
+  calls+=1
+  if calls==1:
+   return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await load_research_skills(need="github reproducibility")\ncandidate = await acquire_github_scientific_method(capability_need="novel method", why_existing_capabilities_are_inadequate="no installed method fits", repository_url="https://github.com/example/public-method", requested_ref="main", install_command=["python", "-m", "pip", "install", "."], test_command=["python", "-m", "pytest"], execute_command=["python", "method.py", "/input/request.json"], input_json={"x": [1]})\nawait validate_sandbox_measurement(candidate_id=candidate["candidate_id"], analysis_id="sandbox-analysis")\nawait admit_measurement(analysis_id="sandbox-analysis")\ncandidate'},tool_call_id='sandbox-code')])
+  return ModelResponse(parts=[TextPart('sandbox complete')])
+ researcher=agents.fresh_researcher()
+ with researcher.override(model=FunctionModel(model)):
+  result=researcher.run_sync('use the sandbox',deps=ResearcherDeps(runtime=runtime,block_id=block.block_id))
+ assert result.output=='sandbox complete'
+ events={event.event_type for event in manager.ledger(block.block_id).history()}
+ assert {'ResearchSkillsLoaded','GithubAcquisitionCompleted','SandboxMeasurementValidated','EvidenceAdmission'}<=events
+ assert runtime.oncolab.describe('software.github-scientific').validation_state.value=='unvalidated'
 def test_harness_code_mode_runs_contract_tools_and_director_delegates():
  seen=[]
  def response(request):
@@ -86,16 +138,24 @@ def test_harness_code_mode_runs_contract_tools_and_director_delegates():
  async def director_model(messages,info):
   nonlocal director_calls
   director_calls+=1
-  if director_calls==1:
-   assert [tool.name for tool in info.function_tools]==['run_code']
-   return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await list_workspace()\nawait run_workspace_shell(command="echo director-workspace")\nawait search_capabilities(query="GDC", kinds=["source"], limit=3)\nawait describe_capability(capability_id="source.gdc")\nblock = await allocate_block(objective="synthetic", why_now="test", seconds=60)\nawait launch_researcher(block_id=block["block_id"])\nblock'},tool_call_id='director-code')])
+  tools={tool.name for tool in info.function_tools}
+  if os.name=='posix' and director_calls==1:
+   assert {'list_files','shell','run_code'}<=tools
+   return ModelResponse(parts=[ToolCallPart('list_files',{'path':'.'},tool_call_id='director-coder')])
+  if director_calls==1+(os.name=='posix'):
+   assert 'run_code' in tools
+   return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await search_oncolab(query="GDC", kinds=["source"], limit=3)\nawait describe_oncolab(capability_id="source.gdc")\nblock = await allocate_block(objective="synthetic", why_now="test", seconds=60)\nawait launch_researcher(block_id=block["block_id"])\nblock'},tool_call_id='director-code')])
   return ModelResponse(parts=[TextPart('director complete')])
  async def researcher_model(messages,info):
   nonlocal researcher_calls
   researcher_calls+=1
-  if researcher_calls==1:
-   assert [tool.name for tool in info.function_tools]==['run_code']
-   return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await list_workspace()\nawait run_workspace_shell(command="echo researcher-workspace")\nawait search_capabilities(query="regression", kinds=["statistical_method"], limit=3)\nawait describe_capability(capability_id="stat.statsmodels")\nawait acquire_gdc(endpoint="files", filters={"op":"in", "content":{"field":"files.data_type", "value":["Gene Expression Quantification"]}}, fields=["file_id"], size=1)\nawait search_xena(query="TCGA", limit=1)\nawait search_public_literature(query="oncology", limit=1)\nawait run_statistics(analysis_id="analysis", question="synthetic", estimand="difference", method="independent_t_test", inputs={"group_a":[1.0, 2.0, 3.0], "group_b":[4.0, 5.0, 6.0]})\nawait admit_measurement(analysis_id="analysis")\nawait create_line_figure(title="synthetic", x=[1.0, 2.0, 3.0], y=[1.0, 4.0, 9.0])\nawait block_status()\nawait evaluate_candidate(candidate_id="candidate", candidate_summary="synthetic subgroup")\nhypotheses = await generate_hypotheses(finding="effect found")\nawait request_scope_escalation(proposed_test="mechanistic experiment", rationale="beyond scope")\nawait complete_block(reason="researcher complete")\nhypotheses'},tool_call_id='researcher-code')])
+  tools={tool.name for tool in info.function_tools}
+  if os.name=='posix' and researcher_calls==1:
+   assert {'list_files','shell','run_code'}<=tools
+   return ModelResponse(parts=[ToolCallPart('list_files',{'path':'.'},tool_call_id='researcher-coder')])
+  if researcher_calls==1+(os.name=='posix'):
+   assert 'run_code' in tools
+   return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await search_oncolab(query="regression", kinds=["statistical_method"], limit=3)\nawait describe_oncolab(capability_id="stat.statsmodels")\nawait acquire_gdc(endpoint="files", filters={"op":"in", "content":{"field":"files.data_type", "value":["Gene Expression Quantification"]}}, fields=["file_id"], size=1)\nawait search_xena(query="TCGA", limit=1)\nawait search_public_literature(query="oncology", limit=1)\nawait run_statistics(analysis_id="analysis", question="synthetic", estimand="difference", method="independent_t_test", inputs={"group_a":[1.0, 2.0, 3.0], "group_b":[4.0, 5.0, 6.0]})\nawait admit_measurement(analysis_id="analysis")\nawait create_line_figure(title="synthetic", x=[1.0, 2.0, 3.0], y=[1.0, 4.0, 9.0])\nawait block_status()\nawait evaluate_candidate(candidate_id="candidate", candidate_summary="synthetic subgroup")\nhypotheses = await generate_hypotheses(finding="effect found")\nawait request_scope_escalation(proposed_test="mechanistic experiment", rationale="beyond scope")\nawait complete_block(reason="researcher complete")\nhypotheses'},tool_call_id='researcher-code')])
   return ModelResponse(parts=[TextPart('researcher complete')])
  with agents.director.override(model=FunctionModel(director_model)),agents.researcher.override(model=FunctionModel(researcher_model)):
   result=agents.director.run_sync('allocate and investigate',deps=DirectorDeps(runtime))

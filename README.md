@@ -12,7 +12,7 @@ OncoJev is not a fixed GDC or cancer-modality pipeline. A human provides a broad
 Director
   -> BlockManager
   -> Researcher / JevBlock
-     -> Science | Jev | Reasoner | capability registries
+     -> Science | Jev | Reasoner | OncoLab Index
   -> Evidence + Ledger + Dossier
   -> Director
 ```
@@ -35,8 +35,7 @@ Only reproducible deterministic measurements admitted by Science become `Scienti
 | Location | Purpose |
 | --- | --- |
 | `src/` | Python application and runtime implementation |
-| `registries/capabilities/` | Deterministic executable scientific capabilities |
-| `registries/jev/` | Evaluated reusable semantic measurements |
+| `src/oncolab/` | Shared OncoLab Index, typed contracts, and bundled verification records |
 | `skills/` | Progressive procedural and domain knowledge |
 | `evals/` | Evaluation corpora and regressions |
 | `web/` | Future TypeScript/Next.js observability UI |
@@ -44,7 +43,7 @@ Only reproducible deterministic measurements admitted by Science become `Scienti
 
 ## First executable slice
 
-The initial slice executes a credential-free synthetic run through deterministic block deadlines, parallel Jev questions, deterministic frontier policy, Science-only evidence admission, Reasoner hypotheses, and a typed Dossier handoff. A separate Harness invariant runs independent Director and Researcher agents through Pydantic AI Harness Code Mode and their role-specific contract tools; the Monty sandbox has no host filesystem or shell access. It intentionally does not yet provide a database, API, GDC client, or frontend.
+The initial slice executes a credential-free synthetic run through deterministic block deadlines, parallel Jev questions, deterministic frontier policy, Science-only evidence admission, Reasoner hypotheses, and a typed Dossier handoff. In Railway's Linux container, both Director and Researcher use Pydantic AI Harness `Coder` plus `CodeMode`: Coder supplies bounded repository tools and a scrubbed command environment, while Code Mode runs typed OncoLab orchestration in Monty. Public GitHub methods execute separately in the credential-free Docker scientific sandbox. It intentionally does not yet provide a database, API, GDC client, or frontend.
 
 ## Development
 
