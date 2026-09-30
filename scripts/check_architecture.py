@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "src" / "oncojev"
+SOURCE = ROOT / "src"
 
 
 def imports_forbidden_upstream(path: Path) -> bool:
@@ -28,7 +28,7 @@ def main() -> None:
         raise SystemExit(f"runtime imports .upstream: {offenders}")
 
     director = SOURCE / "director"
-    if any("oncojev.science.admission" in path.read_text(encoding="utf-8") for path in director.glob("*.py")):
+    if any("science.admission" in path.read_text(encoding="utf-8") for path in director.glob("*.py")):
         raise SystemExit("Director must not import Science admission.")
 
     required = (

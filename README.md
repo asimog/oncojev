@@ -34,7 +34,7 @@ Only reproducible deterministic measurements admitted by Science become `Scienti
 
 | Location | Purpose |
 | --- | --- |
-| `src/oncojev/` | Python application and runtime implementation |
+| `src/` | Python application and runtime implementation |
 | `registries/capabilities/` | Deterministic executable scientific capabilities |
 | `registries/jev/` | Evaluated reusable semantic measurements |
 | `skills/` | Progressive procedural and domain knowledge |
@@ -44,7 +44,7 @@ Only reproducible deterministic measurements admitted by Science become `Scienti
 
 ## First executable slice
 
-The initial slice executes a credential-free synthetic run through independent Director and Researcher agents, deterministic block deadlines, parallel Jev questions, deterministic frontier policy, Science-only evidence admission, Reasoner hypotheses, and a typed Dossier handoff. It intentionally does not yet provide a database, API, GDC client, or frontend.
+The initial slice executes a credential-free synthetic run through deterministic block deadlines, parallel Jev questions, deterministic frontier policy, Science-only evidence admission, Reasoner hypotheses, and a typed Dossier handoff. A separate Harness invariant runs independent Director and Researcher agents through Pydantic AI Harness Code Mode and their role-specific contract tools; the Monty sandbox has no host filesystem or shell access. It intentionally does not yet provide a database, API, GDC client, or frontend.
 
 ## Development
 

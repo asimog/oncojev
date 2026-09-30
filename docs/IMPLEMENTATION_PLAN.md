@@ -1,0 +1,129 @@
+# Implementation plan
+
+This is OncoJev’s only implementation-phase and status tracker.
+
+## 1. Architecture, upstream, and tracking
+
+**Status:** DONE
+
+**Goal:** Lock the two-scope architecture, add progressive upstream navigation, and establish this single tracker.
+
+**Scope:** Architecture and capability documentation; `.upstream/INDEX.md`; limited GDC API/model/pipeline navigation; manifest reconciliation for locally cloned procedural and public-source references; and a procedural statistical-method guide. No scientific runtime expansion.
+
+**Acceptance criteria:** The Director/Researcher scope boundary is canonical; upstream navigation is progressive; the manifest remains the pin source; no additional tracker is created; existing executable behavior remains unchanged.
+
+**Dependencies:** Existing repository documentation and local upstream inventory.
+
+**Completion evidence:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/CAPABILITIES.md`, `skills/statistical-methods/README.md`, `.upstream/INDEX.md`, and `.upstream/manifest.yaml` updated; focused test suite and architecture check pass.
+
+## 2. Capability Index and wrapper contracts
+
+**Status:** DONE
+
+**Goal:** Define a large, bounded-retrieval Capability Index and wrapper contracts.
+
+**Scope:** One typed metadata index, bounded deterministic retrieval, initial descriptors, and Director/Researcher index-access tools. No scientific execution wrappers.
+
+**Acceptance criteria:** Indexed existence remains distinct from executable, validated, and reusable capability state; both roles can search/describe the same bounded catalogue without receiving it wholesale.
+
+**Dependencies:** Phase 1.
+
+**Completion evidence:** `CapabilityDescriptor`, `CapabilityIndex`, and 100+ initial descriptors implemented; Director and Researcher Code Mode integration exercised with `FunctionModel`; `pytest`, the synthetic slice, and architecture checks pass.
+
+## 3. Initial executable scientific capabilities
+
+**Status:** DONE
+
+**Goal:** Add initial statistics, GDC/Xena, literature, and visualization capabilities.
+
+**Scope:** Typed public GDC/Xena/literature wrappers, a small deterministic NumPy/pandas/SciPy/statsmodels surface, matplotlib SVG artifacts, and their bounded Researcher Code Mode tools. No fixed scientific workflow, controlled-data support, sandbox filesystem/shell access, database/API, or UI.
+
+**Acceptance criteria:** A Researcher can discover and invoke independent source, literature, statistics, and visualization capabilities through the bounded Capability Index; sources cannot receive credentials; acquisition is not evidence; deterministic measurements require explicit evidence admission; all tool activity is recorded in the block ledger.
+
+**Dependencies:** Phase 2.
+
+**Completion evidence:** `tests/invariants/test_boundaries.py` exercises the typed tool surface through Code Mode with transport-safe source responses. A live OpenRouter Researcher run on 2026-09-30 selected public GDC, literature, SciPy correlation, and matplotlib independently through the Index, explicitly admitted its measured result, completed its block, and emitted the ledger-backed log. The UCSC Xena wrapper also retrieved two public TCGA-matching dataset records through its documented Hub query interface. `pytest`, `uv lock --check`, and `scripts/check_architecture.py` pass.
+
+## 4. JevBlock deterministic state and Researcher loop
+
+**Status:** IN PROGRESS
+
+**Goal:** Implement deterministic ResearchState, Jev projections, and the local Researcher loop.
+
+**Scope:** Immutable provider-agnostic ResearchState, deterministic Jev projections, and block-local Researcher orchestration only.
+
+**Acceptance criteria:** Local decisions respect lifecycle, budgets, frontier policy, and scope escalation.
+
+**Dependencies:** Phases 2–3.
+
+**Completion evidence:** Not started.
+
+## 5. Skills and scientific sandbox
+
+**Status:** NOT STARTED
+
+**Goal:** Add progressive skills, a scientific sandbox, and GitHub method acquisition.
+
+**Scope:** Controlled procedural use and external software acquisition.
+
+**Acceptance criteria:** Sandboxed work cannot bypass evidence, provenance, or promotion rules.
+
+**Dependencies:** Phases 2–4.
+
+**Completion evidence:** Not started.
+
+## 6. Live agent and Jev execution
+
+**Status:** NOT STARTED
+
+**Goal:** Enable live Director, Researcher, Reasoner, and TypeSafe execution.
+
+**Scope:** Provider configuration and live integration validation.
+
+**Acceptance criteria:** Credentials, budgets, fallbacks, and live failure semantics are verified.
+
+**Dependencies:** Phases 2–5.
+
+**Completion evidence:** Not started.
+
+## 7. Persistence and application API
+
+**Status:** NOT STARTED
+
+**Goal:** Add durable persistence and the application API.
+
+**Scope:** State, artifacts, and typed backend exposure.
+
+**Acceptance criteria:** Ledger immutability and dossier/evidence boundaries persist across restarts.
+
+**Dependencies:** Phases 4 and 6.
+
+**Completion evidence:** Not started.
+
+## 8. Next.js observability UI
+
+**Status:** NOT STARTED
+
+**Goal:** Build the observability-only frontend.
+
+**Scope:** Missions, blocks, evidence, dossiers, frontiers, registries, and resource usage.
+
+**Acceptance criteria:** UI consumes typed backend state and is not a scientific authority.
+
+**Dependencies:** Phase 7.
+
+**Completion evidence:** Not started.
+
+## 9. Autonomous research evaluation
+
+**Status:** NOT STARTED
+
+**Goal:** Run and evaluate real autonomous research work.
+
+**Scope:** Reproducible research-evaluation corpus and outcomes.
+
+**Acceptance criteria:** Scientific utility, recall, uncertainty, cost, and safety are evaluated reproducibly.
+
+**Dependencies:** Phases 3–8.
+
+**Completion evidence:** Not started.

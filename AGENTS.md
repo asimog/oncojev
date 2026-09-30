@@ -8,7 +8,7 @@ OncoJev is an autonomous computational oncology research system, not a fixed ana
 
 1. This file and `README.md`.
 2. The task-relevant document in `docs/`.
-3. `config/` and the smallest relevant package in `src/oncojev/`.
+3. `config/` and the smallest relevant package in `src/`.
 4. Relevant registry, skill, and test files.
 5. `web/` only for UI work.
 
@@ -31,10 +31,12 @@ OncoJev is an autonomous computational oncology research system, not a fixed ana
 
 ## `.upstream/` rule
 
-Never begin by recursively reading, searching, indexing, testing, or summarizing `.upstream/`. Do not import it from application code. For a concrete upstream question only: read `.upstream/manifest.yaml`, select one repository and the smallest relevant path, inspect it, then stop.
+Never begin by recursively reading, searching, indexing, testing, or summarizing `.upstream/`. Do not import it from application code. For a concrete upstream question only: read `.upstream/INDEX.md`, then `.upstream/manifest.yaml`, select one repository and the smallest relevant path, inspect it, then stop.
+
+`docs/IMPLEMENTATION_PLAN.md` is the sole phase/status tracker. Director has global scope; Researcher operates only inside one JevBlock.
 
 ## Boundaries and done
 
-Backend code belongs in `src/oncojev/`; future UI code belongs in `web/` and is observability only. Keep Pydantic AI integration behind `src/oncojev/runtime/pydantic_ai/`.
+Backend code belongs in `src/`; future UI code belongs in `web/` and is observability only. Keep Pydantic AI integration behind `src/runtime/pydantic_ai/`.
 
 For a change to be done: update the nearest durable documentation/configuration if needed, preserve the boundaries above, add a behavior-level test only when it protects a credible regression, run the focused tests and `scripts/check_architecture.py`, and report exact results.

@@ -1,0 +1,21 @@
+records:
+  - capability_id: source.gdc
+    verification_id: phase3-live-2026-09-30
+    execution_reference: var/phase3-live/stdout-2.json
+    source_reference: .upstream/INDEX.md
+    evidence: [public typed AcquisitionRecord, live OpenRouter block ledger]
+  - capability_id: literature.public
+    verification_id: phase3-live-2026-09-30
+    execution_reference: var/phase3-live/stdout-2.json
+    source_reference: .upstream/INDEX.md
+    evidence: [typed LiteratureSearchResult, live OpenRouter block ledger]
+  - capability_id: science.scipy.pearsonr
+    verification_id: phase3-live-2026-09-30
+    execution_reference: tcga-sitecount-vs-cases
+    source_reference: .upstream/INDEX.md
+    evidence: [MeasuredResult, explicit ScientificEvidence admission]
+  - capability_id: visualization.scientific
+    verification_id: phase3-live-2026-09-30
+    execution_reference: a9e96174-8d7f-49c1-a95c-8fa7edd651db
+    source_reference: .upstream/INDEX.md
+    evidence: [matplotlib FigureArtifact]

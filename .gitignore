@@ -11,5 +11,7 @@ build/
 .next/
 node_modules/
 coverage/
+var/
 .upstream/*
 !.upstream/manifest.yaml
+!.upstream/INDEX.md
