@@ -24,6 +24,13 @@ incomplete or failed queries cannot support a potential-novelty annotation.
 Context categories, coverage limits and unresolved issues survive bounded retrieval
 and start packets without changing evidence or establishing independent replication.
 
+Memory-v4 adds declared/completed scientific follow-ups with original/target
+references, effect intervals, case overlap, local confirmation exposure and unresolved
+explanations. Pending declarations remain attempted; unavailable references remain
+unknown. Model-conditional comparison summaries reach Director continuation and
+fresh Researcher start packets without inheriting evidence authority. Older digest
+versions remain readable; new derivations append and supersede them for retrieval.
+
 Director prose is optional context and never supplies canonical outcomes or search
 relevance. Legacy prose remains labelled, including records without a linked cycle.
 

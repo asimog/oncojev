@@ -43,7 +43,7 @@ def register_scientific_tools(agent):
     async def run_source_analysis(ctx:RunContext[Any],acquisition_id:str,analysis_id:str,question:str,population:str,
                                   estimand:str,method:str,fields:dict[str,str],entity_field:str,entity_unit:str,
                                   design:str,transformations:dict[str,str]={},replication_id:str|None=None,
-                                  test_plan:dict[str,Any]|None=None)->dict[str,Any]:
+                                  test_plan:dict[str,Any]|None=None,followup_id:str|None=None)->dict[str,Any]:
         """Complete-row Pearson or OLS over owned retained inputs with explicit entity/design contract."""
         runtime=ctx.deps.runtime;block_id=ctx.deps.block_id
         runtime.claim(block_id,"tool",runtime.max_tool_calls)
@@ -52,6 +52,8 @@ def register_scientific_tools(agent):
             variables=tuple(fields),fields=fields,entity_field=entity_field,entity_unit=entity_unit,design=design,
             transformations=transformations,source_refs=(acquisition_id,),replication_id=replication_id,
             test_plan=HypothesisTestPlan.model_validate(test_plan) if test_plan is not None else None)
+        from src.runtime.pydantic_ai.followup_tools import prepare_followup,retain_followup
+        prepared=prepare_followup(runtime,block_id,followup_id,record,spec) if followup_id else None
         from uuid import uuid4
         call_id=str(uuid4());capability="science.source-paired"
         runtime.index_receipt("researcher","execute",block_id=block_id,selected_id=capability)
@@ -81,12 +83,14 @@ def register_scientific_tools(agent):
             invalid = isinstance(error, InvalidAnalysis)
             stage = "invalid" if invalid else "interrupted" if isinstance(error, asyncio.CancelledError) else "operational_failed"
             retain(attempt.model_copy(update={"stage":stage, "outcome":"invalid" if invalid else "attempted", "failure_type":type(error).__name__}))
+            if prepared: retain_followup(runtime,prepared,record,stage=stage,failure_type=type(error).__name__)
             runtime.append_event(block_id,"CapabilityFailure",{"invocation_id":call_id,"capability_id":capability,"error_type":type(error).__name__, "scientific_invalid":invalid})
             raise
         runtime.measurements[(block_id,analysis_id)]=result
         try:state=runtime.research_state.get(block_id)
         except KeyError:state=runtime.research_state.start(block_id,runtime.manager.block(block_id).objective)
         runtime.persist_state(state.add_measurement(result))
+        followup_result=None
         if runtime.repository is not None:
             with runtime.repository.store.transaction():
                 runtime.repository.record_measurement(result,block_id)
@@ -94,7 +98,8 @@ def register_scientific_tools(agent):
                     "outcome":result.diagnostics.get("hypothesis_test", {}).get("outcome", "unknown"),
                     "measurement_reference":ExecutionReference(kind="measurement", value=analysis_id,
                         sha256=content_hash(result.model_dump(mode="json")), block_id=block_id)}))
+                if prepared: followup_result=retain_followup(runtime,prepared,record,measurement=result)
         runtime.append_event(block_id,"ScienceMeasurement",{"analysis_id":analysis_id,"method":method,"analysis_key":result.analysis_key})
         runtime.append_event(block_id,"CapabilityResult",{"invocation_id":call_id,"capability_id":capability,"analysis_id":analysis_id,"origin":"source"})
         runtime.verification(block_id,capability,analysis_id,"measurement",result,"Paired complete-row association over stored source slice; assumptions and population representativeness not established.")
-        return result.model_dump(mode="json")
+        return result.model_dump(mode="json") | ({"followup":followup_result.model_dump(mode="json")} if followup_result else {})

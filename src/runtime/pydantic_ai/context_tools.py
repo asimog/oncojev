@@ -79,6 +79,15 @@ def register_context_tools(agent):
                     "input_reference": r.payload.get("input_reference"), "measurement_reference": r.payload.get("measurement_reference"),
                     "limitations": r.payload.get("limitations")} for r in related[:10]]
         basis.extend(reference(r) for r in related[:10] if r.seq != attempt_record.seq)
+        challenges=[]
+        for record in store.records(kind=RecordKind.FOLLOWUP_RESULT):
+            current=attempt.measurement_reference.model_dump(mode="json")
+            if current not in (record.payload.get("baseline_measurement"),record.payload.get("target_measurement")): continue
+            plan=next((r for r in store.records(kind=RecordKind.FOLLOWUP_PLAN,block_id=record.block_id) if r.record_id==record.record_id),None)
+            if plan is not None:
+                challenges.append({"declaration":plan.payload,"result":record.payload,
+                    "references":[reference(plan).model_dump(mode="json"),reference(record).model_dump(mode="json")]})
+                if len(challenges)<=5: basis.extend((reference(plan),reference(record)))
         assessment = LiteratureContext(assessment_id=str(uuid4()), block_id=block_id, claim=claim,
             basis=tuple(basis), semantic_status="insufficient_material")
         material = any(record.abstract and not record.abstract_truncated for search in searches for record in search.records)
@@ -91,11 +100,12 @@ def register_context_tools(agent):
             unresolved.append(f"{len(related)-10} related attempt records omitted from semantic projection.")
         if len(failures) > 5:
             unresolved.append(f"{len(failures)-5} failed searches omitted from semantic projection; exact failure references remain retained.")
+        if len(challenges)>5: unresolved.append(f"{len(challenges)-5} scientific follow-up comparisons omitted from semantic projection.")
         if material:
             payload = {"claim": claim, "analysis_contract": attempt.analysis.model_dump(mode="json", exclude={"inputs"}),
                 "measurement": measurement, "source_scope": {"source": source.get("source"), "request": source.get("request"),
                 "coverage": source.get("coverage")}, "literature": [s.model_dump(mode="json") for s in searches],
-                "history": history, "search_failures": [r.payload for r in failures[:5]], "unresolved": unresolved, "limitations": assessment.limitations}
+                "history": history, "challenge_history":challenges[:5], "search_failures": [r.payload for r in failures[:5]], "unresolved": unresolved, "limitations": assessment.limitations}
             try:
                 result = await measure_async(runtime, block_id, "literature_context", assessment.assessment_id,
                     payload, policy=LiteratureContextPolicy())

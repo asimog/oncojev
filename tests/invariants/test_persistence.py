@@ -1166,6 +1166,107 @@ def test_source_resolved_paired_analysis_and_repeat_admission_survive_reopen(tmp
  reopened.close()
 
 
+def test_predeclared_followups_compare_effect_bounds_and_preserve_overlap_and_low_information(tmp_path):
+    """Real retained analyses and independent expected signals; no biological utility claim."""
+    import httpx
+    from uuid import UUID
+    from src.sources.public import GdcPublicSource, PublicLiteratureSource
+    from src.memory.service import ResearchMemory
+    from src.application.export import render_snapshot
+    system=cycle_system(); runtime=system.runtime
+    runtime.researcher_factory=lambda block_id:system.agents.researcher
+    runtime.max_tool_calls=100
+    store=SqliteResearchStore(tmp_path/'followups.sqlite3'); repository=ResearchRepository(store)
+    def rows(start,n=100,kind='positive'):
+        return [{'id':str(UUID(int=start+i+1)), 'case_id':str(UUID(int=start+i+1)), 'x':i-(n-1)/2,
+                 'y':(i-(n-1)/2)**2 if kind=='null' else (-2 if kind=='reversed' else 2)*(i-(n-1)/2)+(0.2 if i%2 else -0.2)} for i in range(n)]
+    baseline=rows(0)
+    fixtures={'baseline':baseline,'replicated':rows(100),'reversed':rows(200,kind='reversed'),
+        'null':rows(300,kind='null'),'low_information':rows(400,3),'overlap':baseline,
+        'partial':rows(500),'sensitivity':rows(0,kind='reversed'),
+        'invalid':[baseline[0],baseline[0],*baseline[2:]],'changed_threshold':rows(600),'prior_exposure':rows(700),
+        'early_exposure':rows(700)}
+    def transport(request):
+        body=json.loads(request.content); name=body['filters']['content']['value'][0]
+        return httpx.Response(200,json={'data':{'hits':fixtures[name], 'pagination':{'total':200 if name=='partial' else len(fixtures[name])}}})
+    runtime.gdc=GdcPublicSource(httpx.MockTransport(transport))
+    runtime.literature=PublicLiteratureSource(httpx.MockTransport(lambda request:httpx.Response(200,json={
+        'message':{'items':[{'title':['Retained association report'],'abstract':'Scoped association and uncertainty require comparison.'}],'total-results':1}})))
+    async def director(messages,info):
+        if not any(isinstance(m,ModelResponse) for m in messages):
+            return ModelResponse(parts=[ToolCallPart('run_code',{'code':
+                'b=await allocate_block(objective="challenge source association", why_now="test replication and alternatives", seconds=120)\n'
+                'await launch_researcher(block_id=b["block_id"])'},tool_call_id='launch-followups')])
+        return ModelResponse(parts=[TextPart('Use retained challenge outcomes')])
+    names=list(fixtures)[1:-1]; outputs=[]
+    async def researcher(messages,info):
+        if not any(isinstance(m,ModelResponse) for m in messages):
+            code=['h=await assess_hypothesis(hypothesis="X has a positive association with Y", proposed_test="directional Pearson effect-bound comparison")',
+                'family=[h["identity"],'+','.join(repr(name) for name in names)+']',
+                'test={"hypothesis_id":h["identity"], "direction":"positive", "minimum_effect":0.3, "multiplicity_family":family}',
+                'f={"op":"in","content":{"field":"project.project_id","value":["baseline"]}}',
+                'a=await acquire_gdc(endpoint="cases",filters=f,fields=["case_id","x","y"],size=100)',
+                'await run_source_analysis(acquisition_id=a["acquisition_id"],analysis_id="baseline",question="association",population="discovery cases",estimand="Pearson r",method="pearson_correlation",fields={"x":"x","y":"y"},entity_field="id",entity_unit="case",design="declared independent cases",test_plan=test)',
+                'await admit_measurement(analysis_id="baseline")',
+                'await acquire_gdc(endpoint="cases",filters={"op":"in","content":{"field":"project.project_id","value":["early_exposure"]}},fields=["case_id","x","y"],size=100)']
+            for name in names:
+                code.extend(['test={"hypothesis_id":h["identity"], "direction":"positive", "minimum_effect":0.3, "multiplicity_family":family}',
+                    f'f={{"op":"in","content":{{"field":"project.project_id","value":["{name}"]}}}}',
+                    'request={"fields":"case_id,x,y","format":"JSON","size":100,"from":0,"sort":"case_id:asc","filters":f}',
+                    f'target={{"analysis_id":"{name}","question":"followup association","population":"confirmation cases","estimand":"Pearson r","method":"pearson_correlation","variables":["x","y"],"fields":{{"x":"x","y":"y"}},"entity_field":"id","entity_unit":"case","design":"declared independent cases","test_plan":test}}',
+                    f'p=await declare_source_followup(baseline_analysis_id="baseline",comparison_id="{name}",kind="{"sensitivity" if name=="sensitivity" else "independent_replication"}",target_analysis=target,target_request=request,expected_discrimination="Recover the positive minimum effect, reverse it or bound it inside the negligible-effect range; wide intervals stay inconclusive.",alternative_explanations=["Confounding or population differences"] )',
+                    'a=await acquire_gdc(endpoint="cases",filters=f,fields=["case_id","x","y"],size=100)'])
+                if name=='changed_threshold': code.append('test={"hypothesis_id":h["identity"],"direction":"positive","minimum_effect":0.1,"multiplicity_family":family}')
+                call=f'r=await run_source_analysis(acquisition_id=a["acquisition_id"],analysis_id="{name}",question="followup association",population="confirmation cases",estimand="Pearson r",method="pearson_correlation",fields={{"x":"x","y":"y"}},entity_field="id",entity_unit="case",design="declared independent cases",test_plan=test,followup_id=p["followup_id"])'
+                code.append('try:\n    '+call+'\nexcept ValueError:\n    pass' if name in {'invalid','changed_threshold'} else call)
+                if name not in {'invalid','changed_threshold'}: code.append('comparison=r["followup"]["outcome"]')
+            code.extend(['l=await search_public_literature(query="association context",limit=1)',
+                'await assess_literature_context(analysis_id="replicated",claim="The declared directional effect bound was recovered in the inspected confirmation rows.",literature_ids=[l["context_id"]])',
+                'await complete_block(reason="source challenges retained")'])
+            return ModelResponse(parts=[ToolCallPart('run_code',{'code':'\n'.join(code)},tool_call_id='followups')])
+        outputs.extend(str(p.content) for m in messages for p in m.parts if getattr(p,'content',None))
+        return ModelResponse(parts=[TextPart('Unresolved explanations and source limits retained')])
+    with system.agents.director.override(model=scripted(director)),system.agents.researcher.override(model=scripted(researcher)):
+        result=run_cycle(system,'challenge association',repository=repository)
+    assert result.status.value=='complete'
+    assert not any('Runtime error' in value or 'Type error' in value for value in outputs),outputs
+    plans=store.records(kind=RecordKind.FOLLOWUP_PLAN)
+    outcomes={next(p.payload['comparison_id'] for p in plans if p.record_id==r.record_id):r.payload for r in store.records(kind=RecordKind.FOLLOWUP_RESULT)}
+    assert {k:v['outcome'] for k,v in outcomes.items()}=={'replicated':'replicated','reversed':'contradictory','null':'not_replicated',
+        'low_information':'inconclusive','overlap':'inconclusive','partial':'inconclusive','sensitivity':'sensitivity_dependent','invalid':'invalid','prior_exposure':'inconclusive'}
+    assert outcomes['prior_exposure']['confirmation_access']=='previously_accessed'
+    assert outcomes['replicated']['confirmation_access']=='fresh_local_query'
+    assert outcomes['overlap']['overlap_count']==100 and outcomes['overlap']['independence']=='overlap'
+    assert outcomes['partial']['independence']=='unknown' and outcomes['partial']['overlap_count']==0
+    assert outcomes['null']['intervals']['target_low']>-.3 and outcomes['null']['intervals']['target_high']<.3
+    assert outcomes['low_information']['intervals']['target_low']==-1 and outcomes['low_information']['intervals']['target_high']==1
+    assert outcomes['replicated']['intervals']['baseline_low']>.3 and outcomes['replicated']['intervals']['target_low']>.3
+    assert len(store.records(kind=RecordKind.EVIDENCE))==1
+    context_call=next(r for r in store.records(kind=RecordKind.JEV_CALL) if r.payload.get('context_type')=='literature_context' and r.payload['outcome']=='completed')
+    assert context_call.payload['projection']['payload']['challenge_history'][0]['result']['outcome']=='replicated'
+    assert 'invalid' not in {r.record_id for r in store.records(kind=RecordKind.MEASUREMENT)}
+    assert 'changed_threshold' not in {r.record_id for r in store.records(kind=RecordKind.MEASUREMENT)}
+    for plan in plans:
+        acquisition=next(r for r in store.records(kind=RecordKind.ACQUISITION) if r.payload['request']==plan.payload['target_request'])
+        assert acquisition.seq>plan.seq
+    memory=ResearchMemory(store); digest=memory.search('challenge')[0]
+    assert len(digest.scientific_followups)==10 and not digest.scientific_negative_findings
+    assert any(item.details['stage']=='declared' and item.details['outcome']=='attempted' for item in digest.scientific_followups)
+    assert memory.start_context('challenge').prior_followups
+    for item in digest.scientific_followups:
+        for ref in item.references: memory.resolve(ref)
+    assert len(runtime.active_research.delta.references['scientific_followups'])==9
+    export=render_snapshot(store)
+    exported=next(json.loads(data) for name,data in export.items() if name.startswith('blocks/') and name.endswith('records.json'))
+    assert len([r for r in exported if r['kind']=='followup_result'])==9
+    store.close()
+    reopened=SqliteResearchStore(tmp_path/'followups.sqlite3')
+    try:
+        assert len(ResearchMemory(reopened).search('challenge')[0].scientific_followups)==10
+        assert len(reconstruct_block(reopened,result.block_ids[0]).scientific_followups)==9
+    finally: reopened.close()
+
+
 def test_literature_context_cycle_retains_native_basis_and_unknowns_without_changing_evidence(tmp_path):
     """Scripted native judgments prove context plumbing/abstention, not classification truth."""
     import httpx

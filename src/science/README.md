@@ -39,6 +39,25 @@ and a separate measurement-backed or invalid/operational terminal state. Resourc
 and interruption failures remain attempts. The test protocol is source-paired-test-v1;
 replay does not establish independent biological replication.
 
+`source-followup-v1` freezes a same-method GDC case-paired follow-up, its meaningful
+effect bound, explicit multiplicity family, exact query, expected discrimination
+and alternative explanations. The runtime retains the declaration before accessing
+new confirmation inputs and checks earlier case-level value exposure across queries.
+Canonical case UUIDs and complete retained queries distinguish observed disjointness
+from overlap or unknown identity/coverage. Designs and population/variable compatibility
+remain declared; hidden linkage, confounding and external leakage are not ruled out.
+
+Comparisons retain both effect intervals. Recovery of the directional minimum effect
+is model-conditional replication; a confidently reversed effect is contradictory.
+An interval wholly within the declared negligible-effect bounds is not replicated;
+wide intervals remain inconclusive, including non-significance. Same-participant
+changes yield consistent or sensitivity-dependent results, never independent
+replication. Invalid/operational outcomes stay distinct, and comparisons cannot
+change original measurements or admit evidence. This supports case-paired Pearson
+and simple OLS contracts, not biological corroboration or other operation families.
+`run_source_analysis` returns the retained comparison alongside the measurement
+when a follow-up is requested, so the Researcher can use its outcome immediately.
+
 Exact scientific bytes remain in append-only ScientificArtifact records.
 External sandbox requests retain copies and validate their identities; execution
 mounts are read-only and network-disabled. The local backend accepts declared

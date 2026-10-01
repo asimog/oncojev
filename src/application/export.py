@@ -23,7 +23,7 @@ GROUPS = {
                      RecordKind.ENVIRONMENT_QUALIFICATION, RecordKind.DEPLOYMENT_VERIFICATION),
 }
 BLOCK_KINDS = (RecordKind.BLOCK, RecordKind.BLOCK_DELTA, RecordKind.DOSSIER,
-               RecordKind.MEASUREMENT, RecordKind.EVIDENCE, RecordKind.SCIENTIFIC_ATTEMPT, RecordKind.LITERATURE, RecordKind.LITERATURE_CONTEXT, RecordKind.JEV_CALL)
+               RecordKind.MEASUREMENT, RecordKind.EVIDENCE, RecordKind.SCIENTIFIC_ATTEMPT, RecordKind.LITERATURE, RecordKind.LITERATURE_CONTEXT, RecordKind.JEV_CALL, RecordKind.FOLLOWUP_PLAN, RecordKind.FOLLOWUP_RESULT)
 PRIVATE = re.compile(r"(?:credential|secret|authorization|api_key|token|password|headers|content_base64|raw_json|messages|prompt|environment|experiment_path)", re.I)
 TOKEN = re.compile(r"(?:gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{16,}|Bearer\s+[^\s\"']+)")
 

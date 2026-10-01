@@ -34,7 +34,7 @@ class ResearchMemory:
         for ref in digest.references:
             self.resolve(ref)
         for field in (digest.hypotheses, digest.scientific_negative_findings, digest.candidates,
-                      digest.operational_blockers, digest.scientific_attempts, digest.literature_contexts, digest.uncertainties, digest.continuation_proposals, digest.legacy_notes):
+                      digest.operational_blockers, digest.scientific_attempts, digest.literature_contexts, digest.scientific_followups, digest.uncertainties, digest.continuation_proposals, digest.legacy_notes):
             for item in field:
                 for ref in item.references:
                     self.resolve(ref)
@@ -87,14 +87,15 @@ class ResearchMemory:
         records.extend(notes)
         records = list({r.seq: r for r in records}.values())
         refs = tuple(reference(r) for r in records if r.kind in {RecordKind.CYCLE, RecordKind.BLOCK, RecordKind.DOSSIER,
-            RecordKind.MEASUREMENT, RecordKind.EVIDENCE, RecordKind.STATE_REVISION, RecordKind.OUTCOME_CORRECTION, RecordKind.SCIENTIFIC_ATTEMPT, RecordKind.LITERATURE_CONTEXT})
-        priority = {"evidence": 0, "measurement": 1, "dossier": 2, "outcome_correction": 3, "cycle": 4, "block": 5, "state_revision": 6, "scientific_attempt": 2, "literature_context": 2}
+            RecordKind.MEASUREMENT, RecordKind.EVIDENCE, RecordKind.STATE_REVISION, RecordKind.OUTCOME_CORRECTION, RecordKind.SCIENTIFIC_ATTEMPT, RecordKind.LITERATURE_CONTEXT, RecordKind.FOLLOWUP_PLAN, RecordKind.FOLLOWUP_RESULT})
+        priority = {"evidence": 0, "measurement": 1, "dossier": 2, "outcome_correction": 3, "cycle": 4, "block": 5, "state_revision": 6, "scientific_attempt": 2, "literature_context": 2, "followup_plan":2, "followup_result":2}
         refs = tuple(sorted(refs, key=lambda r: (priority[r.kind], -r.seq)))
-        fingerprint = content_hash({"derivation":"research-memory-v3", "records": [(r.seq, content_hash(r.payload)) for r in sorted(records, key=lambda r: r.seq)]})
+        fingerprint = content_hash({"derivation":"research-memory-v4", "records": [(r.seq, content_hash(r.payload)) for r in sorted(records, key=lambda r: r.seq)]})
         hypotheses, candidates, blockers, uncertainties, proposals = [], [], [], [], []
         attempts, attempt_unresolved = self._attempt_items(records)
+        followups, followup_unresolved = self._followup_items(records)
         contexts = []
-        objectives, lifecycle, limitations, unresolved = [], [], [], list(attempt_unresolved)
+        objectives, lifecycle, limitations, unresolved = [], [], [], [*attempt_unresolved,*followup_unresolved]
         usage = {}
         entities, topics = set(), set()
         inferred = orphan or bool(payload.get("outcome_inferred"))
@@ -183,8 +184,39 @@ class ResearchMemory:
             director_outcome=payload.get("director_outcome", "unknown"), failure_reason=payload.get("error_type"), block_ids=block_ids,
             objectives=tuple(objectives), lifecycle=tuple(lifecycle), references=refs, limitations=tuple(dict.fromkeys(limitations)),
             unresolved_references=tuple(sorted(set(unresolved))), hypotheses=tuple(hypotheses), candidates=tuple(candidates),
-            operational_blockers=tuple(blockers), scientific_attempts=attempts, literature_contexts=tuple(contexts), uncertainties=tuple(uncertainties), continuation_proposals=tuple(proposals),
+            operational_blockers=tuple(blockers), scientific_attempts=attempts, literature_contexts=tuple(contexts), scientific_followups=followups, uncertainties=tuple(uncertainties), continuation_proposals=tuple(proposals),
             resource_usage=usage, entities=tuple(sorted(entities)), topics=tuple(sorted(topics)), inferred=inferred, legacy_notes=legacy, director_note=current_note)
+
+    def _followup_items(self, records):
+        from src.science.followup import FollowupPlan, FollowupResult
+        items, unresolved = [], []
+        for stored in records:
+            if stored.kind != RecordKind.FOLLOWUP_PLAN: continue
+            plan=FollowupPlan.model_validate(stored.payload)
+            terminal=next((r for r in reversed(records) if r.kind==RecordKind.FOLLOWUP_RESULT and r.record_id==plan.followup_id and r.block_id==plan.block_id),None)
+            result=FollowupResult.model_validate(terminal.payload) if terminal else None
+            if result and result.baseline_measurement!=plan.baseline_measurement:
+                raise ValueError("follow-up result changed its original baseline")
+            refs=[reference(stored),*((reference(terminal),) if terminal else ())]
+            missing=[]
+            for ref in (plan.baseline_measurement,plan.baseline_input,*((result.target_measurement,result.target_input) if result else ())):
+                if ref is None: continue
+                target=next((r for r in reversed(self.store.records(kind=RecordKind(ref.kind),block_id=ref.block_id))
+                    if r.record_id==ref.value and content_hash(r.payload)==ref.sha256),None)
+                if target: refs.append(reference(target))
+                else: missing.append(f"{plan.followup_id}:{ref.kind}:{ref.value}")
+            unresolved.extend(missing)
+            outcome="unknown" if missing else result.outcome if result else "attempted"
+            details={"outcome":outcome,"stage":result.stage if result else "declared", "kind":plan.kind,
+                "population":plan.target_analysis.population,"design":plan.target_analysis.design,"method":plan.target_analysis.method,
+                "independence":result.independence if result else "unknown", "overlap_count":result.overlap_count if result else None,
+                "confirmation_access":result.confirmation_access if result else "unknown",
+                "intervals":result.intervals if result else {}, "unresolved":(*missing,*(result.unresolved if result else ("Declared comparison has no terminal result.",))),
+                "expected_discrimination":plan.expected_discrimination,"alternative_explanations":plan.alternative_explanations,
+                "limitations":result.limitations if result else plan.limitations}
+            items.append(MemoryItem(item_id=plan.followup_id,summary=f"{outcome} (model-conditional retained-query comparison): {plan.kind}; {plan.target_analysis.question}; independence={details['independence']}; confirmation_access={details['confirmation_access']}",
+                epistemic_status="scientific_followup",references=tuple(refs),details=details))
+        return tuple(items),tuple(unresolved)
 
     def _attempt_items(self, records):
         from src.science.models import ScientificAttempt
@@ -282,7 +314,7 @@ class ResearchMemory:
                 continue
             if since is not None and d.recorded_at < since or until is not None and d.recorded_at > until:
                 continue
-            items = (*d.hypotheses, *d.candidates, *d.scientific_attempts, *d.literature_contexts, *d.operational_blockers, *d.uncertainties, *d.continuation_proposals)
+            items = (*d.hypotheses, *d.candidates, *d.scientific_attempts, *d.literature_contexts, *d.scientific_followups, *d.operational_blockers, *d.uncertainties, *d.continuation_proposals)
             refs = (*d.references, *(r for item in items for r in item.references))
             if shared_reference is not None and not any(r.record_id == shared_reference for r in refs):
                 continue
@@ -294,7 +326,7 @@ class ResearchMemory:
                 continue
             # Legacy Director prose never supplies relevance or facts.
             text = " ".join((d.direction, *d.objectives, *d.entities, *d.topics,
-                             *(i.summary for field in (d.hypotheses, d.candidates, d.scientific_attempts, d.literature_contexts, d.operational_blockers, d.uncertainties, d.continuation_proposals) for i in field)))
+                             *(i.summary for field in (d.hypotheses, d.candidates, d.scientific_attempts, d.literature_contexts, d.scientific_followups, d.operational_blockers, d.uncertainties, d.continuation_proposals) for i in field)))
             score = len(terms(query) & terms(text))
             if query and score == 0:
                 continue
@@ -317,7 +349,7 @@ class ResearchMemory:
             view["director_note_available"] = digest.director_note is not None
             view["resource_usage"] = {b: {"recorded_resources": v.get("recorded_resources", {})} for b, v in list(digest.resource_usage.items())[:20]}
             omitted = {}
-            for key in ("references", "hypotheses", "scientific_negative_findings", "scientific_attempts", "literature_contexts", "candidates", "operational_blockers", "uncertainties", "continuation_proposals", "limitations", "unresolved_references", "entities", "topics", "lifecycle"):
+            for key in ("references", "hypotheses", "scientific_negative_findings", "scientific_attempts", "literature_contexts", "scientific_followups", "candidates", "operational_blockers", "uncertainties", "continuation_proposals", "limitations", "unresolved_references", "entities", "topics", "lifecycle"):
                 omitted[key] = max(0, len(view[key]) - 20)
                 view[key] = view[key][:20]
                 truncated[key] = sum(len(i if isinstance(i, str) else i.get("summary", "")) > 1000 for i in view[key])
@@ -328,7 +360,9 @@ class ResearchMemory:
                         item["summary"] = item["summary"][:1000]
                         item["details"] = (self._compact_attempt(item["details"]) if key == "scientific_attempts" else
                                            {k: item["details"][k] for k in ("category", "semantic_status", "unresolved", "limitations")}
-                                           if key == "literature_contexts" else {})
+                                           if key == "literature_contexts" else
+                                           {k:item["details"][k] for k in ("outcome","kind","independence","confirmation_access","overlap_count","intervals","unresolved","limitations")}
+                                           if key == "scientific_followups" else {})
                         # Native distributions/full contracts stay reference-resolvable.
                         item["references"] = item["references"][:2]
             view["omitted_items"] = omitted
@@ -359,11 +393,12 @@ class ResearchMemory:
             prior_failures=tuple(i["summary"] for d in views for i in d["operational_blockers"])[:20],
             prior_attempts=tuple(i["summary"] for d in views for i in d.get("scientific_attempts", ()))[:20],
             prior_contexts=tuple(i["summary"] for d in views for i in d.get("literature_contexts", ()))[:20],
+            prior_followups=tuple(i["summary"] for d in views for i in d.get("scientific_followups", ()))[:20],
             uncertainties=tuple(i["summary"] for d in views for i in d["uncertainties"])[:20],
             candidate_directions=tuple(i["summary"] for d in views for i in (*d["candidates"], *d["continuation_proposals"]))[:20],
             limitations=tuple(dict.fromkeys(s for d in views for s in d["limitations"]))[:20], omitted_digests=context["omitted_digests"])
         while len(canonical_bytes(start.model_dump(mode="json"))) > 16384:
-            field = max(("prior_failures", "prior_attempts", "prior_contexts", "uncertainties", "candidate_directions", "limitations", "references"),
+            field = max(("prior_failures", "prior_attempts", "prior_contexts", "prior_followups", "uncertainties", "candidate_directions", "limitations", "references"),
                         key=lambda f: len(canonical_bytes(getattr(start, f) if f != "references" else [r.model_dump(mode="json") for r in start.references])))
             start = start.model_copy(update={field: getattr(start, field)[:-1], "omitted_items": start.omitted_items + 1})
         return start

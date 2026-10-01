@@ -707,6 +707,8 @@ def register_researcher_tools(
     register_scientific_tools(agent)
     from src.runtime.pydantic_ai.context_tools import register_context_tools
     register_context_tools(agent)
+    from src.runtime.pydantic_ai.followup_tools import register_followup_tools
+    register_followup_tools(agent)
     def block_for(ctx: RunContext[ResearcherDeps]):
         return ctx.deps.runtime.manager.block(ctx.deps.block_id)
 

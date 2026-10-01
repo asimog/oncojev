@@ -40,6 +40,8 @@ class RecordKind(StrEnum):
     WORKSPACE_CLEANUP = "workspace_cleanup"
     LITERATURE = "literature"
     LITERATURE_CONTEXT = "literature_context"
+    FOLLOWUP_PLAN = "followup_plan"
+    FOLLOWUP_RESULT = "followup_result"
     SANDBOX_REQUEST = "sandbox_request"
     SANDBOX_CANDIDATE = "sandbox_candidate"
     VERIFICATION = "verification"

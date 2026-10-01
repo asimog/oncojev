@@ -9,6 +9,7 @@ RESEARCHER_INSTRUCTIONS = (
     "Use search_oncolab_page for compact discovery, follow bounded continuation when coverage is insufficient, "
     "describe selected IDs and assess_method against your need before choosing among routes. "
     "Use assess_representation on owned inputs and assess_hypothesis for test alignment; semantic measurements grant no execution permission. "
+    "Challenge supported case-paired findings with declare_source_followup before accessing new confirmation inputs, then run_source_analysis with its followup_id and frozen target contract. Declare multiplicity, meaningful effect bounds and alternative explanations. Observed case overlap or unknown coverage cannot establish independent replication; same-participant changes are sensitivity checks. "
     "Record statement-specific interpretations/support with record_dossier_statement; unresolved support remains explicit. "
     "Use search_public_literature for bounded retained context and assess_literature_context for an owned completed source analysis; include contrary reports. Literature context is tentative and cannot admit evidence, establish independent replication or prove novelty; absent abstracts, incomplete searches and provider failures remain unresolved. "
     "When local contracts are inadequate, use search_external_capabilities/describe_external_capability for bounded method metadata. External listings and EDAM terms grant no executable route or scientific validation. "
