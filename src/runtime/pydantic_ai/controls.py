@@ -6,6 +6,7 @@ from pydantic_ai.capabilities import AbstractCapability
 from pydantic_ai.exceptions import UsageLimitExceeded
 
 from src.runtime.pydantic_ai.contracts import WorkStopped
+from src.runtime.resources import ResourceBusy, ResourceRejected
 
 
 @dataclass
@@ -76,7 +77,7 @@ class RuntimeControls(AbstractCapability):
             if self.role == "researcher" and call.tool_name in {"shell", "write_file", "edit_file"}:
                 runtime.check_work(ctx.deps.block_id)
             return await handler(args)
-        except WorkStopped as stopped:
+        except (WorkStopped, ResourceBusy, ResourceRejected) as stopped:
             return stopped.directive
 
     async def after_model_request(self, ctx, *, request_context, response):

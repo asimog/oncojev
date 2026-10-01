@@ -11,7 +11,9 @@ from pydantic_ai.workspaces import LocalWorkspaceBackend
 class ConfinedBackend:
     # Deliberately no SupportsFilesystem: Workspace uses its shell filesystem
     # adapter, so reads, edits, symlink traversal and shell share one policy.
-    def __init__(self, workspace: Path, application: Path):
+    def __init__(self, workspace: Path, application: Path, runtime=None, owner="director"):
+        self.runtime = runtime
+        self.owner = owner
         self.application = application.resolve()
         self.workspace = workspace.resolve()
         self.workspace.mkdir(parents=True, exist_ok=True)
@@ -40,8 +42,12 @@ class ConfinedBackend:
         elif shell:
             raise TypeError("argv command requires shell=False")
         launcher = Path(__file__).with_name("landlock_exec.py")
-        return await self.backend.run([sys.executable, "-I", str(launcher), str(self.workspace),
-                                       str(self.application), *command], timeout=timeout)
+        argv = [sys.executable, "-I", str(launcher), str(self.workspace), str(self.application), *command]
+        if self.runtime is None:
+            raise RuntimeError("Coder requires service-owned execution resources")
+        async with self.runtime.service_resources.heavy(self.owner):
+            return await self.backend.run(argv, timeout=timeout)
+
 
 
 @dataclass
@@ -50,5 +56,6 @@ class ConfinedWorkspace(AbstractCapability):
     application: Path
 
     def get_workspace(self, ctx, *, ref):
-        backend = ConfinedBackend(self.working_dir, self.application)
+        backend = ConfinedBackend(self.working_dir, self.application, ctx.deps.runtime,
+                                  getattr(ctx.deps, "block_id", "director"))
         return backend if ref is None or ref == backend.ref else None

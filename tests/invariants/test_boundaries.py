@@ -238,7 +238,12 @@ def test_harness_code_mode_runs_contract_tools_and_director_delegates():
    return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await search_oncolab(query="regression", kinds=["statistical_method"], limit=3)\nawait describe_oncolab(capability_id="stat.statsmodels")\ngdc = await acquire_gdc(endpoint="files", filters={"op":"in", "content":{"field":"files.data_type", "value":["Gene Expression Quantification"]}}, fields=["file_id"], size=1)\nawait search_xena(query="TCGA", limit=1)\nawait search_public_literature(query="oncology", limit=1)\nawait measure_acquisition(acquisition_id=gdc["acquisition_id"], analysis_id="analysis")\nawait admit_measurement(analysis_id="analysis")\nawait create_line_figure(title="synthetic", x=[1.0, 2.0, 3.0], y=[1.0, 4.0, 9.0])\nawait block_status()\nawait evaluate_candidate(candidate_id="candidate", candidate_summary="synthetic subgroup")\nhypotheses = await generate_hypotheses(finding="effect found")\nawait request_scope_escalation(proposed_test="mechanistic experiment", rationale="beyond scope")\nawait complete_block(reason="researcher complete")\nhypotheses'},tool_call_id='researcher-code')])
   return ModelResponse(parts=[TextPart('researcher complete')])
  with agents.director.override(model=scripted(director_model)),agents.researcher.override(model=scripted(researcher_model)):
-  result=agents.director.run_sync('allocate and investigate',deps=DirectorDeps(runtime))
+  import asyncio
+  async def run_owned():
+   result = await agents.director.run('allocate and investigate', deps=DirectorDeps(runtime))
+   await runtime.active_research.task
+   return result
+  result=asyncio.run(run_owned())
  assert result.output=='director complete'
  block=manager.blocks()[0];assert manager.status(block) is BlockStatus.COMPLETE
  event_types={event.event_type for event in manager.ledger(block.block_id).history()}
@@ -340,3 +345,60 @@ def test_ordered_source_pages_preserve_totals_and_reject_overlap():
  with pytest.raises(ValueError,match="total changed"):combine_pages((first,second.model_copy(update={"coverage":second.coverage.model_copy(update={"reported_total":3})})))
  unknown=first.model_copy(update={"coverage":first.coverage.model_copy(update={"reported_total":None})})
  assert not combine_pages((unknown,)).coverage.complete
+
+
+@pytest.mark.parametrize("source_kind", ["gdc", "xena", "literature"])
+def test_public_sources_stop_unknown_length_stream_at_the_byte_ceiling(source_kind):
+ import asyncio
+ from src.runtime.resources import ResourceRejected
+ reached_tail=[]
+ class Oversized(httpx.AsyncByteStream):
+  async def __aiter__(self):
+   yield b"123"
+   yield b"456"
+   reached_tail.append(True)
+   yield b"unbounded tail"
+ transport=httpx.MockTransport(lambda request:httpx.Response(200,stream=Oversized()))
+ source={"gdc":GdcPublicSource,"xena":XenaPublicSource,"literature":PublicLiteratureSource}[source_kind](transport,max_download_bytes=4)
+ async def run():
+  try:
+   with pytest.raises(ResourceRejected) as rejected:
+    if source_kind=="gdc":await source.search("cases",{},("id",))
+    elif source_kind=="xena":await source.search_datasets("TCGA")
+    else:await source.search("oncology")
+   assert rejected.value.directive["scientific_negative"] is False
+   assert rejected.value.directive["consumed_bytes"]==5
+   assert not reached_tail
+  finally:await source.aclose()
+ asyncio.run(run())
+
+
+def test_download_service_consumption_survives_fresh_runtime_allocations():
+ import asyncio
+ from src.config.loader import load_models_config
+ from src.config.models import RuntimeConfig,RuntimeMode
+ from src.runtime.pydantic_ai.factory import build_harness_runtime
+ from src.runtime.resources import ResourceRejected,ServiceResources
+ resources=ServiceResources(max_service_download_bytes=48)
+ payload=b'{"message":{"items":[]}}'
+ assert len(payload)==24
+ async def run():
+  for index in range(3):
+   runtime=build_harness_runtime(load_models_config(ROOT/"config"/"models.yaml"),RuntimeConfig(mode=RuntimeMode.DETERMINISTIC),resources=resources)
+   # Replace only network transport; preserve the production governor meter.
+   original=runtime.literature
+   runtime.literature=PublicLiteratureSource(httpx.MockTransport(lambda request:httpx.Response(200,content=payload)))
+   runtime.literature.meter=original.meter
+   block=runtime.manager.allocate(f"block {index}","test")
+   from src.runtime.pydantic_ai.contracts import ActiveResearchContext
+   runtime.active_research=ActiveResearchContext(f"run-{index}",block.block_id,"mission","cycle",0)
+   try:
+    if index<2:await runtime.literature.search("oncology")
+    else:
+     with pytest.raises(ResourceRejected,match="service or block"):
+      await runtime.literature.search("oncology")
+    assert resources.downloaded_bytes==24*(index+1)
+    assert resources.block_downloaded_bytes[block.block_id]==24
+   finally:
+    await asyncio.gather(original.aclose(),runtime.literature.aclose(),runtime.gdc.aclose(),runtime.xena.aclose())
+ asyncio.run(run())

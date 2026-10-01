@@ -245,7 +245,7 @@ def test_cycle_terminal_outcomes(scenario):
     if scenario in errors:
         assert cycles[0].payload["director_error_type"] == type(errors[scenario]).__name__
     blocks = system.runtime.manager.blocks()
-    assert len(blocks) == (0 if scenario in {"before_allocation", "no_allocation"} else 2 if scenario == "multiple_blocks" else 1)
+    assert len(blocks) == (0 if scenario in {"before_allocation", "no_allocation"} else 1)
     for block in blocks:
         view = reconstruct_block(repository.store, block.block_id)
         assert view.complete is succeeds
@@ -986,3 +986,184 @@ def test_workspace_retention_exports_before_cleanup_and_preserves_active_or_unre
  assert len(store.records(kind=RecordKind.WORKSPACE_CLEANUP))==1
  assert store.count()>before and store.latest(RecordKind.DOSSIER,block_id=closed.block_id)
  store.close()
+
+
+@pytest.mark.parametrize("truncated", [False, True])
+def test_owned_launch_keeps_director_responsive_during_blocking_jev(tmp_path, truncated):
+    """Launch and inspection stay responsive; blocking transport cannot own SQLite."""
+    import asyncio
+    from pydantic_ai.exceptions import UsageLimitExceeded
+    from src.runtime.cycle import run_cycle_async
+
+    started = threading.Event()
+    release = threading.Event()
+    owner_thread = threading.get_ident()
+    calls = 0
+    researcher_calls = 0
+    system = cycle_system()
+    repository = ResearchRepository(SqliteResearchStore(tmp_path / "async.sqlite3"))
+
+    class PendingJev(DeterministicJevClient):
+        def evaluate(self, payload, questions):
+            assert threading.get_ident() != owner_thread
+            started.set()
+            if not release.wait(3):
+                raise RuntimeError("Director could not run during Jev transport")
+            return super().evaluate(payload, questions)
+
+    system.runtime.jev = PendingJev()
+
+    async def director(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            code = ('block = await allocate_block(objective="responsive investigation", why_now="test", seconds=60)\n'
+                    'handle = await launch_researcher(block_id=block["block_id"])\n'
+                    'assert handle["status"] == "active"\n'
+                    'try:\n    await launch_researcher(block_id=block["block_id"])\n'
+                    'except Exception:\n    pass\n'
+                    'resources = await inspect_director_resources()\nresources')
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": code}, tool_call_id="start")])
+        assert await asyncio.wait_for(asyncio.to_thread(started.wait, 2), 2.5)
+        assert not system.runtime.active_research.task.done()
+        assert repository.store.latest(RecordKind.LEDGER_EVENT) is not None
+        release.set()
+        if truncated:
+            raise UsageLimitExceeded("Director ended independently")
+        return ModelResponse(parts=[TextPart("bounded planning completed")])
+
+    async def researcher(messages, info):
+        nonlocal researcher_calls
+        researcher_calls += 1
+        if researcher_calls == 1:
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code":
+                'await evaluate_candidate(candidate_id="c", candidate_summary="public association")'}, tool_call_id="jev")])
+        return ModelResponse(parts=[TextPart("investigation returned")])
+
+    async def run():
+        with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+            return await run_cycle_async(system, "direction", repository=repository)
+
+    try:
+        result = asyncio.run(run())
+        assert result.status.value == ("incomplete" if truncated else "complete")
+        block_id = result.block_ids[0]
+        history = system.runtime.manager.ledger(block_id).history()
+        assert sum(e.event_type == "ResearcherRunStarted" for e in history) == 1
+        assert sum(e.event_type == "ResearcherRunCompleted" for e in history) == 1
+        assert len(repository.store.records(kind=RecordKind.DOSSIER, block_id=block_id)) == 1
+        assert len(repository.store.records(kind=RecordKind.CYCLE)) == 1
+        assert reconstruct_block(repository.store, block_id).complete
+    finally:
+        release.set()
+        repository.store.close()
+
+
+@pytest.mark.parametrize("terminal", ["returned", "failed", "cancelled"])
+def test_heavy_work_drains_and_preserves_one_lease_until_child_returns(terminal):
+    import asyncio
+    from src.runtime.resources import ResourceBusy
+
+    system = cycle_system()
+    runtime = system.runtime
+    repository = ResearchRepository(SqliteResearchStore())
+    runtime.repository = repository
+    block = runtime.manager.allocate("bounded work", "test", 60)
+    repository.record_block(block)
+    started = threading.Event()
+    release = threading.Event()
+
+    def compute():
+        started.set()
+        if not release.wait(3):
+            raise RuntimeError("child was not drained")
+        if terminal == "failed":
+            raise ValueError("scientific operation failed")
+        return 7
+
+    async def run():
+        task = asyncio.create_task(runtime.heavy_operation(block.block_id, compute))
+        assert await asyncio.to_thread(started.wait, 2)
+        if terminal == "cancelled":
+            task.cancel()
+            await asyncio.sleep(0)
+        with pytest.raises(ResourceBusy) as busy:
+            async with runtime.service_resources.heavy("director"):
+                pytest.fail("Director stole the active science lease")
+        assert busy.value.directive["scientific_negative"] is False
+        assert not task.done()
+        release.set()
+        if terminal == "failed":
+            with pytest.raises(ValueError, match="scientific operation failed"):
+                await task
+        else:
+            assert await task == 7
+        assert runtime.service_resources.heavy_owner is None
+        async with runtime.service_resources.heavy("director"):
+            assert runtime.service_resources.heavy_owner == "director"
+
+    try:
+        asyncio.run(run())
+        events = repository.store.records(kind=RecordKind.LEDGER_EVENT, block_id=block.block_id)
+        assert sum(e.payload["event_type"] == "HeavyExecutionLease" for e in events) == 1
+        assert sum(e.payload["event_type"] == "HeavyExecutionReleased" for e in events) == 1
+        assert runtime.service_resources.receipts[0]["status"] == "released"
+    finally:
+        release.set()
+        repository.store.close()
+
+
+def test_cycle_shutdown_drains_active_research_and_persists_before_reopen(tmp_path):
+    import asyncio
+    from src.runtime.cycle import run_cycle_async
+
+    system = cycle_system()
+    database = tmp_path / "shutdown.sqlite3"
+    repo = ResearchRepository(SqliteResearchStore(database))
+    started = asyncio.Event()
+    release = asyncio.Event()
+    calls = 0
+
+    async def director(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code":
+                'b = await allocate_block(objective="shutdown", why_now="test", seconds=60)\n'
+                'await launch_researcher(block_id=b["block_id"])'}, tool_call_id="start")])
+        await release.wait()
+        return ModelResponse(parts=[TextPart("Director finished")])
+
+    async def researcher(messages, info):
+        started.set()
+        await release.wait()
+        return ModelResponse(parts=[TextPart("Researcher finished")])
+
+    async def run():
+        with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+            task = asyncio.create_task(run_cycle_async(system, "direction", repository=repo))
+            await asyncio.wait_for(started.wait(), 2)
+            task.cancel()
+            await asyncio.sleep(0)
+            assert not task.done()
+            assert not system.runtime.active_research.task.done()
+            release.set()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+            assert system.runtime.active_research.task.done()
+
+    asyncio.run(run())
+    block_id = system.runtime.manager.blocks()[0].block_id
+    assert len(repo.store.records(kind=RecordKind.DOSSIER, block_id=block_id)) == 1
+    assert len(repo.store.records(kind=RecordKind.CYCLE)) == 1
+    repo.store.close()
+    reopened = ResearchRepository(SqliteResearchStore(database))
+    try:
+        before = reopened.store.count()
+        assert recover_interrupted_blocks(reopened) == ()
+        assert reopened.store.count() == before
+        view = reconstruct_block(reopened.store, block_id)
+        assert view.dossier is not None
+        assert view.run_outcome.value == "completed"
+    finally:
+        reopened.store.close()

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
 
+from src.runtime.resources import ServiceResources
 from src.api.server import create_server
 from src.application.service import ResearchApplication
 from src.block.models import BlockStatus, CycleStatus, DirectorOutcome, JevBlock, RunOutcome, run_outcome
@@ -19,7 +21,7 @@ from src.persistence.reconstruct import reconstruct_block
 from src.researcher.state import ResearchState
 from src.persistence.repository import ResearchRepository
 from src.persistence.store import SqliteResearchStore
-from src.runtime.cycle import CycleResult, run_cycle
+from src.runtime.cycle import CycleResult, run_cycle_async
 from src.runtime.pydantic_ai.factory import build_system
 from src.memory.service import ResearchMemory
 
@@ -108,9 +110,13 @@ class AutonomousService:
         self.policy = load_runtime_config(root / "config" / "runtime.yaml")
         recover_interrupted_blocks(self.repository)
         ResearchMemory(self.store).backfill()
+        self.resources = ServiceResources()
         self.director = None
+        self._loop_runner = asyncio.Runner()
+        self._cycle_lock = asyncio.Lock()
+        self._owner_loop = None
 
-    def run_once(self, direction: str = DEFAULT_DIRECTION) -> CycleResult:
+    async def _run_once(self, direction: str = DEFAULT_DIRECTION) -> CycleResult:
         recover_interrupted_blocks(self.repository)
         if self.policy.retention.enabled:
             from src.persistence.retention import cleanup_workspaces
@@ -122,25 +128,49 @@ class AutonomousService:
                     if result["status"]!="removed":print(f"WORKSPACE CLEANUP {result['status']}: {result['error_type']}",flush=True)
             except Exception as error:
                 print(f"WORKSPACE RETENTION UNAVAILABLE: {type(error).__name__}",flush=True)
-        system = build_system(self.models, self.policy, repository=self.repository, director=self.director)
+        system = build_system(self.models, self.policy, repository=self.repository, director=self.director, resources=self.resources)
         self.director = system.agents.director
-        return run_cycle(system, direction, repository=self.repository, mission_id=f"mission-{self.store.count() + 1}")
+        try:
+            return await run_cycle_async(system, direction, repository=self.repository, mission_id=f"mission-{self.store.count() + 1}")
+        finally:
+            await asyncio.gather(*(client.aclose() for client in
+                (system.runtime.gdc, system.runtime.xena, system.runtime.literature)))
+
+    async def run_once_async(self, direction: str = DEFAULT_DIRECTION) -> CycleResult:
+        loop = asyncio.get_running_loop()
+        if self._owner_loop is not None and self._owner_loop is not loop:
+            raise RuntimeError("service lifecycle belongs to another event loop")
+        self._owner_loop = loop
+        if self._cycle_lock.locked():
+            raise RuntimeError("one service cycle is already active")
+        async with self._cycle_lock:
+            return await self._run_once(direction)
+
+    def run_once(self, direction: str = DEFAULT_DIRECTION) -> CycleResult:
+        return self._loop_runner.run(self.run_once_async(direction))
+
+    async def _serve_cycles(self, direction: str, interval_seconds: int) -> None:
+        while True:
+            try:
+                await self.run_once_async(direction)
+            except Exception as error:
+                print(f"AUTONOMOUS CYCLE FAILED: {type(error).__name__}", flush=True)
+            await asyncio.sleep(interval_seconds)
+
+    def close(self):
+        self._loop_runner.close()
+        self.store.close()
 
     def serve(self, host: str, port: int, direction: str, interval_seconds: int) -> None:
         server = create_server(self.application, host, port)
         api_thread = threading.Thread(target=server.serve_forever, name="oncojev-api", daemon=True)
         api_thread.start()
         try:
-            while True:
-                try:
-                    self.run_once(direction)
-                except Exception as error:
-                    print(f"AUTONOMOUS CYCLE FAILED: {type(error).__name__}", flush=True)
-                threading.Event().wait(interval_seconds)
+            self._loop_runner.run(self._serve_cycles(direction, interval_seconds))
         finally:
             server.shutdown()
             server.server_close()
-            self.store.close()
+            self.close()
 
 
 def service_from_environment(root: Path) -> AutonomousService:

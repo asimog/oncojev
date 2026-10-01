@@ -76,6 +76,7 @@ def build_harness_runtime(
     manager: BlockManager | None = None,
     environment: dict[str, str] | None = None,
     repository=None,
+    resources=None,
 ) -> HarnessRuntime:
     source = environment if environment is not None else os.environ
     mode = resolve_mode(policy.mode, source)
@@ -119,6 +120,17 @@ def build_harness_runtime(
         xena=XenaPublicSource(max_download_bytes=policy.block.max_download_bytes),
         literature=PublicLiteratureSource(max_download_bytes=policy.block.max_download_bytes),
     )
+    if resources is not None:
+        runtime.service_resources = resources
+    def meter_download(byte_count):
+        active = runtime.active_research
+        owner = active.block_id if active else "unassigned"
+        runtime.service_resources.charge_download(owner, byte_count)
+        if active:
+            runtime.append_event(owner, "DownloadUsage", {"bytes": byte_count,
+                "service_consumed_bytes": runtime.service_resources.downloaded_bytes})
+    for client in (runtime.gdc, runtime.xena, runtime.literature):
+        client.meter = meter_download
     bind_repository(runtime, repository)
     return runtime
 
@@ -132,6 +144,7 @@ def build_system(
     environment: dict[str, str] | None = None,
     repository=None,
     director=None,
+    resources=None,
 ) -> ConfiguredSystem:
     """Wire the autonomous live system; offline fixtures are constructed explicitly in tests."""
     if policy.mode is not RuntimeMode.LIVE:
@@ -143,6 +156,6 @@ def build_system(
         director_code = min(director_code, max_tool_calls)
         researcher_code = min(researcher_code, max_tool_calls)
     agents = create_configured_agents(models, director_code, researcher_code, director=director)
-    runtime = build_harness_runtime(models, policy, manager=manager, environment=environment, repository=repository)
+    runtime = build_harness_runtime(models, policy, manager=manager, environment=environment, repository=repository, resources=resources)
     runtime.researcher_factory = agents.fresh_researcher
     return ConfiguredSystem(agents=agents, runtime=runtime, mode=RuntimeMode.LIVE)

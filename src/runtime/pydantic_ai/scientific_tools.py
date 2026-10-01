@@ -53,7 +53,7 @@ def register_scientific_tools(agent):
         call_id=str(uuid4());capability="science.source-paired"
         runtime.index_receipt("researcher","execute",block_id=block_id,selected_id=capability)
         runtime.append_event(block_id,"CapabilityInvocation",{"invocation_id":call_id,"capability_id":capability,"analysis_id":analysis_id,"method":method})
-        try:result=runtime.science.execute_source(record,spec)
+        try:result=await runtime.heavy_operation(block_id,runtime.science.execute_source,record.model_copy(deep=True),spec.model_copy(deep=True))
         except Exception as error:
             runtime.append_event(block_id,"CapabilityFailure",{"invocation_id":call_id,"capability_id":capability,"error_type":type(error).__name__})
             raise

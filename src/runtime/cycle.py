@@ -6,6 +6,7 @@ Dossiers are assembled deterministically from the append-only ledger and, when a
 repository is supplied, the whole cycle is persisted as typed records.
 """
 
+import asyncio
 from dataclasses import dataclass
 from uuid import uuid4
 
@@ -24,7 +25,8 @@ DIRECTOR_PROMPT = (
     "Broad research direction: {direction}\n"
     "Determine for yourself what to do. Read recent research memory, search the OncoLab Index for relevant capabilities, "
     "allocate exactly one bounded block with a defensible objective, then launch the Researcher "
-    "inside it. Do not prescribe a fixed pipeline. When the block is complete, report a short summary."
+    "inside it. Launch returns promptly; perform bounded global planning using immutable views. "
+    "Do not prescribe a fixed pipeline. Python awaits and persists the real block outcome."
 )
 
 
@@ -48,7 +50,7 @@ class CycleFailed(RuntimeError):
         super().__init__(f"Research cycle failed: {error_type}")
 
 
-def run_cycle(
+async def run_cycle_async(
     system: ConfiguredSystem,
     direction: str,
     *,
@@ -70,15 +72,22 @@ def run_cycle(
     director_error = None
     failure = None
     error_type = None
+    cancelled = False
     try:
         limits = system.runtime.usage_limits("director")
         memory = system.runtime.memory_service()
-        from src.runtime.pydantic_ai.search_tools import semantic_memory_context
-        context = semantic_memory_context(system.runtime,direction,limit=min(5,system.runtime.memory_limit))
+        from src.runtime.pydantic_ai.search_tools import semantic_memory_context_async
+        context = await semantic_memory_context_async(system.runtime,direction,limit=min(5,system.runtime.memory_limit))
         prompt = DIRECTOR_PROMPT.format(direction=direction) + "\nRetrieved structured memory (context, not evidence):\n" + canonical_bytes(context).decode("utf-8")
-        result = system.agents.director.run_sync(prompt,
+        result = await system.agents.director.run(prompt,
                                                 deps=DirectorDeps(system.runtime), usage_limits=limits, usage=system.runtime.director_usage)
         director_output = result.output
+    except asyncio.CancelledError:
+        cancelled = True
+        director_error = "CancelledError"
+        director_outcome = DirectorOutcome.FAILED
+        failure = CycleFailed("ServiceShutdown")
+        error_type = "ServiceShutdown"
     except Exception as error:
         director_error = type(error).__name__
         # These installed exception types identify budget exhaustion or a token-
@@ -95,28 +104,34 @@ def run_cycle(
         if director_error:
             system.runtime.append_event(block.block_id, "DirectorRunTruncated" if director_outcome is DirectorOutcome.TRUNCATED else "DirectorRunFailed", {"error_type": director_error})
 
-    if len(new_blocks) != 1:
+    allocation_rejected = any(e.event_type == "DirectorAllocationRejected" for b in new_blocks for e in manager.ledger(b.block_id).history())
+    if len(new_blocks) != 1 or allocation_rejected:
         failure = failure or CycleFailed("InvalidBlockCount")
         error_type = error_type or "InvalidBlockCount"
-    elif failure is None:
+    elif failure is None or system.runtime.active_research is not None:
         block = new_blocks[0]
         events = manager.ledger(block.block_id).history()
         if not any(event.event_type == "ResearcherRunStarted" for event in events):
             try:
-                system.runtime.start_researcher(block.block_id, "python_orchestrator")
-                researcher = system.runtime.researcher_factory(block.block_id) if system.runtime.researcher_factory else system.agents.fresh_researcher(block.block_id)
-                researcher.run_sync(system.runtime.researcher_prompt(block.block_id), deps=ResearcherDeps(system.runtime, block.block_id),
-                                    usage=system.runtime.researcher_budget(block.block_id), usage_limits=system.runtime.usage_limits("researcher"))
-                system.runtime.complete_researcher(block.block_id)
+                system.runtime.schedule_researcher(block.block_id, "python_orchestrator")
             except Exception as error:
                 system.runtime.append_event(block.block_id, "ResearcherRunFailed", {"error_type": type(error).__name__})
                 failure = error
                 error_type = type(error).__name__
-        outcome = run_outcome(manager.ledger(block.block_id).history())
-        if outcome is not RunOutcome.COMPLETED:
-            failures = [e for e in manager.ledger(block.block_id).history() if e.event_type == "ResearcherRunFailed"]
-            error_type = failures[0].payload.get("error_type", "ResearcherRunFailed") if failures else "ResearcherRunIncomplete"
-            failure = failure or CycleFailed(error_type)
+    active = system.runtime.active_research
+    if active is not None:
+        while not active.task.done():
+            try:
+                await asyncio.shield(active.task)
+            except asyncio.CancelledError:
+                cancelled = True
+        if active.error is not None:
+            failure = active.error
+            error_type = type(active.error).__name__
+    for block in new_blocks:
+        if failure is None and run_outcome(manager.ledger(block.block_id).history()) is not RunOutcome.COMPLETED:
+            failure = CycleFailed("ResearcherRunIncomplete")
+            error_type = "ResearcherRunIncomplete"
 
     status = CycleStatus.FAILED if failure else (CycleStatus.INCOMPLETE if director_error else CycleStatus.COMPLETE)
     dossiers = []
@@ -145,7 +160,14 @@ def run_cycle(
         repository.record_cycle(mission_id, system.mode.value, direction, tuple(b.block_id for b in new_blocks),
                                 status=status, error_type=error_type, director_outcome=director_outcome, director_error_type=director_error, cycle_id=cycle_id)
         system.runtime.memory_service().backfill()
+    if cancelled:
+        raise asyncio.CancelledError
     if failure is not None:
         raise failure
     return CycleResult(direction, system.mode, director_output, tuple(b.block_id for b in new_blocks),
                        tuple(dossiers), status, director_outcome, director_error)
+
+
+def run_cycle(system: ConfiguredSystem, direction: str, *, repository=None, mission_id=None) -> CycleResult:
+    """Synchronous CLI boundary; all run ownership stays on one event loop."""
+    return asyncio.run(run_cycle_async(system, direction, repository=repository, mission_id=mission_id))

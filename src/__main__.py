@@ -15,9 +15,11 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     service = service_from_environment(root)
     if args.command == "cycle":
-        result = service.run_once(args.direction)
-        print(f"AUTONOMOUS CYCLE {result.status.value.upper()}: {result.block_ids[0]}; director={result.director_outcome.value}; dossiers={len(result.dossiers)}")
-        service.store.close()
+        try:
+            result = service.run_once(args.direction)
+            print(f"AUTONOMOUS CYCLE {result.status.value.upper()}: {result.block_ids[0]}; director={result.director_outcome.value}; dossiers={len(result.dossiers)}")
+        finally:
+            service.close()
         return
     service.serve(
         os.environ.get("HOST", "0.0.0.0"),

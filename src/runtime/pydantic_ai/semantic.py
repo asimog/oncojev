@@ -2,6 +2,7 @@
 
 This is receipt/budget plumbing, not an agent or an admission authority.
 """
+import asyncio
 from datetime import UTC, datetime
 from time import perf_counter
 from uuid import uuid4
@@ -14,7 +15,7 @@ from src.provenance import canonical_bytes, content_hash
 from src.researcher.state import JevProjection, ProjectionSpec
 
 
-def measure(runtime, block_id, context_type, identity, payload, *, eligible=True, escalate=False):
+async def measure_async(runtime, block_id, context_type, identity, payload, *, eligible=True, escalate=False):
     """One versioned context, independent questions, native receipt and policy.
 
     Director Control uses a separate global retrieval allocation; it has no
@@ -49,7 +50,7 @@ def measure(runtime, block_id, context_type, identity, payload, *, eligible=True
     try:
         if len(canonical_bytes(payload))>spec.max_payload_bytes:
             raise ValueError("semantic context exceeds byte bound; expand fewer contracts")
-        decisions=runtime.jev.evaluate(payload,questions)
+        decisions=await runtime.evaluate_jev(payload,questions)
         if len(decisions)!=len(questions) or {d.question_id for d in decisions}!={q.question_id for q in questions}:
             raise ValueError("incomplete semantic batch")
     except Exception as error:
@@ -76,3 +77,8 @@ def measure(runtime, block_id, context_type, identity, payload, *, eligible=True
         runtime.append_event(block_id,"FrontierDecision",{**result,**frontier.model_dump(mode="json"),"candidate_summary":receipt.candidate_summary})
         if runtime.repository is not None:runtime.repository.record_jev_decisions(block_id,decisions)
     return result
+
+
+def measure(*args, **kwargs):
+    """Offline evaluation boundary; the composition remains the async owner path."""
+    return asyncio.run(measure_async(*args, **kwargs))

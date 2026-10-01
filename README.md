@@ -69,8 +69,10 @@ failure/resource triage and non-authoritative engineering proposals. Its
 `inspect_director_resources` tool reads independent Director, aggregate cycle and
 memory-semantic allowances before allocation or during a block, including
 configured cost bounds and reported-cost completeness. Researcher retains local
-scientific choices. Non-blocking supervision, durable global portfolios, governed
-proposals and a zero-block program pause await their owning H phases.
+scientific choices. Launch returns a Python-owned run identity promptly; the Director can perform
+bounded work while the Researcher runs. The one-cycle CLI awaits its actual
+outcome. Completion-triggered scheduling, durable global portfolios and governed
+proposals await their owning H phases.
 
 Only source-bound acquisition measurements or replay-validated sandbox measurements can be admitted as evidence. Agent-provided arrays and generated code may support exploration but cannot cross the Science admission boundary.
 

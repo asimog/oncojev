@@ -1,4 +1,5 @@
 """Agent-facing progressive discovery and block-local suitability tools."""
+import asyncio
 import unicodedata
 from time import perf_counter
 from typing import Any
@@ -9,7 +10,7 @@ from src.oncolab.execution import check_routes
 from src.oncolab.models import OncoLabKind
 from src.provenance import canonical_bytes, content_hash
 from src.researcher.state import StateFragment
-from src.runtime.pydantic_ai.semantic import measure
+from src.runtime.pydantic_ai.semantic import measure_async
 
 
 def register_search_page(agent):
@@ -69,7 +70,7 @@ def register_local_semantic_tools(agent):
             evidence_refs=tuple(evidence_ids),unresolved_refs=tuple(missing),semantic_status="unavailable")
         if not missing and support:
             try:
-                result=measure(runtime,block_id,"statement",identity,{"statement":statement,"epistemic_type":epistemic_type,"resolved_support":support})
+                result=await measure_async(runtime,block_id,"statement",identity,{"statement":statement,"epistemic_type":epistemic_type,"resolved_support":support})
                 annotation=annotation.model_copy(update={"semantic_status":"measured","semantic_call_id":result["call_id"]})
             except Exception:
                 pass # Terminal summary must remain constructible; failures have receipts.
@@ -91,7 +92,7 @@ def register_local_semantic_tools(agent):
         checks=check_routes(runtime.oncolab.describe(capability_id),available_inputs(runtime,block_id,acquisition_ids),operation)
         payload={"need":need,"contract":contract["descriptor"],"execution_routes":contract["execution_routes"],"checks":checks,
                  "contract_sha256":contract["contract_sha256"],"description_receipt":receipt.receipt_id,"snapshot_id":runtime.oncolab.snapshot_id}
-        result=measure(runtime,block_id,"method",capability_id,payload,eligible=checks["eligible"])
+        result=await measure_async(runtime,block_id,"method",capability_id,payload,eligible=checks["eligible"])
         assessment={**result,"checks":checks,"contract_sha256":contract["contract_sha256"],"need_sha256":content_hash(need)}
         runtime.method_assessments[f"{block_id}:{capability_id}"]=assessment
         return assessment
@@ -105,7 +106,7 @@ def register_local_semantic_tools(agent):
             "fields":fields[:40],"omitted_fields":max(0,len(fields)-40),"rows":len(record.records),
             "limitations":["Stored response slice; population completeness unknown."],
             "available_counts":{k:sum(row.get(k) is not None for row in record.records) for k in fields[:40]}}
-        return measure(runtime,ctx.deps.block_id,"representation",acquisition_id,{"need":need,"representation":representation},eligible=bool(record.records),escalate=True)
+        return await measure_async(runtime,ctx.deps.block_id,"representation",acquisition_id,{"need":need,"representation":representation},eligible=bool(record.records),escalate=True)
 
     @agent.tool
     async def assess_hypothesis(ctx: RunContext[Any], hypothesis: str, proposed_test: str) -> dict[str, Any]:
@@ -125,7 +126,7 @@ def register_local_semantic_tools(agent):
             runtime.append_event(block_id,"HypothesisExactDuplicate",{"identity":identity,"hypothesis":hypothesis,"proposed_test":proposed_test})
             return {"identity":identity,"exact_duplicate":True,"semantic_called":False,"epistemic_status":"hypothesis"}
         payload={"objective":state.objective,"hypothesis":hypothesis,"proposed_test":proposed_test,"prior_hypotheses":prior[:10]}
-        result=measure(runtime,block_id,"hypothesis",identity,payload,escalate=True)
+        result=await measure_async(runtime,block_id,"hypothesis",identity,payload,escalate=True)
         runtime.persist_state(state.append("candidates",StateFragment(fragment_id=identity,kind="hypothesis",summary=hypothesis,
             provenance=(result["call_id"],),details={"statement":hypothesis,"proposed_test":proposed_test})))
         return {**result,"identity":identity,"exact_duplicate":False}
@@ -133,7 +134,7 @@ def register_local_semantic_tools(agent):
     return {"assess_hypothesis":assess_hypothesis}
 
 
-def semantic_memory_context(runtime,query,*,limit=5,block_id=None,**filters):
+async def semantic_memory_context_async(runtime,query,*,limit=5,block_id=None,**filters):
     from src.memory.models import MemoryRetrievalReceipt
     from src.persistence.records import RecordKind
     started=perf_counter()
@@ -164,7 +165,7 @@ def semantic_memory_context(runtime,query,*,limit=5,block_id=None,**filters):
         for digest in context["digests"][:min(5,runtime.memory_limit)]:
             payload={"objective":query,"memory":{k:digest[k] for k in ("digest_id","objectives","cycle_status","failure_reason","hypotheses","operational_blockers","uncertainties","limitations","candidates")},
                      "comparison":[d for d in comparison if d["digest_id"]!=digest["digest_id"]]}
-            result=measure(runtime,block_id,"memory",digest["digest_id"],payload)
+            result=await measure_async(runtime,block_id,"memory",digest["digest_id"],payload)
             measurements.append(result)
             scores[digest["digest_id"]]=next((d["p_true"] for d in result["decisions"] if d["question_id"].endswith(":relevance")),0)
     except Exception as error:
@@ -176,3 +177,8 @@ def semantic_memory_context(runtime,query,*,limit=5,block_id=None,**filters):
     context["measurements"]=measurements
     # Never let annotations turn the F3 envelope into an unbounded context.
     return finish()
+
+
+def semantic_memory_context(*args, **kwargs):
+    """Synchronous offline inspection boundary."""
+    return asyncio.run(semantic_memory_context_async(*args, **kwargs))

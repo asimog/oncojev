@@ -4,6 +4,8 @@ The harness is allowed to orchestrate these operations, but deterministic Python
 remains the authority for deadlines, frontier policy, and evidence admission.
 """
 
+import asyncio
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -15,6 +17,7 @@ from pydantic_ai.usage import RunUsage, UsageLimits
 
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.exceptions import IncompleteToolCall, UsageLimitExceeded
+from src.runtime.resources import ServiceResources
 from src.block.manager import BlockManager
 from src.block.models import BlockStatus
 from src.oncolab.catalogue import initial_oncolab_index
@@ -45,7 +48,7 @@ from src.oncolab.labskills import BlockSkillStore
 from src.memory.service import ResearchMemory
 from src.memory.models import MemoryFilters, MemoryReference
 from src.provenance import canonical_bytes
-from src.runtime.pydantic_ai.search_tools import register_search_page, register_local_semantic_tools, semantic_memory_context
+from src.runtime.pydantic_ai.search_tools import register_search_page, register_local_semantic_tools, semantic_memory_context_async
 
 
 def is_director_truncation(error: Exception) -> bool:
@@ -59,6 +62,24 @@ class WorkStopped(RuntimeError):
         self.directive = {"status": "handoff_required", "reason": reason, "resource": resource,
                           "retryable": False, "next_action": "inspect partial results and request complete_block"}
         super().__init__(reason.replace("_", " "))
+
+
+@dataclass
+class ActiveResearchContext:
+    run_id: str
+    block_id: str
+    mission_id: str | None
+    cycle_id: str | None
+    start_sequence: int
+    task: asyncio.Task | None = None
+    error: Exception | None = None
+    output: str | None = None
+
+    def handle(self):
+        return {"run_id": self.run_id, "block_id": self.block_id,
+                "mission_id": self.mission_id, "cycle_id": self.cycle_id,
+                "start_sequence": self.start_sequence,
+                "status": "active" if self.task is None or not self.task.done() else "failed" if self.error else "completed"}
 
 
 @dataclass
@@ -122,6 +143,11 @@ class HarnessRuntime:
     memory_jev_seconds: float = 20
     memory_elapsed: float = 0
     method_assessments: dict[str, dict[str, Any]] = field(default_factory=dict)
+    service_resources: ServiceResources = field(default_factory=ServiceResources)
+    _jev_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    active_research: ActiveResearchContext | None = None
+    _owner_loop: asyncio.AbstractEventLoop | None = None
+    _owner_thread: int | None = None
     _counts: dict[str, int] = field(default_factory=dict)
 
     def memory_service(self):
@@ -206,6 +232,8 @@ class HarnessRuntime:
         return self.researcher_usage.setdefault(block_id, RunUsage())
 
     def append_event(self, block_id: str, event_type: str, payload: dict[str, Any]) -> LedgerEvent:
+        if self._owner_thread is not None and threading.get_ident() != self._owner_thread:
+            raise RuntimeError("runtime mutations belong to the service event-loop owner")
         event = LedgerEvent(event_type=event_type, occurred_at=datetime.now(UTC), payload=payload)
         self.manager.ledger(block_id).append(event)
         if self.repository is not None:
@@ -260,6 +288,66 @@ class HarnessRuntime:
             self.append_event(block_id, "IndexReceipt", receipt.model_dump(mode="json"))
         return receipt
 
+    async def heavy_operation(self, block_id, operation, *inputs):
+        async with self.service_resources.heavy(block_id) as receipt:
+            self.append_event(block_id, "HeavyExecutionLease", dict(receipt))
+            try:
+                return await self.offload(operation, *inputs)
+            finally:
+                self.append_event(block_id, "HeavyExecutionReleased", {"owner": block_id})
+
+    async def evaluate_jev(self, payload, questions):
+        from copy import deepcopy
+        async with self._jev_lock:
+            return await self.offload(self.jev.evaluate, deepcopy(payload), tuple(questions))
+
+    async def offload(self, operation, *inputs):
+        """Only detached computation/transport; the caller owns state and persistence.
+
+        Cancellation drains bounded work rather than releasing child ownership
+        while it is still executing. Shutdown may take its operation timeout.
+        """
+        task = asyncio.create_task(asyncio.to_thread(operation, *inputs))
+        while True:
+            try:
+                return await asyncio.shield(task)
+            except asyncio.CancelledError:
+                if task.done():
+                    return task.result()
+
+    def schedule_researcher(self, block_id: str, launched_by: str) -> dict[str, Any]:
+        loop = asyncio.get_running_loop()
+        if self._owner_loop is not None and self._owner_loop is not loop:
+            raise RuntimeError("Researcher lifecycle belongs to another event loop")
+        self._owner_loop = loop
+        self._owner_thread = threading.get_ident()
+        if self.active_research is not None and not self.active_research.task.done():
+            raise RuntimeError("one active Researcher is already running")
+        self.start_researcher(block_id, launched_by)
+        active = ActiveResearchContext(str(uuid4()), block_id, self.mission_id, self.cycle_id,
+                                       self.repository.store.count() if self.repository else 0)
+        self.active_research = active
+        self.append_event(block_id, "ResearcherRunHandle", active.handle())
+        active.task = loop.create_task(self._run_researcher(active), name=f"researcher:{active.run_id}")
+        return active.handle()
+
+    async def _run_researcher(self, active: ActiveResearchContext) -> None:
+        try:
+            researcher = self.researcher_factory(active.block_id) if self.researcher_factory else self.researcher
+            if researcher is None:
+                raise RuntimeError("Researcher agent is not configured")
+            result = await researcher.run(self.researcher_prompt(active.block_id),
+                deps=ResearcherDeps(self, active.block_id), usage=self.researcher_budget(active.block_id),
+                usage_limits=self.usage_limits("researcher"))
+            active.output = result.output
+            self.complete_researcher(active.block_id)
+        except asyncio.CancelledError:
+            self.append_event(active.block_id, "ResearcherRunFailed", {"error_type": "CancelledError"})
+            active.error = RuntimeError("Researcher cancelled by aggregate shutdown")
+        except Exception as error:
+            active.error = error
+            self.append_event(active.block_id, "ResearcherRunFailed", {"error_type": type(error).__name__})
+
     def start_researcher(self, block_id: str, launched_by: str) -> None:
         if any(event.event_type == "ResearcherRunStarted" for event in self.manager.ledger(block_id).history()):
             self.append_event(block_id, "ResearcherLaunchRejected", {"reason": "no_retry_contract"})
@@ -305,7 +393,7 @@ def register_memory_tools(agent):
     async def search_research_memory(ctx: RunContext[Any], query: str = "", filters: dict[str, Any] | None = None, limit: int = 10) -> dict[str, Any]:
         """Search historical typed outcomes by mission/entity/topic/time; bounded context, not evidence."""
         memory = ctx.deps.runtime.memory_service()
-        return semantic_memory_context(ctx.deps.runtime, query, limit=min(limit, ctx.deps.runtime.memory_limit), block_id=getattr(ctx.deps,"block_id",None), **MemoryFilters.model_validate(filters or {}).model_dump())
+        return await semantic_memory_context_async(ctx.deps.runtime, query, limit=min(limit, ctx.deps.runtime.memory_limit), block_id=getattr(ctx.deps,"block_id",None), **MemoryFilters.model_validate(filters or {}).model_dump())
 
     @agent.tool
     async def resolve_memory_reference(ctx: RunContext[Any], reference: MemoryReference) -> dict[str, Any] | None:
@@ -366,7 +454,7 @@ def register_director_tools(
                 "director_cost_limit": runtime.director_cost_limit,
                 "aggregate": usage["total"], "aggregate_budgets": usage["budgets"]["cycle"],
                 "aggregate_cost_limit": runtime.cycle_cost_limit, "cost_complete": usage["cost_complete"],
-                "memory_semantics": memory}
+                "memory_semantics": memory, "service_resources": runtime.service_resources.snapshot()}
 
     @agent.tool
     async def search_oncolab(
@@ -394,9 +482,13 @@ def register_director_tools(
     ) -> dict[str, Any]:
         """Create a bounded block. Only BlockManager computes its deadline."""
         runtime = ctx.deps.runtime
+        pending = [b for b in runtime.manager.blocks() if runtime.manager.status(b) in {BlockStatus.ACTIVE, BlockStatus.HANDOFF}]
+        if pending:
+            runtime.append_event(pending[0].block_id, "DirectorAllocationRejected", {"reason": "single_researcher_allocation"})
+            raise RuntimeError("another Researcher block is already allocated")
         block = runtime.manager.allocate(
             objective, why_now, seconds, mission_id=runtime.mission_id, cycle_id=runtime.cycle_id,
-            memory=runtime.memory_service().start_context(objective, context=semantic_memory_context(runtime,objective)) if runtime.memory_service() else None,
+            memory=runtime.memory_service().start_context(objective, context=await semantic_memory_context_async(runtime,objective)) if runtime.memory_service() else None,
             entities=tuple(entities), topics=tuple(topics),
         )
         state = runtime.research_state.start(block.block_id, block.objective)
@@ -413,7 +505,7 @@ def register_director_tools(
                                    since: datetime | None = None, until: datetime | None = None) -> dict[str, Any]:
         """Retrieve bounded typed outcomes by relevance and filters, never legacy prose as facts."""
         memory = ctx.deps.runtime.memory_service()
-        return semantic_memory_context(ctx.deps.runtime, query, limit=min(limit,ctx.deps.runtime.memory_limit), mission_id=mission_id, entity=entity, topic=topic, since=since, until=until)
+        return await semantic_memory_context_async(ctx.deps.runtime, query, limit=min(limit,ctx.deps.runtime.memory_limit), mission_id=mission_id, entity=entity, topic=topic, since=since, until=until)
 
     @agent.tool
     async def inspect_block(
@@ -439,27 +531,10 @@ def register_director_tools(
     @agent.tool
     async def launch_researcher(
         ctx: RunContext[DirectorDeps], block_id: str
-    ) -> str:
-        """Run the separate Researcher agent inside an already allocated active block."""
-        runtime = ctx.deps.runtime
-        block = runtime.manager.block(block_id)
-        if runtime.manager.status(block) is not BlockStatus.ACTIVE:
-            raise RuntimeError("cannot launch a non-active block")
-        runtime.start_researcher(block_id, "director")
-        try:
-            researcher = runtime.researcher_factory(block_id) if runtime.researcher_factory else runtime.researcher
-            if researcher is None:
-                raise RuntimeError("Researcher agent is not configured")
-            result = await researcher.run(
-                runtime.researcher_prompt(block_id),
-                deps=ResearcherDeps(runtime=runtime, block_id=block_id),
-                usage=runtime.researcher_budget(block_id), usage_limits=runtime.usage_limits("researcher"),
-            )
-        except Exception as error:
-            runtime.append_event(block_id, "ResearcherRunFailed", {"error_type": type(error).__name__})
-            raise
-        runtime.complete_researcher(block_id)
-        return result.output
+    ) -> dict[str, Any]:
+        """Schedule one fresh Researcher and return its identity without waiting."""
+        return ctx.deps.runtime.schedule_researcher(block_id, "director")
+
 
 
 def register_researcher_tools(
@@ -624,7 +699,7 @@ def register_researcher_tools(
         call_id = invocation(ctx, "software.github-scientific", request_id=request_id)
         append(ctx, "GithubAcquisitionStarted", {"invocation_id": call_id, "request_id": request_id, "request_sha256": content_hash(request.model_dump(mode="json")), "repository_url": request.repository_url, "requested_ref": request.requested_ref, "capability_need": capability_need})
         try:
-            candidate = runtime.sandbox.acquire_and_execute(request)
+            candidate = await runtime.heavy_operation(ctx.deps.block_id, runtime.sandbox.acquire_and_execute, request.model_copy(deep=True))
             if runtime.repository is not None:
                 runtime.repository.record_immutable(RecordKind.SANDBOX_CANDIDATE, candidate.candidate_id, candidate, ctx.deps.block_id)
         except Exception as error:
@@ -677,7 +752,7 @@ def register_researcher_tools(
         spec = AnalysisSpec(analysis_id=analysis_id, question=question, population="agent-provided exploratory values", estimand=estimand, method=method, variables=tuple(inputs), inputs=inputs)
         call_id = invocation(ctx, capability_id, method=method, analysis_id=analysis_id)
         try:
-            result = ctx.deps.runtime.science.execute(spec)
+            result = await ctx.deps.runtime.heavy_operation(ctx.deps.block_id, ctx.deps.runtime.science.execute, spec.model_copy(deep=True))
         except Exception as error:
             failure(ctx, call_id, capability_id, error)
             raise
@@ -701,7 +776,7 @@ def register_researcher_tools(
         record = runtime.resolve_acquisition(ctx.deps.block_id, acquisition_id)
         call_id = invocation(ctx, "science.acquisition-summary", analysis_id=analysis_id, acquisition_id=acquisition_id, numeric_field=numeric_field)
         try:
-            result = runtime.science.measure_acquisition(record, analysis_id, numeric_field)
+            result = await runtime.heavy_operation(ctx.deps.block_id, runtime.science.measure_acquisition, record.model_copy(deep=True), analysis_id, numeric_field)
         except Exception as error:
             failure(ctx, call_id, "science.acquisition-summary", error)
             raise
@@ -745,7 +820,7 @@ def register_researcher_tools(
         ctx.deps.runtime.claim(ctx.deps.block_id, "tool", ctx.deps.runtime.max_tool_calls)
         call_id = invocation(ctx, "visualization.scientific")
         try:
-            artifact = line_figure(title, x, y)
+            artifact = await ctx.deps.runtime.heavy_operation(ctx.deps.block_id, line_figure, title, list(x), list(y))
         except Exception as error:
             failure(ctx, call_id, "visualization.scientific", error)
             raise
@@ -832,7 +907,7 @@ def register_researcher_tools(
                                                  "question_hashes": tuple(content_hash(q.model_dump(mode="json")) for q in questions)})
             if runtime.repository is not None:
                 runtime.repository.record_jev_call(receipt)
-            decisions = runtime.jev.evaluate(projection.payload, questions)
+            decisions = await runtime.evaluate_jev(projection.payload, questions)
         except Exception as error:
             failures = error.failures if isinstance(error, JevOperationalFailure) else (
                 JevExecutionFailure(question_id=f"{candidate_id}-batch", category=JevFailureCategory.VALIDATION,

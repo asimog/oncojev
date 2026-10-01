@@ -1,18 +1,44 @@
 from typing import Any
 import re
+import asyncio
 
 import httpx
 
+from src.runtime.resources import ResourceRejected
 from src.sources.models import AcquisitionRecord, CoverageContract, ScientificArtifact, LiteratureRecord, LiteratureSearchResult
+
+
+async def bounded_response(client, method, url, ceiling, meter=None, **kwargs):
+    """Bound decoded response content while streaming, including failed attempts."""
+    chunks = []
+    size = 0
+    async with client.stream(method, url, **kwargs) as response:
+        response.raise_for_status()
+        declared = response.headers.get("content-length")
+        if declared is not None and int(declared) > ceiling:
+            raise ResourceRejected("public source response exceeded the configured byte budget", size)
+        async for chunk in response.aiter_bytes(chunk_size=min(65536, ceiling + 1)):
+            size += len(chunk)
+            if meter is not None:
+                meter(len(chunk))
+            if size > ceiling:
+                raise ResourceRejected("public source response exceeded the configured byte budget", size)
+            chunks.append(chunk)
+        return httpx.Response(response.status_code, content=b"".join(chunks), request=response.request)
 
 
 class GdcPublicSource:
     """Anonymous-only GDC metadata wrapper. It accepts no credential input."""
     allowed_endpoints = frozenset({"projects", "cases", "files", "annotations"})
 
-    def __init__(self, transport: httpx.AsyncBaseTransport | None = None, max_download_bytes: int = 100_000_000) -> None:
+    def __init__(self, transport: httpx.AsyncBaseTransport | None = None, max_download_bytes: int = 10_000_000) -> None:
         self._client = httpx.AsyncClient(base_url="https://api.gdc.cancer.gov", transport=transport, headers={"Accept": "application/json"}, timeout=20)
-        self._max_download_bytes = max_download_bytes
+        if max_download_bytes <= 0: raise ValueError("download ceiling must be positive")
+        self._max_download_bytes = min(max_download_bytes, 10_000_000)
+        self.meter = None
+
+    async def aclose(self):
+        await self._client.aclose()
 
     async def search(self, endpoint: str, filters: dict[str, Any], fields: tuple[str, ...], size: int = 10, offset: int = 0, sort: str = "id:asc") -> AcquisitionRecord:
         if endpoint not in self.allowed_endpoints: raise ValueError("unsupported public GDC endpoint")
@@ -22,7 +48,7 @@ class GdcPublicSource:
         content = list(filters.get("content", [])) if filters.get("op") == "and" else [filters]
         if endpoint == "files": content.append({"op":"in","content":{"field":"files.access","value":["open"]}})
         payload={"filters":{"op":"and","content":content},"fields":",".join(fields),"format":"JSON","size":size,"from":offset,"sort":sort}
-        response=await self._client.post(f"/{endpoint}",json=payload);response.raise_for_status();self._validate_size(response);body=response.json();hits=body.get("data",{}).get("hits",[])
+        response=await bounded_response(self._client,"POST",f"/{endpoint}",self._max_download_bytes,self.meter,json=payload);body=await asyncio.to_thread(response.json);hits=body.get("data",{}).get("hits",[])
         pagination=body.get("data",{}).get("pagination",{})
         total=pagination.get("total")
         total=total if isinstance(total,int) and not isinstance(total,bool) and total>=0 else None
@@ -44,18 +70,19 @@ class GdcPublicSource:
         from uuid import UUID
         UUID(file_id)
         if format not in {"tsv","json","text","binary","gzip"}:raise ValueError("declare supported byte format")
-        metadata=await self._client.get(f"/files/{file_id}",params={"fields":"access,file_name,data_format,md5sum,file_size"})
+        metadata=await bounded_response(self._client,"GET",f"/files/{file_id}",self._max_download_bytes,self.meter,params={"fields":"access,file_name,data_format,md5sum,file_size"})
         metadata.raise_for_status();self._validate_size(metadata)
         info=metadata.json().get("data",{})
         if info.get("access")!="open":raise ValueError("only explicitly open GDC files may be acquired")
         if isinstance(info.get("file_size"),int) and info["file_size"]>self._max_download_bytes:
-            raise ValueError("artifact exceeds byte budget")
+            raise ResourceRejected("artifact exceeds byte budget", 0)
         chunks=[];size=0
         async with self._client.stream("GET",f"/data/{file_id}") as response:
             response.raise_for_status()
-            async for chunk in response.aiter_raw():
+            async for chunk in response.aiter_raw(chunk_size=min(65536,self._max_download_bytes+1)):
                 size+=len(chunk)
-                if size>self._max_download_bytes:raise ValueError("artifact exceeds byte budget")
+                if self.meter is not None:self.meter(len(chunk))
+                if size>self._max_download_bytes:raise ResourceRejected("artifact exceeds byte budget", size)
                 chunks.append(chunk)
         data=b"".join(chunks)
         if info.get("file_size") is not None and info["file_size"]!=size:raise ValueError("file size differs from source metadata")
@@ -66,34 +93,44 @@ class GdcPublicSource:
 
     def _validate_size(self, response: httpx.Response) -> None:
         if len(response.content) > self._max_download_bytes:
-            raise ValueError("public source response exceeded the configured byte budget")
+            raise ResourceRejected("public source response exceeded the configured byte budget", len(response.content))
 
 
 class XenaPublicSource:
     """Anonymous bounded Xena Hub dataset search; no credentials exist here."""
-    def __init__(self, transport: httpx.AsyncBaseTransport | None = None, max_download_bytes: int = 100_000_000) -> None:
+    def __init__(self, transport: httpx.AsyncBaseTransport | None = None, max_download_bytes: int = 10_000_000) -> None:
         self._client=httpx.AsyncClient(base_url="https://ucscpublic.xenahubs.net",transport=transport,headers={"Accept":"application/json"},timeout=20)
-        self._max_download_bytes=max_download_bytes
+        if max_download_bytes <= 0: raise ValueError("download ceiling must be positive")
+        self._max_download_bytes=min(max_download_bytes, 10_000_000)
+        self.meter = None
+    async def aclose(self):
+        await self._client.aclose()
+
     async def search_datasets(self, query: str, limit: int = 10) -> AcquisitionRecord:
         if not 1 <= limit <= 50: raise ValueError("limit must be between 1 and 50")
         if not re.fullmatch(r"[A-Za-z0-9 ._-]{1,100}", query): raise ValueError("query must contain only simple search text")
         escaped=query.replace('"', '\\"')
         xena_query=f'(query {{:select [:dataset.name :dataset.longtitle :dataset.type] :from [:dataset] :where [:like :dataset.name "%{escaped}%"] :limit {limit}}})'
-        response=await self._client.post("/data/",content=xena_query,headers={"Content-Type":"text/plain"});response.raise_for_status()
-        if len(response.content)>self._max_download_bytes:raise ValueError("public source response exceeded the configured byte budget")
+        response=await bounded_response(self._client,"POST","/data/",self._max_download_bytes,self.meter,content=xena_query,headers={"Content-Type":"text/plain"})
+        if len(response.content)>self._max_download_bytes:raise ResourceRejected("public source response exceeded the configured byte budget", len(response.content))
         body=response.json()
         if not isinstance(body,list): raise ValueError("unexpected Xena dataset response")
         return AcquisitionRecord(source="ucsc-xena",request={"query":query,"limit":limit,"xena_query":xena_query},records=tuple(body),provenance=("https://ucscpublic.xenahubs.net/data/",),response_bytes=len(response.content))
 
 
 class PublicLiteratureSource:
-    def __init__(self, transport: httpx.AsyncBaseTransport | None = None, max_download_bytes: int = 100_000_000) -> None:
+    def __init__(self, transport: httpx.AsyncBaseTransport | None = None, max_download_bytes: int = 10_000_000) -> None:
         self._client=httpx.AsyncClient(base_url="https://api.crossref.org",transport=transport,headers={"Accept":"application/json"},timeout=20)
-        self._max_download_bytes=max_download_bytes
+        if max_download_bytes <= 0: raise ValueError("download ceiling must be positive")
+        self._max_download_bytes=min(max_download_bytes, 10_000_000)
+        self.meter = None
+    async def aclose(self):
+        await self._client.aclose()
+
     async def search(self, query: str, limit: int = 5) -> LiteratureSearchResult:
         if not 1 <= limit <= 20: raise ValueError("limit must be between 1 and 20")
-        response=await self._client.get("/works",params={"query":query,"rows":limit});response.raise_for_status()
-        if len(response.content)>self._max_download_bytes:raise ValueError("public source response exceeded the configured byte budget")
+        response=await bounded_response(self._client,"GET","/works",self._max_download_bytes,self.meter,params={"query":query,"rows":limit})
+        if len(response.content)>self._max_download_bytes:raise ResourceRejected("public source response exceeded the configured byte budget", len(response.content))
         items=response.json().get("message",{}).get("items",[])
         records=tuple(LiteratureRecord(title=(item.get("title") or ["Untitled"])[0],doi=item.get("DOI"),url=item.get("URL"),source="crossref") for item in items[:limit])
         return LiteratureSearchResult(query=query,request={"query":query,"rows":limit},records=records,provenance=("https://api.crossref.org/works",),response_bytes=len(response.content))

@@ -15,7 +15,7 @@ block:
   max_reasoner_calls: 10
   max_reasoner_model_requests: 10
   max_sandbox_calls: 5
-  max_download_bytes: 100000000
+  max_download_bytes: 10000000
   max_cost: null
 director:
   max_model_requests: 50

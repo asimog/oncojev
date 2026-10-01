@@ -48,7 +48,7 @@ class BlockConfig(StrictModel):
     max_reasoner_calls: int = Field(default=5, ge=0)
     max_reasoner_model_requests: int = Field(default=10, ge=0)
     max_sandbox_calls: int = Field(default=2, ge=0)
-    max_download_bytes: int = Field(default=100_000_000, gt=0)
+    max_download_bytes: int = Field(default=10_000_000, gt=0, le=10_000_000)
     max_cost: float | None = Field(default=None, gt=0)
 
     @model_validator(mode="after")
