@@ -110,7 +110,10 @@ class AutonomousService:
         self.policy = load_runtime_config(root / "config" / "runtime.yaml")
         recover_interrupted_blocks(self.repository)
         ResearchMemory(self.store).backfill()
-        self.resources = ServiceResources()
+        self.resources = ServiceResources(max_file_bytes=self.policy.block.max_download_bytes,
+            max_block_download_bytes=self.policy.resources.max_block_download_bytes,
+            max_service_download_bytes=self.policy.resources.max_service_download_bytes)
+        self._last_system = None
         self.director = None
         self._loop_runner = asyncio.Runner()
         self._cycle_lock = asyncio.Lock()
@@ -129,6 +132,7 @@ class AutonomousService:
             except Exception as error:
                 print(f"WORKSPACE RETENTION UNAVAILABLE: {type(error).__name__}",flush=True)
         system = build_system(self.models, self.policy, repository=self.repository, director=self.director, resources=self.resources)
+        self._last_system = system
         self.director = system.agents.director
         try:
             return await run_cycle_async(system, direction, repository=self.repository, mission_id=f"mission-{self.store.count() + 1}")
@@ -155,7 +159,45 @@ class AutonomousService:
                 await self.run_once_async(direction)
             except Exception as error:
                 print(f"AUTONOMOUS CYCLE FAILED: {type(error).__name__}", flush=True)
-            await asyncio.sleep(interval_seconds)
+                await asyncio.sleep(interval_seconds)
+                continue
+            await self._post_block_review(direction)
+            # An early finish is an event, not a reason to wait out its deadline.
+            # The next real allocation uses unchanged deterministic defaults.
+
+
+    async def _post_block_review(self, direction):
+        async with self._cycle_lock:
+            await self._review_terminal(direction)
+
+    async def _review_terminal(self, direction):
+        from src.runtime.pydantic_ai.contracts import DirectorDeps
+        from src.block.models import ServiceResearchState
+        from src.provenance import canonical_bytes
+        system = self._last_system
+        active = system.runtime.active_research if system else None
+        if active is None or not active.finished.is_set():
+            return
+        runtime = system.runtime
+        if any(e.event_type == "PostBlockReviewStarted" and e.payload.get("run_id") == active.run_id
+               for e in runtime.manager.ledger(active.block_id).history()):
+            return
+        runtime.append_event(active.block_id, "PostBlockReviewStarted", {"run_id": active.run_id})
+        runtime.set_service_state(ServiceResearchState.POST_BLOCK_REVIEW, cause=active.run_id)
+        prompt = ("Researcher terminal event. Review these persisted changes for the next investigation. "
+                  "Do bounded global work and yield; Python starts the next allocation cycle. "
+                  "Do not allocate or launch another block in this review turn. Broad direction: " + direction +
+                  "\nBlockDelta (reference-linked derived context, never evidence):\n" +
+                  canonical_bytes(active.delta.model_dump(mode="json") if active.delta else {}).decode())
+        try:
+            result = await system.agents.director.run(prompt, deps=DirectorDeps(runtime),
+                usage=runtime.director_usage, usage_limits=runtime.usage_limits("director"))
+            if result.output:
+                self.repository.record_research_memory(runtime.mission_id, result.output[:2000],
+                    ("post-block-review-v1", active.run_id), cycle_id=runtime.cycle_id)
+            runtime.append_event(active.block_id, "PostBlockReviewed", {"run_id": active.run_id})
+        except Exception as error:
+            runtime.append_event(active.block_id, "PostBlockReviewFailed", {"run_id": active.run_id, "error_type": type(error).__name__})
 
     def close(self):
         self._loop_runner.close()

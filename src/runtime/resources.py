@@ -22,8 +22,8 @@ class ResourceRejected(ValueError):
 @dataclass
 class ServiceResources:
     max_file_bytes: int = 10_000_000
-    max_block_download_bytes: int = 10_000_000
-    max_service_download_bytes: int = 10_000_000
+    max_block_download_bytes: int = 50_000_000
+    max_service_download_bytes: int = 500_000_000
     heavy_owner: str | None = None
     downloaded_bytes: int = 0
     block_downloaded_bytes: dict[str, int] = field(default_factory=dict)

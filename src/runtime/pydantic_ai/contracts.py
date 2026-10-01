@@ -20,7 +20,7 @@ from pydantic_ai import Agent, RunContext
 from pydantic_ai.exceptions import IncompleteToolCall, UsageLimitExceeded
 from src.runtime.resources import ServiceResources
 from src.block.manager import BlockManager
-from src.block.models import BlockStatus
+from src.block.models import BlockStatus, ServiceResearchState
 from src.oncolab.catalogue import initial_oncolab_index
 from src.oncolab.registry import OncoLabIndex, OncoLabVerificationRecord, IndexReceipt
 from src.provenance import ExecutionReference, content_hash
@@ -76,6 +76,9 @@ class ActiveResearchContext:
     error: Exception | None = None
     output: str | None = None
     dossier: Any = None
+    delta: Any = None
+    started_counter: float = field(default_factory=perf_counter)
+    finished: asyncio.Event = field(default_factory=asyncio.Event)
 
     def handle(self):
         return {"run_id": self.run_id, "block_id": self.block_id,
@@ -148,6 +151,11 @@ class HarnessRuntime:
     service_resources: ServiceResources = field(default_factory=ServiceResources)
     _jev_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     active_research: ActiveResearchContext | None = None
+    service_state: ServiceResearchState = ServiceResearchState.ALLOCATING
+    director_turn_started: float | None = None
+    director_idle_started: float | None = None
+    director_turn_seconds: float = 0
+    director_idle_seconds: float = 0
     _owner_loop: asyncio.AbstractEventLoop | None = None
     _owner_thread: int | None = None
     _counts: dict[str, int] = field(default_factory=dict)
@@ -290,6 +298,15 @@ class HarnessRuntime:
             self.append_event(block_id, "IndexReceipt", receipt.model_dump(mode="json"))
         return receipt
 
+    def set_service_state(self, value, *, cause=None):
+        self.service_state = value
+        if self.repository:
+            from src.persistence.records import StoredRecord
+            self.repository.store.append(StoredRecord(kind=RecordKind.SERVICE_EVENT, record_id=str(uuid4()),
+                block_id=self.active_research.block_id if self.active_research else None,
+                payload={"state": value.value, "mission_id": self.mission_id, "cycle_id": self.cycle_id,
+                         "cause": cause, "operational_only": True}))
+
     async def heavy_operation(self, block_id, operation, *inputs):
         async with self.service_resources.heavy(block_id) as receipt:
             self.append_event(block_id, "HeavyExecutionLease", dict(receipt))
@@ -329,6 +346,7 @@ class HarnessRuntime:
         active = ActiveResearchContext(str(uuid4()), block_id, self.mission_id, self.cycle_id,
                                        self.repository.store.count() if self.repository else 0)
         self.active_research = active
+        self.set_service_state(ServiceResearchState.RESEARCHER_ACTIVE, cause=active.run_id)
         self.append_event(block_id, "ResearcherRunHandle", active.handle())
         active.task = loop.create_task(self._run_researcher(active), name=f"researcher:{active.run_id}")
         return active.handle()
@@ -367,6 +385,15 @@ class HarnessRuntime:
                 self.repository.record_terminal(block, dossier)
             self.append_event(block.block_id, "DossierHandoff", {"block_id": block.block_id, "status": block.status.value})
         active.dossier = dossier
+        if self.repository:
+            from src.dossier.delta import build_delta
+            active.delta = build_delta(self.repository.store, block, active.run_id, active.start_sequence,
+                datetime.now(UTC), researcher_seconds=perf_counter()-active.started_counter,
+                director_seconds=self.director_turn_seconds + (perf_counter()-self.director_turn_started if self.director_turn_started is not None else 0),
+                idle_seconds=self.director_idle_seconds + (perf_counter()-self.director_idle_started if self.director_idle_started is not None else 0))
+            self.repository.record_immutable(RecordKind.BLOCK_DELTA, active.run_id, active.delta, block.block_id)
+        self.set_service_state(ServiceResearchState.POST_BLOCK_REVIEW, cause=active.run_id)
+        active.finished.set()
 
 
     def start_researcher(self, block_id: str, launched_by: str) -> None:
@@ -503,7 +530,8 @@ def register_director_tools(
     ) -> dict[str, Any]:
         """Create a bounded block. Only BlockManager computes its deadline."""
         runtime = ctx.deps.runtime
-        pending = [b for b in runtime.manager.blocks() if runtime.manager.status(b) in {BlockStatus.ACTIVE, BlockStatus.HANDOFF}]
+        pending = [b for b in runtime.manager.blocks() if runtime.manager.status(b) in {BlockStatus.ACTIVE, BlockStatus.HANDOFF}
+                   or (runtime.cycle_id is not None and b.cycle_id == runtime.cycle_id)]
         if pending:
             runtime.append_event(pending[0].block_id, "DirectorAllocationRejected", {"reason": "single_researcher_allocation"})
             raise RuntimeError("another Researcher block is already allocated")

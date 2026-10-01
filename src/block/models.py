@@ -9,6 +9,13 @@ class BlockStatus(StrEnum):
     FAILED = "failed"
     INTERRUPTED = "interrupted"
 
+class ServiceResearchState(StrEnum):
+    ALLOCATING = "allocating"
+    RESEARCHER_ACTIVE = "researcher_active"
+    DIRECTOR_GLOBAL_WORK = "director_global_work"
+    WAITING_FOR_RESEARCH_EVENT = "waiting_for_research_event"
+    POST_BLOCK_REVIEW = "post_block_review"
+
 class RunOutcome(StrEnum):
     NOT_STARTED = "not_started"
     COMPLETED = "completed"

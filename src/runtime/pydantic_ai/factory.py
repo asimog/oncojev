@@ -122,13 +122,24 @@ def build_harness_runtime(
     )
     if resources is not None:
         runtime.service_resources = resources
+    else:
+        from src.runtime.resources import ServiceResources
+        runtime.service_resources = ServiceResources(max_file_bytes=policy.block.max_download_bytes,
+            max_block_download_bytes=policy.resources.max_block_download_bytes,
+            max_service_download_bytes=policy.resources.max_service_download_bytes)
     def meter_download(byte_count):
         active = runtime.active_research
         owner = active.block_id if active else "unassigned"
-        runtime.service_resources.charge_download(owner, byte_count)
-        if active:
-            runtime.append_event(owner, "DownloadUsage", {"bytes": byte_count,
-                "service_consumed_bytes": runtime.service_resources.downloaded_bytes})
+        try:
+            runtime.service_resources.charge_download(owner, byte_count)
+        except ValueError as error:
+            if active:
+                runtime.append_event(owner, "ResourceRejected", getattr(error, "directive", {"reason": str(error)}))
+            raise
+        finally:
+            if active:
+                runtime.append_event(owner, "DownloadUsage", {"bytes": byte_count,
+                    "service_consumed_bytes": runtime.service_resources.downloaded_bytes})
     for client in (runtime.gdc, runtime.xena, runtime.literature):
         client.meter = meter_download
     bind_repository(runtime, repository)

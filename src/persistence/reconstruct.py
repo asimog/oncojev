@@ -32,6 +32,8 @@ class BlockReconstruction(BaseModel, frozen=True):
     verifications: tuple[dict[str, Any], ...] = ()
     index_receipts: tuple[dict[str, Any], ...] = ()
     jev_calls: tuple[dict[str, Any], ...] = ()
+    block_deltas: tuple[dict[str, Any], ...] = ()
+    service_events: tuple[dict[str, Any], ...] = ()
     candidate_history: tuple[dict[str, Any], ...] = ()
     resolved_inputs: dict[str, dict[str, Any]] = Field(default_factory=dict)
     unresolved_source_refs: tuple[str, ...] = ()
@@ -87,6 +89,7 @@ def reconstruct_block(store: SqliteResearchStore, block_id: str) -> BlockReconst
                      if r.block_id == block_id or (block_payload and block_payload.get("cycle_id") and r.payload.get("cycle_id") == block_payload["cycle_id"]))
     calls = {r.record_id: r.payload for r in store.records(kind=RecordKind.JEV_CALL, block_id=block_id)}
     return BlockReconstruction(
+        block_deltas=payloads(RecordKind.BLOCK_DELTA), service_events=payloads(RecordKind.SERVICE_EVENT),
         block_id=block_id,
         block=block_payload,
         state_revisions=payloads(RecordKind.STATE_REVISION),

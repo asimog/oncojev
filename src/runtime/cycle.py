@@ -7,10 +7,11 @@ repository is supplied, the whole cycle is persisted as typed records.
 """
 
 import asyncio
+from time import perf_counter
 from dataclasses import dataclass
 from uuid import uuid4
 
-from src.block.models import BlockStatus, CycleStatus, DirectorOutcome, RunOutcome, run_outcome
+from src.block.models import BlockStatus, CycleStatus, DirectorOutcome, ServiceResearchState, RunOutcome, run_outcome
 from src.config.models import RuntimeMode
 from src.dossier.builder import build_dossier
 from src.dossier.models import JevBlockDossier
@@ -73,6 +74,9 @@ async def run_cycle_async(
     failure = None
     error_type = None
     cancelled = False
+    system.runtime.set_service_state(ServiceResearchState.ALLOCATING, cause=cycle_id)
+    director_started = perf_counter()
+    system.runtime.director_turn_started = director_started
     try:
         limits = system.runtime.usage_limits("director")
         memory = system.runtime.memory_service()
@@ -99,6 +103,8 @@ async def run_cycle_async(
             failure = error
         error_type = director_error
 
+    system.runtime.director_turn_seconds += perf_counter() - director_started
+    system.runtime.director_turn_started = None
     new_blocks = tuple(block for block in manager.blocks() if block.block_id not in before)
     for block in new_blocks:
         if director_error:
@@ -120,11 +126,17 @@ async def run_cycle_async(
                 error_type = type(error).__name__
     active = system.runtime.active_research
     if active is not None:
+        idle_started = perf_counter()
+        system.runtime.director_idle_started = idle_started
+        if not active.task.done():
+            system.runtime.set_service_state(ServiceResearchState.WAITING_FOR_RESEARCH_EVENT, cause=active.run_id)
         while not active.task.done():
             try:
                 await asyncio.shield(active.task)
             except asyncio.CancelledError:
                 cancelled = True
+        system.runtime.director_idle_seconds += perf_counter() - idle_started
+        system.runtime.director_idle_started = None
         if active.error is not None:
             failure = active.error
             error_type = type(active.error).__name__

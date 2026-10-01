@@ -6,6 +6,7 @@ from pydantic_ai.capabilities import AbstractCapability
 from pydantic_ai.exceptions import UsageLimitExceeded
 
 from src.runtime.pydantic_ai.contracts import WorkStopped
+from src.block.models import ServiceResearchState
 from src.runtime.resources import ResourceBusy, ResourceRejected
 
 
@@ -28,6 +29,8 @@ class RuntimeControls(AbstractCapability):
         runtime = ctx.deps.runtime
         # Direct standalone fixtures still register their actual usage object.
         if self.role == "director":
+            if runtime.active_research is not None and not runtime.active_research.task.done():
+                runtime.set_service_state(ServiceResearchState.DIRECTOR_GLOBAL_WORK, cause=runtime.active_research.run_id)
             runtime.director_usage = ctx.usage
         elif self.role == "reasoner":
             runtime.reasoner_usage[ctx.deps.block_id] = ctx.usage

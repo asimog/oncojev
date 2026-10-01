@@ -101,6 +101,11 @@ class RetentionConfig(StrictModel):
     max_workspaces: int = Field(default=20, ge=1, le=100)
 
 
+class ServiceResourceConfig(StrictModel):
+    max_block_download_bytes: int = Field(default=50_000_000, gt=0)
+    max_service_download_bytes: int = Field(default=500_000_000, gt=0)
+
+
 class RuntimeConfig(StrictModel):
     mode: RuntimeMode = RuntimeMode.DETERMINISTIC
     block: BlockConfig = Field(default_factory=BlockConfig)
@@ -110,3 +115,4 @@ class RuntimeConfig(StrictModel):
     jev: JevConfig = Field(default_factory=JevConfig)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     retention: RetentionConfig = Field(default_factory=RetentionConfig)
+    resources: ServiceResourceConfig = Field(default_factory=ServiceResourceConfig)

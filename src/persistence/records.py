@@ -13,6 +13,8 @@ from pydantic import BaseModel, Field
 
 
 class RecordKind(StrEnum):
+    SERVICE_EVENT = "service_event"
+    BLOCK_DELTA = "block_delta"
     CYCLE = "cycle"
     CYCLE_START = "cycle_start"
     OUTCOME_CORRECTION = "outcome_correction"

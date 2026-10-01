@@ -1219,3 +1219,91 @@ def test_researcher_terminal_bundle_is_visible_before_director_turn_returns(rese
         assert len(repo.store.records(kind=RecordKind.CYCLE)) == 1
     finally:
         repo.store.close()
+
+
+
+def test_service_completion_reviews_delta_and_allocates_again_without_deadline_sleep(tmp_path, monkeypatch):
+    import asyncio
+    from contextlib import ExitStack
+    from src.autonomous import AutonomousService
+    from src.memory.models import MemoryReference
+    from src.provenance import content_hash
+
+    service = AutonomousService(ROOT, tmp_path / "events.sqlite3")
+    systems = [cycle_system(), cycle_system()]
+    reviews = []
+    allocations = []
+    composed = 0
+
+    async def director(messages, info):
+        prompts = " ".join(str(p.content) for m in messages for p in m.parts if hasattr(p, "content"))
+        if "Researcher terminal event" in prompts:
+            assert "BlockDelta" in prompts and "allocated_seconds" in prompts
+            assert "hypotheses" in prompts and "uncertainties" in prompts
+            reviews.append(prompts)
+            return ModelResponse(parts=[TextPart("Review retained the uncertainty and proposes a next investigation")])
+        if not any(isinstance(m, ModelResponse) for m in messages):
+            allocations.append(True)
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code":
+                'b = await allocate_block(objective="continuous investigation", why_now="test")\n'
+                'await launch_researcher(block_id=b["block_id"])'}, tool_call_id="allocate")])
+        return ModelResponse(parts=[TextPart("Independent global work finished; yield")])
+
+    async def researcher(messages, info):
+        if not any(isinstance(m, ModelResponse) for m in messages):
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code":
+                'await generate_hypotheses(finding="synthetic association requiring replication")'}, tool_call_id="hypothesis")])
+        return ModelResponse(parts=[TextPart("Researcher returned early")])
+
+    def compose(*args, **kwargs):
+        nonlocal composed
+        if composed == 2:
+            raise asyncio.CancelledError
+        system = systems[composed]
+        composed += 1
+        if kwargs.get("director") is not None:
+            from src.runtime.pydantic_ai.agents import OncoJevAgents
+            system = ConfiguredSystem(OncoJevAgents(kwargs["director"], system.agents.researcher,
+                system.agents.fresh_researcher), system.runtime, system.mode)
+            systems[composed-1] = system
+        system.runtime.service_resources = kwargs["resources"]
+        return system
+
+    monkeypatch.setattr("src.autonomous.build_system", compose)
+    try:
+        with ExitStack() as stack:
+            for system in systems:
+                stack.enter_context(system.agents.director.override(model=scripted(director)))
+                stack.enter_context(system.agents.researcher.override(model=scripted(researcher)))
+            async def run():
+                with pytest.raises(asyncio.CancelledError):
+                    await asyncio.wait_for(service._serve_cycles("direction", 3600), 10)
+            service._loop_runner.run(run())
+        assert len(allocations) == len(reviews) == 2
+        assert systems[0].agents.director is systems[1].agents.director
+        assert len(service.store.records(kind=RecordKind.CYCLE)) == 2
+        assert len(service.store.records(kind=RecordKind.BLOCK_DELTA)) == 2
+        for system in systems:
+            active = system.runtime.active_research
+            delta = active.delta
+            assert delta.resources["allocated_seconds"] == 900
+            assert delta.resources["unused_allowance_seconds"] > 890
+            assert delta.resources["workspace_peak_bytes"] is None
+            assert not delta.references.get("scientific_negatives")
+            assert not delta.references.get("resolutions")
+            assert delta.references["hypotheses"] and delta.references["uncertainties"]
+            for values in delta.references.values():
+                for reference in values:
+                    assert isinstance(reference, MemoryReference)
+                    record = service.store.record_at(reference.seq)
+                    assert record.block_id == active.block_id
+                    assert content_hash(record.payload) == reference.sha256
+            events = system.runtime.manager.ledger(active.block_id).history()
+            assert sum(e.event_type == "PostBlockReviewed" for e in events) == 1
+            view = service.application.reconstruction(active.block_id)
+            assert len(view.block_deltas) == 1 and view.service_events
+        # A repeated notification cannot create another model review.
+        service._loop_runner.run(service._post_block_review("direction"))
+        assert len(reviews) == 2
+    finally:
+        service.close()
