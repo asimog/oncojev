@@ -241,6 +241,12 @@ def test_director_global_frontier_retains_replication_relations_and_rejects_stal
     assert any(r.payload['context_type'] == 'global_investigation' for r in calls)
     assert all(r.payload['policy_version'] == 'global-frontier-policy-v1' for r in calls if r.payload['context_type'].startswith('global_'))
     assert all(r.block_id is None for r in calls)
+    from src.application.export import render_snapshot
+    exported_calls=json.loads(render_snapshot(store)['program/native-calls.json'])
+    assert {r['record_id'] for r in exported_calls}=={r.record_id for r in calls}
+    assert all(r['block_id'] is None for r in exported_calls)
+    assert {r['record_id']:(r['payload']['context_type'],r['payload']['outcome']) for r in exported_calls}=={
+        r.record_id:(r.payload['context_type'],r.payload['outcome']) for r in calls}
     assert not store.records(kind=RecordKind.EVIDENCE)
     assert len(store.records(kind=RecordKind.PROGRAM_REVIEW)) == 2
     from src.director.review import portfolio

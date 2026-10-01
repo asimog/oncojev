@@ -8,7 +8,7 @@ from src.persistence.records import RecordKind
 from src.provenance import content_hash
 
 
-RENDERER = "oncojevlab-v2"
+RENDERER = "oncojevlab-v3"
 GROUPS = {
     "program": (RecordKind.MISSION, RecordKind.CYCLE, RecordKind.CYCLE_START, RecordKind.OUTCOME_CORRECTION),
     "program/reviews": (RecordKind.RESEARCH_MEMORY,),
@@ -60,6 +60,9 @@ def render_snapshot(store, *, high_water=None):
         values = [_record(r) for r in selected if r.kind in kinds]
         if values:
             files[path + ".json"] = json_bytes(values)
+    global_calls = [_record(r) for r in selected if r.kind == RecordKind.JEV_CALL and r.block_id is None]
+    if global_calls:
+        files["program/native-calls.json"] = json_bytes(global_calls)
     block_ids = sorted({r.block_id for r in selected if r.kind in BLOCK_KINDS and r.block_id})
     for block_id in block_ids:
         # IDs are data, never filesystem path components selected by an agent.
