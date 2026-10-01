@@ -28,7 +28,7 @@ denied(lambda: Path({str(peer / "write")!r}).write_text("escaped"))
 denied(lambda: Path("/app/config/runtime.yaml").write_text("escaped"))
 denied(lambda: socket.socket())
 denied(lambda: subprocess.run(["/bin/true"]))
-assert "GITHUB_TOKEN" not in os.environ
+assert not any(key in os.environ for key in ("GITHUB_TOKEN", "OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "ONCOJEV_DATABASE_URL", "ONCOJEV_MIGRATION_DATABASE_URL", "ONCOJEV_WRITER_PASSWORD"))
 print(json.dumps({{"values": {{"value": 4.0}}}}))
 '''
         archive = io.BytesIO()

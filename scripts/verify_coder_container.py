@@ -100,7 +100,7 @@ checks = {{
     "peer_read_denied": denied(lambda: (p({str(peer)!r}) / "peer-private.txt").read_text()),
     "credential_file_denied": denied(lambda: p({str(secret)!r}).read_text()),
     "proc_environment_denied": denied(lambda: p("/proc/1/environ").read_bytes()),
-    "provider_environment_absent": not any(name in os.environ for name in ("OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "LOGFIRE_TOKEN", "AWS_SECRET_ACCESS_KEY", "GH_TOKEN", "GITHUB_TOKEN", "ONCOJEV_DB_PATH")),
+    "provider_environment_absent": not any(name in os.environ for name in ("OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "LOGFIRE_TOKEN", "AWS_SECRET_ACCESS_KEY", "GH_TOKEN", "GITHUB_TOKEN", "ONCOJEV_DB_PATH", "ONCOJEV_DATABASE_URL", "ONCOJEV_MIGRATION_DATABASE_URL", "ONCOJEV_WRITER_PASSWORD")),
     "publisher_credential_denied": denied(lambda: p("/app/var/publisher-credential-sentinel").read_text()),
 }}
 child = subprocess.run([sys.executable, "-c", "from pathlib import Path; Path(" + repr(str(p({str(peer)!r}) / "child-write-denied.txt")) + ").write_text('denied')"], capture_output=True)
@@ -159,7 +159,7 @@ def main() -> None:
     (proof_root / "publisher-credential-sentinel").write_text("fake publisher credential")
     director_root.mkdir(parents=True, exist_ok=True)
     (director_root / "peer-private.txt").write_text("fake Director scratch data")
-    for name in ("OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "LOGFIRE_TOKEN", "AWS_SECRET_ACCESS_KEY", "GH_TOKEN", "GITHUB_TOKEN", "ONCOJEV_DB_PATH"):
+    for name in ("OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "LOGFIRE_TOKEN", "AWS_SECRET_ACCESS_KEY", "GH_TOKEN", "GITHUB_TOKEN", "ONCOJEV_DB_PATH", "ONCOJEV_DATABASE_URL", "ONCOJEV_MIGRATION_DATABASE_URL", "ONCOJEV_WRITER_PASSWORD"):
         os.environ[name] = "fake-verifier-sentinel"
 
     with agents.director.override(model=_model("director", peer, secret, proof_root)):
