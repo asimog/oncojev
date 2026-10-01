@@ -32,6 +32,17 @@ flowchart TD
 
 The global scope contains only Director Control, the OncoLab Index, and Research Memory. Control includes global allocation and deterministic block lifecycle. Director and Researcher are separate Pydantic AI agents. `BlockManager` owns soft handoff deadlines and per-block budgets. Entering the handoff window prevents new expensive work but never cancels an in-flight operation.
 
+H1 preserves this composition and expands the Director's global management
+instructions: reference-linked cross-block synthesis, uncertainty/duplication/
+contradiction review, diversification, dependencies, capability/failure triage,
+resource planning and non-authoritative engineering proposals. The Director
+allocates questions; local source, method, representation, analysis and strategy
+remain Researcher-owned. `inspect_director_resources` supplies independent
+Director and aggregate allowances, memory-semantic counters, configured monetary
+bounds and reported-cost completeness without allocating a block or changing
+active research. Global portfolios/semantic operations, governed proposals,
+non-blocking supervision and zero-block pause remain in their planned phases.
+
 Each JevBlock is the Researcher’s local scope. It contains capability discovery/use, acquisition, deterministic science, deterministic ResearchState, Jev projections/measurement, local deterministic frontier policy, Reasoner, optional sandboxed software, visualization, and dossier construction. There are no separate global Science, source, Jev, visualization, or sandbox planes.
 
 ## Agent harness

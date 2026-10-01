@@ -63,6 +63,15 @@ Deadlines are soft handoff boundaries: new expensive work stops in the reserve w
 
 Both roles retain Coder and Code Mode in Linux. The Director uses `/work/director` for scratch engineering; each JevBlock has its own `var/workspaces/<block-id>`. Application source and policy are read-only from both coding contexts. Linux Landlock confines native file tools, shell commands and descendants to public application reads and their own writable workspace; peer workspaces, credential files and process environments are inaccessible. Commands receive a scrubbed environment. This path fails closed without Landlock ABI 3 or newer; run `scripts/verify_coder_container.py` in the target Linux image. Scratch results never become scientific evidence without deterministic Science validation and admission.
 
+H1 expands the Director's instructions to global memory synthesis, uncertainty,
+duplication/contradiction review, diversification/dependencies, capability gaps,
+failure/resource triage and non-authoritative engineering proposals. Its
+`inspect_director_resources` tool reads independent Director, aggregate cycle and
+memory-semantic allowances before allocation or during a block, including
+configured cost bounds and reported-cost completeness. Researcher retains local
+scientific choices. Non-blocking supervision, durable global portfolios, governed
+proposals and a zero-block program pause await their owning H phases.
+
 Only source-bound acquisition measurements or replay-validated sandbox measurements can be admitted as evidence. Agent-provided arrays and generated code may support exploration but cannot cross the Science admission boundary.
 
 Public acquisitions, literature context and sandbox replay requests/outputs are

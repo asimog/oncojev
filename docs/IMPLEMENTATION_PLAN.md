@@ -1,6 +1,6 @@
 # Next-stage autonomous laboratory implementation plan
 
-**Stage status: IN PROGRESS — H0 DONE; H1–H14 PLANNED.** Planning and documentation reconciliation and the executable H0 baseline audit are recorded on 2026-10-01; no next-stage runtime implementation, deployment, promotion or publication is claimed by this document. This is OncoJev's sole active implementation-phase/status tracker.
+**Stage status: IN PROGRESS — H0/H1 DONE; H2–H14 PLANNED.** Planning/documentation reconciliation, the executable H0 baseline audit and bounded H1 Director role/resource-tool delivery are recorded on 2026-10-01. No asynchronous lifecycle, deployment, promotion or publication is claimed. This is OncoJev's sole active implementation-phase/status tracker.
 
 The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
@@ -68,7 +68,7 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 | Phase | Priority/class | Build prerequisites / completion evidence | Status |
 | --- | --- | --- | --- |
 | H0 — baseline audit/reconciliation | P0, audit | Current checkout; caller inventory, gap matrix and 96-test baseline below | DONE: audited `6e29289` on 2026-10-01; deployment proof remains H11 |
-| H1 — Director harness/role/tools | P0, authority preservation | H0 | PLANNED |
+| H1 — Director harness/role/tools | P0, authority preservation | H0 | DONE: global role/resource read and local Linux confinement proof, 2026-10-01; target Railway proof remains H11 |
 | H2 — non-blocking single-Researcher lifecycle | P0, lifecycle correctness | H1 | PLANNED |
 | H3 — events, delta, pause and stale basis | P0, lifecycle/provenance | H2, existing F3/F6 | PLANNED |
 | H4 — global semantics, generators and hypothesis refinement (D3/D4) | P1, semantic method | Build: H3. Return-pass proof: H6/H7 generators and H13/H14 contract comparison. | PLANNED |
@@ -172,6 +172,25 @@ No new tests were added for this documentation audit: existing behavior-level ba
 4. Bound independent Director turns separately from Researcher elapsed time and aggregate service/cycle allowances. Retain separate model/provider-tool/CodeMode/tool, Jev call/question, Reasoner, source, scientific execution and byte counters. Expose configured monetary bound and known/unknown reported cost; do not invent pricing. Check newly introduced persistence/credential paths remain outside Coder access.
 
 **Exit proof:** real harness can write its own scratch while denied application/config/policy/question/prompt/deployment writes, peer workspace and credential/process-environment reads; child commands remain scrubbed/confined. Scratch scripts/prototypes are non-evidence and cannot mutate authoritative OncoLab/lifecycle. Primary owners: `test_live_mode.py` and existing Linux `scripts/verify_coder_container.py`; budget ownership in `test_boundaries.py`. Run owning tests; Linux verifier here proves its tested environment only, actual Railway proof remains H11.
+
+#### H1 delivery — preserved harness and global role, 2026-10-01
+
+**Starting HEAD:** `b71d2554e2c8bfaab4f0d254d7bb79198f6d4e81`, `main`; one unrelated untracked `package-lock.json` preserved and excluded. Origin was one commit behind (H0), with no remote-only commits after fetch.
+
+- Expanded `src/director/agent.py` from allocation-focused instructions to reference-linked cross-block memory/hypothesis/uncertainty synthesis, duplication/apparent contradiction review, dependencies/diversification/concentration, capability demand/gaps/failures, resource/failure triage, supervision/continuations and non-authoritative engineering proposals. Instructions explicitly preserve Researcher-owned local scientific choices, Python deadlines/state authority and scratch non-evidence status.
+- Retained service-lifetime Director composition, fresh block Researcher, Linux Coder, `/work/director`, Monty CodeMode and existing typed memory/Index/control tools without duplicate APIs. Added the usable `inspect_director_resources` read through the existing registration/CodeMode path: independent Director and aggregate model/provider-tool/CodeMode allowances, separately bounded memory Jev calls/questions/bytes/time, configured monetary bounds, reported cost and aggregate cost completeness. Inspection does not allocate or mutate active research. Existing strict configuration and resource-counter owners remain unchanged.
+- Strengthened `scripts/verify_coder_container.py` with real-file preconditions and source/prompt, question, policy, catalogue, deployment, authoritative-record sentinel and publisher-credential denials. Both roles retain native scratch writes, shell writes, application reads, CodeMode Index access and confined descendants; provider/publisher/database-path environment values are scrubbed. Negative controls use synthetic sentinels, never real credentials or the historical database.
+- Added behavior-level cases in `test_live_mode.py`: resource reads before allocation and with an active block preserve state/deadline and report independent allowances/unknown cost; zero Director provider-tool, CodeMode-execution or snippet-tool allowance prevents allocation effects. Existing lifecycle, persistence, source/Jev/Reasoner/scientific budgets and role-headroom cases remain the primary owners of their delivered contracts.
+
+| Verification command | Actual result |
+| --- | --- |
+| `.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_live_mode.py tests/invariants/test_boundaries.py tests/invariants/test_persistence.py -q` | Exit 0: **91 passed, 1 warning in 67.74 s**. Existing `pydantic_graph` no-current-event-loop deprecation. |
+| `docker build -t oncojev-h1:local .` | Exit 0; frozen application dependencies, unprivileged production Dockerfile. Image config `sha256:7d6403d3fede9755b2c7a11caeab560c6ad97b5b9df4e238da2831aa2161f31a`. |
+| `docker run --rm -e LOGFIRE_SEND_TO_LOGFIRE=false oncojev-h1:local python -m scripts.verify_coder_container` | Exit 0: **20/20 boundary checks true for each role**, plus native write/read and CodeMode result assertions. Python 3.12.12, Pydantic AI 2.52.0, Harness 0.52.0; Linux `6.6.114.1-microsoft-standard-WSL2`, Landlock ABI 3. |
+| `.venv/Scripts/python.exe -B scripts/check_architecture.py` | Exit 0: architecture checks passed. |
+| `git diff --check` | Exit 0. |
+
+**Scope/limits:** this closes H1's harness/role/tool-preservation batch, not H2 non-blocking tasks, H3 event/delta/pause, H4 global semantic portfolios or H5/H7–H9 institutional/external/governed proposals. Those tools are exposed only as their owning implementations ship; the prompt truthfully states current absence and retains the one-allocation cycle contract. Qualitative global reasoning instructions are not semantic/scientific utility proof. Local Linux confinement is not Railway kernel/volume verification; H11 remains the explicit deployment gate. Reported model cost can remain partial/unknown; configured bounds do not fabricate prices or a complete spend guarantee. `uv` was unavailable in the Windows shell, so local checks used the existing application virtual environment. No live provider research, deployment, database mutation, scientific admission or publication was performed.
 
 ### H2 — Python-owned non-blocking execution with one active Researcher
 

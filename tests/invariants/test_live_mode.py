@@ -259,6 +259,93 @@ def test_factory_allocation_defaults_and_bounds_are_enforced_through_tools():
     assert blocks[0].start.allocation.handoff_reserve_seconds == 90
 
 
+@pytest.mark.parametrize("active_block", [False, True])
+def test_director_can_inspect_independent_resources_without_mutating_active_research(active_block):
+    """The real tool boundary reports limits before allocation and during a block.
+
+    Existing block inspection requires a block and cannot protect pre-allocation
+    planning or the Director CodeMode accounting path.
+    """
+    from decimal import Decimal
+    from pydantic_ai.messages import ToolReturnPart
+    from pydantic_ai.usage import RunUsage
+    from src.runtime.pydantic_ai.contracts import DirectorDeps
+
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    runtime = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, environment={})
+    runtime.director_cost_limit = 0.25
+    runtime.cycle_cost_limit = 0.75
+    runtime.director_tool_limit = 3
+    runtime.director_code_limit = 2
+    runtime.director_usage = RunUsage(requests=1, cost=Decimal("0.1"))
+    block = runtime.manager.allocate("independent investigation", "test") if active_block else None
+    state = runtime.research_state.start(block.block_id, block.objective) if block else None
+    if block:
+        runtime.researcher_budget(block.block_id).requests = 9
+    runtime.memory_elapsed = 3
+    runtime._counts["memory_questions"] = 2
+    before = block.model_dump(mode="json") if block else None
+    calls = 0
+
+    async def model(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return ModelResponse(parts=[ToolCallPart(
+                "run_code", {"code": "await inspect_director_resources()"}, tool_call_id="resources")])
+        return ModelResponse(parts=[TextPart("reviewed")])
+
+    agent = create_agents("test", "test").director
+    with agent.override(model=scripted(model)):
+        result = agent.run_sync("Review global allowances", deps=DirectorDeps(runtime), usage=runtime.director_usage)
+    returned = next(part.content for message in result.new_messages() for part in message.parts
+                    if isinstance(part, ToolReturnPart))
+    assert returned["director_cost_limit"] == 0.25 and returned["aggregate_cost_limit"] == 0.75
+    assert returned["director"]["reported_cost"] == "0.1" and returned["cost_complete"] is False
+    assert returned["director_budgets"]["model_requests"]["attempted"] == 2
+    assert returned["aggregate_budgets"]["model_requests"]["attempted"] == (11 if block else 2)
+    # Both the snippet and its inner typed tool consume provider-tool allowance.
+    assert returned["director_budgets"]["provider_tools"]["remaining"] == 1
+    assert returned["director_budgets"]["code_mode_executions"]["remaining"] == 1
+    assert returned["memory_semantics"]["questions"]["remaining"] == 18
+    assert returned["memory_semantics"]["seconds"]["remaining"] == 17
+    assert runtime.manager.blocks() == ((block,) if block else ())
+    if block:
+        assert block.model_dump(mode="json") == before
+        assert runtime.research_state.get(block.block_id) == state
+
+
+@pytest.mark.parametrize("limit", ["director_tool_limit", "director_code_limit", "snippet_tools"])
+def test_zero_director_coding_allowance_denies_allocation_before_effects(limit):
+    """Director's independent limits must guard CodeMode and its lifecycle effects."""
+    from pydantic_ai.messages import ToolReturnPart
+    from src.runtime.pydantic_ai.contracts import DirectorDeps
+
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    runtime = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, environment={})
+    if limit != "snippet_tools":
+        setattr(runtime, limit, 0)
+    calls = 0
+
+    async def model(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return ModelResponse(parts=[ToolCallPart("run_code", {
+                "code": 'await allocate_block(objective="must not start", why_now="budget test")'
+            }, tool_call_id="denied")])
+        return ModelResponse(parts=[TextPart("stopped")])
+
+    agent = create_agents("test", "test", max_tool_calls=0 if limit == "snippet_tools" else 100).director
+    with agent.override(model=scripted(model)):
+        result = agent.run_sync("Review allowance", deps=DirectorDeps(runtime))
+    returned = next(part.content for message in result.new_messages() for part in message.parts
+                    if isinstance(part, ToolReturnPart))
+    assert returned["retryable"] is False
+    assert runtime.manager.blocks() == ()
+    assert runtime.researcher_usage == {}
+
+
 @pytest.mark.parametrize("limit", ["max_provider_tool_calls", "max_code_mode_executions", "max_code_mode_tool_calls"])
 def test_zero_framework_budgets_deny_code_before_source_execution(limit, monkeypatch):
     from pydantic_ai.messages import ToolReturnPart

@@ -86,12 +86,20 @@ checks = {{
     "application_readable": "default_seconds" in p("/app/config/runtime.yaml").read_text(),
     "application_write_denied": denied(lambda: open_write("/app/config/runtime.yaml")),
     "application_symlink_write_denied": denied(lambda: open_write(own / "app-alias")),
+    "production_source_write_denied": denied(lambda: open_write("/app/src/director/agent.py")),
+    "questions_write_denied": denied(lambda: open_write("/app/src/jev/questions.py")),
+    "policy_write_denied": denied(lambda: open_write("/app/src/jev/frontier.py")),
+    "registry_write_denied": denied(lambda: open_write("/app/src/oncolab/catalogue.py")),
+    "deployment_write_denied": denied(lambda: open_write("/app/railway.toml")),
+    "database_read_denied": denied(lambda: p("/app/var/authoritative-db-sentinel").read_bytes()),
+    "database_write_denied": denied(lambda: open_write("/app/var/authoritative-db-sentinel")),
     "peer_write_denied": denied(lambda: (p({str(peer)!r}) / "shell-write-denied.txt").write_text("denied")),
     "other_block_write_denied": denied(lambda: p("/app/var/workspaces/peer/other-block-write-denied.txt").write_text("denied")),
     "peer_read_denied": denied(lambda: (p({str(peer)!r}) / "peer-private.txt").read_text()),
     "credential_file_denied": denied(lambda: p({str(secret)!r}).read_text()),
     "proc_environment_denied": denied(lambda: p("/proc/1/environ").read_bytes()),
-    "provider_environment_absent": not any(name in os.environ for name in ("OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "LOGFIRE_TOKEN", "AWS_SECRET_ACCESS_KEY")),
+    "provider_environment_absent": not any(name in os.environ for name in ("OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "LOGFIRE_TOKEN", "AWS_SECRET_ACCESS_KEY", "GH_TOKEN", "GITHUB_TOKEN", "ONCOJEV_DB_PATH")),
+    "publisher_credential_denied": denied(lambda: p("/app/var/publisher-credential-sentinel").read_text()),
 }}
 child = subprocess.run([sys.executable, "-c", "from pathlib import Path; Path(" + repr(str(p({str(peer)!r}) / "child-write-denied.txt")) + ").write_text('denied')"], capture_output=True)
 checks["descendant_write_denied"] = child.returncode != 0 and b"PermissionError" in child.stderr
@@ -118,6 +126,10 @@ assert all(checks.values())
 
 
 def main() -> None:
+    # Every negative control must target a real file, not a missing path.
+    for relative in ("src/director/agent.py", "src/jev/questions.py", "src/jev/frontier.py",
+                     "src/oncolab/catalogue.py", "config/runtime.yaml", "railway.toml"):
+        assert (Path("/app") / relative).is_file(), relative
     runtime = HarnessRuntime(
         manager=BlockManager(),
         jev=DeterministicJevClient(),
@@ -137,8 +149,10 @@ def main() -> None:
     (peer / "peer-private.txt").write_text("fake private block data")
     secret = Path("/app/var/provider-secret-sentinel")
     secret.write_text("fake secret sentinel")
+    Path("/app/var/authoritative-db-sentinel").write_text("fake authoritative records")
+    Path("/app/var/publisher-credential-sentinel").write_text("fake publisher credential")
     (director_root / "peer-private.txt").write_text("fake Director scratch data")
-    for name in ("OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "LOGFIRE_TOKEN", "AWS_SECRET_ACCESS_KEY"):
+    for name in ("OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "LOGFIRE_TOKEN", "AWS_SECRET_ACCESS_KEY", "GH_TOKEN", "GITHUB_TOKEN", "ONCOJEV_DB_PATH"):
         os.environ[name] = "fake-verifier-sentinel"
 
     with agents.director.override(model=_model("director", peer, secret)):
@@ -166,6 +180,7 @@ def main() -> None:
     results = {role: json.loads((root / "boundary-check.json").read_text())
                for role, root in (("director", director_root), ("researcher", researcher_root))}
     assert all(all(checks.values()) for checks in results.values())
+    assert Path("/app/var/authoritative-db-sentinel").read_text() == "fake authoritative records"
     assert not (peer / "native-write-denied.txt").exists()
     assert not (director_root / "native-write-denied.txt").exists()
     assert not Path("/app/.env.local").exists()

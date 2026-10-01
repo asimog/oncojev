@@ -347,6 +347,28 @@ def register_director_tools(
     register_memory_tools(agent)
     register_search_page(agent)
     @agent.tool
+    async def inspect_director_resources(ctx: RunContext[DirectorDeps]) -> dict[str, Any]:
+        """Read independent Director and aggregate allowances without allocating or changing a block.
+
+        Reported costs are partial unless every model response supplied cost; no pricing is inferred.
+        """
+        runtime = ctx.deps.runtime
+        usage = runtime.usage_summary()
+        memory_limits = {"calls": ("memory_jev", runtime.memory_jev_calls),
+                         "questions": ("memory_questions", runtime.memory_jev_questions),
+                         "bytes": ("memory_bytes", runtime.memory_jev_bytes)}
+        memory = {name: {"attempted": runtime._counts.get(key, 0), "limit": limit,
+                         "remaining": max(0, limit - runtime._counts.get(key, 0))}
+                  for name, (key, limit) in memory_limits.items()}
+        memory["seconds"] = {"attempted": runtime.memory_elapsed, "limit": runtime.memory_jev_seconds,
+                             "remaining": max(0, runtime.memory_jev_seconds - runtime.memory_elapsed)}
+        return {"director": usage["director"], "director_budgets": usage["budgets"]["director"],
+                "director_cost_limit": runtime.director_cost_limit,
+                "aggregate": usage["total"], "aggregate_budgets": usage["budgets"]["cycle"],
+                "aggregate_cost_limit": runtime.cycle_cost_limit, "cost_complete": usage["cost_complete"],
+                "memory_semantics": memory}
+
+    @agent.tool
     async def search_oncolab(
         ctx: RunContext[DirectorDeps], query: str = "", kinds: list[OncoLabKind] = [], tags: list[str] = [], limit: int = 8
     ) -> list[dict[str, Any]]:
