@@ -22,6 +22,16 @@ def _oncolab_descriptor(capability_id: str, name: str, kind: OncoLabKind, purpos
 
 def initial_oncolab_index() -> OncoLabIndex:
     descriptors = (
+        _oncolab_descriptor("science.source-paired","Source-resolved paired association",OncoLabKind.STATISTICAL_METHOD,
+            "Pearson correlation or simple OLS over complete paired rows with unique entity keys from one owned acquisition.",
+            ("paired","association","correlation","regression"),"src/science/execution.py",availability=OncoLabAvailability.INSTALLED,
+            execution_mode=OncoLabExecutionMode.LOCAL_PYTHON,access_policy=OncoLabAccessPolicy.LOCAL_ONLY,
+            limitations=("No joins, covariates or causal inference; independent-row/method assumptions must be declared.",)),
+        _oncolab_descriptor("source.gdc-file","Open GDC exact-byte file acquisition",OncoLabKind.SOURCE,
+            "Bounded file acquisition after GDC metadata explicitly declares open access; retains exact bytes and source identity.",
+            ("gdc","file","artifact","bytes"),"src/sources/public.py",availability=OncoLabAvailability.AVAILABLE,
+            execution_mode=OncoLabExecutionMode.REMOTE_API,access_policy=OncoLabAccessPolicy.PUBLIC,
+            limitations=("Per-file open access, size and checksum checks; release/licence unknown unless supplied by source.",)),
         _oncolab_descriptor("science.acquisition-summary", "Stored acquisition summary", OncoLabKind.SCIENTIFIC_METHOD,
             "Descriptive record count or numeric-field summary of an exact stored public response slice.",
             ("acquisition", "descriptive", "summary"), "src/science/execution.py",
@@ -105,7 +115,7 @@ def initial_oncolab_index() -> OncoLabIndex:
     def actual_contract(d):
         routes=ROUTES.get(d.capability_id)
         if not routes:return d
-        local=d.capability_id in {"science.acquisition-summary","stat.scipy","stat.pandas","stat.statsmodels","visualization.scientific"}
+        local=d.capability_id in {"science.acquisition-summary","science.source-paired","stat.scipy","stat.pandas","stat.statsmodels","visualization.scientific"}
         operations=", ".join(r.operation or r.tool for r in routes)
         limitations=tuple(x for x in d.limitations if "future" not in x and "no executable" not in x.lower() and "No GDC wrapper" not in x)
         return d.model_copy(update={"input_contract":"Typed tool inputs: "+"; ".join(f"{r.operation or r.tool}: {', '.join(r.required_inputs) or 'bounded request'}" for r in routes),

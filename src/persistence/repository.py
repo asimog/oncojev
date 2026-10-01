@@ -18,7 +18,7 @@ from src.persistence.store import SqliteResearchStore
 from src.researcher.state import ResearchState
 from src.science.models import MeasuredResult
 from src.visualization.models import FigureArtifact
-from src.sources.models import AcquisitionRecord, LiteratureSearchResult
+from src.sources.models import AcquisitionRecord, LiteratureSearchResult, ScientificArtifact
 from src.oncolab.registry import OncoLabVerificationRecord, IndexReceipt
 from src.persistence.references import resolve_reference
 
@@ -85,6 +85,17 @@ class ResearchRepository:
             raise ValueError("acquisition is not owned by this block")
         return AcquisitionRecord.model_validate(matches[-1].payload)
 
+    def record_scientific_artifact(self, artifact: ScientificArtifact) -> StoredRecord:
+        artifact.validate_bytes()
+        return self.record_immutable(RecordKind.SCIENTIFIC_ARTIFACT, artifact.artifact_id, artifact, artifact.block_id)
+
+    def resolve_scientific_artifact(self, block_id: str, artifact_id: str) -> ScientificArtifact:
+        matches=[r for r in self.store.records(kind=RecordKind.SCIENTIFIC_ARTIFACT,block_id=block_id) if r.record_id==artifact_id]
+        if not matches:raise ValueError("artifact is not owned by this block")
+        artifact=ScientificArtifact.model_validate(matches[-1].payload)
+        if artifact.block_id != block_id:raise ValueError("artifact owner mismatch")
+        return artifact
+
     def record_verification(self, record: OncoLabVerificationRecord) -> StoredRecord:
         resolve_reference(self.store, record.execution_reference)
         return self.record_immutable(RecordKind.VERIFICATION, f"{record.capability_id}:{record.verification_id}", record,
@@ -98,6 +109,11 @@ class ResearchRepository:
 
     def record_evidence(self, evidence: ScientificEvidence, block_id: str | None = None) -> StoredRecord:
         """Store one already-admitted evidence item; never admits on its own."""
+        matches=[r for r in self.store.records(kind=RecordKind.EVIDENCE,block_id=block_id) if r.record_id==evidence.evidence_id]
+        if matches:
+            if matches[-1].payload["measurement"] != evidence.measurement.model_dump(mode="json"):
+                raise ValueError("evidence identity cannot be rebound")
+            return matches[-1]
         return self._append(RecordKind.EVIDENCE, evidence.evidence_id, evidence.model_dump(mode="json"), block_id)
 
     def record_jev_decisions(self, block_id: str, decisions: tuple[JevDecision, ...]) -> StoredRecord:

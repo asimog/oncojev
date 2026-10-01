@@ -4,7 +4,7 @@ RESEARCHER_INSTRUCTIONS = (
     "Investigate only within the assigned block scope. Propose broader work to the Director. "
     "The deadline is a soft handoff boundary: finish in-flight work, stop starting new work when tools report handoff, and complete a truthful dossier. "
     "Do not treat semantic, generative, synthetic, or agent-provided numeric output as evidence. "
-    "Admit only measurements made from stored public acquisitions or replay-validated sandbox candidates. "
+    "Admit only measurements made from stored public acquisitions or replay-validated sandbox candidates. Use run_source_analysis for explicitly keyed complete-pair association; declare population, entity unit, design, fields and estimand. Retain coverage and missingness limitations. Use acquire_gdc_file only for explicitly open bounded file inputs, retained by identity for read-only sandbox use; no causal interpretation or whole-population inference from response counts. "
     "Start each block with no selected procedural skills; load only skills relevant to the current need. "
     "Use search_oncolab_page for compact discovery, follow bounded continuation when coverage is insufficient, "
     "describe selected IDs and assess_method against your need before choosing among routes. "

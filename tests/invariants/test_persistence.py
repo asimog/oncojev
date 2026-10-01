@@ -815,3 +815,114 @@ def test_semantic_memory_has_separate_global_budget_and_deterministic_fallback(t
     assert len(calls)==2 and calls[-1].block_id is None
     assert len(store.records(kind=RecordKind.MEMORY_RETRIEVAL))==2
     store.close()
+
+
+def test_source_resolved_paired_analysis_and_repeat_admission_survive_reopen(tmp_path):
+ from src.runtime.pydantic_ai.contracts import ResearcherDeps
+ system=cycle_system();runtime=system.runtime
+ repository=ResearchRepository(SqliteResearchStore(tmp_path/"analysis.sqlite3"));runtime.repository=repository
+ block=runtime.manager.create("paired association","curated need",ResourceAllocation(seconds=60,handoff_reserve_seconds=5))
+ repository.record_block(block)
+ record=AcquisitionRecord(source="controlled-public",request={"fields":["id","x","y"]},
+  records=({"id":"a","x":1,"y":2},{"id":"b","x":2,"y":4},{"id":"c","x":3,"y":5},{"id":"d","x":None,"y":100}),provenance=("controlled-response",))
+ runtime.retain_acquisition(block.block_id,record)
+ calls=0
+ async def respond(messages,info):
+  nonlocal calls
+  calls+=1
+  if calls>1:return ModelResponse(parts=[TextPart("finished")])
+  args=f'acquisition_id="{record.acquisition_id}", question="association", population="stored public response", estimand="Pearson r", method="pearson_correlation", fields={{"x":"x","y":"y"}}, entity_field="id", entity_unit="sample", design="paired independent sample rows"'
+  code=f'a=await run_source_analysis(analysis_id="a", {args})\ne=await admit_measurement(analysis_id="a")\ne2=await admit_measurement(analysis_id="a")\nb=await run_source_analysis(analysis_id="b", {args})\ne3=await admit_measurement(analysis_id="b")\nr=await run_source_analysis(analysis_id="r", replication_id="declared-repeat-1", {args})\ner=await admit_measurement(analysis_id="r")'
+  return ModelResponse(parts=[ToolCallPart("run_code",{"code":code},tool_call_id="paired")])
+ with system.agents.researcher.override(model=scripted(respond)):
+  response=system.agents.researcher.run_sync("execute paired analysis",deps=ResearcherDeps(runtime=runtime,block_id=block.block_id))
+ measurements=repository.store.records(kind=RecordKind.MEASUREMENT,block_id=block.block_id)
+ assert len(measurements)==3, [str(p) for m in response.all_messages() for p in m.parts if p.part_kind not in {"user-prompt","text","tool-call"}]
+ values=measurements[0].payload["values"]
+ assert values["correlation"]==pytest.approx(0.9819805060619657)
+ assert measurements[0].payload["diagnostics"]["paired_entities"]==["a","b","c"]
+ assert measurements[0].payload["diagnostics"]["counts"]=={"total_rows":4,"complete_pairs":3,"excluded_rows":1}
+ assert len(repository.store.records(kind=RecordKind.EVIDENCE))==2
+ assert len(runtime.research_state.get(block.block_id).evidence_ids)==2
+ spec=AnalysisSpec(analysis_id="bad",question="q",population="slice",estimand="r",method="pearson_correlation",variables=("x","y"),fields={"x":"x","y":"y"},entity_field="id",source_refs=(record.acquisition_id,))
+ with pytest.raises(ValueError,match="duplicate entity"):
+  runtime.science.execute_source(record.model_copy(update={"records":({"id":"same","x":1,"y":2},{"id":"same","x":3,"y":4})}),spec)
+ with pytest.raises(ValueError,match="nonconstant"):
+  runtime.science.execute_source(record.model_copy(update={"records":({"id":"a","x":1,"y":2},{"id":"b","x":1,"y":4})}),spec)
+ with pytest.raises(ValueError,match="not supplied arrays"):
+  runtime.science.execute_source(record,spec.model_copy(update={"inputs":{"x":[1,2],"y":[3,4]}}))
+ repository.store.close()
+ reopened=SqliteResearchStore(tmp_path/"analysis.sqlite3")
+ assert len(reopened.records(kind=RecordKind.EVIDENCE))==2
+ assert reconstruct_block(reopened,block.block_id).unresolved_source_refs==()
+ reopened.close()
+
+
+def test_exact_public_artifact_retention_ownership_and_sandbox_replay(tmp_path):
+ import asyncio,hashlib,subprocess
+ import httpx
+ from src.sources.public import GdcPublicSource
+ from src.sources.models import ScientificArtifact
+ from src.science.sandbox import DockerScientificSandbox,GithubMethodRequest,SandboxError,validate_sandbox_candidate
+ data=b"sample\tx\ty\na\t1\t2\nb\t2\t4\n"
+ file_id="11111111-1111-4111-8111-111111111111"
+ class Stream(httpx.AsyncByteStream):
+  async def __aiter__(self):yield data
+ def transport(request):
+  if request.url.path.startswith("/files/"):
+   return httpx.Response(200,json={"data":{"access":"open","file_size":len(data),"md5sum":hashlib.md5(data).hexdigest()}})
+  return httpx.Response(200,stream=Stream())
+ source=GdcPublicSource(httpx.MockTransport(transport),max_download_bytes=1000)
+ artifact=asyncio.run(source.acquire_file(file_id,"owner","tsv"))
+ database=tmp_path/"artifacts.sqlite3";store=SqliteResearchStore(database);repo=ResearchRepository(store)
+ repo.record_scientific_artifact(artifact);store.close()
+ store=SqliteResearchStore(database);repo=ResearchRepository(store)
+ retained=repo.resolve_scientific_artifact("owner",artifact.artifact_id)
+ assert retained.bytes()==data and retained.byte_sha256==hashlib.sha256(data).hexdigest()
+ assert retained.licence is None and retained.release is None
+ with pytest.raises(ValueError,match="not owned"):repo.resolve_scientific_artifact("peer",artifact.artifact_id)
+ with pytest.raises(ValueError,match="byte identity"):ScientificArtifact.model_validate(retained.model_dump(mode="json")|{"size_bytes":100})
+ seen=[]
+ def runner(arguments,**kwargs):
+  if arguments[:2]==("git","ls-remote"):return subprocess.CompletedProcess(arguments,0,"a"*40+"\tHEAD\n","")
+  if arguments[:3]==("docker","image","inspect"):return subprocess.CompletedProcess(arguments,0,"sha256:"+"b"*64+"\n","")
+  if arguments[:2]==("docker","run"):
+   seen.append(arguments)
+   command=arguments[arguments.index("sha256:"+"b"*64)+1:]
+   if command==("python","method.py","/input/request.json"):
+    mount=next(x for x in arguments if x.endswith(":/input/artifacts:ro"))
+    host=Path(mount.removesuffix(":/input/artifacts:ro"))
+    assert (host/retained.byte_sha256).read_bytes()==data
+    return subprocess.CompletedProcess(arguments,0,'{"values":{"rows":2}}\n',"")
+  return subprocess.CompletedProcess(arguments,0,"ok\n","")
+ request=GithubMethodRequest(repository_url="https://github.com/example/method",test_command=("pytest",),execute_command=("python","method.py","/input/request.json"),input_json={"path":f"/input/artifacts/{retained.byte_sha256}"},input_artifacts=(retained,))
+ sandbox=DockerScientificSandbox(runner=runner);candidate=sandbox.acquire_and_execute(request)
+ result=validate_sandbox_candidate(candidate,"file-analysis")
+ assert result.values=={"rows":2.0} and result.origin=="sandbox"
+ assert sandbox.replay(candidate).receipt.input_sha256==candidate.receipt.input_sha256
+ assert all("none" in args for args in seen if ":/input/artifacts:ro" in " ".join(args))
+ mutated=retained.model_copy(update={"content_base64":"YmFk"})
+ with pytest.raises(ValueError,match="byte identity"):sandbox.acquire_and_execute(request.model_copy(update={"input_artifacts":(mutated,)}))
+ # Exercise the real Code Mode acquisition -> owned byte resolution -> sandbox -> admission path.
+ from src.runtime.pydantic_ai.contracts import ResearcherDeps
+ system=cycle_system();runtime=system.runtime;runtime.repository=repo;runtime.gdc=source;runtime.sandbox=sandbox
+ block=runtime.manager.create("scientific file measurement","fixture bridge",ResourceAllocation(seconds=60,handoff_reserve_seconds=5))
+ repo.record_block(block)
+ calls=0
+ async def respond(messages,info):
+  nonlocal calls
+  calls+=1
+  if calls>1:return ModelResponse(parts=[TextPart("complete")])
+  code=f'a=await acquire_gdc_file(file_id="{file_id}",format="tsv")\nc=await acquire_github_scientific_method(capability_need="paired file rows",why_existing_capabilities_are_inadequate="Existing metadata wrappers do not parse this file",repository_url="https://github.com/example/method",requested_ref="HEAD",install_command=["python","-m","pip","install","."],test_command=["pytest"],execute_command=["python","method.py","/input/request.json"],input_json={{"path":a["sandbox_path"]}},artifact_ids=[a["artifact_id"]])\nawait validate_sandbox_measurement(candidate_id=c["candidate_id"],analysis_id="bridge")\nawait admit_measurement(analysis_id="bridge")'
+  return ModelResponse(parts=[ToolCallPart("run_code",{"code":code},tool_call_id="bridge")])
+ with system.agents.researcher.override(model=scripted(respond)):
+  response=system.agents.researcher.run_sync("bounded file bridge",deps=ResearcherDeps(runtime=runtime,block_id=block.block_id))
+ assert len(store.records(kind=RecordKind.EVIDENCE,block_id=block.block_id))==1, response.all_messages()
+ assert len(store.records(kind=RecordKind.SCIENTIFIC_ARTIFACT,block_id=block.block_id))==1
+ assert reconstruct_block(store,block.block_id).unresolved_source_refs==()
+ # Access and byte limits are transport failures, never negative scientific results.
+ denied=GdcPublicSource(httpx.MockTransport(lambda req:httpx.Response(200,json={"data":{"access":"controlled"}})))
+ with pytest.raises(ValueError,match="explicitly open"):asyncio.run(denied.acquire_file(file_id,"owner","tsv"))
+ bounded=GdcPublicSource(httpx.MockTransport(transport),max_download_bytes=10)
+ with pytest.raises(ValueError,match="byte budget"):asyncio.run(bounded.acquire_file(file_id,"owner","tsv"))
+ store.close()

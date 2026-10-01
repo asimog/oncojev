@@ -25,6 +25,7 @@ class BlockReconstruction(BaseModel, frozen=True):
     jev_failures: tuple[dict[str, Any], ...]
     artifacts: tuple[dict[str, Any], ...]
     acquisitions: tuple[dict[str, Any], ...] = ()
+    scientific_artifacts: tuple[dict[str, Any], ...] = ()
     literature: tuple[dict[str, Any], ...] = ()
     sandbox_requests: tuple[dict[str, Any], ...] = ()
     sandbox_candidates: tuple[dict[str, Any], ...] = ()
@@ -71,6 +72,7 @@ def reconstruct_block(store: SqliteResearchStore, block_id: str) -> BlockReconst
     candidates = payloads(RecordKind.SANDBOX_CANDIDATE)
     inputs = {p["acquisition_id"]: p for p in acquisitions}
     inputs.update({p["candidate_id"]: p for p in candidates})
+    inputs.update({p["artifact_id"]:p for p in payloads(RecordKind.SCIENTIFIC_ARTIFACT)})
     unresolved = tuple(sorted({ref for m in payloads(RecordKind.MEASUREMENT) for ref in m.get("source_refs", ()) if ref not in inputs}))
     invocations = []
     for event in events:
@@ -94,7 +96,7 @@ def reconstruct_block(store: SqliteResearchStore, block_id: str) -> BlockReconst
         jev_outputs=payloads(RecordKind.JEV_OUTPUT),
         jev_failures=payloads(RecordKind.JEV_FAILURE),
         artifacts=payloads(RecordKind.ARTIFACT),
-        acquisitions=acquisitions, literature=payloads(RecordKind.LITERATURE),
+        acquisitions=acquisitions, scientific_artifacts=payloads(RecordKind.SCIENTIFIC_ARTIFACT), literature=payloads(RecordKind.LITERATURE),
         sandbox_requests=payloads(RecordKind.SANDBOX_REQUEST), sandbox_candidates=candidates,
         verifications=payloads(RecordKind.VERIFICATION), index_receipts=receipts, jev_calls=tuple(calls.values()),
         candidate_history=tuple(e.payload for e in events if e.event_type == "FrontierDecision"),

@@ -15,7 +15,7 @@ def content_hash(value: object) -> str:
 
 
 class ExecutionReference(BaseModel, frozen=True):
-    kind: Literal["file", "measurement", "evidence", "artifact", "acquisition", "literature", "sandbox_candidate"]
+    kind: Literal["file", "measurement", "evidence", "artifact", "acquisition", "literature", "sandbox_candidate", "scientific_artifact"]
     value: str = Field(min_length=1)
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     block_id: str | None = None

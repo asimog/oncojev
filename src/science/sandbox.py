@@ -17,6 +17,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field, field_validator, computed_field
 
 from src.science.models import MeasuredResult
+from src.sources.models import ScientificArtifact
 from src.provenance import content_hash
 
 
@@ -46,6 +47,12 @@ class GithubMethodRequest(BaseModel, frozen=True):
     test_command: tuple[str, ...]
     execute_command: tuple[str, ...]
     input_json: dict[str, Any]
+    input_artifacts: tuple[ScientificArtifact,...] = ()
+
+    def input_identity(self) -> str:
+        for artifact in self.input_artifacts:artifact.validate_bytes()
+        if not self.input_artifacts:return _canonical_hash(self.input_json)
+        return _canonical_hash({"json":self.input_json,"artifacts":[{"id":a.artifact_id,"sha256":a.byte_sha256,"size":a.size_bytes,"format":a.format} for a in self.input_artifacts]})
 
     @field_validator("repository_url")
     @classmethod
@@ -123,6 +130,7 @@ class DockerScientificSandbox:
         self._runner = runner
 
     def acquire_and_execute(self, request: GithubMethodRequest) -> SandboxMeasurementCandidate:
+        request.input_identity()  # Reject corrupted bytes before acquisition or execution.
         with tempfile.TemporaryDirectory(prefix="oncojev-sandbox-") as temporary:
             root = Path(temporary)
             environment = self._environment(root)
@@ -134,6 +142,10 @@ class DockerScientificSandbox:
             self._require_success("checkout", self._run(("git", "-C", str(repository), "checkout", "--detach", commit), root, environment))
             input_file = root / "input.json"
             input_file.write_text(json.dumps(request.input_json, sort_keys=True), encoding="utf-8")
+            artifact_directory=root / "artifacts"
+            artifact_directory.mkdir()
+            for artifact in request.input_artifacts:
+                (artifact_directory / artifact.byte_sha256).write_bytes(artifact.bytes())
             venv = root / "venv"
             venv.mkdir()
             bootstrap = self._docker("none", repository, venv, input_file, ("python", "-m", "venv", "/venv"), root, environment, image=image, include_input=False)
@@ -155,7 +167,7 @@ class DockerScientificSandbox:
                 commit_sha=commit,
                 environment=resolved_environment,
                 environment_sha256=_canonical_hash(resolved_environment),
-                input_sha256=_canonical_hash(request.input_json),
+                input_sha256=request.input_identity(),
                 install=install[0], test=test[0], first_run=first[0], replay_run=replay[0], bootstrap=bootstrap[0],
             )
             candidate_id = str(uuid4())
@@ -196,7 +208,7 @@ class DockerScientificSandbox:
     def _docker(self, network: str, repository: Path, venv: Path, input_file: Path, command: tuple[str, ...], root: Path, environment: dict[str, str], *, image: str, include_input: bool) -> tuple[SandboxInvocation, str]:
         mounts = ("-v", f"{repository}:/repo:ro", "-v", f"{venv}:/venv")
         if include_input:
-            mounts = (*mounts, "-v", f"{input_file}:/input/request.json:ro")
+            mounts = (*mounts, "-v", f"{input_file}:/input/request.json:ro", "-v", f"{root / 'artifacts'}:/input/artifacts:ro")
         args = ("docker", "run", "--rm", "--network", network, "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "128", "--cpus", str(self.policy.cpu), "--memory", f"{self.policy.memory_mb}m", "--tmpfs", "/tmp:rw,nosuid,nodev,noexec,size=256m", *mounts, "-w", "/repo", "-e", "HOME=/tmp/sandbox", "-e", "PYTHONNOUSERSITE=1", "-e", "PIP_NO_INPUT=1", "-e", "PATH=/venv/bin:/usr/local/bin:/usr/bin:/bin", image, *command)
         result = self._run(args, root, environment)
         invocation = SandboxInvocation(command=command, exit_status=result.returncode, stdout_sha256=_sha256(result.stdout.encode()), stderr_sha256=_sha256(result.stderr.encode()))
@@ -240,7 +252,7 @@ def validate_sandbox_candidate(candidate: SandboxMeasurementCandidate, analysis_
         raise SandboxError("candidate lacks replayable request, policy or output")
     if not SHA.fullmatch(receipt.commit_sha) or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(receipt.environment.get("image"))):
         raise SandboxError("candidate environment and commit must be immutable")
-    if receipt.repository_url != candidate.request.repository_url or receipt.input_sha256 != _canonical_hash(candidate.request.input_json):
+    if receipt.repository_url != candidate.request.repository_url or receipt.input_sha256 != candidate.request.input_identity():
         raise SandboxError("sandbox input identity mismatch")
     if receipt.environment_sha256 != _canonical_hash(receipt.environment):
         raise SandboxError("sandbox environment identity mismatch")

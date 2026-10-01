@@ -112,3 +112,17 @@ inspection and deterministic finalization remain available. Hard SDK limits may
 end the agent run, after which Python still records its outcome and partial dossier.
 
 F4 exposes progressive OncoLab cards and explicit contract expansion, plus local method, representation, hypothesis/test and statement-support measurements. Local semantic contracts are not promoted capabilities. External GitHub acquisition retains inadequacy rationale and alternatives; installed lexical overlap no longer vetoes an unmet need. Existing sandbox, credential and allocation limits apply.
+
+F5 adds source-resolved Pearson/simple OLS over one retained acquisition, with unique
+entity keys, complete paired rows, explicit fields/transforms/design and missingness
+counts. Joins, covariates, survival and TMB remain unsupported. Association is not
+causal inference; method assumptions and population representativeness remain
+limitations. The bundled Pearson record proves only its three-row fixture.
+
+Open GDC file acquisition requires per-file open metadata and bounded anonymous
+streaming, retaining exact bytes/hash/size/source identity in immutable typed
+SQLite records. Sandbox requests retain those owned inputs and mount them read-only
+at `/input/artifacts/<byte_sha256>` with execution network disabled. Unknown licence
+and release remain null. Controlled-access and arbitrary URL acquisition remain
+unavailable. JSON acquisition hashes continue to identify structured retained
+content, not unstored HTTP bodies.

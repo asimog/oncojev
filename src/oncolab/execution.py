@@ -16,6 +16,11 @@ class ExecutionRoute(BaseModel, frozen=True):
 
 
 ROUTES = {
+    "source.gdc-file": (ExecutionRoute(tool="acquire_gdc_file",required_inputs=("open_file_id",)),),
+    "science.source-paired": (
+        ExecutionRoute(tool="run_source_analysis",operation="pearson_correlation",required_inputs=("acquisition","x","y"),minimum_rows=2),
+        ExecutionRoute(tool="run_source_analysis",operation="ordinary_least_squares",required_inputs=("acquisition","x","y"),minimum_rows=3),
+    ),
     "science.acquisition-summary": (ExecutionRoute(tool="measure_acquisition", required_inputs=("acquisition",)),),
     "stat.scipy": (
         ExecutionRoute(tool="run_statistics", operation="pearson_correlation", required_inputs=("x", "y"), minimum_rows=2, exploratory=True),

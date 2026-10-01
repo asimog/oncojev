@@ -26,3 +26,13 @@ records:
     execution_scope: Recorded exploratory FigureArtifact creation only; SVG bytes and measured input linkage unavailable.
     source_reference: .upstream/INDEX.md
     evidence: [redacted artifact identity and original SVG hash; not verified science]
+  - capability_id: science.source-paired
+    verification_id: f5-paired-fixture-2026-10-01
+    execution_reference:
+      kind: file
+      value: src/oncolab/proven/artifacts/f5-paired-fixture.json
+      sha256: 636a6e4f1254551a2b5f46f34d32c4f4efc229ab7e7a6b564ce092e5a961a3cb
+    execution_scope: Source-resolved Pearson on three controlled paired rows with unique entity keys; not live scientific utility or family promotion.
+    source_reference: src/science/execution.py
+    outcome: execution_observed
+    evidence: [exact controlled input and AnalysisSpec retained; independently expected correlation 0.9819805060619657]

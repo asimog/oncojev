@@ -3,7 +3,7 @@ import re
 
 import httpx
 
-from src.sources.models import AcquisitionRecord, LiteratureRecord, LiteratureSearchResult
+from src.sources.models import AcquisitionRecord, CoverageContract, ScientificArtifact, LiteratureRecord, LiteratureSearchResult
 
 
 class GdcPublicSource:
@@ -14,14 +14,55 @@ class GdcPublicSource:
         self._client = httpx.AsyncClient(base_url="https://api.gdc.cancer.gov", transport=transport, headers={"Accept": "application/json"}, timeout=20)
         self._max_download_bytes = max_download_bytes
 
-    async def search(self, endpoint: str, filters: dict[str, Any], fields: tuple[str, ...], size: int = 10) -> AcquisitionRecord:
+    async def search(self, endpoint: str, filters: dict[str, Any], fields: tuple[str, ...], size: int = 10, offset: int = 0, sort: str = "id:asc") -> AcquisitionRecord:
         if endpoint not in self.allowed_endpoints: raise ValueError("unsupported public GDC endpoint")
         if not 1 <= size <= 100: raise ValueError("size must be between 1 and 100")
+        if offset < 0 or offset > 1_000_000: raise ValueError("offset is outside bounded pagination")
+        if not re.fullmatch(r"[A-Za-z0-9_.]+:(asc|desc)",sort): raise ValueError("declare one stable ordering field")
         content = list(filters.get("content", [])) if filters.get("op") == "and" else [filters]
         if endpoint == "files": content.append({"op":"in","content":{"field":"files.access","value":["open"]}})
-        payload={"filters":{"op":"and","content":content},"fields":",".join(fields),"format":"JSON","size":size}
+        payload={"filters":{"op":"and","content":content},"fields":",".join(fields),"format":"JSON","size":size,"from":offset,"sort":sort}
         response=await self._client.post(f"/{endpoint}",json=payload);response.raise_for_status();self._validate_size(response);body=response.json();hits=body.get("data",{}).get("hits",[])
-        return AcquisitionRecord(source="gdc",request=payload,records=tuple(hits[:size]),provenance=("https://api.gdc.cancer.gov",endpoint),response_bytes=len(response.content))
+        pagination=body.get("data",{}).get("pagination",{})
+        total=pagination.get("total")
+        total=total if isinstance(total,int) and not isinstance(total,bool) and total>=0 else None
+        rows=hits[:size];ids=[row.get("id") for row in rows]
+        known=all(isinstance(i,str) and i for i in ids)
+        unique=len(set(ids)) if known else None
+        duplicate=len(rows)-unique if unique is not None else 0
+        complete=offset==0 and total is not None and len(rows)==total and known and duplicate==0
+        coverage=CoverageContract(endpoint=endpoint,offset=offset,requested_size=size,returned_rows=len(rows),reported_total=total,
+            ordering=sort,id_field="id",unique_entities=unique,duplicate_rows=duplicate,complete=complete,
+            limitations=() if complete else ("Bounded page; completeness not established.",))
+        return AcquisitionRecord(source="gdc",request=payload,records=tuple(rows),coverage=coverage,
+            provenance=("https://api.gdc.cancer.gov",endpoint),response_bytes=len(response.content))
+
+    async def acquire_file(self,file_id:str,block_id:str,format:str)->ScientificArtifact:
+        """A single open GDC file; no credentials, arbitrary URL or redirects."""
+        import base64
+        import hashlib
+        from uuid import UUID
+        UUID(file_id)
+        if format not in {"tsv","json","text","binary","gzip"}:raise ValueError("declare supported byte format")
+        metadata=await self._client.get(f"/files/{file_id}",params={"fields":"access,file_name,data_format,md5sum,file_size"})
+        metadata.raise_for_status();self._validate_size(metadata)
+        info=metadata.json().get("data",{})
+        if info.get("access")!="open":raise ValueError("only explicitly open GDC files may be acquired")
+        if isinstance(info.get("file_size"),int) and info["file_size"]>self._max_download_bytes:
+            raise ValueError("artifact exceeds byte budget")
+        chunks=[];size=0
+        async with self._client.stream("GET",f"/data/{file_id}") as response:
+            response.raise_for_status()
+            async for chunk in response.aiter_raw():
+                size+=len(chunk)
+                if size>self._max_download_bytes:raise ValueError("artifact exceeds byte budget")
+                chunks.append(chunk)
+        data=b"".join(chunks)
+        if info.get("file_size") is not None and info["file_size"]!=size:raise ValueError("file size differs from source metadata")
+        if info.get("md5sum") and hashlib.md5(data).hexdigest()!=info["md5sum"]:raise ValueError("source MD5 differs from retained bytes")
+        return ScientificArtifact(block_id=block_id,source="gdc",request={"file_id":file_id,"metadata":info},source_identity=file_id,
+            content_base64=base64.b64encode(data).decode("ascii"),byte_sha256=hashlib.sha256(data).hexdigest(),size_bytes=size,format=format,
+            provenance=("https://api.gdc.cancer.gov",f"/data/{file_id}"))
 
     def _validate_size(self, response: httpx.Response) -> None:
         if len(response.content) > self._max_download_bytes:

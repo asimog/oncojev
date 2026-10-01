@@ -239,7 +239,7 @@ class HarnessRuntime:
         return self.acquisitions[acquisition_id].model_copy(deep=True)
 
     def verification(self, block_id, capability_id, record_id, kind, value, scope, outcome="execution_observed"):
-        record = OncoLabVerificationRecord(capability_id=capability_id, verification_id=f"{block_id}:{record_id}",
+        record = OncoLabVerificationRecord(capability_id=capability_id, verification_id=f"{block_id}:{kind}:{record_id}:{outcome}",
             execution_reference=ExecutionReference(kind=kind, value=record_id, block_id=block_id,
                                                    sha256=content_hash(value.model_dump(mode="json"))),
             execution_scope=scope, outcome=outcome, source_reference="runtime typed execution",
@@ -446,6 +446,8 @@ def register_researcher_tools(
     register_memory_tools(agent)
     register_search_page(agent)
     semantic_tools=register_local_semantic_tools(agent)
+    from src.runtime.pydantic_ai.scientific_tools import register_scientific_tools
+    register_scientific_tools(agent)
     def block_for(ctx: RunContext[ResearcherDeps]):
         return ctx.deps.runtime.manager.block(ctx.deps.block_id)
 
@@ -512,14 +514,14 @@ def register_researcher_tools(
 
     @agent.tool
     async def acquire_gdc(
-        ctx: RunContext[ResearcherDeps], endpoint: str, filters: dict[str, Any], fields: list[str], size: int = 10
+        ctx: RunContext[ResearcherDeps], endpoint: str, filters: dict[str, Any], fields: list[str], size: int = 10, offset: int = 0, sort: str = "id:asc"
     ) -> dict[str, Any]:
         """Acquire bounded anonymous GDC metadata. Tokens and controlled access are impossible here."""
         runtime = ctx.deps.runtime
         runtime.claim(ctx.deps.block_id, "source", runtime.max_source_calls)
         call_id = invocation(ctx, "source.gdc", endpoint=endpoint)
         try:
-            record = await runtime.gdc.search(endpoint, filters, tuple(fields), size)
+            record = await runtime.gdc.search(endpoint, filters, tuple(fields), size, offset, sort)
         except Exception as error:
             failure(ctx, call_id, "source.gdc", error)
             raise
@@ -528,7 +530,7 @@ def register_researcher_tools(
         runtime.verification(ctx.deps.block_id, "source.gdc", record.acquisition_id, "acquisition", record, f"Anonymous {endpoint} retrieval; bounded response slice only.")
         save(ctx, state(ctx).append("acquisitions", StateFragment(fragment_id=record.acquisition_id, kind="gdc", summary=f"{endpoint}: {len(record.records)} public records", provenance=record.provenance,
             details={"source": record.source, "content_sha256": record.content_sha256, "request_sha256": content_hash(record.request),
-                     "record_count": len(record.records), "coverage": "unknown", "source_refs": [record.acquisition_id]})))
+                     "record_count": len(record.records), "coverage": record.coverage.model_dump(mode="json") if record.coverage else None, "source_refs": [record.acquisition_id]})))
         return record.model_dump(mode="json")
 
     @agent.tool
@@ -574,7 +576,7 @@ def register_researcher_tools(
     async def acquire_github_scientific_method(
         ctx: RunContext[ResearcherDeps], capability_need: str, why_existing_capabilities_are_inadequate: str,
         repository_url: str, requested_ref: str, install_command: list[str], test_command: list[str],
-        execute_command: list[str], input_json: dict[str, Any],
+        execute_command: list[str], input_json: dict[str, Any], artifact_ids: list[str] = [],
     ) -> dict[str, Any]:
         """Acquire public GitHub code only through the credential-free Docker sandbox; no stdout or files are returned."""
         if not why_existing_capabilities_are_inadequate.strip():
@@ -589,7 +591,11 @@ def register_researcher_tools(
         append(ctx, "ExternalMethodInadequacy", {"need":capability_need,"rationale":why_existing_capabilities_are_inadequate,
             "alternatives":[{"capability_id":m.capability_id,"assessment":runtime.method_assessments.get(f"{ctx.deps.block_id}:{m.capability_id}")} for m in matches]})
         runtime.claim(ctx.deps.block_id, "sandbox", runtime.max_sandbox_calls)
-        request = GithubMethodRequest(repository_url=repository_url, requested_ref=requested_ref, install_command=tuple(install_command), test_command=tuple(test_command), execute_command=tuple(execute_command), input_json=input_json)
+        artifacts=[]
+        for artifact_id in artifact_ids:
+            if runtime.repository is None:raise ValueError("file execution requires durable retained artifacts")
+            artifacts.append(runtime.repository.resolve_scientific_artifact(ctx.deps.block_id,artifact_id))
+        request = GithubMethodRequest(input_artifacts=tuple(artifacts), repository_url=repository_url, requested_ref=requested_ref, install_command=tuple(install_command), test_command=tuple(test_command), execute_command=tuple(execute_command), input_json=input_json)
         request_id = str(uuid4())
         if runtime.repository is not None:
             runtime.repository.record_immutable(RecordKind.SANDBOX_REQUEST, request_id, request, ctx.deps.block_id)
@@ -622,6 +628,12 @@ def register_researcher_tools(
             if runtime.sandbox_owners.get(candidate_id) != ctx.deps.block_id:
                 raise ValueError("sandbox candidate is not owned by this block")
             candidate = runtime.sandbox_candidates[candidate_id].model_copy(deep=True)
+        if candidate.request and candidate.request.input_artifacts:
+            if runtime.repository is None:raise ValueError("file validation requires durable owned inputs")
+            for artifact in candidate.request.input_artifacts:
+                retained=runtime.repository.resolve_scientific_artifact(ctx.deps.block_id,artifact.artifact_id)
+                if retained.byte_sha256 != artifact.byte_sha256 or retained.request != artifact.request:
+                    raise ValueError("sandbox retained artifact identity mismatch")
         measurement = validate_sandbox_candidate(candidate, analysis_id)
         ctx.deps.runtime.measurements[(ctx.deps.block_id, analysis_id)] = measurement
         save(ctx, state(ctx).add_measurement(measurement))
@@ -683,12 +695,23 @@ def register_researcher_tools(
     async def admit_measurement(ctx: RunContext[ResearcherDeps], analysis_id: str) -> dict[str, Any]:
         """Admit only a deterministic result previously produced by run_statistics or run_science."""
         result = ctx.deps.runtime.measurements[(ctx.deps.block_id, analysis_id)]
-        evidence = admit_scientific_evidence(result)
+        evidence = admit_scientific_evidence(result,ctx.deps.block_id)
+        if runtime := ctx.deps.runtime:
+            existing=runtime.evidence.get(evidence.evidence_id)
+            if existing is None and runtime.repository is not None:
+                matches=[r for r in runtime.repository.store.records(kind=RecordKind.EVIDENCE,block_id=ctx.deps.block_id) if r.record_id==evidence.evidence_id]
+                if matches:
+                    from src.evidence.models import ScientificEvidence
+                    existing=ScientificEvidence.model_validate(matches[-1].payload)
+            if existing is not None:
+                append(ctx,"EvidenceAdmissionReused",{"evidence_id":existing.evidence_id,"analysis_id":analysis_id})
+                save(ctx,state(ctx).add_evidence(existing.evidence_id))
+                return existing.model_dump(mode="json")
         ctx.deps.runtime.evidence[evidence.evidence_id] = evidence
         save(ctx, state(ctx).add_evidence(evidence.evidence_id))
         if ctx.deps.runtime.repository is not None:
             ctx.deps.runtime.repository.record_evidence(evidence, ctx.deps.block_id)
-        capability_id = "software.github-scientific" if result.origin == "sandbox" else "science.acquisition-summary"
+        capability_id = "software.github-scientific" if result.origin == "sandbox" else "science.source-paired" if "source-paired-v1" in result.provenance else "science.acquisition-summary"
         ctx.deps.runtime.verification(ctx.deps.block_id, capability_id, analysis_id, "measurement", result,
                                      f"Validated {result.origin} measurement: {result.provenance}; declared execution only.", "measurement_validated")
         append(ctx, "EvidenceAdmission", {"evidence_id": evidence.evidence_id, "analysis_id": analysis_id})

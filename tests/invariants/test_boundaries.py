@@ -294,3 +294,48 @@ def test_oncolab_continuation_recovers_zero_overlap_candidates_and_rejects_stale
     changed=original.describe('stat.scipy').model_copy(update={'purpose':'changed scientific contract'})
     index=OncoLabIndex((changed,))
     with pytest.raises(ValueError):index.search_page('unseen-synonym',continuation=cursor)
+
+
+def test_source_summary_reports_undefined_sd_and_missingness_denominators():
+ from src.sources.models import AcquisitionRecord
+ executor=ScienceExecutor()
+ record=AcquisitionRecord(source="fixture",request={},records=({"v":4},{"v":None},{"v":"invalid"},{}),provenance=("controlled-source",))
+ result=executor.measure_acquisition(record,"summary-single","v")
+ assert result.values["standard_deviation"] is None
+ assert result.values["mean"]==4 and result.values["n"]==1
+ assert {k:result.values[k] for k in ("total_rows","valid_numeric","absent","null","invalid_type","nonfinite")}=={
+  "total_rows":4,"valid_numeric":1,"absent":1,"null":1,"invalid_type":1,"nonfinite":0}
+ assert "n>=2" in result.diagnostics["undefined"]["standard_deviation"]
+ empty=executor.measure_acquisition(record.model_copy(update={"records":({"v":None},)}),"empty","v")
+ assert empty.values["mean"] is None and empty.values["n"]==0
+ two=executor.measure_acquisition(record.model_copy(update={"records":({"v":2},{"v":4})}),"two","v")
+ assert two.values["standard_deviation"]==pytest.approx(2**.5)
+ # Nonfinite structured acquisitions cannot acquire a canonical identity.
+ with pytest.raises(ValueError):executor.measure_acquisition(record.model_copy(update={"records":({"v":float("nan")},)}),"nonfinite","v")
+
+
+def test_repeat_admission_is_identity_stable():
+ from src.sources.models import AcquisitionRecord
+ record=AcquisitionRecord(source="fixture",request={},records=({"id":"a"},),provenance=("controlled-source",))
+ result=ScienceExecutor().measure_acquisition(record,"repeat")
+ assert admit_scientific_evidence(result).evidence_id==admit_scientific_evidence(result).evidence_id
+
+
+def test_ordered_source_pages_preserve_totals_and_reject_overlap():
+ import asyncio
+ from src.sources.coverage import combine_pages
+ def transport(request):
+  payload=__import__("json").loads(request.content)
+  offset=payload["from"]
+  return httpx.Response(200,json={"data":{"hits":[{"id":str(offset+1),"age":10+offset}],"pagination":{"total":2}}})
+ source=GdcPublicSource(httpx.MockTransport(transport))
+ first=asyncio.run(source.search("cases",{},("id","age"),size=1))
+ second=asyncio.run(source.search("cases",{},("id","age"),size=1,offset=1))
+ assert not first.coverage.complete and first.coverage.reported_total==2
+ merged=combine_pages((first,second))
+ assert merged.coverage.complete and merged.coverage.unique_entities==2 and merged.coverage.returned_rows==2
+ with pytest.raises(ValueError,match="repeated"):combine_pages((first,first))
+ with pytest.raises(ValueError,match="overlapping"):combine_pages((first,second.model_copy(update={"records":first.records})))
+ with pytest.raises(ValueError,match="total changed"):combine_pages((first,second.model_copy(update={"coverage":second.coverage.model_copy(update={"reported_total":3})})))
+ unknown=first.model_copy(update={"coverage":first.coverage.model_copy(update={"reported_total":None})})
+ assert not combine_pages((unknown,)).coverage.complete

@@ -3,9 +3,10 @@
 from src.evidence.models import ScientificEvidence
 from src.science.models import MeasuredResult
 import math
+from src.provenance import content_hash
 
 
-def admit_scientific_evidence(result: MeasuredResult) -> ScientificEvidence:
+def admit_scientific_evidence(result: MeasuredResult, scope_id: str | None = None) -> ScientificEvidence:
     if result.deterministic is not True:
         raise ValueError("only deterministic measurements may be admitted")
     if not result.provenance:
@@ -17,4 +18,5 @@ def admit_scientific_evidence(result: MeasuredResult) -> ScientificEvidence:
     for value in result.values.values():
         if isinstance(value, (int, float)) and not isinstance(value, bool) and not math.isfinite(float(value)):
             raise ValueError("evidence values must be finite")
-    return ScientificEvidence(measurement=result)
+    identity=result.analysis_key or content_hash(result.model_dump(mode="json",exclude={"analysis_id","replication_id"}))
+    return ScientificEvidence(evidence_id=content_hash({"scope":scope_id,"analysis":identity,"replication":result.replication_id}),measurement=result)

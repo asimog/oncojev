@@ -35,7 +35,7 @@ class ResearchState(BaseModel, frozen=True):
         return self.model_copy(update={"measurements": (*self.measurements, result)})
 
     def add_evidence(self, evidence_id: str) -> "ResearchState":
-        return self.model_copy(update={"evidence_ids": (*self.evidence_ids, evidence_id)})
+        return self if evidence_id in self.evidence_ids else self.model_copy(update={"evidence_ids": (*self.evidence_ids, evidence_id)})
 
 
 class ProjectionSpec(BaseModel, frozen=True):
@@ -70,7 +70,7 @@ def project_state(state: ResearchState, spec: ProjectionSpec) -> JevProjection:
                "observations": fragments(state.observations), "acquisition_summaries": fragments(state.acquisitions),
                "measurements": [{"analysis_id": m.analysis_id, "values": m.values, "origin": m.origin,
                                   "source_refs": m.source_refs, "input_sha256": m.input_sha256,
-                                  "provenance": m.provenance, "limitations": m.limitations} for m in state.measurements[-spec.max_items:]],
+                                  "provenance": m.provenance, "limitations": m.limitations, "interpretation":m.interpretation, "analysis_key":m.analysis_key, "diagnostics":m.diagnostics} for m in state.measurements[-spec.max_items:]],
                "evidence_refs": list(state.evidence_ids[-spec.max_items:]),
                "uncertainties": fragments(state.uncertainties), "prior_actions": fragments(state.prior_actions),
                "omitted": {}}

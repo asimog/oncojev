@@ -106,8 +106,9 @@ def test_conditions_differ_only_in_semantic_capabilities_and_are_all_determinist
 
     for metrics in report.conditions:
         assert metrics.measurements == 2
-        assert metrics.evidence == 2
-        assert metrics.source_bound_evidence == 2
+        assert metrics.evidence == 1
+        assert metrics.unique_analysis_outcomes == 1 and metrics.declared_replication_outcomes == 0
+        assert metrics.source_bound_evidence == 1
         assert metrics.deterministic_evidence is True
         assert metrics.dossiers == 1
         assert metrics.has_preferred_continuation is True
@@ -177,7 +178,7 @@ def test_failed_condition_preserves_partial_results_and_continues(failure):
     assert all(m.cycles == 1 for m in report.conditions)
     assert all(m.status.value == "complete" and m.completed_blocks == 1 for m in remaining)
     if failure == "researcher":
-        assert first.evidence == 2 and first.dossiers == 1
+        assert first.evidence == 1 and first.dossiers == 1
         assert first.completed_blocks == 0 and first.failed_cycles == 1
     elif failure in {"custom_before_cycle", "setup_failure"}:
         assert first.completed_blocks == 0 and first.failed_cycles == 1

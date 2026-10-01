@@ -1,0 +1,112 @@
+{
+  "scope": "Controlled fixture paired-source execution; not live oncology utility or capability-family promotion",
+  "input": {
+    "acquisition_id": "controlled-paired-fixture",
+    "source": "controlled-fixture",
+    "request": {
+      "fixture": true
+    },
+    "records": [
+      {
+        "id": "a",
+        "x": 1,
+        "y": 2
+      },
+      {
+        "id": "b",
+        "x": 2,
+        "y": 4
+      },
+      {
+        "id": "c",
+        "x": 3,
+        "y": 5
+      }
+    ],
+    "public_only": true,
+    "provenance": [
+      "independently-declared-fixture"
+    ],
+    "response_bytes": null,
+    "coverage": null,
+    "content_sha256": "4a5c62df3b1233515f4f381419cd31b63ade1a30651e656f4424f4a621f3736f"
+  },
+  "analysis": {
+    "analysis_id": "f5-paired-fixture",
+    "question": "linear association",
+    "population": "three controlled rows",
+    "estimand": "Pearson r",
+    "method": "pearson_correlation",
+    "variables": [
+      "x",
+      "y"
+    ],
+    "inputs": {},
+    "source_refs": [
+      "controlled-paired-fixture"
+    ],
+    "entity_field": "id",
+    "fields": {
+      "x": "x",
+      "y": "y"
+    },
+    "design": "paired independent row assumption",
+    "entity_unit": "sample",
+    "transformations": {},
+    "covariates": [],
+    "missingness_policy": "complete_pair",
+    "replication_id": null
+  },
+  "result": {
+    "analysis_id": "f5-paired-fixture",
+    "values": {
+      "correlation": 0.9819805060619655,
+      "p_value": 0.12103771832367739,
+      "n": 3
+    },
+    "provenance": [
+      "scipy.pearsonr",
+      "f5-paired-fixture",
+      "source-paired-v1",
+      "e066b998c63fb400b3d0ed5c56389c00d24d7e3c3038e53be3f52d572b913fc6"
+    ],
+    "origin": "source",
+    "source_refs": [
+      "controlled-paired-fixture"
+    ],
+    "input_sha256": "4a5c62df3b1233515f4f381419cd31b63ade1a30651e656f4424f4a621f3736f",
+    "limitations": [
+      "Association over complete stored rows; no causal interpretation.",
+      "Inference requires independent observations and method-specific assumptions; these are declared, not empirically guaranteed.",
+      "Response coverage does not establish population representativeness."
+    ],
+    "deterministic": true,
+    "analysis_key": "e066b998c63fb400b3d0ed5c56389c00d24d7e3c3038e53be3f52d572b913fc6",
+    "replication_id": null,
+    "interpretation": "associative",
+    "diagnostics": {
+      "counts": {
+        "total_rows": 3,
+        "complete_pairs": 3,
+        "excluded_rows": 0
+      },
+      "excluded_fields": {},
+      "paired_entities": [
+        "a",
+        "b",
+        "c"
+      ],
+      "fields": {
+        "x": "x",
+        "y": "y"
+      },
+      "design": "paired independent row assumption",
+      "entity_unit": "sample",
+      "population": "three controlled rows",
+      "estimand": "Pearson r",
+      "transformations": {},
+      "coverage": null
+    }
+  },
+  "independent_expected_r": 0.9819805060619657
+}

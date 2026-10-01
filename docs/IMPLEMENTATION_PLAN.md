@@ -210,17 +210,17 @@ Each still-open item has one primary disposition; dependencies are cross-referen
 | F1 | DONE | Deterministic allocation, budgets and authority |
 | F2 | DONE | Replayable provenance, registry receipts and telemetry |
 | F3 | DONE | Typed cross-cycle memory and validated start packets |
-| F4 | NEXT, P1 | Semantic search and Jev measurement core |
-| F5 | PLANNED, P1 correctness / P2 expansion | Scientific execution depth and curated capability expansion |
+| F4 | DONE, P1 | Semantic search and Jev measurement core |
+| F5 | DONE, P1 correctness / P2 expansion | Scientific execution depth and curated capability expansion |
 | F6 | PLANNED, P2 | Retention, cleanup and truthful observability |
 
 **Mapping:** old F6 → new F4; old F4 → new F5; old F5 → new F6. Historical identifiers in F0–F3 and original verification remain unchanged; apply this mapping to their forward references. Other docs' old F6 semantic-memory references require follow-up with the relevant implementation; this rewrite does not edit them.
 
-**Order:** F4a is next, evaluation in the same slice. F4b/F4c then ship independently; F4d uses F4c; F4e uses F3 + F4a/F4c. F5a/F5b and F6a/F6b are independent corrective branches over delivered foundations. F5c precedes file-based F5e operations; F5d uses F5a/F5b, F5c only for files. F5e selects one need after F4a rather than waiting for all F4. Numbering does not serialize every branch.
+**Order:** F4a shipped first with evaluation in the same slice. F4b/F4c then ship independently; F4d uses F4c; F4e uses F3 + F4a/F4c. F5a/F5b and F6a/F6b are independent corrective branches over delivered foundations. F5c precedes file-based F5e operations; F5d uses F5a/F5b, F5c only for files. F5e selects one need after F4a rather than waiting for all F4. Numbering does not serialize every branch.
 
 **Authority throughout:** OncoLab (`src/oncolab/`) and Research Memory (`src/memory/`) remain shared application components, not Director-owned. Director allocates global scope; Researcher chooses inside one JevBlock; Science alone measures deterministically and admits evidence; Jev measures bounded semantics; Reasoner generates possibilities; BlockManager owns allocations/deadlines. Python enforces budgets/admission/reproducible frontier rules. Frontier is decision context, not research strategy. Preserve Director Coder, read-only application access, writable `/work/director`, isolation/credentials, service-lifetime Director/durable-memory authority and fresh Researchers/state/skills/budgets. No global Science/Jev plane, swarm, new agent framework or direct Director acquisition tools.
 
-**Batch discipline:** Each remaining batch states primary behavior owners/checks. Credible bug regressions require before-fix evidence; extend existing service/tool/execution fixtures without test-only production seams or duplicate ownership. Focused tests + architecture checker + diff check required; full suite at integration, Linux/browser checks only for affected paths. Documentation targets below are future implementation updates, not authorized edits now.
+**Batch discipline:** Each remaining batch states primary behavior owners/checks. Credible bug regressions require before-fix evidence; extend existing service/tool/execution fixtures without test-only production seams or duplicate ownership. Focused tests + architecture checker + diff check required; full suite at integration, Linux/browser checks only for affected paths. Documentation targets below accompany implementation. The later user request authorizes implementation and a commit between completed phases; the earlier rewrite-only restriction is historical.
 
 #### F0 — P0: truthful cycle outcomes and recovery
 
@@ -414,11 +414,11 @@ Use deterministic checks for routes/access/fields/input presence. Jev cannot cer
 
 **Transition review:** F4 found an explicit paired-association need represented by the lexical-mismatch selection case. F5 should first repair current summary/admission correctness, retain coverage/entity identity, then add source-resolved paired analysis and exact-byte inputs. A curated per-operation association wrapper can close that need without harvesting GDC or requiring its full caller pipelines. Bulk harvesting, embedding/storage migration and automatic promotion triggers remain unmet. Dependency-lock uncertainty remains D8 and must be visible in file replay.
 
-#### F5 — PLANNED: scientific execution depth and curated expansion
+#### F5 — DONE: scientific execution depth and curated expansion
 
 F4a does not require this phase. Correctness over existing admission paths is P1; new families are selected P2 expansion. F2 already retains parsed acquisitions and sandbox requests/candidates.
 
-##### F5a — PLANNED / P1: truthful existing source summaries
+##### F5a — DONE / P1: truthful existing source summaries
 
 **Dependencies:** F2; independent of broader F4/F5. **Problem → behavior:** Admissible source summaries report SD=0 for n=1 and omit invalid/missing denominators; represent undefined statistics/diagnostics explicitly.
 
@@ -426,7 +426,7 @@ F4a does not require this phase. Correctness over existing admission paths is P1
 
 **Acceptance/primary tests:** Before-fix Science/tool regression reproduces n=1 with missing/invalid rows. `test_boundaries.py` owns independently calculated summary/admission cases n=0/1/2, null/invalid/nonfinite and constant/small samples; undefined outputs carry reason, not certainty. Persistence checks only if new typed compatibility introduces a distinct reopen risk. Focused modules + architecture checker. **Docs:** Science/descriptor missingness contracts, CAPABILITIES, tracker. **Non-goals/limits:** no new methods/source family; never silently revise historical measurements.
 
-##### F5b — PLANNED / P1: coverage, population and structural input contracts
+##### F5b — DONE / P1: coverage, population and structural input contracts
 
 **Dependencies:** F2; independent of F4a/F5c. **Problem → behavior:** Response counts lack completeness proof; source contracts make coverage/entity units explicit.
 
@@ -436,7 +436,7 @@ Static GDC extraction is a small optional branch for a specific join/field need:
 
 **Acceptance/primary tests:** `test_boundaries.py` owns acquisition via controlled transport → Science validation for incomplete/repeated/overlapping pages, missing totals, projected fields and one-to-many joins; joined rows cannot inflate patients. Independent declared fixtures, not extractor-generated expectations. Focused module + architecture checker; named live field/access probes before new source-route claims. **Docs:** source/Science/capability contracts, tracker. **Non-goals/limits:** no fixed GDC workflow/all-example access claims.
 
-##### F5c — PLANNED / P2: exact scientific file/artifact bridge
+##### F5c — DONE / P2: exact scientific file/artifact bridge
 
 **Dependencies:** F2 + relevant F5b request/access contract. **Problem → behavior:** Parsed records/JSON mounts do not support broad file-based Science. Deliver bounded public acquisition → exact retained bytes → immutable typed artifact/content identity → block-owned read-only input → isolated deterministic execution → replay/validation → Science admission.
 
@@ -444,7 +444,7 @@ Static GDC extraction is a small optional branch for a specific join/field need:
 
 **Acceptance/primary tests:** `test_persistence.py` owns byte retention/reopen/hash/wrong-owner/cleanup survival at acquisition-to-execution boundary; existing sandbox transport owner checks mount/replay mismatch. Target Linux verifier separately proves filesystem isolation. Admission rejects unresolved/mutated inputs. Focused modules + architecture checker + affected Linux check. **Docs:** source/provenance/sandbox/CAPABILITIES, tracker. **Non-goals/limits:** no arbitrary URL execution/promotion; immutable image alone does not freeze dependency installation (D8).
 
-##### F5d — PLANNED / P1: source-resolved analysis and admission identity
+##### F5d — DONE / P1: source-resolved analysis and admission identity
 
 **Dependencies:** F5a/F5b; F5c only for files. **Problem → behavior:** Scientifically explicit source-resolved analyses and idempotent admission prevent misleading/inflated utility.
 
@@ -452,7 +452,7 @@ Static GDC extraction is a small optional branch for a specific join/field need:
 
 **Acceptance/primary tests:** `test_boundaries.py` owns source-to-Science/tool/admission with independent known numerical results, adversarial pairing, assumptions and exploratory-array rejection; duplicate bug requires before-fix evidence. `test_persistence.py` owns repeat admission/reopen without inflated evidence and distinct analyses on one input. `test_evaluation.py` counts unique outcomes/replication correctly. Focused modules + architecture checker; scientific review of estimand/diagnostics. **Docs:** Science/evidence/capability/identity contracts, tracker. **Non-goals/limits:** no relabelled arrays, inference from counts or mandatory survival/TMB.
 
-##### F5e — PLANNED / P2: one curated capability selected by research need
+##### F5e — DONE / P2: one curated capability selected by research need
 
 **Dependencies:** F4a identifies need/inadequacy; relevant F5b/F5d, F5c for files. Standalone fixture transform need not wait for full caller pipeline. **Problem → behavior:** Useful upstream ideas become truthful per-operation capabilities with actual prerequisites/scoped verification.
 
@@ -461,6 +461,16 @@ Static GDC extraction is a small optional branch for a specific join/field need:
 **Operation gate:** INDEX → manifest → actual clone pin → smallest implementation/tests, then stop. Record missing wrapper, missing input, unsupported environment, credentials, unknown licence/access or explicit prohibition separately. GitHub visibility is not licence certainty; no unsupported non-redistributability claims for BAM/reference/PON/images/capture inputs. Verify selected current anonymous route/artifact constraints before declaring executable sources. Correct impossible-work blocker descriptions here. No execution receipt for reference inspection; fixtures prove scoped execution, not live utility; one receipt never promotes family.
 
 **Acceptance/primary tests:** `test_boundaries.py` owns actual wrapper on independently verified valid/invalid inputs/prerequisite failures; persistence only for novel behavior beyond F2/F5c. Focused modules + architecture checker; scoped live acquisition/execution only when claiming it. **Docs:** descriptor/prerequisites/provenance/scoped record, tracker. **Non-goals/limits:** no whole-repository certification/all-GDC audit/harvesting targets/ORM/admin exposure/mandatory TMB/survival; additional families D7.
+
+**F5 delivery (2026-10-01):** All five bounded batches shipped. Source summaries preserve classification counts/undefined SD rather than fabricate zero. GDC offsets/order/totals/unique IDs survive retention; ordered page composition rejects overlap/gaps/mixed queries/changing totals and discloses absent snapshot guarantees. Source-resolved Pearson/simple OLS constructs complete pairs from unique entity rows, retaining fields, design, estimand, transformations, exclusions and associative limits. Unsupported covariates/joins fail explicitly. Stable scoped admission reuses evidence; declared replication stays separately identified without claiming independence. The first curated operation closes F4's paired-association need; a portable three-row fixture verifies that operation only. Optional GDC static extraction and other candidate families remain selected-need branches D7, not mandatory broad delivery.
+
+ScientificArtifact retains exact bytes with owner/source/request/hash/size/format in immutable persistence; controlled open GDC acquisition validates access, bounds, size and source MD5 when available. Science sandbox requests retain owned bytes and mount `/input/artifacts/<hash>` read-only, with network-disabled execution/replay. Resolution and validation reject corrupted/wrong-owner inputs. No general arbitrary-URL execution or promotion exists. Structured acquisition hashes remain distinct from raw byte hashes; dependency installation remains unlocked (D8).
+
+**Newly verified F2 gap:** Execution and later validation of the same measurement originally reused one immutable verification ID, causing an identity-rebind failure. F5 now includes record kind and outcome in new verification IDs. Historical receipts were not altered. The paired Code Mode regression exercises both transitions and duplicate admission.
+
+**F5 verification:** `python -B -m pytest -p no:cacheprovider`: 99 passed, one existing warning, 91.72 s. Summary/admission regression tests on detached `0b8d4fa` failed on SD=0 and distinct repeat UUIDs (2 failed, 18 deselected); current tests pass. Real Code Mode covers retained source pairs and file acquisition → retained owner/hash resolution → controlled sandbox/replay → Science validation/admission, plus SQLite reopen. `python -B scripts/verify_scientific_artifacts.py` passed real Linux read-only input/root mounts on image `sha256:1c6bfc53933fc364bee31525905264a63967566add58cba2077be8743f50a5da`; this is fixture mount proof, not external-software utility. Anonymous acquisition of documented GDC UUID `353efa55-06d3-43a8-adf5-50f3219e9f14` succeeded: 51,100 bytes, SHA-256 `8c8fe077f4e6d3b02301c4df5d6d72b66b37c02271a479087d330e3f90030b69`, metadata open, source size/MD5 matched; licence/release unknown. This scoped probe was temporary, with no live scientific admission or claim of retained historical replay. Architecture/diff checks passed; no dependency installation or upstream runtime imports.
+
+**Transition review:** Retained scientific inputs now live outside scratch workspaces, enabling F6 archive-before-cleanup. Preserve active/unresolved blocks and persistence failures. F4 evaluation does not justify bulk harvesting, embeddings, registry migration, ontology prerequisites or promotion. Additional methods/static GDC joins, stronger dependency locks and expanded scientific/semantic utility evaluations remain earned deferrals. F6 should also repair the snapshot's synthetic rows being presented as source-bound evidence and live UI inheriting offline evaluation-condition labels.
 
 #### F6 — PLANNED: retention, cleanup and truthful observability
 
@@ -518,7 +528,7 @@ Official [GDC download documentation](https://docs.gdc.cancer.gov/API/Users_Guid
 For every implementation batch: require a credible regression and one primary behavior-level test owner; reuse existing fixtures where possible, add no test-only production seam. Run focused tests and `scripts/check_architecture.py`, then `git diff --check`. At integration completion run the full Python suite and any affected web/Linux checks; record exact commands, results, unresolved blockers and documentary changes here. Only this plan file changed during planning; no source, tests, configuration, ledger or evidence were modified.
 
 
-### 10.6 Verification of this rewrite — 2026-10-01
+### 10.6 Historical verification of the rewrite — 2026-10-01
 
 | Check | Current result |
 | --- | --- |

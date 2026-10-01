@@ -1,8 +1,22 @@
 from typing import Any
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, model_validator
 from src.provenance import content_hash
+
+
+class CoverageContract(BaseModel, frozen=True):
+    endpoint: str | None = None
+    offset: int = Field(default=0, ge=0)
+    requested_size: int | None = Field(default=None, ge=1)
+    returned_rows: int = Field(default=0, ge=0)
+    reported_total: int | None = Field(default=None, ge=0)
+    ordering: str | None = None
+    id_field: str | None = None
+    unique_entities: int | None = Field(default=None, ge=0)
+    duplicate_rows: int = Field(default=0, ge=0)
+    complete: bool = False
+    limitations: tuple[str, ...] = ("Population coverage unknown.",)
 
 
 class AcquisitionRecord(BaseModel, frozen=True):
@@ -13,12 +27,16 @@ class AcquisitionRecord(BaseModel, frozen=True):
     public_only: bool = True
     provenance: tuple[str, ...] = Field(min_length=1)
     response_bytes: int | None = Field(default=None, ge=0)
+    coverage: CoverageContract | None = None
 
     @computed_field
     @property
     def content_sha256(self) -> str:
-        return content_hash({"source": self.source, "request": self.request, "records": self.records,
-                             "public_only": self.public_only, "provenance": self.provenance})
+        payload = {"source": self.source, "request": self.request, "records": self.records,
+                   "public_only": self.public_only, "provenance": self.provenance}
+        if self.coverage is not None:
+            payload["coverage"] = self.coverage.model_dump(mode="json")
+        return content_hash(payload)
 
 
 class LiteratureRecord(BaseModel, frozen=True):
@@ -41,3 +59,40 @@ class LiteratureSearchResult(BaseModel, frozen=True):
     def content_sha256(self) -> str:
         return content_hash({"query": self.query, "request": self.request, "records": [r.model_dump(mode="json") for r in self.records],
                              "provenance": self.provenance})
+
+
+class ScientificArtifact(BaseModel, frozen=True):
+    """Exact retained bytes; content identity is separate from logical acquisition."""
+    artifact_id: str = Field(default_factory=lambda: str(uuid4()))
+    block_id: str = Field(min_length=1)
+    source: str
+    request: dict[str, Any]
+    source_identity: str
+    content_base64: str
+    byte_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    size_bytes: int = Field(ge=0)
+    format: str
+    access: str = "open"
+    release: str | None = None
+    licence: str | None = None
+    provenance: tuple[str, ...] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_bytes(self):
+        import base64
+        import hashlib
+        data = base64.b64decode(self.content_base64, validate=True)
+        if len(data) != self.size_bytes or hashlib.sha256(data).hexdigest() != self.byte_sha256:
+            raise ValueError("artifact byte identity mismatch")
+        return self
+
+    def bytes(self) -> bytes:
+        import base64
+        # Revalidate nested mutable payloads before use.
+        self.validate_bytes()
+        return base64.b64decode(self.content_base64, validate=True)
+
+    @computed_field
+    @property
+    def content_sha256(self) -> str:
+        return self.byte_sha256

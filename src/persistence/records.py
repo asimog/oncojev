@@ -17,6 +17,7 @@ class RecordKind(StrEnum):
     CYCLE_START = "cycle_start"
     OUTCOME_CORRECTION = "outcome_correction"
     ACQUISITION = "acquisition"
+    SCIENTIFIC_ARTIFACT = "scientific_artifact"
     LITERATURE = "literature"
     SANDBOX_REQUEST = "sandbox_request"
     SANDBOX_CANDIDATE = "sandbox_candidate"

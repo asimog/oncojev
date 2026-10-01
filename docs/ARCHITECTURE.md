@@ -104,3 +104,12 @@ without a digest is labelled unverified context. API reads never backfill memory
 Scientific and Jev capabilities begin local. Only repeat use, validation, provenance, and evaluation justify a reusable registry entry. Skills explain when and how to approach work; registries contain contracts for executable or evaluated artifacts. See [UPSTREAM.md](UPSTREAM.md), [JEV.md](JEV.md), and [FRONTEND.md](FRONTEND.md).
 
 F4 discovery uses shared OncoLab cards, snapshot-bound continuation and explicit contract expansion. Researcher suitability extends the existing frontier; Python checks route, access and inputs. Semantic Research Memory follows bounded F3 retrieval with separate global budgets and deterministic fallback. Director Control receives context, not scientific acquisition authority. Terminal dossier construction never requires successful Jev annotation.
+
+ScientificArtifact stores exact bytes, source/request identity, byte hash, size,
+format and block ownership independently of analysis identity. Retained inputs
+live in append-only persistence, outside disposable Coder workspaces. Runtime
+resolves owner/hash before sandbox input mounting and validation. Source analysis
+resolves fields and paired entity rows deterministically from owned acquisitions.
+Analysis keys bind content, design, population, estimand, fields and transformations;
+admission uses stable scoped identity and explicit replication identity. No
+persistence or presentation component admits evidence.
