@@ -949,7 +949,11 @@ def test_restart_resolves_exact_acquisition_input_and_preallocation_index_receip
         return httpx.Response(200, json={"data": {"hits": [{"file_id": "a", "count": 7}]}}) if len(source_calls) == 1 else httpx.Response(503, json={"detail": "unavailable"})
 
     runtime.gdc = GdcPublicSource(httpx.MockTransport(source))
-    runtime.literature = PublicLiteratureSource(httpx.MockTransport(lambda request: httpx.Response(200, json={"message": {"items": [{"title": ["Public study"], "DOI": "10.1/study"}]}})))
+    runtime.literature = PublicLiteratureSource(httpx.MockTransport(lambda request: httpx.Response(200, json={"message": {
+        "total-results": 100, "items": [
+            {"title": ["Public study"], "DOI": "10.1/study", "abstract": "<jats:p>Retained population and endpoint.</jats:p>"},
+            {"title": ["Title only"], "DOI": "10.1/title"},
+        ]}})))
     director_calls = researcher_calls = 0
 
     async def director(messages, info):
@@ -968,7 +972,7 @@ def test_restart_resolves_exact_acquisition_input_and_preallocation_index_receip
                     'record = await acquire_gdc(endpoint="files", filters={}, fields=["file_id", "count"])\n'
                     'await measure_acquisition(acquisition_id=record["acquisition_id"], analysis_id="count")\n'
                     'await admit_measurement(analysis_id="count")\n'
-                    'await search_public_literature(query="public study", limit=1)\n'
+                    'await search_public_literature(query="public study", limit=2)\n'
                     'try:\n    await acquire_gdc(endpoint="files", filters={}, fields=["file_id"])\nexcept Exception:\n    pass\n'
                     'await evaluate_candidate(candidate_id="c", candidate_summary="public metadata signal")\n'
                     'await complete_block(reason="done")')
@@ -993,7 +997,24 @@ def test_restart_resolves_exact_acquisition_input_and_preallocation_index_receip
     assert copy.content_sha256 == stored["content_sha256"]
     assert not view.unresolved_source_refs
     assert view.literature[0]["records"][0]["doi"] == "10.1/study"
-    assert view.literature[0]["request"] == {"query": "public study", "rows": 1}
+    assert view.literature[0]["request"] == {"query": "public study", "rows": 2}
+    literature = view.literature[0]
+    assert literature["records"][0]["abstract"] == "<jats:p>Retained population and endpoint.</jats:p>"
+    assert literature["records"][1]["abstract"] is None
+    assert literature["coverage"]["reported_total"] == 100
+    assert literature["coverage"]["returned_rows"] == 2
+    assert literature["coverage"]["complete"] is False
+    from src.sources.models import LiteratureSearchResult
+    reopened_literature = LiteratureSearchResult.model_validate(literature)
+    assert reopened_literature.retrieved_at is not None
+    assert reopened_literature.content_sha256 == literature["content_sha256"]
+    altered_record = reopened_literature.records[0].model_copy(update={"abstract": "Different endpoint"})
+    assert reopened_literature.model_copy(update={"records": (altered_record,)}).content_sha256 != literature["content_sha256"]
+    legacy = LiteratureSearchResult.model_validate({"query": "public study", "records": [
+        {"title": "Public study", "doi": "10.1/study", "url": None, "source": "crossref"}],
+        "provenance": ["https://api.crossref.org/works"]})
+    assert legacy.retrieved_at is None and legacy.coverage is None
+    assert legacy.content_sha256 == "7932afaee924646f538dc179d25e66b1ed1faef86f8f491f1405b3d47facbf55"
     usage = view.dossier["resource_usage"]
     assert usage["source_attempts"] == 3 and usage["source_successes"] == 2 and usage["source_failures"] == 1
     assert usage["source_byte_reports"] == 3 and usage["source_bytes_reported"] > 0

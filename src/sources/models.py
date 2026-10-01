@@ -48,6 +48,8 @@ class LiteratureRecord(BaseModel, frozen=True):
     doi: str | None = None
     url: str | None = None
     source: str
+    abstract: str | None = None
+    abstract_truncated: bool = False
 
 
 class LiteratureSearchResult(BaseModel, frozen=True):
@@ -57,12 +59,28 @@ class LiteratureSearchResult(BaseModel, frozen=True):
     records: tuple[LiteratureRecord, ...]
     provenance: tuple[str, ...] = Field(min_length=1)
     response_bytes: int | None = Field(default=None, ge=0)
+    retrieved_at: datetime | None = None
+    coverage: CoverageContract | None = None
 
     @computed_field
     @property
     def content_sha256(self) -> str:
-        return content_hash({"query": self.query, "request": self.request, "records": [r.model_dump(mode="json") for r in self.records],
-                             "provenance": self.provenance})
+        # Old title-only records retain their original content identity on reopen.
+        records = []
+        for record in self.records:
+            payload = record.model_dump(mode="json", exclude={"abstract", "abstract_truncated"})
+            if record.abstract is not None:
+                payload["abstract"] = record.abstract
+            if record.abstract_truncated:
+                payload["abstract_truncated"] = True
+            records.append(payload)
+        payload = {"query": self.query, "request": self.request, "records": records,
+                   "provenance": self.provenance}
+        if self.retrieved_at is not None:
+            payload["retrieved_at"] = self.model_dump(mode="json", include={"retrieved_at"})["retrieved_at"]
+        if self.coverage is not None:
+            payload["coverage"] = self.coverage.model_dump(mode="json")
+        return content_hash(payload)
 
 
 class ScientificArtifact(BaseModel, frozen=True):

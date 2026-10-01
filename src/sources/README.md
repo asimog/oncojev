@@ -7,6 +7,13 @@ File discovery preserves open, controlled and unknown access metadata. Anonymous
 byte acquisition requires explicit open access. Clients accept no scientific or
 provider credentials and bound response bytes.
 
+Literature searches retain the exact query, retrieval time, reported result count
+and deposited abstracts where supplied. Raw abstract text/markup is bounded to
+2048 UTF-8 bytes per work and 8192 per query, with explicit truncation markers.
+Absent abstracts remain absent; no full text is fetched. Even an empty query or
+all reported hits cannot establish comprehensive literature coverage or novelty.
+Legacy title-only records retain their hashes and unknown retrieval time/coverage.
+
 GDC search records offsets, endpoint-specific ID ordering, requested/returned sizes, reported
 totals and unique IDs. Ordered page combination rejects overlap, gaps, repeated
 pages, changing totals and mixed queries. Observed page completeness does not

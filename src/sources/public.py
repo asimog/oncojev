@@ -195,6 +195,35 @@ class PublicLiteratureSource:
         if not 1 <= limit <= 20: raise ValueError("limit must be between 1 and 20")
         response=await bounded_response(self._client,"GET","/works",self._max_download_bytes,self.meter,params={"query":query,"rows":limit})
         if len(response.content)>self._max_download_bytes:raise ResourceRejected("public source response exceeded the configured byte budget", len(response.content))
-        items=response.json().get("message",{}).get("items",[])
-        records=tuple(LiteratureRecord(title=(item.get("title") or ["Untitled"])[0],doi=item.get("DOI"),url=item.get("URL"),source="crossref") for item in items[:limit])
-        return LiteratureSearchResult(query=query,request={"query":query,"rows":limit},records=records,provenance=("https://api.crossref.org/works",),response_bytes=len(response.content))
+        message = response.json().get("message", {})
+        items = message.get("items", [])
+        records = []
+        remaining_abstract_bytes = 8192
+        for item in items[:limit]:
+            abstract = item.get("abstract")
+            truncated = False
+            if isinstance(abstract, str) and abstract.strip():
+                encoded = abstract.encode("utf-8")
+                retained = encoded[:min(2048, remaining_abstract_bytes)].decode("utf-8", errors="ignore")
+                truncated = retained != abstract
+                remaining_abstract_bytes -= len(retained.encode("utf-8"))
+                abstract = retained or None
+            else:
+                abstract = None
+            records.append(LiteratureRecord(title=(item.get("title") or ["Untitled"])[0],
+                doi=item.get("DOI"), url=item.get("URL"), source="crossref",
+                abstract=abstract, abstract_truncated=truncated))
+        total = message.get("total-results")
+        if type(total) is not int or total < 0:
+            total = None
+        coverage = CoverageContract(endpoint="/works", requested_size=limit,
+            returned_rows=len(records), reported_total=total, ordering="Crossref query relevance",
+            complete=False, limitations=(
+                "One bounded Crossref metadata query; not comprehensive literature coverage.",
+                "Deposited abstracts may be absent; no full text was acquired.",
+                "Abstracts retain raw source text/markup, at most 2048 UTF-8 bytes per work and 8192 per query; truncation is explicit.",
+                "An empty result does not establish novelty or absence of contrary reports.",
+            ))
+        return LiteratureSearchResult(query=query, request={"query":query,"rows":limit},
+            records=tuple(records), provenance=("https://api.crossref.org/works",),
+            response_bytes=len(response.content), retrieved_at=datetime.now(UTC), coverage=coverage)

@@ -407,6 +407,32 @@ def test_ordered_source_pages_preserve_totals_and_reject_overlap():
  assert not combine_pages((unknown,)).coverage.complete
 
 
+@pytest.mark.parametrize("populated", [False, True])
+def test_literature_search_retains_bounded_excerpts_without_claiming_complete_coverage(populated):
+ import asyncio
+ items = [{"title": [str(i)], "DOI": f"10.1/{i}", "abstract": "癌" * 4000} for i in range(6)] if populated else []
+ source = PublicLiteratureSource(httpx.MockTransport(lambda request: httpx.Response(200,
+  json={"message": {"items": items, "total-results": 6 if populated else 0}})))
+ async def run():
+  try:
+   result = await source.search("bounded oncology query", limit=6)
+   assert result.retrieved_at is not None
+   assert result.coverage.returned_rows == len(items)
+   assert result.coverage.reported_total == len(items)
+   assert not result.coverage.complete  # Even all returned hits do not cover world literature.
+   retained = [record.abstract for record in result.records if record.abstract is not None]
+   assert sum(len(text.encode("utf-8")) for text in retained) <= 8192
+   assert all(len(text.encode("utf-8")) <= 2048 and "�" not in text for text in retained)
+   if populated:
+    assert retained and all(record.abstract_truncated for record in result.records)
+    assert result.records[-1].abstract is None
+   else:
+    assert result.records == ()
+  finally:
+   await source.aclose()
+ asyncio.run(run())
+
+
 @pytest.mark.parametrize("source_kind", ["gdc", "xena", "literature"])
 def test_public_sources_stop_unknown_length_stream_at_the_byte_ceiling(source_kind):
  import asyncio
