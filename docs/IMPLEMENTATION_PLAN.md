@@ -1,6 +1,6 @@
 # Next-stage autonomous laboratory implementation plan
 
-**Stage status: IN PROGRESS - H0/H1 DONE; H2-H12 PARTIAL; H13-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
+**Stage status: IN PROGRESS - H0/H1 DONE; H2-H13 PARTIAL; H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
 
 The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](references/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
@@ -86,7 +86,7 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 | H10 — execution backend, scientific operations and dependency locking (D7/D8) | P0 for Railway execution, scientific correctness | Build: H2 and existing F5 admission; H6 inputs for selected science. Return-pass proof: scoped H13 evaluation; deployment in H11. | PARTIAL: confined Linux exploratory backend; qualification/scientific expansion return proof remains |
 | H11 — durable Railway deployment/confinement | P0 for deployment, operations | H2/H3/H5/H10 | PARTIAL: deployed persistent nonroot worker; target boundary checks passed; aggregate resources/continuation proof remains |
 | H12 — oncojevlab export/publication | P2, observability | H3/H4/H5/H9/H11 records | PARTIAL: deterministic local exporter and isolated publisher; R9/context utility and external publication remain |
-| H13 — semantic/scientific evaluation corpus | P1, evaluation | Build alongside H4/H6–H10 baselines; return scoped proof to owners. Full-system conditions after H11/H12. | PLANNED |
+| H13 — semantic/scientific evaluation corpus | P1, evaluation | Build alongside H4/H6–H10 baselines; return scoped proof to owners. Full-system conditions after H11/H12. | PARTIAL: retained-representation contract comparisons; semantic/scientific utility corpus and return gates remain |
 | H14 — frontier audit, generator contract and bounded calibration/Autoresearch (D3/D5) | P1, policy correctness and measured semantic research | Build: H0 caller inventory and H4/H6/H7 baselines. Acceptance: H13 comparisons/instability evidence. | PLANNED |
 | H15 — final documentation/full verification | Integration | H1–H14 acceptance or explicitly recorded external blockers | PARTIAL: target documentation aligned; final implemented-state reconciliation pending |
 
@@ -464,6 +464,14 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 **Exit proof:** same persisted snapshot yields identical bytes, all claims trace to typed IDs, secrets absent, external edits cannot change scientific records, failed publish leaves closure/evidence unchanged and defined boundaries deduplicate commits. Primary owner `test_persistence.py` at exporter/publication service boundary; add a distinct owning export test file only if needed for that new public contract. Run focused tests, local exporter dry-run, architecture/diff checks; external publication proof separately recorded when configured.
 
 ### H13 — Labelled semantic/scientific utility evaluations
+
+**Delivered retained-representation comparison (2026-10-02):** `src/evals/representation.py` compares the production source-input checks, versioned projection/native Jev receipt and frontier policy on the same owned alternatives. Label/case/split/basis data stay outside provider payloads and runtime admission. Reports retain dataset/input hashes, tuning/held-out split, per-candidate checks/actions, retrieval/input-gate/retained recall, missed/usefully deferred alternatives, unresolved inputs, failures and actual resource use; scientific utility and cost remain unknown. Provider or budget failures fall back through the deterministic input gate, so absent/incompatible inputs cannot become retained execution candidates.
+
+**Local result:** `python -m scripts.evaluate_representation --output evals/representation/results/input-contracts-local-v1.json` compared six generated contract cases (two tuning, four held-out) under deterministic and fixture Jev-assisted conditions. All labelled useful inputs were retained in both conditions; no invalid input was retained. Thirteen fixture semantic receipts retain requested/resolved model, projection/question/policy identity and distributions; there were no operational failures in this run. The separate failed-provider/unresolved-input regression passed (one test in 5.82s), preserving eligible alternatives, deferring missing units and proving label isolation and no evidence admission. The corpus and captured output are evaluation artifacts, not scientific records. This supplies H6 input-contract evidence only; supplied nested field mappings do not prove automatic schema discovery or live semantic recall.
+
+**Selection entrypoint proof:** `uv run --frozen python scripts/evaluate_selection.py --output evals/selection/results/selection-local-v1.json` also passed locally. All four nonempty useful-label sets had retrieval/retained recall 1.0 in both deterministic/fixture-assisted conditions; unimplemented survival retains an unknown denominator, and no scientific utility is claimed. This is catalogue selection proof, not operation execution or promotion utility.
+
+**Remaining acceptance:** independently reviewed scientific labels, masked findings/controls/replication and actual validated operations; Reasoner/full-system matched-budget comparisons; live repeated semantic measurements and H4/H7/H9/H10/H14 return gates. No model winner, scientific validity or clinical effectiveness is inferred from this tiny generated corpus. H13 remains PARTIAL.
 
 **Owner:** `src/evals/{models,corpus,selection,harness}.py`, `scripts/evaluate_selection.py`, existing `evals/jev/` guidance and eval receipts.
 

@@ -1,0 +1,485 @@
+{
+  "version": "input-contracts-v1",
+  "scope": "Generated input-contract labels; tuning and held-out contract cases are not independently reviewed cancer findings. No scientific utility or clinical-effectiveness claim.",
+  "acquisitions": [
+    {
+      "acquisition_id": "counts",
+      "source": "benchmark-table",
+      "retrieved_at": "2026-10-02T00:00:00Z",
+      "request": {},
+      "records": [
+        {
+          "person": "0",
+          "signal": {
+            "z": 1
+          },
+          "outcome": 1,
+          "units": {
+            "signal": {
+              "z": "counts"
+            }
+          },
+          "genome_build": "GRCh38"
+        },
+        {
+          "person": "1",
+          "signal": {
+            "z": 2
+          },
+          "outcome": 3,
+          "units": {
+            "signal": {
+              "z": "counts"
+            }
+          },
+          "genome_build": "GRCh38"
+        },
+        {
+          "person": "2",
+          "signal": {
+            "z": 3
+          },
+          "outcome": 5,
+          "units": {
+            "signal": {
+              "z": "counts"
+            }
+          },
+          "genome_build": "GRCh38"
+        }
+      ],
+      "origin": "synthetic",
+      "provenance": [
+        "input-contracts-v1",
+        "generated contract fixture; not a biological cohort"
+      ]
+    },
+    {
+      "acquisition_id": "tpm",
+      "source": "benchmark-table",
+      "retrieved_at": "2026-10-02T00:00:00Z",
+      "request": {},
+      "records": [
+        {
+          "person": "0",
+          "signal": {
+            "z": 1
+          },
+          "outcome": 1,
+          "units": {
+            "signal": {
+              "z": "TPM"
+            }
+          },
+          "genome_build": "GRCh38"
+        },
+        {
+          "person": "1",
+          "signal": {
+            "z": 2
+          },
+          "outcome": 3,
+          "units": {
+            "signal": {
+              "z": "TPM"
+            }
+          },
+          "genome_build": "GRCh38"
+        },
+        {
+          "person": "2",
+          "signal": {
+            "z": 3
+          },
+          "outcome": 5,
+          "units": {
+            "signal": {
+              "z": "TPM"
+            }
+          },
+          "genome_build": "GRCh38"
+        }
+      ],
+      "origin": "synthetic",
+      "provenance": [
+        "input-contracts-v1",
+        "generated contract fixture; not a biological cohort"
+      ]
+    },
+    {
+      "acquisition_id": "duplicates",
+      "source": "benchmark-table",
+      "retrieved_at": "2026-10-02T00:00:00Z",
+      "request": {},
+      "records": [
+        {
+          "person": "0",
+          "signal": {
+            "z": 1
+          },
+          "outcome": 1,
+          "units": {
+            "signal": {
+              "z": "counts"
+            }
+          },
+          "genome_build": "GRCh38"
+        },
+        {
+          "person": "0",
+          "signal": {
+            "z": 1
+          },
+          "outcome": 1,
+          "units": {
+            "signal": {
+              "z": "counts"
+            }
+          },
+          "genome_build": "GRCh38"
+        },
+        {
+          "person": "2",
+          "signal": {
+            "z": 3
+          },
+          "outcome": 5,
+          "units": {
+            "signal": {
+              "z": "counts"
+            }
+          },
+          "genome_build": "GRCh38"
+        }
+      ],
+      "origin": "synthetic",
+      "provenance": [
+        "input-contracts-v1",
+        "generated contract fixture; not a biological cohort"
+      ]
+    },
+    {
+      "acquisition_id": "missing",
+      "source": "benchmark-table",
+      "retrieved_at": "2026-10-02T00:00:00Z",
+      "request": {},
+      "records": [
+        {
+          "person": "0",
+          "outcome": 1
+        },
+        {
+          "person": "1",
+          "outcome": 2
+        },
+        {
+          "person": "2",
+          "outcome": 3
+        }
+      ],
+      "origin": "synthetic",
+      "provenance": [
+        "input-contracts-v1",
+        "generated contract fixture; not a biological cohort"
+      ]
+    },
+    {
+      "acquisition_id": "complete",
+      "source": "benchmark-table",
+      "retrieved_at": "2026-10-02T00:00:00Z",
+      "request": {},
+      "records": [
+        {
+          "person": "0",
+          "signal": {
+            "z": 1
+          },
+          "outcome": 1,
+          "units": {
+            "signal": {
+              "z": "counts"
+            }
+          },
+          "genome_build": "GRCh38"
+        },
+        {
+          "person": "1",
+          "signal": {
+            "z": 2
+          },
+          "outcome": 3,
+          "units": {
+            "signal": {
+              "z": "counts"
+            }
+          },
+          "genome_build": "GRCh38"
+        },
+        {
+          "person": "2",
+          "signal": {
+            "z": 3
+          },
+          "outcome": 5,
+          "units": {
+            "signal": {
+              "z": "counts"
+            }
+          },
+          "genome_build": "GRCh38"
+        }
+      ],
+      "origin": "synthetic",
+      "provenance": [
+        "input-contracts-v1",
+        "generated contract fixture; not a biological cohort"
+      ],
+      "coverage": {
+        "returned_rows": 3,
+        "reported_total": 3,
+        "unique_entities": 3,
+        "complete": true,
+        "limitations": []
+      }
+    },
+    {
+      "acquisition_id": "old-build",
+      "source": "benchmark-table",
+      "retrieved_at": "2026-10-02T00:00:00Z",
+      "request": {},
+      "records": [
+        {
+          "person": "0",
+          "signal": {
+            "z": 1
+          },
+          "outcome": 1,
+          "units": {
+            "signal": {
+              "z": "counts"
+            }
+          },
+          "genome_build": "GRCh37"
+        },
+        {
+          "person": "1",
+          "signal": {
+            "z": 2
+          },
+          "outcome": 3,
+          "units": {
+            "signal": {
+              "z": "counts"
+            }
+          },
+          "genome_build": "GRCh37"
+        },
+        {
+          "person": "2",
+          "signal": {
+            "z": 3
+          },
+          "outcome": 5,
+          "units": {
+            "signal": {
+              "z": "counts"
+            }
+          },
+          "genome_build": "GRCh37"
+        }
+      ],
+      "origin": "synthetic",
+      "provenance": [
+        "input-contracts-v1",
+        "generated contract fixture; not a biological cohort"
+      ]
+    },
+    {
+      "acquisition_id": "controlled",
+      "source": "gdc",
+      "retrieved_at": "2026-10-02T00:00:00Z",
+      "request": {},
+      "records": [
+        {
+          "id": "controlled",
+          "access": "controlled",
+          "data_type": "Gene Expression Quantification"
+        }
+      ],
+      "origin": "synthetic",
+      "provenance": [
+        "input-contracts-v1",
+        "generated contract fixture; not a biological cohort"
+      ],
+      "coverage": {
+        "endpoint": "files",
+        "returned_rows": 1
+      }
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "mapped-pairs",
+      "split": "tuning",
+      "need": {
+        "estimand": "paired association over inspected rows",
+        "representation": "paired_data",
+        "entity_key": "person",
+        "fields": {
+          "x": "signal.z",
+          "y": "outcome"
+        },
+        "numeric_roles": [
+          "x",
+          "y"
+        ],
+        "minimum_complete_rows": 3
+      },
+      "candidate_ids": [
+        "counts",
+        "missing",
+        "duplicates",
+        "controlled"
+      ],
+      "useful_ids": [
+        "counts"
+      ],
+      "label_basis": "Three unique scalar entities and two finite numeric fields; nested mapping is explicit.",
+      "label_scope": "input_contract"
+    },
+    {
+      "case_id": "controlled-metadata",
+      "split": "tuning",
+      "need": {
+        "estimand": "file metadata",
+        "representation": "metadata",
+        "fields": {
+          "id": "id"
+        }
+      },
+      "candidate_ids": [
+        "controlled"
+      ],
+      "useful_ids": [
+        "controlled"
+      ],
+      "label_basis": "Controlled access does not hide metadata; this request does not acquire assay bytes.",
+      "label_scope": "input_contract"
+    },
+    {
+      "case_id": "normalization",
+      "split": "held_out",
+      "need": {
+        "estimand": "paired association over inspected rows",
+        "representation": "paired_data",
+        "entity_key": "person",
+        "fields": {
+          "x": "signal.z",
+          "y": "outcome"
+        },
+        "numeric_roles": [
+          "x",
+          "y"
+        ],
+        "minimum_complete_rows": 3,
+        "units": {
+          "x": "TPM"
+        }
+      },
+      "candidate_ids": [
+        "tpm",
+        "counts"
+      ],
+      "useful_ids": [
+        "tpm"
+      ],
+      "label_basis": "Source-returned units distinguish TPM from counts; no conversion operation is available.",
+      "label_scope": "input_contract"
+    },
+    {
+      "case_id": "participant-key",
+      "split": "held_out",
+      "need": {
+        "estimand": "paired association over inspected rows",
+        "representation": "paired_data",
+        "entity_key": "person",
+        "fields": {
+          "x": "signal.z",
+          "y": "outcome"
+        },
+        "numeric_roles": [
+          "x",
+          "y"
+        ],
+        "minimum_complete_rows": 3
+      },
+      "candidate_ids": [
+        "duplicates",
+        "counts"
+      ],
+      "useful_ids": [
+        "counts"
+      ],
+      "label_basis": "Duplicate entity identifiers fail the one-row-per-entity pairing contract.",
+      "label_scope": "input_contract"
+    },
+    {
+      "case_id": "coverage",
+      "split": "held_out",
+      "need": {
+        "estimand": "paired association over inspected rows",
+        "representation": "paired_data",
+        "entity_key": "person",
+        "fields": {
+          "x": "signal.z",
+          "y": "outcome"
+        },
+        "numeric_roles": [
+          "x",
+          "y"
+        ],
+        "minimum_complete_rows": 3,
+        "require_complete_coverage": true
+      },
+      "candidate_ids": [
+        "counts",
+        "complete"
+      ],
+      "useful_ids": [
+        "complete"
+      ],
+      "label_basis": "Only the explicit complete coverage fixture satisfies the declared full-response requirement; representativeness stays unknown.",
+      "label_scope": "input_contract"
+    },
+    {
+      "case_id": "annotation-build",
+      "split": "held_out",
+      "need": {
+        "estimand": "paired association over inspected rows",
+        "representation": "paired_data",
+        "entity_key": "person",
+        "fields": {
+          "x": "signal.z",
+          "y": "outcome"
+        },
+        "numeric_roles": [
+          "x",
+          "y"
+        ],
+        "minimum_complete_rows": 3,
+        "identities": {
+          "genome_build": "GRCh38"
+        }
+      },
+      "candidate_ids": [
+        "old-build",
+        "counts"
+      ],
+      "useful_ids": [
+        "counts"
+      ],
+      "label_basis": "Explicit source build identities differ; build conversion is not implied.",
+      "label_scope": "input_contract"
+    }
+  ]
+}

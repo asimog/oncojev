@@ -204,3 +204,49 @@ def test_selection_evaluation_exposes_recall_unknown_denominators_and_non_gdc_sp
     assert any(row['information_space']=='literature' for row in report['rows'])
     assert all(row['downstream_scientific_utility'] is None and row['cost'] is None for row in report['rows'])
     assert next(row for row in report['rows'] if row['task_id']=='unimplemented-survival')['retrieval_recall'] is None
+
+
+def test_representation_evaluation_isolates_labels_and_keeps_failure_fallback_gated(tmp_path):
+    """Evaluation receipts expose misses/failures without leaking labels or granting absent inputs."""
+    import asyncio, json
+    from src.evals.representation import RepresentationCase, evaluate_representations
+    from src.runtime.pydantic_ai.contracts import HarnessRuntime
+    from src.persistence.store import SqliteResearchStore
+    from src.persistence.records import RecordKind
+    from src.block.manager import BlockManager
+    from src.director.models import ResourceAllocation
+    from src.reasoner.service import DeterministicReasoner
+    from src.science.execution import ScienceExecutor
+    from src.sources.representation import RepresentationNeed
+    payloads = []
+    class FailedProvider:
+        def evaluate(self, state, questions):
+            payloads.append(state)
+            raise TimeoutError('fixture provider unavailable')
+    store = SqliteResearchStore(tmp_path / 'evaluation.sqlite3')
+    manager = BlockManager(); block = manager.create('representation comparison', 'evaluation', ResourceAllocation(seconds=300))
+    runtime = HarnessRuntime(manager=manager, jev=FailedProvider(), science=ScienceExecutor(),
+        reasoner=DeterministicReasoner(), max_jev_calls=10, max_reasoner_calls=1, repository=ResearchRepository(store))
+    record = AcquisitionRecord(source='fixture-table', request={}, provenance=('input-contract fixture',), origin='synthetic',
+        records=({'id':'a','x':1,'y':2}, {'id':'b','x':2,'y':5}))
+    runtime.retain_acquisition(block.block_id, record)
+    need = RepresentationNeed(estimand='pair', representation='paired_data', entity_key='id', fields={'x':'x','y':'y'}, numeric_roles=('x','y'))
+    cases = (
+        RepresentationCase(case_id='label-sentinel-valid', split='held_out', need=need,
+            candidate_ids=(record.acquisition_id, 'unresolved'), useful_ids=(record.acquisition_id,), label_basis='label-sentinel-basis'),
+        RepresentationCase(case_id='label-sentinel-missing', split='held_out', need=need.model_copy(update={'units':{'x':'TPM'}}),
+            candidate_ids=(record.acquisition_id,), useful_ids=(), label_basis='label-sentinel-unmeasured-units'),
+    )
+    try:
+        report = asyncio.run(evaluate_representations(runtime, block.block_id, cases, condition='jev_assisted'))
+        valid, missing = report['rows']
+        assert valid['retained_ids'] == [record.acquisition_id] and valid['retained_recall'] == 1
+        assert valid['unresolved_ids'] == ['unresolved']
+        assert valid['operational_failures'] and missing['operational_failures']
+        assert missing['retained_ids'] == [] and missing['retained_recall'] is None
+        assert all(not row['invalid_retained_ids'] and row['scientific_utility'] is None and row['cost'] is None for row in report['rows'])
+        assert 'label-sentinel' not in json.dumps(payloads)
+        assert not store.records(kind=RecordKind.EVIDENCE)
+        assert all(r.payload['outcome'] in {'started','failed'} for r in store.records(kind=RecordKind.JEV_CALL))
+    finally:
+        store.close()
