@@ -49,12 +49,14 @@ class GdcPublicSource:
         if not 1 <= size <= 100: raise ValueError("size must be between 1 and 100")
         if offset < 0 or offset > 1_000_000: raise ValueError("offset is outside bounded pagination")
         if not re.fullmatch(r"[A-Za-z0-9_.]+:(asc|desc)",sort): raise ValueError("declare one stable ordering field")
-        content = list(filters.get("content", [])) if filters.get("op") == "and" else [filters]
         identity_field = {'files':'file_id','cases':'case_id','projects':'project_id','annotations':'annotation_id'}[endpoint]
         if sort.startswith('id:'):
             sort = identity_field + sort[2:]
         fields = tuple(identity_field if field == 'id' else field for field in fields)
-        payload={"filters":{"op":"and","content":content},"fields":",".join(fields),"format":"JSON","size":size,"from":offset,"sort":sort}
+        payload={"fields":",".join(fields),"format":"JSON","size":size,"from":offset,"sort":sort}
+        if filters:
+            from copy import deepcopy
+            payload["filters"] = deepcopy(filters)
         response=await bounded_response(self._client,"POST",f"/{endpoint}",self._max_download_bytes,self.meter,json=payload);body=await asyncio.to_thread(response.json);hits=body.get("data",{}).get("hits",[])
         if body.get('error'):
             raise RuntimeError('GDC query failed despite HTTP success')

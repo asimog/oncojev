@@ -419,7 +419,7 @@ def test_gdc_file_discovery_retains_access_without_silent_open_filter(access):
         try:
             record = await source.search("files", {}, ("id", "access", "data_type", "data_format"), size=1)
             assert record.records[0]["access"] == access
-            assert not any(term.get("content", {}).get("field") == "files.access" for term in requests[0]["filters"]["content"])
+            assert requests[0].get("filters", {}) == {}, "empty discovery filters must not add hidden constraints"
             cards = source.asset_cards(record)
             assert cards[0].access == (access or "unknown")
             assert cards[0].file_size is None and cards[0].entity_unit == "file"

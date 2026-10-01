@@ -902,7 +902,7 @@ def test_restart_resolves_exact_acquisition_input_and_preallocation_index_receip
     stored = getattr(view, "resolved_inputs", {}).get(source_id)
     assert stored is not None, "restart lost exact acquired scientific input"
     assert stored["records"] == [{"file_id": "a", "count": 7}]
-    assert stored["request"]["filters"]["content"][-1]["content"]["value"] == ["open"]
+    assert stored["request"].get("filters", {}) == {}, "discovery must retain the exact requested filter without hiding access alternatives"
     assert view.measurements[0]["input_sha256"] == stored["content_sha256"]
     from src.sources.models import AcquisitionRecord
     copy = AcquisitionRecord.model_validate(stored).model_copy(update={"acquisition_id": "different-run"})
