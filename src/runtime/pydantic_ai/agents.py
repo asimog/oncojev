@@ -18,6 +18,7 @@ from src.runtime.pydantic_ai.providers import configured_model, model_settings
 from src.runtime.pydantic_ai.telemetry import configure_agent_telemetry
 from src.runtime.pydantic_ai.controls import RuntimeControls
 from src.runtime.pydantic_ai.workspace import ConfinedWorkspace
+from src.runtime.paths import workspace_root, director_root
 
 
 def _code_mode_tools(_ctx: object, tool_definition: object) -> bool:
@@ -62,8 +63,8 @@ def _build(
     workspace = Path(__file__).resolve().parents[3]
 
     def build_researcher(block_id: str | None = None) -> Agent[ResearcherDeps, str]:
-        researcher_workspace = workspace / "var" / "workspaces" / (block_id or "unassigned")
-        if not researcher_workspace.resolve().is_relative_to(workspace / "var" / "workspaces"):
+        researcher_workspace = workspace_root(workspace) / (block_id or "unassigned")
+        if not researcher_workspace.resolve().is_relative_to(workspace_root(workspace).resolve()):
             raise ValueError("Researcher workspace must remain under the block workspace root")
         researcher = Agent(
             researcher_model, name="oncojev-researcher", instructions=RESEARCHER_INSTRUCTIONS,
@@ -78,7 +79,7 @@ def _build(
     director = director or Agent(
         director_model, name="oncojev-director", instructions=DIRECTOR_INSTRUCTIONS,
         deps_type=DirectorDeps, model_settings=director_settings,
-        capabilities=_runtime_capabilities(Path("/work/director"), max_tool_calls, "director"),
+        capabilities=_runtime_capabilities(director_root(workspace), max_tool_calls, "director"),
         defer_model_check=True,
     )
     if fresh_director:

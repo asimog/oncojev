@@ -410,6 +410,9 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 
 ### H11 — One durable Railway worker and truthful confinement status
 
+**Cutover preparation (2026-10-02):** user authorized replacing `ontojev-api` in existing Railway project `9dfd938b-9b23-4077-b3ed-ec386131e17f`, service `7c1aeaa3-de6e-4ba4-a3d8-27fb2f1b13ae`, production environment. Existing 500 MB `/data` volume has about 83 MB free; previous files remain preserved. `ONCOJEV_DATA_ROOT=/data/oncojev` isolates new records and both workspaces on that volume, owned by the nonroot runtime user. Runtime selects confined local-venv science; Railway configuration declares one replica. Six focused role/factory/sandbox tests, architecture and diff checks passed. Deployment, target confinement, restart persistence and sequential live cycles still require actual receipts; this preparation does not close H11.
+
+
 **Owner:** Dockerfile, railway.toml, service/env/config, read-only operational application/API, existing Coder verifier plus scientific backend proof.
 
 1. Keep API and autonomous loop in one service with one Director and one active Researcher; redeploy only for application/software changes. Sequential blocks/dossiers/evidence/hypotheses/memory/verifications/registry revisions/promotions/reviews/exports must not restart normal research.

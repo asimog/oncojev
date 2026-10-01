@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from src.runtime.paths import data_root, workspace_root
+
 import asyncio
 import os
 import threading
@@ -127,7 +129,7 @@ class AutonomousService:
         if self.policy.retention.enabled:
             from src.persistence.retention import cleanup_workspaces
             try:
-                results=cleanup_workspaces(self.repository,self.root / "var" / "workspaces",
+                results=cleanup_workspaces(self.repository,workspace_root(self.root),
                     minimum_age_seconds=self.policy.retention.minimum_age_seconds,max_archive_bytes=self.policy.retention.max_archive_bytes,
                     max_workspaces=self.policy.retention.max_workspaces)
                 for result in results:
@@ -223,5 +225,5 @@ class AutonomousService:
 
 
 def service_from_environment(root: Path) -> AutonomousService:
-    database = Path(os.environ.get("ONCOJEV_DB_PATH", str(root / "var" / "oncojev.sqlite3")))
+    database = Path(os.environ.get("ONCOJEV_DB_PATH", str(data_root(root) / "oncojev.sqlite3")))
     return AutonomousService(root, database)

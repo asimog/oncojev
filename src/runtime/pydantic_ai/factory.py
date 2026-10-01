@@ -20,6 +20,7 @@ from src.runtime.pydantic_ai.telemetry import configure_agent_telemetry
 from src.runtime.pydantic_ai.reasoner import BudgetedLiveReasoner
 from src.science.execution import ScienceExecutor
 from src.science.sandbox import DockerScientificSandbox, SandboxPolicy
+from src.runtime.paths import workspace_root
 from src.oncolab.registry import OncoLabVerificationRecord
 from src.persistence.records import RecordKind
 from src.persistence.references import resolve_reference
@@ -157,7 +158,7 @@ def build_harness_runtime(
         from pathlib import Path
         from src.runtime.resources import ResourceRejected
         root = Path(__file__).resolve().parents[3]
-        workspace = root / "var" / "workspaces" / owner
+        workspace = workspace_root(root) / owner
         if workspace.exists() and (workspace.is_symlink() or workspace.is_junction()):
             raise ResourceRejected("workspace capacity cannot follow linked paths", 0)
         used = 0
@@ -178,7 +179,7 @@ def build_harness_runtime(
     if policy.sandbox.provider == "local_venv":
         from src.science.local import LocalVenvScientificBackend
         from pathlib import Path
-        runtime.sandbox = LocalVenvScientificBackend(Path(__file__).resolve().parents[3] / "var" / "workspaces", runtime.sandbox.policy)
+        runtime.sandbox = LocalVenvScientificBackend(workspace_root(Path(__file__).resolve().parents[3]), runtime.sandbox.policy)
     runtime.gdc.reserve = reserve_file
     runtime.gdc.transfer_receipt = lambda owner, detail: runtime.append_event(owner, "DataTransferReceipt", detail)
     return runtime
