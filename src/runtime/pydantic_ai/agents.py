@@ -57,6 +57,7 @@ def _build(
     director_model: object, researcher_model: object, max_tool_calls: int,
     director_settings: dict | None = None, researcher_settings: dict | None = None,
     researcher_code_calls: int | None = None,
+    director=None,
 ) -> OncoJevAgents:
     workspace = Path(__file__).resolve().parents[3]
 
@@ -73,13 +74,15 @@ def _build(
         register_researcher_tools(researcher)
         return researcher
 
-    director = Agent(
+    fresh_director = director is None
+    director = director or Agent(
         director_model, name="oncojev-director", instructions=DIRECTOR_INSTRUCTIONS,
         deps_type=DirectorDeps, model_settings=director_settings,
         capabilities=_runtime_capabilities(Path("/work/director"), max_tool_calls, "director"),
         defer_model_check=True,
     )
-    register_director_tools(director)
+    if fresh_director:
+        register_director_tools(director)
     return OncoJevAgents(director=director, researcher=build_researcher(), _fresh_researcher=build_researcher)
 
 
@@ -87,11 +90,12 @@ def create_agents(director_model: str, researcher_model: str, max_tool_calls: in
     return _build(director_model, researcher_model, max_tool_calls)
 
 
-def create_configured_agents(config: ModelsConfig, max_tool_calls: int = 100, researcher_code_calls: int | None = None) -> OncoJevAgents:
+def create_configured_agents(config: ModelsConfig, max_tool_calls: int = 100, researcher_code_calls: int | None = None, *, director=None) -> OncoJevAgents:
     load_local_environment()
     configure_agent_telemetry()
     return _build(
         configured_model(config.director), configured_model(config.researcher), max_tool_calls,
         model_settings(config.director), model_settings(config.researcher),
         researcher_code_calls,
+        director,
     )

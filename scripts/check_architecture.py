@@ -31,7 +31,7 @@ def main() -> None:
     if any("science.admission" in path.read_text(encoding="utf-8") for path in director.glob("*.py")):
         raise SystemExit("Director must not import Science admission.")
 
-    for package in ("persistence", "application", "api"):
+    for package in ("persistence", "application", "api", "memory"):
         for path in (SOURCE / package).rglob("*.py"):
             text = path.read_text(encoding="utf-8")
             if "science.admission" in text or "admit_scientific_evidence" in text:

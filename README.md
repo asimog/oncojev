@@ -71,6 +71,11 @@ typed, hashed execution references and declared scope; exploratory plots and
 provided-array statistics remain exploratory. See [capability records](docs/CAPABILITIES.md)
 and [Jev receipts](docs/JEV.md) for the replay and uncertainty contracts.
 
+Typed cross-cycle memory retrieves relevant recorded outcomes and supplies bounded
+start packets with references, failures, uncertainties and candidate directions.
+The service retains one Director Agent and no prior message history; Researcher
+instances, state, skills and budgets remain fresh. See [research memory](src/memory/README.md).
+
 ## Development
 
 Configured Director, fresh Researcher, and Reasoner agents send Logfire agent,

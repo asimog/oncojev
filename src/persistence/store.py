@@ -81,6 +81,14 @@ class SqliteResearchStore:
         matches = self.records(kind=kind, block_id=block_id)
         return matches[-1] if matches else None
 
+    def record_at(self, seq: int) -> StoredRecord | None:
+        """Resolve an immutable sequence reference without scanning whole history."""
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT seq, kind, block_id, record_id, recorded_at, schema_version, payload FROM records WHERE seq = ?", (seq,)
+            ).fetchone()
+        return self._row_to_record(row) if row else None
+
     def block_ids(self) -> tuple[str, ...]:
         with self._lock:
             rows = self._connection.execute(

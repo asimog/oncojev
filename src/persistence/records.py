@@ -34,6 +34,7 @@ class RecordKind(StrEnum):
     ARTIFACT = "artifact"
     DOSSIER = "dossier"
     RESEARCH_MEMORY = "research_memory"
+    MEMORY_DIGEST = "memory_digest"
 
 
 class StoredRecord(BaseModel, frozen=True):

@@ -5,6 +5,7 @@ from src.block.models import BlockStatus,JevBlock
 from src.director.models import JevBlockStart,ResourceAllocation
 from src.ledger.store import Ledger
 from src.config.models import BlockConfig
+from src.memory.models import StartMemory
 
 
 class HandoffRequired(RuntimeError):
@@ -15,13 +16,17 @@ class BlockManager:
     def __init__(self,now:Callable[[],datetime]|None=None, *, policy:BlockConfig|None=None)->None:
         self.policy=policy
         self._now=now or (lambda:datetime.now(UTC)); self._ledgers:dict[str,Ledger]={}; self._blocks:dict[str,JevBlock]={}
-    def create(self,objective:str,why_now:str,allocation:ResourceAllocation, *, mission_id:str|None=None, cycle_id:str|None=None)->JevBlock:
+    def create(self,objective:str,why_now:str,allocation:ResourceAllocation, *, mission_id:str|None=None, cycle_id:str|None=None, memory:StartMemory|None=None, entities:tuple[str,...]=(), topics:tuple[str,...]=())->JevBlock:
         if self.policy is not None:
             if not self.policy.min_seconds <= allocation.seconds <= self.policy.max_seconds:
                 raise ValueError("block duration is outside configured min/max bounds")
             if allocation.handoff_reserve_seconds != self.policy.handoff_reserve_seconds:
                 raise ValueError("block reserve must match deterministic policy")
-        started=self._now(); start=JevBlockStart(block_id=str(uuid4()),objective=objective,why_now=why_now,allocation=allocation,deadline=started+timedelta(seconds=allocation.seconds))
+        started=self._now(); context=memory or StartMemory()
+        start=JevBlockStart(block_id=str(uuid4()),objective=objective,why_now=why_now,allocation=allocation,deadline=started+timedelta(seconds=allocation.seconds), entities=entities, topics=topics,
+            memory=context, relevant_evidence_refs=tuple(r.record_id for r in context.references if r.kind=="evidence"),
+            known_uncertainties=context.uncertainties, candidate_directions=context.candidate_directions,
+            constraints=("Prior context is not inherited evidence admission authority.", *context.limitations))
         block=JevBlock(block_id=start.block_id,start=start,started_at=started,deadline=start.deadline,mission_id=mission_id,cycle_id=cycle_id)
         self._blocks[start.block_id]=block; self._ledgers[start.block_id]=Ledger(); return block
     def allocate(self, objective:str, why_now:str, seconds:int|None=None, **references)->JevBlock:

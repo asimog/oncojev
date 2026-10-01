@@ -1,5 +1,27 @@
 # OncoLab Index semantics
 
+Cross-cycle research context lives in `src/memory/`, separately from capability
+verification. Versioned digests reference recorded outcomes, measurements,
+evidence, hypotheses, semantic candidates, blockers, uncertainties and proposals.
+Director prose is optional context. Factory/service backfill appends derived
+records and respects effective legacy outcome corrections; it never reruns work.
+
+Both roles can use `search_research_memory`, `get_dossier`, `get_evidence`,
+`get_hypotheses`, `get_negative_results`, `get_open_uncertainties` and
+`resolve_memory_reference`. Director `read_research_memory` now returns a bounded
+typed context envelope rather than a recent-prose list. Retrieval accepts mission,
+declared entity/topic and timezone-aware time filters. Search uses stable lexical
+relevance, not automatic newest-result copying; semantic memory ranking remains F6.
+The Director receives retrieved context automatically and allocation retrieves
+again for its selected objective. Both Researcher launch paths receive the validated
+start packet, while state/evidence/measurements/skills/budgets remain fresh.
+
+Digest context is bounded to 20 results and 32 KiB; start memory to 16 KiB. Exact
+records remain hash-resolvable. Oversized requested records return an explicit
+omission response instead of silently changing measurements. Current Science
+outputs do not declare scientific negatives: the separate negative-results field
+remains empty for them. Provider failures and semantic rejection cannot populate it.
+
 `OncoLabIndex` is the one shared application registry for Director and Researcher within a runtime. It provides bounded deterministic retrieval and loads bundled records from `src/oncolab/proven/verified-executions.yaml` plus resolvable durable verification receipts through factory composition, separately from descriptor status. Loading is idempotent by capability/verification identity and never resumes research. Verification names a declared execution, not the maturity or scientific validity of a statistics family. `describe_oncolab` returns at most 20 verification records and an omitted count. The Pydantic AI harness is only a client through runtime dependencies; it owns no registry. “OncoLab” names this domain index; Pydantic AI capabilities and tools remain framework plumbing under `src/runtime/pydantic_ai/`.
 
 The Index describes data/source capabilities, scientific and statistical methods, transformations, software, visualization, literature/knowledge, and Jev measurements. It uses typed descriptors with purpose, contracts, applicability, limitations, assumptions, missingness semantics, availability, execution/access policy, resource class, validation state, and provenance. It is metadata only: typed wrappers remain the only route to execution.

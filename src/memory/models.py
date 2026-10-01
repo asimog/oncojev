@@ -1,0 +1,80 @@
+from datetime import datetime
+from typing import Any, Literal
+
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from src.persistence.records import RecordKind
+
+
+class MemoryReference(BaseModel, frozen=True):
+    kind: RecordKind
+    record_id: str
+    seq: int = Field(gt=0)
+    block_id: str | None = None
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
+class MemoryItem(BaseModel, frozen=True):
+    item_id: str
+    summary: str
+    epistemic_status: Literal["hypothesis", "uncertainty", "operational_failure", "semantic_history", "proposal", "legacy_prose", "director_note", "scientific_negative"]
+    references: tuple[MemoryReference, ...] = ()
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class CycleDigest(BaseModel, frozen=True):
+    version: Literal["research-memory-v1"] = "research-memory-v1"
+    digest_id: str
+    cycle_id: str
+    mission_id: str | None = None
+    direction: str
+    recorded_at: datetime
+    cycle_status: Literal["complete", "failed", "incomplete", "unknown"]
+    director_outcome: Literal["unknown", "returned", "truncated", "failed", "interrupted"]
+    failure_reason: str | None = None
+    block_ids: tuple[str, ...] = ()
+    objectives: tuple[str, ...] = ()
+    lifecycle: tuple[dict[str, Any], ...] = ()
+    references: tuple[MemoryReference, ...] = ()
+    limitations: tuple[str, ...] = ()
+    unresolved_references: tuple[str, ...] = ()
+    hypotheses: tuple[MemoryItem, ...] = ()
+    scientific_negative_findings: tuple[MemoryItem, ...] = ()
+    candidates: tuple[MemoryItem, ...] = ()
+    operational_blockers: tuple[MemoryItem, ...] = ()
+    uncertainties: tuple[MemoryItem, ...] = ()
+    continuation_proposals: tuple[MemoryItem, ...] = ()
+    resource_usage: dict[str, Any] = Field(default_factory=dict)
+    entities: tuple[str, ...] = ()
+    topics: tuple[str, ...] = ()
+    inferred: bool = False
+    legacy_notes: tuple[MemoryItem, ...] = ()
+    director_note: MemoryItem | None = None
+
+
+class MemoryContext(BaseModel, frozen=True):
+    version: Literal["memory-context-v1"] = "memory-context-v1"
+    query: str
+    digests: tuple[dict[str, Any], ...] = ()
+    omitted_digests: int = 0
+    max_bytes: int = 32768
+
+
+class StartMemory(BaseModel, frozen=True):
+    """Prior context does not inherit measurements, evidence or tool authority."""
+    digest_ids: tuple[str, ...] = ()
+    references: tuple[MemoryReference, ...] = ()
+    prior_failures: tuple[str, ...] = ()
+    uncertainties: tuple[str, ...] = ()
+    candidate_directions: tuple[str, ...] = ()
+    limitations: tuple[str, ...] = ()
+    omitted_digests: int = 0
+    omitted_items: int = 0
+
+
+class MemoryFilters(BaseModel, frozen=True):
+    model_config = ConfigDict(extra="forbid")
+    mission_id: str | None = None
+    entity: str | None = None
+    topic: str | None = None
+    since: AwareDatetime | None = None
+    until: AwareDatetime | None = None

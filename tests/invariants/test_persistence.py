@@ -3,6 +3,7 @@
 import json
 import sqlite3
 import threading
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -286,6 +287,9 @@ def test_terminal_bundle_rollback_and_cycle_recovery(tmp_path):
 
 
 def test_legacy_failure_correction_preserves_original_records():
+    from src.memory.service import ResearchMemory
+    from src.researcher.state import StateFragment
+    from src.provenance import canonical_bytes
     repository = ResearchRepository(SqliteResearchStore())
     manager = BlockManager()
     block = manager.create("legacy block 4", "test", ResourceAllocation(seconds=60))
@@ -307,10 +311,29 @@ def test_legacy_failure_correction_preserves_original_records():
     assert application.overview()["latest_cycle"]["status"] == "failed"
     assert application.blocks()[0]["block"]["status"] == "failed"
     assert not reconstruct_block(repository.store, block.block_id).complete
+    memory = ResearchMemory(repository.store)
+    memory.backfill()
+    old_digest = memory.search("legacy")[0]
+    assert old_digest.inferred and old_digest.lifecycle[0]["status"] == "failed"
+    assert memory.get_evidence(evidence.evidence_id, block.block_id)["evidence"] == evidence.model_dump(mode="json")
+    with pytest.raises(ValueError, match="unresolved or changed"):
+        memory.resolve(old_digest.references[0].model_copy(update={"sha256": "0" * 64}))
     recover_interrupted_blocks(repository)
     correction = repository.store.latest(RecordKind.OUTCOME_CORRECTION, block_id=block.block_id)
     assert correction.payload["original_seqs"] == [record.seq for record in originals if record.kind in {RecordKind.BLOCK, RecordKind.DOSSIER, RecordKind.LEDGER_EVENT, RecordKind.CYCLE}]
     assert repository.store.records()[:len(originals)] == originals
+    memory.backfill()
+    assert memory.search("legacy")[0].digest_id != old_digest.digest_id
+    assert memory.get_dossier(block.block_id)["lifecycle_status"] == "failed"
+    large = ResearchState(block_id=block.block_id, objective=block.objective,
+        uncertainties=tuple(StateFragment(fragment_id=str(i), kind="uncertainty", summary="unknown Î©" * 1000, provenance=("fixture",)) for i in range(50)))
+    repository.record_state_revision(large)
+    memory.backfill()
+    context = memory.context("legacy")
+    assert len(canonical_bytes(context.model_dump(mode="json"))) <= 32768
+    assert context.digests and context.digests[0]["operational_blockers"]
+    assert context.digests[0]["omitted_items"]["uncertainties"] > 0
+    assert len(canonical_bytes(memory.start_context("legacy").model_dump(mode="json"))) <= 16384
     count = repository.store.count()
     recover_interrupted_blocks(repository)
     assert repository.store.count() == count
@@ -345,6 +368,119 @@ def test_service_recovers_pending_work_before_each_cycle(tmp_path, monkeypatch):
         assert result.status.value == "complete"
         assert service.application.reconstruction(pending.block_id).block["status"] == "interrupted"
         assert [r.payload["status"] for r in service.store.records(kind=RecordKind.CYCLE)] == ["incomplete", "complete"]
+    finally:
+        service.store.close()
+
+
+@pytest.mark.parametrize("reopen", [False, True])
+@pytest.mark.parametrize("launch", ["nested", "fallback"])
+def test_service_delivers_relevant_failed_history_to_fresh_researcher(tmp_path, monkeypatch, reopen, launch):
+    """Real service/factory/tools preserve failed context without inheriting evidence or transcripts."""
+    import httpx
+    from pydantic_ai.exceptions import UsageLimitExceeded
+    from src.autonomous import AutonomousService
+    from src.runtime.pydantic_ai.factory import build_system
+    from src.sources.public import GdcPublicSource
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "fixture")
+    monkeypatch.setenv("TYPESAFE_API_KEY", "fixture")
+    monkeypatch.setattr("src.runtime.pydantic_ai.factory.build_reasoner", lambda *args: DeterministicReasoner())
+    monkeypatch.setattr("src.runtime.pydantic_ai.factory.build_jev_client", lambda *args: DeterministicJevClient())
+    monkeypatch.setattr("src.runtime.pydantic_ai.agents.configure_agent_telemetry", lambda: None)
+    phase = 1
+    systems = []
+    delivered = []
+    previous_block = None
+
+    async def director(messages, info):
+        first = not any(isinstance(m, ModelResponse) for m in messages)
+        if first:
+            prompt = " ".join(str(p.content) for m in messages for p in m.parts if hasattr(p, "content"))
+            if phase == 2:
+                assert "UsageLimitExceeded" in prompt, "Director lost the prior failed cycle outcome"
+                assert "not biological absence" in prompt
+                assert "unrelated-newest" not in prompt
+            code = 'memory = await read_research_memory(query="melanoma")\n'
+            if phase == 2:
+                code += ('filtered = await search_research_memory(query="melanoma", filters={"entity": "TCGA-SKCM", "topic": "expression"})\n'
+                         'assert filtered["digests"]\n'
+                         'reference = memory["digests"][0]["references"][0]\n'
+                         'resolved = await resolve_memory_reference(kind=reference["kind"], record_id=reference["record_id"], seq=reference["seq"], sha256=reference["sha256"], block_id=reference["block_id"])\nassert resolved\n'
+                         f'dossier = await get_dossier(block_id="{previous_block}")\n'
+                         'hypotheses = await get_hypotheses(query="melanoma")\n'
+                         'negative = await get_negative_results(query="melanoma")\n'
+                         'uncertainty = await get_open_uncertainties(query="melanoma")\n'
+                         'assert dossier is not None\nassert dossier["lifecycle_status"] == "failed"\nassert hypotheses\nassert uncertainty\nassert not negative\n')
+            code += 'block = await allocate_block(objective="melanoma public expression", why_now="review recorded failure", entities=["TCGA-SKCM"], topics=["expression"])\n'
+            if launch == "nested":
+                code += 'await launch_researcher(block_id=block["block_id"])\n'
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": code + 'block'}, tool_call_id="allocate")])
+        if phase == 2:
+            returns = [str(p.content) for m in messages for p in m.parts if hasattr(p, "content")]
+            assert not any("Type error in code" in value or "AssertionError" in value or "Exception:" in value for value in returns), returns[-1]
+            assert systems[-1].runtime.manager.blocks(), returns[-1]
+        return ModelResponse(parts=[TextPart("Optional prose claiming victory is not scientific evidence")])
+
+    async def researcher(messages, info):
+        first = not any(isinstance(m, ModelResponse) for m in messages)
+        if phase == 1:
+            if first:
+                return ModelResponse(parts=[ToolCallPart("run_code", {"code":
+                    'try:\n    await acquire_gdc(endpoint="files", filters={}, fields=["file_id"])\nexcept Exception:\n    pass\n'
+                    'await generate_hypotheses(finding="melanoma source unavailable; unknown")'}, tool_call_id="partial")])
+            raise UsageLimitExceeded("failed researcher")
+        if first:
+            prompt = " ".join(str(p.content) for m in messages for p in m.parts if hasattr(p, "content"))
+            assert "UsageLimitExceeded" in prompt and "Replication needed" in prompt
+            assert "unrelated-newest" not in prompt
+            assert "Optional prose claiming victory" not in prompt
+            delivered.append(prompt)
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": 'await inspect_research_state()'}, tool_call_id="fresh")])
+        return ModelResponse(parts=[TextPart("reviewed prior failure without repeating source call")])
+
+    monkeypatch.setattr("src.runtime.pydantic_ai.agents.configured_model", lambda role: scripted(researcher if role.max_output_tokens == 16000 else director))
+
+    def compose(*args, **kwargs):
+        system = build_system(*args, **kwargs)
+        system.runtime.gdc = GdcPublicSource(httpx.MockTransport(lambda request: httpx.Response(503, json={"error": "unavailable"})))
+        systems.append(system)
+        return system
+
+    monkeypatch.setattr("src.autonomous.build_system", compose)
+    database = tmp_path / "memory-service.sqlite3"
+    service = AutonomousService(ROOT, database)
+    try:
+        with pytest.raises((UsageLimitExceeded, RuntimeError)):
+            service.run_once("melanoma public expression")
+        previous_block = service.store.block_ids()[0]
+        # A newer unrelated, actually recorded cycle must not replace relevant history.
+        service.repository.record_cycle("unrelated", "live", "unrelated-newest cardiology", (), status="failed", error_type="NoAllocation")
+        service.repository.record_research_memory("legacy-only", "melanoma fabricated scientific negative", ("legacy",))
+        if reopen:
+            service.store.close()
+            service = AutonomousService(ROOT, database)
+        phase = 2
+        result = service.run_once("melanoma public expression")
+        assert result.status.value == "complete" and len(delivered) == 1
+        assert systems[0].runtime is not systems[1].runtime
+        assert (systems[0].agents.director is systems[1].agents.director) is not reopen
+        assert systems[1].runtime.manager.blocks()[0].start.memory.prior_failures
+        fresh = systems[1].runtime.research_state.get(result.block_ids[0])
+        assert not fresh.evidence_ids and not fresh.measurements and not fresh.uncertainties
+        from src.memory.service import ResearchMemory
+        memory = ResearchMemory(service.store)
+        count = service.store.count()
+        memory.backfill()
+        assert service.store.count() == count
+        assert memory.get_evidence("missing", previous_block) is None
+        assert not memory.items("scientific_negative_findings", "melanoma")
+        assert memory.search("melanoma", mission_id=systems[0].runtime.mission_id)
+        assert memory.search("melanoma", entity="TCGA-SKCM", topic="expression")
+        assert systems[1].runtime.resources(result.block_ids[0])["source"]["attempted"] == 0
+        assert not memory.search("melanoma", entity="unknown-entity")
+        assert not memory.search("melanoma", topic="unknown-topic")
+        assert not memory.search("melanoma", since=datetime(2100, 1, 1, tzinfo=UTC))
+        assert any(d.legacy_notes and d.inferred for d in memory.digests())
     finally:
         service.store.close()
 

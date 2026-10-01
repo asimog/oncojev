@@ -11,6 +11,7 @@ from src.persistence.records import RecordKind
 from src.persistence.reconstruct import BlockReconstruction, reconstruct_block, effective_cycle
 from src.persistence.repository import ResearchRepository
 from src.persistence.store import SqliteResearchStore
+from src.memory.service import ResearchMemory
 
 
 class ResearchApplication:
@@ -51,4 +52,13 @@ class ResearchApplication:
         return reconstruct_block(self._store, block_id)
 
     def research_memory(self) -> tuple[dict[str, Any], ...]:
-        return tuple(record.payload for record in self._store.records(kind=RecordKind.RESEARCH_MEMORY))
+        views = ResearchMemory(self._store).context("", limit=20).digests
+        if not views:
+            # Read-only compatibility for archives not yet backfilled by the
+            # autonomous service. Narrative is explicitly unverified context.
+            return tuple({"summary": "Legacy prose (unverified context): " + r.payload.get("summary", "")[:1000],
+                          "provenance": ["legacy-prose", r.record_id], "epistemic_status": "legacy_prose"}
+                         for r in self._store.records(kind=RecordKind.RESEARCH_MEMORY)[-20:])
+        return tuple({**d, "summary": f"{d['cycle_status']}: " + "; ".join(d["objectives"] or [d["direction"]]) +
+                       (f"; failure: {d['failure_reason']}" if d["failure_reason"] else ""),
+                       "provenance": [d["version"], d["digest_id"]]} for d in views)

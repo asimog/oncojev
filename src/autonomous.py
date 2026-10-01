@@ -21,6 +21,7 @@ from src.persistence.repository import ResearchRepository
 from src.persistence.store import SqliteResearchStore
 from src.runtime.cycle import CycleResult, run_cycle
 from src.runtime.pydantic_ai.factory import build_system
+from src.memory.service import ResearchMemory
 
 
 DEFAULT_DIRECTION = "Investigate a public oncology signal and admit only source-bound reproducible evidence."
@@ -105,10 +106,13 @@ class AutonomousService:
         self.models = load_models_config(root / "config" / "models.yaml")
         self.policy = load_runtime_config(root / "config" / "runtime.yaml")
         recover_interrupted_blocks(self.repository)
+        ResearchMemory(self.store).backfill()
+        self.director = None
 
     def run_once(self, direction: str = DEFAULT_DIRECTION) -> CycleResult:
         recover_interrupted_blocks(self.repository)
-        system = build_system(self.models, self.policy, repository=self.repository)
+        system = build_system(self.models, self.policy, repository=self.repository, director=self.director)
+        self.director = system.agents.director
         return run_cycle(system, direction, repository=self.repository, mission_id=f"mission-{self.store.count() + 1}")
 
     def serve(self, host: str, port: int, direction: str, interval_seconds: int) -> None:

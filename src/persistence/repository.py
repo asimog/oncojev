@@ -120,6 +120,6 @@ class ResearchRepository:
     def record_dossier(self, dossier: JevBlockDossier) -> StoredRecord:
         return self._append(RecordKind.DOSSIER, dossier.block_id, dossier.model_dump(mode="json"), dossier.block_id)
 
-    def record_research_memory(self, mission_id: str, summary: str, provenance: tuple[str, ...]) -> StoredRecord:
+    def record_research_memory(self, mission_id: str, summary: str, provenance: tuple[str, ...], *, cycle_id: str | None = None) -> StoredRecord:
         record_id = f"{mission_id}:memory:{len(self._store.records(kind=RecordKind.RESEARCH_MEMORY))}"
-        return self._append(RecordKind.RESEARCH_MEMORY, record_id, {"summary": summary, "provenance": list(provenance)})
+        return self._append(RecordKind.RESEARCH_MEMORY, record_id, {"summary": summary, "provenance": list(provenance), "mission_id": mission_id, "cycle_id": cycle_id})

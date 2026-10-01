@@ -16,6 +16,7 @@ from src.dossier.models import JevBlockDossier
 from src.persistence.repository import ResearchRepository
 from src.runtime.pydantic_ai.factory import ConfiguredSystem, bind_repository
 from src.runtime.pydantic_ai.contracts import DirectorDeps, ResearcherDeps, is_director_truncation
+from src.provenance import canonical_bytes
 
 
 DIRECTOR_PROMPT = (
@@ -70,7 +71,10 @@ def run_cycle(
     error_type = None
     try:
         limits = system.runtime.usage_limits("director")
-        result = system.agents.director.run_sync(DIRECTOR_PROMPT.format(direction=direction),
+        memory = system.runtime.memory_service()
+        context = memory.context(direction, limit=min(5, system.runtime.memory_limit)).model_dump(mode="json") if memory else {"digests": []}
+        prompt = DIRECTOR_PROMPT.format(direction=direction) + "\nRetrieved structured memory (context, not evidence):\n" + canonical_bytes(context).decode("utf-8")
+        result = system.agents.director.run_sync(prompt,
                                                 deps=DirectorDeps(system.runtime), usage_limits=limits, usage=system.runtime.director_usage)
         director_output = result.output
     except Exception as error:
@@ -99,7 +103,7 @@ def run_cycle(
             try:
                 system.runtime.start_researcher(block.block_id, "python_orchestrator")
                 researcher = system.runtime.researcher_factory(block.block_id) if system.runtime.researcher_factory else system.agents.fresh_researcher(block.block_id)
-                researcher.run_sync(f"Investigate block {block.block_id}: {block.objective}", deps=ResearcherDeps(system.runtime, block.block_id),
+                researcher.run_sync(system.runtime.researcher_prompt(block.block_id), deps=ResearcherDeps(system.runtime, block.block_id),
                                     usage=system.runtime.researcher_budget(block.block_id), usage_limits=system.runtime.usage_limits("researcher"))
                 system.runtime.complete_researcher(block.block_id)
             except Exception as error:
@@ -134,9 +138,10 @@ def run_cycle(
         dossiers.append(dossier)
     if repository is not None:
         if director_output:
-            repository.record_research_memory(mission_id, director_output[:2000], ("run-cycle-v3", status.value, direction, *(b.block_id for b in new_blocks)))
+            repository.record_research_memory(mission_id, director_output[:2000], ("run-cycle-v3", status.value, direction, *(b.block_id for b in new_blocks)), cycle_id=cycle_id)
         repository.record_cycle(mission_id, system.mode.value, direction, tuple(b.block_id for b in new_blocks),
                                 status=status, error_type=error_type, director_outcome=director_outcome, director_error_type=director_error, cycle_id=cycle_id)
+        system.runtime.memory_service().backfill()
     if failure is not None:
         raise failure
     return CycleResult(direction, system.mode, director_output, tuple(b.block_id for b in new_blocks),

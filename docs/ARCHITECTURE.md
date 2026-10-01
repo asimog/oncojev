@@ -63,6 +63,11 @@ Each Jev call retains its projection and question specifications, hashes, reques
 
 One composition point, `src/runtime/pydantic_ai/factory.py`, constructs the autonomous live system from strict repository-owned configuration. Missing provider credentials fail closed. Deterministic clients exist only as explicit test fixtures. The Reasoner is an independent Pydantic AI sub-agent, and TypeSafe failures are operational (`JevOperationalFailure`), never decisions.
 
+`AutonomousService` owns one Director Agent for its process lifetime and passes it
+back through factory composition. Each cycle still has a new runtime and each
+block a fresh Researcher, state, skills and budgets. Previous Director messages
+are not retained; durable structured memory is authoritative after restart.
+
 ## Persistence and application API
 
 `src/persistence/` writes block, ledger, state, measurement, evidence, Jev, artifact, and dossier records as work occurs into append-only SQLite. Block closure and its terminal dossier are committed atomically and idempotently. A durable cycle-start receipt and mission-linked block records let recovery finish a missing cycle receipt after an interrupted write sequence. Recovery runs at startup and before every service cycle, closes interrupted blocks with a current-time recovery event and partial dossier, and never resumes research. A dossier alone does not establish closure. `src/application/service.py` assembles read models, and `src/api/server.py` exposes them read-only.
@@ -70,6 +75,25 @@ One composition point, `src/runtime/pydantic_ai/factory.py`, constructs the auto
 Lifecycle closure, Researcher run outcome, Director outcome, and scientific objective attainment are separate contracts. Under the no-retry contract, each block permits one Researcher launch. `complete_block` records a handoff request; only `ResearcherRunCompleted` permits successful finalization. Any `ResearcherRunFailed` overrides a normal Director return. Hard Director errors and invalid allocation counts close all allocated blocks as failed and preserve partial dossiers before propagating the error; pre-allocation failure records a failed cycle without inventing a block. Only installed `UsageLimitExceeded` and `IncompleteToolCall` exceptions qualify as Director truncation, which produces an incomplete cycle even after a completed Researcher run. Authentication, transport, tool crashes and generic `UnexpectedModelBehavior` remain hard failures. Objective attainment defaults to unknown; neither model prose nor a completed run establishes a scientific estimate.
 
 Effective reconstruction and API views give failure receipts precedence over contradictory legacy completion. Recovery appends an outcome correction linked to original block, ledger, dossier and cycle sequence numbers. Original cycles, dossiers, measurements and evidence remain unchanged. Legacy completion without a Researcher completion receipt is explicitly inferred as unverified/interrupted. This applies to historical block 4 as well as any matching history.
+
+`src/memory/` appends versioned cycle digests from resolvable records, including
+failed and pre-allocation outcomes. References pin kind, sequence, identity,
+owner and content hash. New corrections produce new derived snapshots; old
+records remain intact. Missing historical inputs and legacy prose are explicitly
+labelled. Search ranks structured context deterministically, with stable ties and
+mission/entity/topic/time filters. Entity/topic tags are declared at allocation.
+Retrieved context is bounded to 32 KiB and start memory to 16 KiB, with omissions
+and truncation marked. Director and Researcher can resolve historical dossiers,
+evidence, hypotheses and open uncertainties from persistence. Scientific negatives
+have their own field; current Science outputs do not declare such interpretations,
+so no negatives are inferred from missing evidence, failure or semantic rejection.
+
+Allocation retrieves context for the actual objective and stores selected
+references, prior failures, uncertainty, candidate directions and limitations in
+the start packet. Both launch paths deliver it to the fresh Researcher without
+inheriting admission authority or prior transcripts. API reads expose bounded
+typed outcomes with derived summary/provenance compatibility fields; archive prose
+without a digest is labelled unverified context. API reads never backfill memory.
 
 ## Observability and evaluation
 

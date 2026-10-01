@@ -24,6 +24,7 @@ from src.oncolab.registry import OncoLabVerificationRecord
 from src.persistence.records import RecordKind
 from src.persistence.references import resolve_reference
 from src.sources.public import GdcPublicSource, PublicLiteratureSource, XenaPublicSource
+from src.memory.service import ResearchMemory
 
 
 def build_jev_client(models: ModelsConfig, mode: RuntimeMode, environment: dict[str, str] | None = None, policy=None) -> JevClient:
@@ -61,6 +62,7 @@ def bind_repository(runtime: HarnessRuntime, repository) -> None:
     """Seed the shared Index from resolvable durable receipts, without resuming work."""
     runtime.repository = repository
     if repository is not None:
+        ResearchMemory(repository.store).backfill()
         for saved in repository.store.records(kind=RecordKind.VERIFICATION):
             record = OncoLabVerificationRecord.model_validate(saved.payload)
             resolve_reference(repository.store, record.execution_reference)
@@ -106,6 +108,7 @@ def build_harness_runtime(
         max_source_calls=policy.block.max_source_calls,
         max_sandbox_calls=policy.block.max_sandbox_calls,
         oncolab_search_k=policy.oncolab.search_k,
+        memory_limit=policy.director.retrieval_k,
         sandbox=DockerScientificSandbox(SandboxPolicy(image=policy.sandbox.image, cpu=policy.sandbox.cpu, memory_mb=policy.sandbox.memory_mb, timeout_seconds=policy.sandbox.timeout_seconds)),
         gdc=GdcPublicSource(max_download_bytes=policy.block.max_download_bytes),
         xena=XenaPublicSource(max_download_bytes=policy.block.max_download_bytes),
@@ -123,6 +126,7 @@ def build_system(
     manager: BlockManager | None = None,
     environment: dict[str, str] | None = None,
     repository=None,
+    director=None,
 ) -> ConfiguredSystem:
     """Wire the autonomous live system; offline fixtures are constructed explicitly in tests."""
     if policy.mode is not RuntimeMode.LIVE:
@@ -133,7 +137,7 @@ def build_system(
     if max_tool_calls is not None:
         director_code = min(director_code, max_tool_calls)
         researcher_code = min(researcher_code, max_tool_calls)
-    agents = create_configured_agents(models, director_code, researcher_code)
+    agents = create_configured_agents(models, director_code, researcher_code, director=director)
     runtime = build_harness_runtime(models, policy, manager=manager, environment=environment, repository=repository)
     runtime.researcher_factory = agents.fresh_researcher
     return ConfiguredSystem(agents=agents, runtime=runtime, mode=RuntimeMode.LIVE)

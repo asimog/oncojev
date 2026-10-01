@@ -36,11 +36,15 @@ from src.science.sandbox import DockerScientificSandbox, GithubMethodRequest, Sa
 from src.sources.models import AcquisitionRecord
 from src.persistence.records import RecordKind
 from src.persistence.repository import ResearchRepository
+from src.persistence.reconstruct import reconstruct_block
 from src.sources.public import GdcPublicSource, PublicLiteratureSource, XenaPublicSource
 from src.visualization.models import FigureArtifact
 from src.visualization.service import line_figure
 from src.researcher.state import ProjectionSpec, ResearchStateStore, StateFragment, project_state
 from src.oncolab.labskills import BlockSkillStore
+from src.memory.service import ResearchMemory
+from src.memory.models import MemoryFilters, MemoryReference
+from src.provenance import canonical_bytes
 
 
 def is_director_truncation(error: Exception) -> bool:
@@ -109,7 +113,17 @@ class HarnessRuntime:
     enable_reasoner: bool = True
     mission_id: str | None = None
     cycle_id: str | None = None
+    memory_limit: int = 20
     _counts: dict[str, int] = field(default_factory=dict)
+
+    def memory_service(self):
+        return ResearchMemory(self.repository.store) if self.repository is not None else None
+
+    def researcher_prompt(self, block_id):
+        block = self.manager.block(block_id)
+        return (f"Investigate block {block_id}: {block.objective}\n"
+                "Validated start packet (prior context only; never evidence admission authority):\n" +
+                canonical_bytes(block.start.model_dump(mode="json")).decode("utf-8"))
 
     def claim(self, block_id: str, resource: str, limit: int) -> None:
         self.check_work(block_id, {resource: (1, limit)})
@@ -261,9 +275,61 @@ class ResearcherDeps:
     block_id: str
 
 
+def register_memory_tools(agent):
+    def bounded(value):
+        if len(canonical_bytes(value)) > 32768:
+            return {"available": True, "omitted": "Requested payload exceeds the 32768-byte context bound; use its typed references."}
+        return value
+
+    def items(ctx, field, query, filters, limit):
+        memory = ctx.deps.runtime.memory_service()
+        return bounded(list(memory.items(field, query, limit=min(limit, ctx.deps.runtime.memory_limit),
+                       **MemoryFilters.model_validate(filters or {}).model_dump())) if memory else [])
+
+    @agent.tool
+    async def search_research_memory(ctx: RunContext[Any], query: str = "", filters: dict[str, Any] | None = None, limit: int = 10) -> dict[str, Any]:
+        """Search historical typed outcomes by mission/entity/topic/time; bounded context, not evidence."""
+        memory = ctx.deps.runtime.memory_service()
+        return memory.context(query, limit=min(limit, ctx.deps.runtime.memory_limit), **MemoryFilters.model_validate(filters or {}).model_dump()).model_dump(mode="json") if memory else {"digests": []}
+
+    @agent.tool
+    async def resolve_memory_reference(ctx: RunContext[Any], reference: MemoryReference) -> dict[str, Any] | None:
+        """Resolve exact recorded context by sequence, kind, owner and hash; never grants admission authority."""
+        memory = ctx.deps.runtime.memory_service()
+        return bounded(memory.resolve(reference)) if memory else None
+
+    @agent.tool
+    async def get_dossier(ctx: RunContext[Any], block_id: str) -> dict[str, Any] | None:
+        """Resolve a persisted historical dossier with effective outcome corrections; summary, not evidence."""
+        memory = ctx.deps.runtime.memory_service()
+        return bounded(memory.get_dossier(block_id)) if memory else None
+
+    @agent.tool
+    async def get_evidence(ctx: RunContext[Any], evidence_id: str, block_id: str) -> dict[str, Any] | None:
+        """Resolve prior admitted evidence for reading; cannot admit it into the current block."""
+        memory = ctx.deps.runtime.memory_service()
+        return bounded(memory.get_evidence(evidence_id, block_id)) if memory else None
+
+    @agent.tool
+    async def get_hypotheses(ctx: RunContext[Any], query: str = "", filters: dict[str, Any] | None = None, limit: int = 10) -> list[dict[str, Any]] | dict[str, Any]:
+        """Retrieve reference-linked hypotheses as possibilities, never findings."""
+        return items(ctx, "hypotheses", query, filters, limit)
+
+    @agent.tool
+    async def get_negative_results(ctx: RunContext[Any], query: str = "", filters: dict[str, Any] | None = None, limit: int = 10) -> list[dict[str, Any]] | dict[str, Any]:
+        """Read explicit scientific negatives only; missing, failure and semantic rejection are not negatives."""
+        return items(ctx, "scientific_negative_findings", query, filters, limit)
+
+    @agent.tool
+    async def get_open_uncertainties(ctx: RunContext[Any], query: str = "", filters: dict[str, Any] | None = None, limit: int = 10) -> list[dict[str, Any]] | dict[str, Any]:
+        """Read unresolved recorded uncertainty without converting it to absence."""
+        return items(ctx, "uncertainties", query, filters, limit)
+
+
 def register_director_tools(
     agent: Agent[DirectorDeps, str],
 ) -> None:
+    register_memory_tools(agent)
     @agent.tool
     async def search_oncolab(
         ctx: RunContext[DirectorDeps], query: str = "", kinds: list[OncoLabKind] = [], tags: list[str] = [], limit: int = 8
@@ -285,12 +351,15 @@ def register_director_tools(
 
     @agent.tool
     async def allocate_block(
-        ctx: RunContext[DirectorDeps], objective: str, why_now: str, seconds: int | None = None
+        ctx: RunContext[DirectorDeps], objective: str, why_now: str, seconds: int | None = None,
+        entities: list[str] = [], topics: list[str] = []
     ) -> dict[str, Any]:
         """Create a bounded block. Only BlockManager computes its deadline."""
         runtime = ctx.deps.runtime
         block = runtime.manager.allocate(
-            objective, why_now, seconds, mission_id=runtime.mission_id, cycle_id=runtime.cycle_id
+            objective, why_now, seconds, mission_id=runtime.mission_id, cycle_id=runtime.cycle_id,
+            memory=runtime.memory_service().start_context(objective) if runtime.memory_service() else None,
+            entities=tuple(entities), topics=tuple(topics),
         )
         state = runtime.research_state.start(block.block_id, block.objective)
         runtime.skills.start(block.block_id)
@@ -301,13 +370,13 @@ def register_director_tools(
         return block.model_dump(mode="json")
 
     @agent.tool
-    async def read_research_memory(ctx: RunContext[DirectorDeps], limit: int = 10) -> list[dict[str, Any]]:
-        """Read recent persisted research summaries; memory is context, never evidence."""
-        repository = ctx.deps.runtime.repository
-        if repository is None:
-            return []
-        records = repository.store.records(kind=RecordKind.RESEARCH_MEMORY)
-        return [record.payload for record in records[-max(1, min(limit, 20)):]]
+    async def read_research_memory(ctx: RunContext[DirectorDeps], query: str = "", limit: int = 10,
+                                   mission_id: str | None = None, entity: str | None = None, topic: str | None = None,
+                                   since: datetime | None = None, until: datetime | None = None) -> dict[str, Any]:
+        """Retrieve bounded typed outcomes by relevance and filters, never legacy prose as facts."""
+        memory = ctx.deps.runtime.memory_service()
+        return memory.context(query, limit=min(limit, ctx.deps.runtime.memory_limit), mission_id=mission_id,
+                              entity=entity, topic=topic, since=since, until=until).model_dump(mode="json") if memory else {"digests": []}
 
     @agent.tool
     async def inspect_block(
@@ -315,6 +384,11 @@ def register_director_tools(
     ) -> dict[str, Any]:
         """Read lifecycle state and immutable ledger history for one block."""
         manager = ctx.deps.runtime.manager
+        if block_id not in {b.block_id for b in manager.blocks()}:
+            repository = ctx.deps.runtime.repository
+            if repository is None:
+                raise KeyError(block_id)
+            return reconstruct_block(repository.store, block_id).model_dump(mode="json")
         block = manager.block(block_id)
         return {
             "block": block.model_dump(mode="json"),
@@ -340,7 +414,7 @@ def register_director_tools(
             if researcher is None:
                 raise RuntimeError("Researcher agent is not configured")
             result = await researcher.run(
-                f"Investigate block {block_id}: {block.objective}",
+                runtime.researcher_prompt(block_id),
                 deps=ResearcherDeps(runtime=runtime, block_id=block_id),
                 usage=runtime.researcher_budget(block_id), usage_limits=runtime.usage_limits("researcher"),
             )
@@ -354,6 +428,7 @@ def register_director_tools(
 def register_researcher_tools(
     agent: Agent[ResearcherDeps, str],
 ) -> None:
+    register_memory_tools(agent)
     def block_for(ctx: RunContext[ResearcherDeps]):
         return ctx.deps.runtime.manager.block(ctx.deps.block_id)
 

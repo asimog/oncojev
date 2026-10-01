@@ -12,7 +12,7 @@ Semantic search and measurement are the core mechanism to deliver and evaluate. 
 
 GDC, Xena, literature and future sources are interchangeable capability adapters selected for a research need. Their integration tests verify adapters; they do not define the system's mission or require every investigation to use the same source, modality or statistical method. Source-specific repairs must not become prerequisites for the provider-independent semantic core.
 
-The original phases below record delivered scaffolding. Their historical **DONE** labels do not certify the stronger completeness, scientific utility, or live-path claims challenged by the engineering audit. The verified follow-up plan in section 10 is authoritative for outstanding work. F0–F2 are implemented; F3–F6 remain planned.
+The original phases below record delivered scaffolding. Their historical **DONE** labels do not certify the stronger completeness, scientific utility, or live-path claims challenged by the engineering audit. The verified follow-up plan in section 10 is authoritative for outstanding work. F0–F3 are implemented; F4–F6 remain planned.
 
 ## 1. Architecture, upstream, and tracking
 
@@ -142,7 +142,7 @@ The original phases below record delivered scaffolding. Their historical **DONE*
 
 ## 10. Verified engineering-audit follow-up — 2026-10-01
 
-**Status:** IN PROGRESS; F0–F2 implemented, F3–F6 remain planned.
+**Status:** IN PROGRESS; F0–F3 implemented, F4–F6 remain planned.
 
 **Baseline:** commit `1f2e999a3e23e88da4ece1defce1f09429005120`; checkout was clean before this documentation change. Input: the supplied “OncoJev — Engineering Audit” and four-block findings. Verification used current application paths, configuration, relevant tests, reference documents, installed dependency source, the committed snapshot generator/view, and read-only local SQLite records. No `.upstream/` repositories were searched or executed. No new live/provider calls were made.
 
@@ -312,7 +312,7 @@ Index search/describe/selection receipts include actor, limits, catalogue identi
 
 #### F3 — P1: typed cross-cycle memory and start packets
 
-**Status:** PLANNED. **Dependencies:** F0 and F2 minimum milestone. **Class:** continuity and retrieval, not scientific admission.
+**Status:** DONE (2026-10-01). **Dependencies:** F0 and F2 minimum milestone. **Class:** continuity and retrieval, not scientific admission.
 
 **Owners:** new typed memory domain/read service, `src/director/models.py`, `src/block/manager.py`, `src/autonomous.py`, `src/runtime/{cycle,pydantic_ai/contracts,pydantic_ai/factory}.py`, `src/persistence/`, `src/application/service.py`.
 
@@ -325,6 +325,14 @@ Index search/describe/selection receipts include actor, limits, catalogue identi
 **Acceptance/tests:** two consecutive `AutonomousService.run_once` cycles with fresh block runtimes consume the first cycle's typed outcome through the actual tools/start packet; repeat across database reopen. Include failed cycle, no evidence, unrelated newest result and legacy memory. Verify Director receives limitations and failure reason without automatically repeating the failed path; test input availability, not stochastic objective wording. Extend existing persistence fixtures before adding a new test module.
 
 **Checks:** focused persistence/live-mode tests and architecture checker. Update ARCHITECTURE/CAPABILITIES memory and Director-lifetime documentation.
+
+**Delivery:** `src/memory/` derives append-only `research-memory-v1` cycle digests from persisted records, including failed/pre-allocation cycles, interrupted terminal blocks and labelled legacy prose. References pin kind/sequence/identity/owner/hash; unresolved historical inputs stay explicit. Corrections and later source records append new snapshots, and retrieval selects the latest per cycle. Digests retain lifecycle/run status, termination/failure reason, dossier/evidence/measurement references, limitations, hypotheses, candidate history, blockers, uncertainty, proposals and recorded resource/model use. Director prose is an optional note, excluded from canonical relevance and start context. Scientific-negative results remain a separate typed collection; current Science outputs do not declare those interpretations, so they remain empty rather than inferred.
+
+Deterministic token-overlap search has stable identity ties and mission, declared entity/topic and timezone-aware time filters. Historical getters resolve persistence rather than a fresh manager. Both roles receive bounded search and reference-resolution tools. Director input automatically includes relevant structured memory; allocation retrieves for its actual objective and persists a validated start packet. Nested and Python fallback launches deliver that packet without prior Researcher messages, inherited evidence/measurements, skills or budgets. Retrieved digest context is limited to 32 KiB and start memory to 16 KiB, with item omissions/text truncation recorded. API reads stay read-only and retain derived summary/provenance fields for existing observability consumers. Service lifetime owns one Director through factory composition; previous Director message retention is zero.
+
+**Verification:** `.\.venv\Scripts\python.exe -m pytest tests/invariants/test_persistence.py tests/invariants/test_live_mode.py` passed 59 tests; `.\.venv\Scripts\python.exe -m pytest` passed 87 tests, each with one existing `pydantic_graph` event-loop deprecation warning. `.\.venv\Scripts\python.exe scripts/check_architecture.py` passed, now also preventing memory from bypassing admission. The service/factory/Code Mode regression covers consecutive cycles, database reopen, nested/fallback launch, prior source and Researcher failures, no evidence, unrelated newer history, legacy prose, entity/topic/time filters and reference resolution. The legacy fixture checks correction precedence, immutable originals, changed-reference denial and large Unicode context bounds. Against the pushed F2 baseline, the service regression failed at the intended assertion: the next Director lacked the prior `UsageLimitExceeded` outcome; only baseline tool-signature arguments were adapted for that reproduction.
+
+**Scope:** F3 implementation and verification are recorded in the typed-memory/start-packet delivery commit. No live provider calls, historical database writes, new scientific methods, `.upstream` inspection or UI implementation. Director Coder and `/work/director` scratch authority remain preserved. These checks prove deterministic continuity and input availability, not stochastic wording or downstream semantic utility; semantic memory ranking and utility evaluation remain F6.
 
 #### F6 — P1: semantic search and measurement core
 
