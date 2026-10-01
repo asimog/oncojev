@@ -24,7 +24,7 @@ def build_delta(store, block, run_id, start_sequence, finished_at: datetime, *, 
     for record in records:
         category = {RecordKind.EVIDENCE: "evidence", RecordKind.MEASUREMENT: "measurements",
                     RecordKind.JEV_OUTPUT: "semantic_measurements", RecordKind.STATE_REVISION: "state_changes",
-                    RecordKind.SCIENTIFIC_ATTEMPT: "scientific_attempts"}.get(record.kind)
+                    RecordKind.SCIENTIFIC_ATTEMPT: "scientific_attempts", RecordKind.LITERATURE_CONTEXT: "literature_contexts"}.get(record.kind)
         if record.kind is RecordKind.LEDGER_EVENT:
             category = {"ReasonerOutput": "hypotheses", "ScientificNegativeFinding": "scientific_negatives",
                         "UncertaintyRecorded": "uncertainties", "ExplicitResolution": "resolutions",

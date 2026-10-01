@@ -48,6 +48,13 @@ separate call/question/byte/time limits and falls back to deterministic ordering
 Native distributions and operational receipts remain durable even when context
 contains only bounded receipt references. No new Director acquisition tools exist.
 
+`literature-context-v1` measures a native categorical context judgment alongside
+independent claim-support and comparison-scope dimensions. Its annotation policy
+always keeps the underlying finding alive and grants no execution or admission
+authority. Uncertain distributions or scope remain unknown; required material and
+potential-novelty coverage checks are deterministic. The distribution thresholds
+are uncalibrated annotation policy, not scientific confidence or proof of novelty.
+
 The TypeSafe skill-suggestion, rerank and citation-check cookbooks informed compact
 shortlist expansion, recall-before-reranking and per-statement checks. Cookbook
 thresholds were not adopted as scientific validation. The scoped provider report

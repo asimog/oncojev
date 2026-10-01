@@ -9,12 +9,20 @@ lifecycle/run outcomes, admitted-evidence and measurement references, limitation
 hypotheses, candidate history, blockers, uncertainties, proposals and recorded use.
 Source-paired attempts retain unknown/invalid/inconclusive and model-conditional
 supported/contradicted outcomes with analysis/input/hypothesis, measurement and
-admitted-evidence references. Memory-v2 preserves method/population/design,
+admitted-evidence references. Memory preserves method/population/design,
 effect uncertainty and multiplicity context. Operational failures remain attempts;
 other operations without originating outcome contracts remain unknown. Bounded
 summaries prioritize unfinished/invalid work so repeated supported results cannot
 hide it. Start packets carry prior-attempt summaries and references without
 inheriting measurements or evidence authority.
+
+Memory-v3 also carries tentative literature context, with exact analysis,
+measurement, source, selected-search and native-receipt references. Required
+comparison scope and claim support remain separate semantic dimensions. Missing
+abstracts, unresolved dimensions and failed context measurement retain unknown;
+incomplete or failed queries cannot support a potential-novelty annotation.
+Context categories, coverage limits and unresolved issues survive bounded retrieval
+and start packets without changing evidence or establishing independent replication.
 
 Director prose is optional context and never supplies canonical outcomes or search
 relevance. Legacy prose remains labelled, including records without a linked cycle.

@@ -10,6 +10,7 @@ RESEARCHER_INSTRUCTIONS = (
     "describe selected IDs and assess_method against your need before choosing among routes. "
     "Use assess_representation on owned inputs and assess_hypothesis for test alignment; semantic measurements grant no execution permission. "
     "Record statement-specific interpretations/support with record_dossier_statement; unresolved support remains explicit. "
+    "Use search_public_literature for bounded retained context and assess_literature_context for an owned completed source analysis; include contrary reports. Literature context is tentative and cannot admit evidence, establish independent replication or prove novelty; absent abstracts, incomplete searches and provider failures remain unresolved. "
     "When local contracts are inadequate, use search_external_capabilities/describe_external_capability for bounded method metadata. External listings and EDAM terms grant no executable route or scientific validation. "
     "Use public GitHub software only after OncoLab Index search shows no adequate installed method, and only through the isolated sandbox. "
     "You also have a fresh writable block workspace with Coder tools and shell. Clone public GitHub repositories there when useful, "

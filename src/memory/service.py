@@ -34,7 +34,7 @@ class ResearchMemory:
         for ref in digest.references:
             self.resolve(ref)
         for field in (digest.hypotheses, digest.scientific_negative_findings, digest.candidates,
-                      digest.operational_blockers, digest.scientific_attempts, digest.uncertainties, digest.continuation_proposals, digest.legacy_notes):
+                      digest.operational_blockers, digest.scientific_attempts, digest.literature_contexts, digest.uncertainties, digest.continuation_proposals, digest.legacy_notes):
             for item in field:
                 for ref in item.references:
                     self.resolve(ref)
@@ -87,12 +87,13 @@ class ResearchMemory:
         records.extend(notes)
         records = list({r.seq: r for r in records}.values())
         refs = tuple(reference(r) for r in records if r.kind in {RecordKind.CYCLE, RecordKind.BLOCK, RecordKind.DOSSIER,
-            RecordKind.MEASUREMENT, RecordKind.EVIDENCE, RecordKind.STATE_REVISION, RecordKind.OUTCOME_CORRECTION, RecordKind.SCIENTIFIC_ATTEMPT})
-        priority = {"evidence": 0, "measurement": 1, "dossier": 2, "outcome_correction": 3, "cycle": 4, "block": 5, "state_revision": 6, "scientific_attempt": 2}
+            RecordKind.MEASUREMENT, RecordKind.EVIDENCE, RecordKind.STATE_REVISION, RecordKind.OUTCOME_CORRECTION, RecordKind.SCIENTIFIC_ATTEMPT, RecordKind.LITERATURE_CONTEXT})
+        priority = {"evidence": 0, "measurement": 1, "dossier": 2, "outcome_correction": 3, "cycle": 4, "block": 5, "state_revision": 6, "scientific_attempt": 2, "literature_context": 2}
         refs = tuple(sorted(refs, key=lambda r: (priority[r.kind], -r.seq)))
-        fingerprint = content_hash({"derivation":"research-memory-v2", "records": [(r.seq, content_hash(r.payload)) for r in sorted(records, key=lambda r: r.seq)]})
+        fingerprint = content_hash({"derivation":"research-memory-v3", "records": [(r.seq, content_hash(r.payload)) for r in sorted(records, key=lambda r: r.seq)]})
         hypotheses, candidates, blockers, uncertainties, proposals = [], [], [], [], []
         attempts, attempt_unresolved = self._attempt_items(records)
+        contexts = []
         objectives, lifecycle, limitations, unresolved = [], [], [], list(attempt_unresolved)
         usage = {}
         entities, topics = set(), set()
@@ -114,6 +115,23 @@ class ResearchMemory:
                     limitations.extend(record.payload.get("limitations", ()))
                     if record.payload.get("origin") in {"provided", "synthetic"}:
                         limitations.append(f"{record.record_id}: exploratory {record.payload['origin']} input; not admitted evidence.")
+                if record.kind == RecordKind.LITERATURE_CONTEXT:
+                    from src.memory.literature import LiteratureContext
+                    context = LiteratureContext.model_validate(record.payload)
+                    missing = []
+                    for ref in context.basis:
+                        try: self.resolve(ref)
+                        except ValueError: missing.append(f"{ref.kind}:{ref.record_id}:{ref.seq}")
+                    unresolved.extend(missing)
+                    category = "unknown" if missing else context.category
+                    attempt_ref = next((ref for ref in context.basis if ref.kind == RecordKind.SCIENTIFIC_ATTEMPT), None)
+                    contract = self.resolve(attempt_ref).get("analysis", {}) if attempt_ref and not missing else {}
+                    contexts.append(MemoryItem(item_id=context.assessment_id,
+                        summary=f"Tentative {category}: {context.claim}", epistemic_status="tentative_literature_context",
+                        references=(reference(record), *(ref for ref in context.basis if f"{ref.kind}:{ref.record_id}:{ref.seq}" not in missing)),
+                        details={"category": category, "claim": context.claim, "semantic_status": context.semantic_status,
+                                 "population": contract.get("population"), "design": contract.get("design"), "method": contract.get("method"),
+                                 "unresolved": (*context.unresolved, *missing), "limitations": context.limitations}))
                 if record.kind == RecordKind.STATE_REVISION and record == self.store.latest(RecordKind.STATE_REVISION, block_id=block_id):
                     for fragment in record.payload.get("uncertainties", ()):
                         uncertainties.append(MemoryItem(item_id=fragment["fragment_id"], summary=fragment["summary"],
@@ -165,7 +183,7 @@ class ResearchMemory:
             director_outcome=payload.get("director_outcome", "unknown"), failure_reason=payload.get("error_type"), block_ids=block_ids,
             objectives=tuple(objectives), lifecycle=tuple(lifecycle), references=refs, limitations=tuple(dict.fromkeys(limitations)),
             unresolved_references=tuple(sorted(set(unresolved))), hypotheses=tuple(hypotheses), candidates=tuple(candidates),
-            operational_blockers=tuple(blockers), scientific_attempts=attempts, uncertainties=tuple(uncertainties), continuation_proposals=tuple(proposals),
+            operational_blockers=tuple(blockers), scientific_attempts=attempts, literature_contexts=tuple(contexts), uncertainties=tuple(uncertainties), continuation_proposals=tuple(proposals),
             resource_usage=usage, entities=tuple(sorted(entities)), topics=tuple(sorted(topics)), inferred=inferred, legacy_notes=legacy, director_note=current_note)
 
     def _attempt_items(self, records):
@@ -264,7 +282,7 @@ class ResearchMemory:
                 continue
             if since is not None and d.recorded_at < since or until is not None and d.recorded_at > until:
                 continue
-            items = (*d.hypotheses, *d.candidates, *d.scientific_attempts, *d.operational_blockers, *d.uncertainties, *d.continuation_proposals)
+            items = (*d.hypotheses, *d.candidates, *d.scientific_attempts, *d.literature_contexts, *d.operational_blockers, *d.uncertainties, *d.continuation_proposals)
             refs = (*d.references, *(r for item in items for r in item.references))
             if shared_reference is not None and not any(r.record_id == shared_reference for r in refs):
                 continue
@@ -276,7 +294,7 @@ class ResearchMemory:
                 continue
             # Legacy Director prose never supplies relevance or facts.
             text = " ".join((d.direction, *d.objectives, *d.entities, *d.topics,
-                             *(i.summary for field in (d.hypotheses, d.candidates, d.scientific_attempts, d.operational_blockers, d.uncertainties, d.continuation_proposals) for i in field)))
+                             *(i.summary for field in (d.hypotheses, d.candidates, d.scientific_attempts, d.literature_contexts, d.operational_blockers, d.uncertainties, d.continuation_proposals) for i in field)))
             score = len(terms(query) & terms(text))
             if query and score == 0:
                 continue
@@ -299,7 +317,7 @@ class ResearchMemory:
             view["director_note_available"] = digest.director_note is not None
             view["resource_usage"] = {b: {"recorded_resources": v.get("recorded_resources", {})} for b, v in list(digest.resource_usage.items())[:20]}
             omitted = {}
-            for key in ("references", "hypotheses", "scientific_negative_findings", "scientific_attempts", "candidates", "operational_blockers", "uncertainties", "continuation_proposals", "limitations", "unresolved_references", "entities", "topics", "lifecycle"):
+            for key in ("references", "hypotheses", "scientific_negative_findings", "scientific_attempts", "literature_contexts", "candidates", "operational_blockers", "uncertainties", "continuation_proposals", "limitations", "unresolved_references", "entities", "topics", "lifecycle"):
                 omitted[key] = max(0, len(view[key]) - 20)
                 view[key] = view[key][:20]
                 truncated[key] = sum(len(i if isinstance(i, str) else i.get("summary", "")) > 1000 for i in view[key])
@@ -308,7 +326,9 @@ class ResearchMemory:
                         view[key][index] = item[:1000]
                     elif "summary" in item:
                         item["summary"] = item["summary"][:1000]
-                        item["details"] = (self._compact_attempt(item["details"]) if key == "scientific_attempts" else {})
+                        item["details"] = (self._compact_attempt(item["details"]) if key == "scientific_attempts" else
+                                           {k: item["details"][k] for k in ("category", "semantic_status", "unresolved", "limitations")}
+                                           if key == "literature_contexts" else {})
                         # Native distributions/full contracts stay reference-resolvable.
                         item["references"] = item["references"][:2]
             view["omitted_items"] = omitted
@@ -338,11 +358,12 @@ class ResearchMemory:
         start = StartMemory(digest_ids=tuple(d["digest_id"] for d in views), references=refs,
             prior_failures=tuple(i["summary"] for d in views for i in d["operational_blockers"])[:20],
             prior_attempts=tuple(i["summary"] for d in views for i in d.get("scientific_attempts", ()))[:20],
+            prior_contexts=tuple(i["summary"] for d in views for i in d.get("literature_contexts", ()))[:20],
             uncertainties=tuple(i["summary"] for d in views for i in d["uncertainties"])[:20],
             candidate_directions=tuple(i["summary"] for d in views for i in (*d["candidates"], *d["continuation_proposals"]))[:20],
             limitations=tuple(dict.fromkeys(s for d in views for s in d["limitations"]))[:20], omitted_digests=context["omitted_digests"])
         while len(canonical_bytes(start.model_dump(mode="json"))) > 16384:
-            field = max(("prior_failures", "prior_attempts", "uncertainties", "candidate_directions", "limitations", "references"),
+            field = max(("prior_failures", "prior_attempts", "prior_contexts", "uncertainties", "candidate_directions", "limitations", "references"),
                         key=lambda f: len(canonical_bytes(getattr(start, f) if f != "references" else [r.model_dump(mode="json") for r in start.references])))
             start = start.model_copy(update={field: getattr(start, field)[:-1], "omitted_items": start.omitted_items + 1})
         return start

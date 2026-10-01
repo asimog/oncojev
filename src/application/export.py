@@ -8,7 +8,7 @@ from src.persistence.records import RecordKind
 from src.provenance import content_hash
 
 
-RENDERER = "oncojevlab-v1"
+RENDERER = "oncojevlab-v2"
 GROUPS = {
     "program": (RecordKind.MISSION, RecordKind.CYCLE, RecordKind.CYCLE_START, RecordKind.OUTCOME_CORRECTION),
     "program/reviews": (RecordKind.RESEARCH_MEMORY,),
@@ -23,7 +23,7 @@ GROUPS = {
                      RecordKind.ENVIRONMENT_QUALIFICATION, RecordKind.DEPLOYMENT_VERIFICATION),
 }
 BLOCK_KINDS = (RecordKind.BLOCK, RecordKind.BLOCK_DELTA, RecordKind.DOSSIER,
-               RecordKind.MEASUREMENT, RecordKind.EVIDENCE, RecordKind.SCIENTIFIC_ATTEMPT, RecordKind.LITERATURE)
+               RecordKind.MEASUREMENT, RecordKind.EVIDENCE, RecordKind.SCIENTIFIC_ATTEMPT, RecordKind.LITERATURE, RecordKind.LITERATURE_CONTEXT, RecordKind.JEV_CALL)
 PRIVATE = re.compile(r"(?:credential|secret|authorization|api_key|token|password|headers|content_base64|raw_json|messages|prompt|environment|experiment_path)", re.I)
 TOKEN = re.compile(r"(?:gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{16,}|Bearer\s+[^\s\"']+)")
 
@@ -74,6 +74,14 @@ def render_snapshot(store, *, high_water=None):
                    f"Retained measurements: {counts['measurement']}; admitted evidence records: {counts['evidence']}.\n\n"
                    "Hypotheses, semantic judgments, Director decisions and operational failures retain their own labels in records.json. "
                    "Lifecycle completion and replay do not establish scientific utility.\n")
+        contexts = [r for r in block if r.kind == RecordKind.LITERATURE_CONTEXT]
+        if contexts:
+            categories = sorted({r.payload.get("category", "unknown") for r in contexts})
+            context_counts = ", ".join(f"{category}: {sum(r.payload.get('category', 'unknown') == category for r in contexts)}"
+                                       for category in categories)
+            summary += (f"\nTentative literature context assessments — {context_counts}. "
+                        "These are search-bound annotations, not proof of novelty or independent replication. "
+                        "Exact claim/source/evidence links, native judgments, coverage limits and unresolved issues are in [records.json](records.json).\n")
         files[f"blocks/{path_id}/summary.md"] = summary.encode()
     readme = ("# OncoJevLab\n\nDeterministic observation of persisted OncoJev research. "
               "This repository grants no orchestration or evidence-admission authority.\n\n"

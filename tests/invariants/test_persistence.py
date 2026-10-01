@@ -599,6 +599,11 @@ def test_legacy_failure_correction_preserves_original_records():
     assert context.digests and context.digests[0]["operational_blockers"]
     assert context.digests[0]["omitted_items"]["uncertainties"] > 0
     assert len(canonical_bytes(memory.start_context("legacy").model_dump(mode="json"))) <= 16384
+    expanded = context.model_dump(mode="json")
+    expanded["digests"][0]["literature_contexts"] = [{"summary": "癌" * 1000} for _ in range(20)]
+    bounded = memory.start_context("legacy", context=expanded)
+    assert len(canonical_bytes(bounded.model_dump(mode="json"))) <= 16384
+    assert bounded.prior_contexts and bounded.omitted_items > 0
     count = repository.store.count()
     recover_interrupted_blocks(repository)
     assert repository.store.count() == count
@@ -1159,6 +1164,124 @@ def test_source_resolved_paired_analysis_and_repeat_admission_survive_reopen(tmp
  assert len(reopened.records(kind=RecordKind.EVIDENCE))==2
  assert reconstruct_block(reopened,block.block_id).unresolved_source_refs==()
  reopened.close()
+
+
+def test_literature_context_cycle_retains_native_basis_and_unknowns_without_changing_evidence(tmp_path):
+    """Scripted native judgments prove context plumbing/abstention, not classification truth."""
+    import httpx
+    from src.sources.public import GdcPublicSource, PublicLiteratureSource
+    from src.jev.models import ChoiceDecision, NoulDecision
+    from src.memory.service import ResearchMemory
+    from src.application.export import render_snapshot
+    system = cycle_system(); runtime = system.runtime
+    runtime.researcher_factory = lambda block_id: system.agents.researcher
+    runtime.max_jev_calls = 20; runtime.max_tool_calls = 100
+    database = tmp_path / 'literature-context.sqlite3'
+    repository = ResearchRepository(SqliteResearchStore(database))
+    rows = [{'id':str(i), 'case_id':str(i), 'x':i, 'y':2*i + (0.2 if i%2 else -0.2)} for i in range(8)]
+    runtime.gdc = GdcPublicSource(httpx.MockTransport(lambda request: httpx.Response(200,
+        json={'data':{'hits':rows, 'pagination':{'total':8}}})))
+    def literature(request):
+        query = request.url.params['query']
+        if query == 'search_failure': return httpx.Response(503)
+        item = {'title':['Retained report'], 'DOI':'10.1/report',
+                'abstract':'Association of X and Y in inspected case rows; context and uncertainty require comparison.'}
+        if query == 'title_only': item.pop('abstract')
+        return httpx.Response(200, json={'message':{'items':[] if query == 'empty' else [item],
+            'total-results':0 if query == 'empty' else 100 if query == 'incomplete' else 1}})
+    runtime.literature = PublicLiteratureSource(httpx.MockTransport(literature))
+    measured = []
+    class NativeFixture(DeterministicJevClient):
+        def evaluate(self, state, questions):
+            if not questions[0].semantic_purpose.startswith('literature_context.'):
+                return super().evaluate(state, questions)
+            query = state['literature'][0]['query']; measured.append(query)
+            if query == 'provider_failure': raise RuntimeError('fixture provider unavailable')
+            category = query if query in {'known_result','rediscovery','known_mechanism_new_context',
+                'contradictory_finding','potentially_novel_observation'} else 'potentially_novel_observation'
+            decisions = []
+            for q in questions:
+                context = dict(question_id=q.question_id, model_requested='fixture', model_resolved='fixture',
+                    question_version=q.question_version, projection_id=q.projection_id)
+                if q.primitive == 'choice':
+                    probabilities = {key:(.9 if key == category else .02) for key in q.criteria}
+                    if query == 'uncertain': probabilities = {key:(.5 if key in {category,'unknown'} else 0) for key in q.criteria}
+                    decisions.append(ChoiceDecision(**context, selected_option=category, probabilities=probabilities, confidence=.9))
+                else:
+                    decisions.append(NoulDecision(**context, p_true=.5 if query == 'scope_missing' and
+                        q.semantic_purpose.endswith('scope_known') else .9))
+            return tuple(decisions)
+    runtime.jev = NativeFixture()
+    cases = ['known_result','rediscovery','known_mechanism_new_context','contradictory_finding',
+             'potentially_novel_observation','uncertain','scope_missing','provider_failure','title_only','empty','incomplete']
+    async def director(messages, info):
+        if not any(isinstance(m, ModelResponse) for m in messages):
+            return ModelResponse(parts=[ToolCallPart('run_code', {'code':
+                'b = await allocate_block(objective="literature association context", why_now="compare retained reports", seconds=120)\n'
+                'await launch_researcher(block_id=b["block_id"])'}, tool_call_id='launch-context')])
+        return ModelResponse(parts=[TextPart('review tentative context')])
+    outputs = []
+    async def researcher(messages, info):
+        if not any(isinstance(m, ModelResponse) for m in messages):
+            code = ['a = await acquire_gdc(endpoint="cases", filters={}, fields=["case_id","x","y"], size=10)',
+                'h = await assess_hypothesis(hypothesis="X has a positive association with Y", proposed_test="directional Pearson association")',
+                'plan = {"hypothesis_id":h["identity"], "direction":"positive", "minimum_effect":0.3, "multiplicity_family":[h["identity"]]}',
+                'r = await run_source_analysis(acquisition_id=a["acquisition_id"], analysis_id="association", question="association", population="inspected fixture cases", estimand="Pearson r", method="pearson_correlation", fields={"x":"x","y":"y"}, entity_field="id", entity_unit="case", design="unadjusted complete-row association", test_plan=plan)',
+                'await admit_measurement(analysis_id="association")']
+            for query in cases:
+                code.append(f'l = await search_public_literature(query="{query}", limit=1)')
+                if query == 'potentially_novel_observation': code.append('novel_search = l["context_id"]')
+                code.append('await assess_literature_context(analysis_id="association", claim="X is positively associated with Y in the inspected rows.", literature_ids=[l["context_id"]])')
+            code.extend(['try:\n    await search_public_literature(query="search_failure", limit=1)\nexcept Exception:\n    pass',
+                'await assess_literature_context(analysis_id="association", claim="X is positively associated with Y in the inspected rows.", literature_ids=[novel_search])',
+                'try:\n    await assess_literature_context(analysis_id="foreign", claim="Invented finding", literature_ids=[novel_search])\nexcept ValueError:\n    pass',
+                'await complete_block(reason="context retained")'])
+            return ModelResponse(parts=[ToolCallPart('run_code', {'code':'\n'.join(code)}, tool_call_id='assess-context')])
+        outputs.extend(str(p.content) for m in messages for p in m.parts if getattr(p, 'content', None))
+        return ModelResponse(parts=[TextPart('Tentative context, no novelty proof')])
+    with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+        result = run_cycle(system, 'literature association context', repository=repository)
+    assert result.status.value == 'complete'
+    assert not any('Runtime error' in value or 'Type error' in value for value in outputs), outputs
+    saved = repository.store.records(kind=RecordKind.LITERATURE_CONTEXT)
+    assert len(saved) == 12
+    assert [r.payload['category'] for r in saved] == cases[:5] + ['unknown']*7
+    assert saved[7].payload['semantic_status'] == 'unavailable'
+    assert all(r.payload['epistemic_status'] == 'tentative_literature_context' for r in saved)
+    assert all(any(ref['kind'] == 'state_revision' for ref in r.payload['basis']) for r in saved)
+    assert 'title_only' not in measured and 'empty' not in measured
+    assert saved[-1].payload['unresolved']
+    memory = ResearchMemory(repository.store)
+    for item in saved:
+        for ref in item.payload['basis']:
+            from src.memory.models import MemoryReference
+            memory.resolve(MemoryReference.model_validate(ref))
+    assert any(ref['kind'] == 'jev_call' for ref in saved[7].payload['basis'])
+    failed_query_basis = [memory.resolve(MemoryReference.model_validate(ref)) for ref in saved[-1].payload['basis'] if ref['kind'] == 'ledger_event']
+    assert any(p.get('event_type') == 'CapabilityFailure' for p in failed_query_basis)
+    assert any(p.get('event_type') == 'CapabilityInvocation' and p['payload'].get('query') == 'search_failure' for p in failed_query_basis)
+    measurements = repository.store.records(kind=RecordKind.MEASUREMENT)
+    evidence = repository.store.records(kind=RecordKind.EVIDENCE)
+    assert len(measurements) == len(evidence) == 1 and evidence[0].payload['measurement'] == measurements[0].payload
+    digest = memory.search('literature')[0]
+    assert len(digest.literature_contexts) == 12 and not digest.scientific_negative_findings
+    assert memory.start_context('literature').prior_contexts
+    assert memory.context('literature').digests[0]['literature_contexts'][0]['details']['category'] == 'known_result'
+    assert len(runtime.active_research.delta.references['literature_contexts']) == 12
+    exported = render_snapshot(repository.store)
+    exported_records = next(json.loads(data) for name,data in exported.items() if name.startswith('blocks/') and name.endswith('records.json'))
+    assert len([r for r in exported_records if r['kind'] == 'literature_context']) == 12
+    assert any(r['kind'] == 'jev_call' and r['payload']['outcome'] == 'failed' for r in exported_records)
+    summary = next(data.decode() for name,data in exported.items() if name.startswith('blocks/') and name.endswith('summary.md'))
+    assert 'rediscovery: 1' in summary and 'unknown: 7' in summary
+    assert 'not proof of novelty or independent replication' in summary
+    repository.store.close()
+    reopened = SqliteResearchStore(database)
+    try:
+        assert len(reconstruct_block(reopened, result.block_ids[0]).literature_contexts) == 12
+        assert len(ResearchMemory(reopened).search('literature')[0].literature_contexts) == 12
+    finally:
+        reopened.close()
 
 
 def test_directional_scientific_attempt_history_retains_effect_bounds_and_unknowns(tmp_path):
