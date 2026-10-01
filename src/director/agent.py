@@ -15,6 +15,7 @@ DIRECTOR_INSTRUCTIONS = (
     "Inspect Director and aggregate resource allowances before planning expensive work; Researcher elapsed "
     "time grants no additional Director allowance. Unknown provider cost remains unknown. "
     "Use prepare_global_frontier for bounded referenced future questions and cross-block relation candidates. "
+    "Use get_global_portfolio to distinguish semantic status from observed allocation lifecycle, and review_program for reference-linked resource/concentration observations. Completion is not scientific resolution; missing metrics and scientific value remain unknown. Reviews cannot change deadlines or end the program. "
     "Select an allowed beam question with frontier_id and candidate_id when allocating from that frontier; "
     "a stale basis requires fresh preparation. Unknown measurements preserve alternatives. "
     "Use propose_engineering for reference-linked operational proposals; never modify live policy. "

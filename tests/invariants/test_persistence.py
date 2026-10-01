@@ -208,14 +208,27 @@ def test_director_global_frontier_retains_replication_relations_and_rejects_stal
                 'assert len(frontier["candidates"]) == 3\n'
                 'assert len(frontier["beam"]) == 3\n'
                 'candidate = frontier["candidates"][0]\n'
+                'portfolio = await get_global_portfolio()\n'
+                'assert len(portfolio["candidates"]) == 3\n'
+                'assert portfolio["candidates"][0]["scientific_resolution"] == "unknown"\n'
+                'review = await review_program()\n'
+                'again = await review_program()\n'
+                'assert review["review_id"] == again["review_id"]\n'
                 'block = await allocate_block(objective=candidate["objective"], why_now="compare referenced hypotheses", '
                 'frontier_id=frontier["frontier_id"], candidate_id=candidate["candidate_id"])\n'
-                'assert block["objective"] == candidate["objective"]\nfrontier["frontier_id"]'}, tool_call_id='frontier')])
+                'assert block["start"]["objective"] == candidate["objective"]\n'
+                'portfolio = await get_global_portfolio()\n'
+                'assert len([c for c in portfolio["candidates"] if c["observed_lifecycle"] == "active"]) == 1\n'
+                'review = await review_program()\n'
+                'assert review["selected_blocks"] == 1\n'
+                'assert review["resources"]["actual_elapsed_seconds"]["recorded_sum"] is None\n'
+                'assert review["resources"]["allocated_seconds"]["recorded_sum"] == 900\n'
+                'assert review["scientific_value"] == "unknown"\nfrontier["frontier_id"]'}, tool_call_id='frontier')])
         responses.extend(str(p.content) for m in messages for p in m.parts if hasattr(p, 'content'))
         return ModelResponse(parts=[TextPart('planned')])
     with system.agents.director.override(model=scripted(model)):
         asyncio.run(system.agents.director.run('prepare a referenced next question', deps=DirectorDeps(runtime)))
-    assert not any('AssertionError' in s or 'Exception:' in s or 'Type error' in s for s in responses), responses
+    assert not any('AssertionError' in s or 'Exception:' in s or 'Type error' in s or 'Runtime error' in s for s in responses), responses
     records = store.records(kind=RecordKind.GLOBAL_FRONTIER)
     assert len(records) == 1 and len(runtime.manager.blocks()) == 1
     frontier = records[0].payload
@@ -229,10 +242,21 @@ def test_director_global_frontier_retains_replication_relations_and_rejects_stal
     assert all(r.payload['policy_version'] == 'global-frontier-policy-v1' for r in calls if r.payload['context_type'].startswith('global_'))
     assert all(r.block_id is None for r in calls)
     assert not store.records(kind=RecordKind.EVIDENCE)
+    assert len(store.records(kind=RecordKind.PROGRAM_REVIEW)) == 2
+    from src.director.review import portfolio
+    foreign={**frontier,'mission_id':'other-mission','candidates':[
+        {**c,'candidate_id':'foreign:'+c['candidate_id']} for c in frontier['candidates']]}
+    store.append(StoredRecord(kind=RecordKind.GLOBAL_FRONTIER,record_id='foreign',payload=foreign))
+    legacy={**frontier};legacy.pop('mission_id')
+    store.append(StoredRecord(kind=RecordKind.GLOBAL_FRONTIER,record_id='legacy-unscoped',payload=legacy))
+    scoped=portfolio(runtime)
+    assert {c['candidate_id'] for c in scoped['candidates']}=={c['candidate_id'] for c in frontier['candidates']}
+    assert scoped['unscoped_legacy_frontiers']==1
     store.close()
     reopened = SqliteResearchStore(path)
     assert reopened.records(kind=RecordKind.GLOBAL_FRONTIER)[0].payload == frontier
     assert len(reopened.records(kind=RecordKind.GLOBAL_RELATION)) == len(frontier['relations'])
+    assert len(reopened.records(kind=RecordKind.PROGRAM_REVIEW)) == 2
     reopened.close()
 
 
@@ -1253,12 +1277,28 @@ def test_predeclared_followups_compare_effect_bounds_and_preserve_overlap_and_lo
     assert len(digest.scientific_followups)==10 and not digest.scientific_negative_findings
     assert any(item.details['stage']=='declared' and item.details['outcome']=='attempted' for item in digest.scientific_followups)
     assert memory.start_context('challenge').prior_followups
+    from src.director.frontier import generate
+    futures,_=generate((digest,),limit=20)
+    purposes={c.scope['source_outcome']:c.scope['continuation_purpose'] for c in futures if c.origin=='scientific_followups'}
+    assert purposes['contradictory']=='contradiction_resolution'
+    assert purposes['not_replicated']=='scope_disagreement'
+    assert purposes['invalid']=='repair_design' and purposes['attempted']=='unfinished_prerequisite'
+    assert all(c.objective!=next(i.summary for i in digest.scientific_followups if i.item_id==c.scope['basis_identity'])
+               for c in futures if c.origin=='scientific_followups')
+    from src.director.review import review_program
+    review=review_program(runtime)
+    assert review['resources']['scientific_executions']['recorded_sum']==9
+    assert review['resources']['cpu_seconds']['recorded_sum'] is None
+    assert review['resources']['actual_elapsed_seconds']['observed_blocks']==1
+    assert review['scientific_value']=='unknown' and review['deadline_action']=='none'
+    assert review_program(runtime)['review_id']==review['review_id']
     for item in digest.scientific_followups:
         for ref in item.references: memory.resolve(ref)
     assert len(runtime.active_research.delta.references['scientific_followups'])==9
     export=render_snapshot(store)
     exported=next(json.loads(data) for name,data in export.items() if name.startswith('blocks/') and name.endswith('records.json'))
     assert len([r for r in exported if r['kind']=='followup_result'])==9
+    assert 'program/resource-reviews.json' in export
     store.close()
     reopened=SqliteResearchStore(tmp_path/'followups.sqlite3')
     try:

@@ -142,8 +142,9 @@ is finished, Python waits for useful events without model polling; waiting is an
 operational work state, not a semantic decision to end the program. Only explicit
 service shutdown, prohibitive hard resource limits, unrecoverable execution failure
 or required fail-closed deployment/confinement can prevent continuation. The current
-service still awaits Researcher synchronously; event-driven scheduling and shared
-resource enforcement are upcoming implementation, not delivered features.
+service owns an asynchronous Researcher task and terminal-event persistence;
+Director performs bounded independent planning while Python owns waiting and
+shared resource enforcement.
 
 The database remains authoritative. Derived Research Memory and human-readable
 exports have no scientific write-back authority. Registry revisions describe

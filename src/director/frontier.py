@@ -26,7 +26,8 @@ class Investigation(BaseModel, frozen=True):
 
 class PreparedFrontier(BaseModel, frozen=True):
     frontier_id: str
-    version: str = "global-frontier-v1"
+    version: str = "global-frontier-v2"
+    mission_id: str | None = None
     objective: str
     basis: str
     candidates: tuple[Investigation, ...] = Field(max_length=20)
@@ -52,7 +53,7 @@ def current_basis(runtime) -> str:
     index = runtime.index_for()
     pin = runtime.institution.pin().model_dump(mode="json") if runtime.institution else None
     return content_hash({"records": latest, "index": index.snapshot_id, "institution": pin,
-                         "mission": runtime.mission_id, "version": "global-frontier-v1"})
+                         "mission": runtime.mission_id, "version": "global-frontier-v2"})
 
 
 def generate(digests, *, limit=20):
@@ -60,26 +61,51 @@ def generate(digests, *, limit=20):
     candidates = {}
     omitted = 0
     for digest in digests:
-        for field in ("continuation_proposals", "uncertainties", "hypotheses", "scientific_attempts", "literature_contexts", "scientific_followups", "operational_blockers", "candidates"):
+        for field in ("continuation_proposals", "uncertainties", "hypotheses", "scientific_followups", "scientific_attempts", "literature_contexts", "operational_blockers", "candidates"):
             for item in getattr(digest, field):
                 if not item.references or not item.summary.strip():
                     continue
                 details = item.details
+                objective=item.summary
                 scope = {key: (details[key] if isinstance(details.get(key), bool) else str(details[key])[:500] if details.get(key) is not None else None) for key in
                          ("proposed_test", "population", "design", "method", "replication", "capability_id")}
                 scope.update(entities=digest.entities[:5], topics=digest.topics[:5])
+                if field=="scientific_followups":
+                    outcome=details.get("outcome","unknown")
+                    question=details.get("question") or item.summary
+                    actions={
+                        "replicated":"Test alternative explanations for the retained association",
+                        "not_replicated":"Determine whether population/design differences or alternative explanations account for the effect-bound disagreement",
+                        "contradictory":"Discriminate the retained opposite-direction findings while preserving their original scopes",
+                        "sensitivity_dependent":"Determine which sensitivity assumptions or representation changes limit the retained association",
+                        "consistent":"Assess independent-replication prerequisites for the retained same-participant robustness finding",
+                        "inconclusive":"Resolve the retained information, identity or design limitations before interpreting the follow-up",
+                        "invalid":"Repair the retained input/design validity problem before retesting",
+                        "attempted":"Resolve prerequisites for the declared unfinished follow-up",
+                        "unknown":"Resolve missing source/interpretation references before revisiting the follow-up",
+                    }
+                    action=actions.get(outcome,actions["unknown"])
+                    purposes={"replicated":"alternative_explanation","not_replicated":"scope_disagreement","contradictory":"contradiction_resolution",
+                        "sensitivity_dependent":"sensitivity_resolution","consistent":"independent_replication",
+                        "inconclusive":"information_or_prerequisite","invalid":"repair_design","attempted":"unfinished_prerequisite","unknown":"resolve_references"}
+                    objective=f"{action}: {question}"[:1000]
+                    scope.update(proposed_test=action,source_outcome=outcome,basis_identity=item.item_id,
+                        continuation_purpose=purposes.get(outcome,"resolve_references"),
+                        unresolved=tuple(str(v)[:500] for v in details.get("unresolved",())[:3]),
+                        alternative_explanations=tuple(str(v)[:500] for v in details.get("alternative_explanations",())[:3]),
+                        scope_role="Originating context; Researcher selects the future operation.")
                 # An underspecified test or replication is not known to duplicate
                 # another block. Never collapse two independent original records.
                 origin = tuple(r.block_id or r.record_id for r in item.references)
                 identity_scope = {key: normalize(value) if isinstance(value, str) else value for key, value in scope.items()}
-                key = content_hash({"statement": normalize(item.summary), "scope": identity_scope,
+                key = content_hash({"statement": normalize(objective), "scope": identity_scope,
                                     "origin": origin if not scope["proposed_test"] or scope["replication"] else None})
                 if key in candidates:
                     old = candidates[key]
                     refs = tuple({r.seq: r for r in (*old.source_refs, *item.references)}.values())[:20]
                     candidates[key] = old.model_copy(update={"source_refs": refs})
                 elif len(candidates) < limit:
-                    candidates[key] = Investigation(candidate_id=key, objective=item.summary[:1000], origin=field,
+                    candidates[key] = Investigation(candidate_id=key, objective=objective[:1000], origin=field,
                                                     source_refs=item.references[:20], scope=scope)
                 else:
                     omitted += 1

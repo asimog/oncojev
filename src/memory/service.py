@@ -90,7 +90,7 @@ class ResearchMemory:
             RecordKind.MEASUREMENT, RecordKind.EVIDENCE, RecordKind.STATE_REVISION, RecordKind.OUTCOME_CORRECTION, RecordKind.SCIENTIFIC_ATTEMPT, RecordKind.LITERATURE_CONTEXT, RecordKind.FOLLOWUP_PLAN, RecordKind.FOLLOWUP_RESULT})
         priority = {"evidence": 0, "measurement": 1, "dossier": 2, "outcome_correction": 3, "cycle": 4, "block": 5, "state_revision": 6, "scientific_attempt": 2, "literature_context": 2, "followup_plan":2, "followup_result":2}
         refs = tuple(sorted(refs, key=lambda r: (priority[r.kind], -r.seq)))
-        fingerprint = content_hash({"derivation":"research-memory-v4", "records": [(r.seq, content_hash(r.payload)) for r in sorted(records, key=lambda r: r.seq)]})
+        fingerprint = content_hash({"derivation":"research-memory-v4-followup-questions-v1", "records": [(r.seq, content_hash(r.payload)) for r in sorted(records, key=lambda r: r.seq)]})
         hypotheses, candidates, blockers, uncertainties, proposals = [], [], [], [], []
         attempts, attempt_unresolved = self._attempt_items(records)
         followups, followup_unresolved = self._followup_items(records)
@@ -208,6 +208,7 @@ class ResearchMemory:
             unresolved.extend(missing)
             outcome="unknown" if missing else result.outcome if result else "attempted"
             details={"outcome":outcome,"stage":result.stage if result else "declared", "kind":plan.kind,
+                "question":plan.target_analysis.question,
                 "population":plan.target_analysis.population,"design":plan.target_analysis.design,"method":plan.target_analysis.method,
                 "independence":result.independence if result else "unknown", "overlap_count":result.overlap_count if result else None,
                 "confirmation_access":result.confirmation_access if result else "unknown",

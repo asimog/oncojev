@@ -27,6 +27,7 @@ class RecordKind(StrEnum):
     REGISTRY_REVIEW = "registry_review"
     INSTITUTIONAL_OBSERVATION = "institutional_observation"
     GLOBAL_FRONTIER = "global_frontier"
+    PROGRAM_REVIEW = "program_review"
     GLOBAL_RELATION = "global_relation"
     ENGINEERING_PROPOSAL = "engineering_proposal"
     SERVICE_EVENT = "service_event"

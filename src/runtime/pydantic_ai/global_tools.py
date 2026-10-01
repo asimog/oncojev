@@ -70,7 +70,7 @@ async def prepare_frontier(runtime, objective, *, limit=10):
         else:
             candidate = candidate.model_copy(update={"status": "keep_alive", "failure_type": failure})
         measured.append(candidate)
-    frontier = PreparedFrontier(frontier_id=str(uuid4()), objective=objective, basis=basis,
+    frontier = PreparedFrontier(frontier_id=str(uuid4()), mission_id=runtime.mission_id, objective=objective, basis=basis,
                                 candidates=tuple(measured), beam=beam(measured), omitted=omitted, relations=tuple(relations))
     runtime.repository.store.append(StoredRecord(kind=RecordKind.GLOBAL_FRONTIER,
         record_id=frontier.frontier_id, payload=frontier.model_dump(mode="json")))
@@ -95,6 +95,18 @@ def validate_selection(runtime, frontier_id, candidate_id, objective):
 
 
 def register_global_tools(agent):
+    @agent.tool
+    async def get_global_portfolio(ctx: RunContext[Any], limit: int = 20) -> dict[str, Any]:
+        """Read semantic proposals and observed allocation lifecycle; completion is not resolution."""
+        from src.director.review import portfolio
+        return portfolio(ctx.deps.runtime,limit=limit)
+
+    @agent.tool
+    async def review_program(ctx: RunContext[Any], limit: int = 20) -> dict[str, Any]:
+        """Retain actual resource/concentration review; grants no stop or deadline authority."""
+        from src.director.review import review_program as review
+        return review(ctx.deps.runtime,limit=limit)
+
     @agent.tool
     async def prepare_global_frontier(ctx: RunContext[Any], objective: str, limit: int = 10) -> dict[str, Any]:
         """Generate and compare referenced questions; retain alternatives and failed semantic fallbacks."""

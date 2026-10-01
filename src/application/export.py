@@ -12,6 +12,7 @@ RENDERER = "oncojevlab-v2"
 GROUPS = {
     "program": (RecordKind.MISSION, RecordKind.CYCLE, RecordKind.CYCLE_START, RecordKind.OUTCOME_CORRECTION),
     "program/reviews": (RecordKind.RESEARCH_MEMORY,),
+    "program/resource-reviews": (RecordKind.PROGRAM_REVIEW,),
     "program/frontier": (RecordKind.GLOBAL_FRONTIER,),
     "program/relations": (RecordKind.GLOBAL_RELATION,),
     "research/history": (RecordKind.MEMORY_DIGEST,),
