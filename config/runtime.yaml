@@ -24,6 +24,8 @@ director:
   max_code_mode_tool_calls: 100
   max_cost: null
   retrieval_k: 20
+  max_event_turns: 8
+  program_review_interval_seconds: 300
 cycle:
   max_model_requests: 300
   max_provider_tool_calls: 700

@@ -190,6 +190,8 @@ def test_swallowed_nested_failure_cannot_complete_cycle():
 def test_cycle_terminal_outcomes(scenario):
     from pydantic_ai.exceptions import IncompleteToolCall, ModelAPIError, ModelHTTPError, UnexpectedModelBehavior, UsageLimitExceeded
 
+    import asyncio
+    director_response_started = asyncio.Event()
     system = cycle_system()
     # The existing factory boundary also exercises the Python fallback path.
     system.runtime.researcher_factory = lambda block_id: system.agents.researcher
@@ -215,6 +217,7 @@ def test_cycle_terminal_outcomes(scenario):
             elif scenario != "fallback_failure":
                 code += 'await launch_researcher(block_id=block["block_id"])\n'
             return ModelResponse(parts=[ToolCallPart("run_code", {"code": code + "block"}, tool_call_id="d1")])
+        director_response_started.set()
         if scenario in errors:
             raise errors[scenario]
         return ModelResponse(parts=[TextPart("Director returned")])
@@ -228,6 +231,7 @@ def test_cycle_terminal_outcomes(scenario):
             if researcher_calls == 1:
                 return ModelResponse(parts=[ToolCallPart("run_code", {"code": 'await complete_block(reason="handoff requested")'}, tool_call_id="r1")])
             raise UsageLimitExceeded("failed after handoff")
+        await director_response_started.wait()
         return ModelResponse(parts=[TextPart("No scientific estimate is attainable with available inputs")])
 
     succeeds = scenario in {"completed", "usage_truncation", "tool_truncation"}
@@ -235,7 +239,7 @@ def test_cycle_terminal_outcomes(scenario):
         if succeeds:
             result = run_cycle(system, "direction", repository=repository)
             assert result.status.value == ("complete" if scenario == "completed" else "incomplete")
-            assert result.director_outcome.value == ("returned" if scenario == "completed" else "truncated")
+            assert result.director_outcome.value in ({"returned", "interrupted"} if scenario == "completed" else {"truncated"})
         else:
             with pytest.raises(Exception):
                 run_cycle(system, "direction", repository=repository)
@@ -1071,6 +1075,10 @@ def test_heavy_work_drains_and_preserves_one_lease_until_child_returns(terminal)
     runtime.repository = repository
     block = runtime.manager.allocate("bounded work", "test", 60)
     repository.record_block(block)
+    server = create_server(ResearchApplication(repository.store), port=0) if terminal == "returned" else None
+    api_thread = threading.Thread(target=server.serve_forever, daemon=True) if server else None
+    if api_thread:
+        api_thread.start()
     started = threading.Event()
     release = threading.Event()
 
@@ -1093,6 +1101,16 @@ def test_heavy_work_drains_and_preserves_one_lease_until_child_returns(terminal)
                 pytest.fail("Director stole the active science lease")
         assert busy.value.directive["scientific_negative"] is False
         assert not task.done()
+        if server:
+            def read_api():
+                address = f"http://127.0.0.1:{server.server_address[1]}/api/blocks/{block.block_id}"
+                with urlopen(address, timeout=2) as response:
+                    return json.loads(response.read())
+            view = await asyncio.wait_for(asyncio.to_thread(read_api), 2.5)
+            assert view["block"]["status"] == "active"
+            assert not view["complete"] and view["dossier"] is None
+            assert any(e["event_type"] == "HeavyExecutionLease" for e in view["ledger"])
+            assert not task.done()
         release.set()
         if terminal == "failed":
             with pytest.raises(ValueError, match="scientific operation failed"):
@@ -1111,6 +1129,10 @@ def test_heavy_work_drains_and_preserves_one_lease_until_child_returns(terminal)
         assert runtime.service_resources.receipts[0]["status"] == "released"
     finally:
         release.set()
+        if server:
+            server.shutdown()
+            server.server_close()
+            api_thread.join(timeout=2)
         repository.store.close()
 
 
@@ -1171,14 +1193,16 @@ def test_cycle_shutdown_drains_active_research_and_persists_before_reopen(tmp_pa
 
 
 @pytest.mark.parametrize("researcher_fails", [False, True])
-def test_researcher_terminal_bundle_is_visible_before_director_turn_returns(researcher_fails):
+def test_terminal_event_yields_pending_director_without_losing_bundle(researcher_fails):
     import asyncio
     from src.runtime.cycle import run_cycle_async
 
     system = cycle_system()
     repo = ResearchRepository(SqliteResearchStore())
+    director_pending = asyncio.Event()
+    never = asyncio.Event()
+    drained = []
     calls = 0
-    observed_terminal = []
 
     async def director(messages, info):
         nonlocal calls
@@ -1187,18 +1211,15 @@ def test_researcher_terminal_bundle_is_visible_before_director_turn_returns(rese
             return ModelResponse(parts=[ToolCallPart("run_code", {"code":
                 'b = await allocate_block(objective="terminal visibility", why_now="test", seconds=60)\n'
                 'await launch_researcher(block_id=b["block_id"])'}, tool_call_id="start")])
-        active = system.runtime.active_research
-        await active.task
-        terminal = repo.store.latest(RecordKind.DOSSIER, block_id=active.block_id)
-        assert terminal is not None, "Director turn is delaying terminal persistence"
-        view = reconstruct_block(repo.store, active.block_id)
-        assert view.run_outcome.value == ("failed" if researcher_fails else "completed")
-        assert view.block["status"] == ("failed" if researcher_fails else "complete")
-        assert not repo.store.records(kind=RecordKind.CYCLE)
-        observed_terminal.append(terminal.seq)
-        return ModelResponse(parts=[TextPart("Director reviewed the persisted outcome")])
+        director_pending.set()
+        try:
+            await never.wait()
+        finally:
+            drained.append(True)
+        return ModelResponse(parts=[TextPart("late Director result")])
 
     async def researcher(messages, info):
+        await director_pending.wait()
         if researcher_fails:
             raise ValueError("investigation failed")
         return ModelResponse(parts=[TextPart("investigation returned")])
@@ -1207,22 +1228,30 @@ def test_researcher_terminal_bundle_is_visible_before_director_turn_returns(rese
         with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
             if researcher_fails:
                 with pytest.raises(ValueError, match="investigation failed"):
-                    await run_cycle_async(system, "direction", repository=repo)
+                    await asyncio.wait_for(run_cycle_async(system, "direction", repository=repo), 2)
             else:
-                await run_cycle_async(system, "direction", repository=repo)
+                result = await asyncio.wait_for(run_cycle_async(system, "direction", repository=repo), 2)
+                assert result.status.value == "complete"
+                assert result.director_outcome.value == "interrupted"
+                assert result.director_error_type == "ResearcherTerminalEvent"
 
     try:
         asyncio.run(run())
-        assert calls == 2
-        assert len(observed_terminal) == 1, "Director turn is delaying terminal persistence"
+        assert calls == 2 and drained == [True]
         assert len(repo.store.records(kind=RecordKind.DOSSIER)) == 1
         assert len(repo.store.records(kind=RecordKind.CYCLE)) == 1
+        active = system.runtime.active_research
+        view = reconstruct_block(repo.store, active.block_id)
+        assert view.run_outcome.value == ("failed" if researcher_fails else "completed")
+        assert view.block["status"] == ("failed" if researcher_fails else "complete")
+        assert active.finished.is_set() and active.task.done()
+        assert any(e["event_type"] == "DirectorYieldedForResearchEvent" for e in view.ledger)
     finally:
         repo.store.close()
 
 
-
-def test_service_completion_reviews_delta_and_allocates_again_without_deadline_sleep(tmp_path, monkeypatch):
+@pytest.mark.parametrize("first_fails", [False, True])
+def test_service_completion_reviews_delta_and_allocates_again_without_deadline_sleep(tmp_path, monkeypatch, first_fails):
     import asyncio
     from contextlib import ExitStack
     from src.autonomous import AutonomousService
@@ -1253,6 +1282,8 @@ def test_service_completion_reviews_delta_and_allocates_again_without_deadline_s
         if not any(isinstance(m, ModelResponse) for m in messages):
             return ModelResponse(parts=[ToolCallPart("run_code", {"code":
                 'await generate_hypotheses(finding="synthetic association requiring replication")'}, tool_call_id="hypothesis")])
+        if first_fails and composed == 1:
+            raise ValueError("recoverable local investigation failure")
         return ModelResponse(parts=[TextPart("Researcher returned early")])
 
     def compose(*args, **kwargs):
@@ -1281,7 +1312,9 @@ def test_service_completion_reviews_delta_and_allocates_again_without_deadline_s
             service._loop_runner.run(run())
         assert len(allocations) == len(reviews) == 2
         assert systems[0].agents.director is systems[1].agents.director
-        assert len(service.store.records(kind=RecordKind.CYCLE)) == 2
+        cycles = service.store.records(kind=RecordKind.CYCLE)
+        assert len(cycles) == 2
+        assert [c.payload["status"] for c in cycles] == (["failed", "complete"] if first_fails else ["complete", "complete"])
         assert len(service.store.records(kind=RecordKind.BLOCK_DELTA)) == 2
         for system in systems:
             active = system.runtime.active_research
@@ -1307,3 +1340,83 @@ def test_service_completion_reviews_delta_and_allocates_again_without_deadline_s
         assert len(reviews) == 2
     finally:
         service.close()
+
+
+@pytest.mark.parametrize("notification", ["material", "scheduled"])
+@pytest.mark.parametrize("global_failure", [False, True])
+def test_research_event_turn_is_bounded_and_never_cancels_the_researcher(notification, global_failure):
+    import asyncio
+    from pydantic_ai.exceptions import UsageLimitExceeded
+    from src.runtime.cycle import run_cycle_async
+
+    system = cycle_system()
+    runtime = system.runtime
+    runtime.director_review_interval_seconds = 0.03
+    runtime.director_event_turn_limit = 1
+    repo = ResearchRepository(SqliteResearchStore())
+    yielded = asyncio.Event()
+    release = asyncio.Event()
+    observed = []
+    director_calls = 0
+    researcher_calls = 0
+
+    async def director(messages, info):
+        nonlocal director_calls
+        director_calls += 1
+        prompt = " ".join(str(p.content) for m in messages for p in m.parts if hasattr(p, "content"))
+        if "Persisted research event permits" in prompt:
+            expected = "ScopeEscalationRequested" if notification == "material" else "ScheduledProgramReview"
+            assert expected in prompt
+            assert not runtime.active_research.finished.is_set()
+            observed.append(expected)
+            release.set()
+            if global_failure:
+                raise UsageLimitExceeded("bounded global turn exhausted")
+            return ModelResponse(parts=[TextPart("useful independent comparison; yield")])
+        if director_calls == 1:
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code":
+                'b = await allocate_block(objective="event supervision", why_now="test", seconds=60)\n'
+                'await launch_researcher(block_id=b["block_id"])'}, tool_call_id="allocate")])
+        yielded.set()
+        return ModelResponse(parts=[TextPart("initial work ended; wait for an event")])
+
+    async def researcher(messages, info):
+        nonlocal researcher_calls
+        researcher_calls += 1
+        await yielded.wait()
+        if notification == "material" and researcher_calls == 1:
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code":
+                'await request_scope_escalation(proposed_test="replicate in another cohort", rationale="outside current scope")'}, tool_call_id="material")])
+        await release.wait()
+        return ModelResponse(parts=[TextPart("Researcher completed independently")])
+
+    async def run():
+        with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+            return await asyncio.wait_for(run_cycle_async(system, "direction", repository=repo), 2)
+
+    try:
+        result = asyncio.run(run())
+        assert result.status.value == "complete"
+        assert len(observed) == 1 and director_calls == 3
+        active = runtime.active_research
+        events = runtime.manager.ledger(active.block_id).history()
+        starts = [e for e in events if e.event_type == "DirectorEventTurnStarted"]
+        terminals = [e for e in events if e.event_type in {"DirectorEventTurnCompleted", "DirectorEventTurnYielded", "DirectorEventTurnFailed"}]
+        assert len(starts) == len(terminals) == 1
+        assert starts[0].payload["event_id"] == terminals[0].payload["event_id"]
+        if notification == "material":
+            record = repo.store.record_at(starts[0].payload["ledger_seq"])
+            assert record.kind is RecordKind.LEDGER_EVENT
+            assert record.payload["event_type"] == "ScopeEscalationRequested"
+        if global_failure:
+            assert terminals[0].event_type == "DirectorEventTurnFailed"
+            assert terminals[0].payload["error_type"] == "UsageLimitExceeded"
+        assert sum(e.event_type == "ResearcherRunCompleted" for e in events) == 1
+        assert not any(e.event_type == "ResearcherRunFailed" for e in events)
+        assert runtime._counts["director:event_turns"] == 1
+        assert runtime.director_turn_seconds > 0 and runtime.director_idle_seconds >= 0
+        assert runtime.director_context is None
+        assert active.task.done()
+    finally:
+        release.set()
+        repo.store.close()

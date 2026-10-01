@@ -23,17 +23,18 @@ class ResearchApplication:
         return {"status": "ok", "records": self._store.count()}
 
     def overview(self) -> dict[str, Any]:
-        latest_cycle = self._store.latest(RecordKind.CYCLE)
-        return {
-            "records": self._store.count(),
-            "blocks": len(self._store.block_ids()),
-            "cycles": len(self._store.records(kind=RecordKind.CYCLE)),
-            "dossiers": len(self._store.records(kind=RecordKind.DOSSIER)),
-            "evidence": len(self._store.records(kind=RecordKind.EVIDENCE)),
-            "latest_cycle": effective_cycle(self._store, latest_cycle.payload) if latest_cycle else None,
-            "data_provenance": "synthetic_fixture" if self._store.records(kind=RecordKind.ACQUISITION) and all(r.payload.get("origin")=="synthetic" for r in self._store.records(kind=RecordKind.ACQUISITION)) else "retained_records",
-            "source_activity": self._source_activity(),
-        }
+        with self._store.transaction():
+            latest_cycle = self._store.latest(RecordKind.CYCLE)
+            return {
+                "records": self._store.count(),
+                "blocks": len(self._store.block_ids()),
+                "cycles": len(self._store.records(kind=RecordKind.CYCLE)),
+                "dossiers": len(self._store.records(kind=RecordKind.DOSSIER)),
+                "evidence": len(self._store.records(kind=RecordKind.EVIDENCE)),
+                "latest_cycle": effective_cycle(self._store, latest_cycle.payload) if latest_cycle else None,
+                "data_provenance": "synthetic_fixture" if self._store.records(kind=RecordKind.ACQUISITION) and all(r.payload.get("origin")=="synthetic" for r in self._store.records(kind=RecordKind.ACQUISITION)) else "retained_records",
+                "source_activity": self._source_activity(),
+            }
 
     def _source_activity(self) -> dict[str,int]:
         events=[r.payload for r in self._store.records(kind=RecordKind.LEDGER_EVENT)]

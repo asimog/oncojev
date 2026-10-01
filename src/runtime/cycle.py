@@ -18,7 +18,7 @@ from src.dossier.models import JevBlockDossier
 from src.persistence.repository import ResearchRepository
 from src.persistence.records import RecordKind
 from src.runtime.pydantic_ai.factory import ConfiguredSystem, bind_repository
-from src.runtime.pydantic_ai.contracts import DirectorDeps, ResearcherDeps, is_director_truncation
+from src.runtime.pydantic_ai.contracts import DirectorDeps, is_director_truncation, is_director_event_yield
 from src.provenance import canonical_bytes
 
 
@@ -77,6 +77,10 @@ async def run_cycle_async(
     system.runtime.set_service_state(ServiceResearchState.ALLOCATING, cause=cycle_id)
     director_started = perf_counter()
     system.runtime.director_turn_started = director_started
+    system.runtime.director_supervising_turn = True
+    system.runtime.director_context = None
+    system.runtime.director_terminal_yield = False
+    system.runtime.director_request_error = None
     try:
         limits = system.runtime.usage_limits("director")
         memory = system.runtime.memory_service()
@@ -93,22 +97,29 @@ async def run_cycle_async(
         failure = CycleFailed("ServiceShutdown")
         error_type = "ServiceShutdown"
     except Exception as error:
+        if system.runtime.director_request_error is not None:
+            error = system.runtime.director_request_error
         director_error = type(error).__name__
         # These installed exception types identify budget exhaustion or a token-
         # truncated tool call. Generic UnexpectedModelBehavior is a hard failure.
-        if is_director_truncation(error):
+        if system.runtime.director_terminal_yield and is_director_event_yield(error):
+            director_outcome = DirectorOutcome.INTERRUPTED
+            director_error = "ResearcherTerminalEvent"
+        elif is_director_truncation(error):
             director_outcome = DirectorOutcome.TRUNCATED
         else:
             director_outcome = DirectorOutcome.FAILED
             failure = error
-        error_type = director_error
+        error_type = None if director_outcome is DirectorOutcome.INTERRUPTED else director_error
 
+    system.runtime.director_supervising_turn = False
+    system.runtime.director_context = None
     system.runtime.director_turn_seconds += perf_counter() - director_started
     system.runtime.director_turn_started = None
     new_blocks = tuple(block for block in manager.blocks() if block.block_id not in before)
     for block in new_blocks:
         if director_error:
-            system.runtime.append_event(block.block_id, "DirectorRunTruncated" if director_outcome is DirectorOutcome.TRUNCATED else "DirectorRunFailed", {"error_type": director_error})
+            system.runtime.append_event(block.block_id, "DirectorYieldedForResearchEvent" if director_outcome is DirectorOutcome.INTERRUPTED else "DirectorRunTruncated" if director_outcome is DirectorOutcome.TRUNCATED else "DirectorRunFailed", {"error_type": director_error})
 
     allocation_rejected = any(e.event_type == "DirectorAllocationRejected" for b in new_blocks for e in manager.ledger(b.block_id).history())
     if len(new_blocks) != 1 or allocation_rejected:
@@ -126,17 +137,19 @@ async def run_cycle_async(
                 error_type = type(error).__name__
     active = system.runtime.active_research
     if active is not None:
-        idle_started = perf_counter()
-        system.runtime.director_idle_started = idle_started
         if not active.task.done():
             system.runtime.set_service_state(ServiceResearchState.WAITING_FOR_RESEARCH_EVENT, cause=active.run_id)
-        while not active.task.done():
-            try:
-                await asyncio.shield(active.task)
-            except asyncio.CancelledError:
-                cancelled = True
-        system.runtime.director_idle_seconds += perf_counter() - idle_started
-        system.runtime.director_idle_started = None
+        from src.runtime.pydantic_ai.lifecycle import wait_for_research
+        try:
+            await wait_for_research(system.runtime, system.agents.director, direction,
+                allow_global_work=failure is None and not cancelled and director_outcome is not DirectorOutcome.TRUNCATED)
+        except asyncio.CancelledError:
+            cancelled = True
+            while not active.task.done():
+                try:
+                    await asyncio.shield(active.task)
+                except asyncio.CancelledError:
+                    cancelled = True
         if active.error is not None:
             failure = active.error
             error_type = type(active.error).__name__
@@ -145,7 +158,7 @@ async def run_cycle_async(
             failure = CycleFailed("ResearcherRunIncomplete")
             error_type = "ResearcherRunIncomplete"
 
-    status = CycleStatus.FAILED if failure else (CycleStatus.INCOMPLETE if director_error else CycleStatus.COMPLETE)
+    status = CycleStatus.FAILED if failure else (CycleStatus.INCOMPLETE if director_outcome is DirectorOutcome.TRUNCATED else CycleStatus.COMPLETE)
     dossiers = []
     for original in new_blocks:
         block = manager.block(original.block_id)

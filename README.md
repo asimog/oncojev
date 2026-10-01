@@ -72,8 +72,9 @@ configured cost bounds and reported-cost completeness. Researcher retains local
 scientific choices. Launch returns a Python-owned run identity promptly; the Director can perform
 bounded work while the Researcher runs. The one-cycle CLI awaits its actual
 outcome. The continuous service reviews persisted completion deltas and immediately
-starts the next allocation. Remaining event scheduling, durable global portfolios
-and governed proposals await their owning H phases.
+starts the next allocation. Material events and configured program reviews enable
+bounded global turns. Prepared frontier/basis work, durable global portfolios and
+governed proposals await their owning H phases.
 
 Only source-bound acquisition measurements or replay-validated sandbox measurements can be admitted as evidence. Agent-provided arrays and generated code may support exploration but cannot cross the Science admission boundary.
 

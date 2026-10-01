@@ -74,6 +74,8 @@ class RetrievalConfig(StrictModel):
     max_memory_jev_questions: int = Field(default=20, ge=0, le=500)
     max_memory_jev_bytes: int = Field(default=131072, ge=0)
     max_memory_jev_seconds: float = Field(default=20, ge=0)
+    max_event_turns: int = Field(default=8, ge=0)
+    program_review_interval_seconds: float = Field(default=300, gt=0)
 
 
 class CycleBudgetConfig(StrictModel):

@@ -94,6 +94,8 @@ def build_harness_runtime(
         max_jev_questions=policy.block.max_jev_questions,
         projection_max_items=policy.jev.projection_max_items,
         projection_max_payload_bytes=policy.jev.projection_max_payload_bytes,
+        director_event_turn_limit=policy.director.max_event_turns,
+        director_review_interval_seconds=policy.director.program_review_interval_seconds,
         director_request_limit=policy.director.max_model_requests,
         director_tool_limit=policy.director.max_provider_tool_calls,
         director_code_limit=policy.director.max_code_mode_executions,

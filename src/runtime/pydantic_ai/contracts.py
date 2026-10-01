@@ -17,7 +17,7 @@ from time import perf_counter
 from pydantic_ai.usage import RunUsage, UsageLimits
 
 from pydantic_ai import Agent, RunContext
-from pydantic_ai.exceptions import IncompleteToolCall, UsageLimitExceeded
+from pydantic_ai.exceptions import IncompleteToolCall, UsageLimitExceeded, RunCancelled
 from src.runtime.resources import ServiceResources
 from src.block.manager import BlockManager
 from src.block.models import BlockStatus, ServiceResearchState
@@ -55,6 +55,10 @@ from src.runtime.pydantic_ai.search_tools import register_search_page, register_
 def is_director_truncation(error: Exception) -> bool:
     """Classify installed budget/token truncation exceptions, never generic errors."""
     return isinstance(error, (UsageLimitExceeded, IncompleteToolCall))
+
+
+def is_director_event_yield(error):
+    return isinstance(error, RunCancelled)
 
 
 class WorkStopped(RuntimeError):
@@ -103,6 +107,9 @@ class HarnessRuntime:
     max_jev_questions: int = 200
     projection_max_items: int = 20
     projection_max_payload_bytes: int = 65536
+    director_event_turn_limit: int = 8
+    director_review_interval_seconds: float = 300
+    research_events: asyncio.Queue = field(default_factory=lambda: asyncio.Queue(maxsize=16))
     director_request_limit: int = 50
     director_tool_limit: int = 100
     director_code_limit: int = 30
@@ -152,6 +159,10 @@ class HarnessRuntime:
     _jev_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     active_research: ActiveResearchContext | None = None
     service_state: ServiceResearchState = ServiceResearchState.ALLOCATING
+    director_supervising_turn: bool = False
+    director_context: Any = None
+    director_terminal_yield: bool = False
+    director_request_error: Exception | None = None
     director_turn_started: float | None = None
     director_idle_started: float | None = None
     director_turn_seconds: float = 0
@@ -246,8 +257,19 @@ class HarnessRuntime:
             raise RuntimeError("runtime mutations belong to the service event-loop owner")
         event = LedgerEvent(event_type=event_type, occurred_at=datetime.now(UTC), payload=payload)
         self.manager.ledger(block_id).append(event)
-        if self.repository is not None:
-            self.repository.record_ledger_event(block_id, event)
+        stored = self.repository.record_ledger_event(block_id, event) if self.repository else None
+        if event_type in {"EvidenceAdmission", "ScopeEscalationRequested", "CapabilityFailure"}:
+            notification = {"event_id": event.event_id, "event_type": event_type, "block_id": block_id,
+                            "ledger_seq": stored.seq if stored else None, "detail": payload}
+            if self.repository:
+                self.repository.record_immutable(RecordKind.SERVICE_EVENT, event.event_id, notification, block_id)
+            try:
+                self.research_events.put_nowait(notification)
+            except asyncio.QueueFull:
+                # The durable event and terminal Delta retain the change. A
+                # full wake-up queue cannot stall or lose scientific admission.
+                key = f"{block_id}:event_notifications_omitted"
+                self._counts[key] = self._counts.get(key, 0) + 1
         return event
 
     def persist_state(self, value):
@@ -394,6 +416,9 @@ class HarnessRuntime:
             self.repository.record_immutable(RecordKind.BLOCK_DELTA, active.run_id, active.delta, block.block_id)
         self.set_service_state(ServiceResearchState.POST_BLOCK_REVIEW, cause=active.run_id)
         active.finished.set()
+        if self.director_supervising_turn and self.director_context is not None and self.director_request_error is None:
+            self.director_terminal_yield = True
+            self.director_context.cancel()
 
 
     def start_researcher(self, block_id: str, launched_by: str) -> None:
@@ -502,7 +527,10 @@ def register_director_tools(
                 "director_cost_limit": runtime.director_cost_limit,
                 "aggregate": usage["total"], "aggregate_budgets": usage["budgets"]["cycle"],
                 "aggregate_cost_limit": runtime.cycle_cost_limit, "cost_complete": usage["cost_complete"],
-                "memory_semantics": memory, "service_resources": runtime.service_resources.snapshot()}
+                "memory_semantics": memory, "service_resources": runtime.service_resources.snapshot(),
+                "event_turns": {"attempted": runtime._counts.get("director:event_turns", 0),
+                                "limit": runtime.director_event_turn_limit,
+                                "program_review_interval_seconds": runtime.director_review_interval_seconds}}
 
     @agent.tool
     async def search_oncolab(

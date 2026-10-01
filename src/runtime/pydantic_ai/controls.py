@@ -29,6 +29,10 @@ class RuntimeControls(AbstractCapability):
         runtime = ctx.deps.runtime
         # Direct standalone fixtures still register their actual usage object.
         if self.role == "director":
+            runtime.director_context = ctx
+            if runtime.director_supervising_turn and runtime.active_research is not None and runtime.active_research.finished.is_set():
+                runtime.director_terminal_yield = True
+                ctx.cancel()
             if runtime.active_research is not None and not runtime.active_research.task.done():
                 runtime.set_service_state(ServiceResearchState.DIRECTOR_GLOBAL_WORK, cause=runtime.active_research.run_id)
             runtime.director_usage = ctx.usage
@@ -36,22 +40,37 @@ class RuntimeControls(AbstractCapability):
             runtime.reasoner_usage[ctx.deps.block_id] = ctx.usage
         else:
             runtime.researcher_usage[ctx.deps.block_id] = ctx.usage
-        total = runtime.total_usage()
-        limits = runtime.usage_limits(self.role)
-        limits.check_before_request(ctx.usage)
-        if self.role in {"researcher", "reasoner"}:
-            reasoner = runtime.reasoner_usage.get(ctx.deps.block_id)
-            researcher = runtime.researcher_budget(ctx.deps.block_id)
-            if researcher.requests + (reasoner.requests if reasoner else 0) >= runtime.max_model_requests:
-                raise UsageLimitExceeded("Researcher allocation model request budget exhausted")
-            role_cost = float(researcher.cost or 0) + (float(reasoner.cost or 0) if reasoner else 0)
-            if runtime.max_cost is not None and role_cost >= runtime.max_cost:
-                raise UsageLimitExceeded("Researcher allocation reported cost budget exhausted")
-        if total.requests >= runtime.cycle_request_limit:
-            raise UsageLimitExceeded("aggregate cycle request budget exhausted")
-        if runtime.cycle_cost_limit is not None and total.cost is not None and total.cost >= runtime.cycle_cost_limit:
-            raise UsageLimitExceeded("aggregate reported cycle cost budget exhausted")
-        return request_context
+        try:
+            total = runtime.total_usage()
+            limits = runtime.usage_limits(self.role)
+            limits.check_before_request(ctx.usage)
+            if self.role in {"researcher", "reasoner"}:
+                reasoner = runtime.reasoner_usage.get(ctx.deps.block_id)
+                researcher = runtime.researcher_budget(ctx.deps.block_id)
+                if researcher.requests + (reasoner.requests if reasoner else 0) >= runtime.max_model_requests:
+                    raise UsageLimitExceeded("Researcher allocation model request budget exhausted")
+                role_cost = float(researcher.cost or 0) + (float(reasoner.cost or 0) if reasoner else 0)
+                if runtime.max_cost is not None and role_cost >= runtime.max_cost:
+                    raise UsageLimitExceeded("Researcher allocation reported cost budget exhausted")
+            if total.requests >= runtime.cycle_request_limit:
+                raise UsageLimitExceeded("aggregate cycle request budget exhausted")
+            if runtime.cycle_cost_limit is not None and total.cost is not None and total.cost >= runtime.cycle_cost_limit:
+                raise UsageLimitExceeded("aggregate reported cycle cost budget exhausted")
+            return request_context
+        except Exception as error:
+            if self.role == "director" and runtime.director_supervising_turn:
+                runtime.director_request_error = error
+            raise
+
+    async def wrap_model_request(self, ctx, *, request_context, handler):
+        try:
+            return await handler(request_context)
+        except Exception as error:
+            if ctx.deps is not None and self.role == "director" and ctx.deps.runtime.director_supervising_turn:
+                # A model failure observed before the terminal event must retain
+                # precedence over the SDK's concurrently requested handoff.
+                ctx.deps.runtime.director_request_error = error
+            raise
 
     async def wrap_tool_execute(self, ctx, *, call, tool_def, args, handler):
         if ctx.deps is None:

@@ -45,6 +45,11 @@ class BlockReconstruction(BaseModel, frozen=True):
 
 
 def reconstruct_block(store: SqliteResearchStore, block_id: str) -> BlockReconstruction:
+    with store.transaction():
+        return _reconstruct_block(store, block_id)
+
+
+def _reconstruct_block(store: SqliteResearchStore, block_id: str) -> BlockReconstruction:
     def payloads(kind: RecordKind) -> tuple[dict[str, Any], ...]:
         return tuple(record.payload for record in store.records(kind=kind, block_id=block_id))
 

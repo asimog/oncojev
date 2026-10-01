@@ -159,7 +159,11 @@ class AutonomousService:
                 await self.run_once_async(direction)
             except Exception as error:
                 print(f"AUTONOMOUS CYCLE FAILED: {type(error).__name__}", flush=True)
-                await asyncio.sleep(interval_seconds)
+                active = self._last_system.runtime.active_research if self._last_system else None
+                if active is None or not active.finished.is_set():
+                    await asyncio.sleep(interval_seconds)
+                    continue
+                await self._post_block_review(direction)
                 continue
             await self._post_block_review(direction)
             # An early finish is an event, not a reason to wait out its deadline.
