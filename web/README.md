@@ -1,6 +1,6 @@
 # OncoJev observability UI
 
-Presentation-only Next.js App Router app. It renders a generated snapshot of application read models and contains no orchestration, scientific, or evidence-admission logic.
+Presentation-only Next.js App Router app. It renders live read models from `ONCOJEV_API_URL`, falls back to the generated snapshot when the API is unavailable, and contains no orchestration, scientific, or evidence-admission logic.
 
 ```bash
 npm install

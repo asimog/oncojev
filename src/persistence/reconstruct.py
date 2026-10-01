@@ -45,5 +45,5 @@ def reconstruct_block(store: SqliteResearchStore, block_id: str) -> BlockReconst
         artifacts=payloads(RecordKind.ARTIFACT),
         ledger=payloads(RecordKind.LEDGER_EVENT),
         dossier=dossier.payload if dossier else None,
-        complete=block_record is not None,
+        complete=bool(block_record and block_record.payload.get("status") == "complete" and dossier is not None),
     )

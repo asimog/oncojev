@@ -12,6 +12,7 @@ from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 
 from src.api.server import create_server
+from src.autonomous import recover_interrupted_blocks
 from src.application.service import ResearchApplication
 from src.block.manager import BlockManager
 from src.config.models import RuntimeMode
@@ -32,6 +33,7 @@ from src.runtime.pydantic_ai.factory import ConfiguredSystem
 from src.science.admission import admit_scientific_evidence
 from src.science.execution import ScienceExecutor
 from src.science.models import AnalysisSpec
+from src.sources.models import AcquisitionRecord
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -63,6 +65,18 @@ def test_store_is_append_only_at_the_database_level():
     assert store.count() == 1
 
 
+def test_restart_recovery_closes_interrupted_block_with_dossier():
+    store = SqliteResearchStore()
+    repository = ResearchRepository(store)
+    block = BlockManager().create("interrupted", "test", ResourceAllocation(seconds=60))
+    repository.record_block(block)
+    assert recover_interrupted_blocks(repository) == (block.block_id,)
+    reconstruction = reconstruct_block(store, block.block_id)
+    assert reconstruction.complete
+    assert reconstruction.block["termination_reason"] == "recovered_after_interruption"
+    assert reconstruction.dossier["termination_reason"] == "recovered_after_interruption"
+
+
 def test_repository_records_typed_objects_and_reconstruction_preserves_provenance():
     store = SqliteResearchStore()
     repository = ResearchRepository(store)
@@ -70,15 +84,12 @@ def test_repository_records_typed_objects_and_reconstruction_preserves_provenanc
     block = manager.create("reconstruct me", "test", ResourceAllocation(seconds=60))
     ledger = manager.ledger(block.block_id)
     ledger.append(LedgerEvent.model_validate({"event_type": "DirectorBlockAllocated", "occurred_at": "2026-09-30T00:00:00Z", "payload": {}}))
-    result = ScienceExecutor().execute(
-        AnalysisSpec(
-            analysis_id="a", question="q", population="p", estimand="mean",
-            method="descriptive_summary", variables=("values",), inputs={"values": [1.0, 2.0, 3.0]},
-        )
-    )
+    acquisition = AcquisitionRecord(source="gdc", request={"test": True}, records=({"file_id": "a"},), provenance=("test",))
+    result = ScienceExecutor().measure_acquisition(acquisition, "a")
     evidence = admit_scientific_evidence(result)
     state = ResearchState(block_id=block.block_id, objective=block.objective).add_measurement(result).add_evidence(evidence.evidence_id)
 
+    block = manager.complete(block, "complete")
     repository.record_block(block)
     for event in ledger.history():
         repository.record_ledger_event(block.block_id, event)
@@ -90,7 +101,7 @@ def test_repository_records_typed_objects_and_reconstruction_preserves_provenanc
     reconstruction = reconstruct_block(store, block.block_id)
     assert reconstruction.complete
     assert reconstruction.evidence[0]["evidence_id"] == evidence.evidence_id
-    assert reconstruction.evidence[0]["measurement"]["values"]["mean"] == 2.0
+    assert reconstruction.evidence[0]["measurement"]["values"]["record_count"] == 1
     assert reconstruction.measurements[0]["analysis_id"] == "a"
     assert reconstruction.ledger[0]["event_type"] == "DirectorBlockAllocated"
     assert reconstruction.dossier["block_id"] == block.block_id
@@ -144,6 +155,8 @@ def test_deterministic_cycle_persists_blocks_dossiers_and_memory():
         max_jev_calls=4,
         max_reasoner_calls=2,
     )
+    acquisition = AcquisitionRecord(source="gdc", request={"test": True}, records=({"file_id": "a"},), provenance=("test",))
+    runtime.acquisitions[acquisition.acquisition_id] = acquisition
     agents = create_agents("test", "test")
     runtime.researcher = agents.researcher
     system = ConfiguredSystem(agents=agents, runtime=runtime, mode=RuntimeMode.DETERMINISTIC)
@@ -166,7 +179,7 @@ def test_deterministic_cycle_persists_blocks_dossiers_and_memory():
         researcher_calls += 1
         if researcher_calls == 1:
             code = (
-                'await run_statistics(analysis_id="a", question="q", estimand="mean", method="descriptive_summary", inputs={"values": [1.0, 2.0, 3.0]})\n'
+                f'await measure_acquisition(acquisition_id="{acquisition.acquisition_id}", analysis_id="a")\n'
                 'await admit_measurement(analysis_id="a")\n'
                 'await complete_block(reason="done")\n"researcher complete"'
             )

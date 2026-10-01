@@ -18,25 +18,21 @@ from src.runtime.pydantic_ai.contracts import DirectorDeps, ResearcherDeps, regi
 from src.runtime.pydantic_ai.providers import configured_model, model_settings
 
 
-_CODER_TOOL_NAMES = frozenset({"read_file", "write_file", "edit_file", "list_files", "grep", "shell", "delegate_task"})
-
-
 def _code_mode_tools(_ctx: object, tool_definition: object) -> bool:
-    """Keep Coder's workspace tools direct; sandbox domain-tool orchestration."""
-    return getattr(tool_definition, "name", None) not in _CODER_TOOL_NAMES
+    """Keep Coder workspace tools direct and domain tools available in Code Mode."""
+    return getattr(tool_definition, "name", None) not in {
+        "read_file", "write_file", "edit_file", "list_files", "grep", "shell", "delegate_task"
+    }
 
 
 def _runtime_capabilities(workspace: Path, max_tool_calls: int) -> list[object]:
-    """Attach Coder only where Pydantic AI has a real POSIX workspace backend.
-
-    Windows development still receives Monty Code Mode. Railway runs this
-    application in Linux Docker, where Coder uses the container workspace.
-    """
+    """Compose writable Coder workspace tools with typed domain orchestration."""
     capabilities: list[object] = [CodeMode(tools=_code_mode_tools, max_tool_calls=max_tool_calls)]
     if os.name == "posix":
+        workspace.mkdir(parents=True, exist_ok=True)
         capabilities[:0] = [
             LocalWorkspace(workspace, env={"HOME": "/tmp/oncojev-coder"}),
-            Coder(sub_agents=False),
+            Coder(sub_agents=False, unrestricted_filesystem=False),
         ]
     return capabilities
 
@@ -45,11 +41,11 @@ def _runtime_capabilities(workspace: Path, max_tool_calls: int) -> list[object]:
 class OncoJevAgents:
     director: Agent[DirectorDeps, str]
     researcher: Agent[ResearcherDeps, str]
-    _fresh_researcher: Callable[[], Agent[ResearcherDeps, str]]
+    _fresh_researcher: Callable[[str | None], Agent[ResearcherDeps, str]]
 
-    def fresh_researcher(self) -> Agent[ResearcherDeps, str]:
+    def fresh_researcher(self, block_id: str | None = None) -> Agent[ResearcherDeps, str]:
         """Create an agent with no previous run history or block skill selections."""
-        return self._fresh_researcher()
+        return self._fresh_researcher(block_id)
 
 
 def _build(
@@ -58,11 +54,12 @@ def _build(
 ) -> OncoJevAgents:
     workspace = Path.cwd()
 
-    def build_researcher() -> Agent[ResearcherDeps, str]:
+    def build_researcher(block_id: str | None = None) -> Agent[ResearcherDeps, str]:
+        researcher_workspace = workspace / "var" / "workspaces" / (block_id or "unassigned")
         researcher = Agent(
             researcher_model, name="oncojev-researcher", instructions=RESEARCHER_INSTRUCTIONS,
             deps_type=ResearcherDeps, model_settings=researcher_settings,
-            capabilities=_runtime_capabilities(workspace, max_tool_calls),
+            capabilities=_runtime_capabilities(researcher_workspace, max_tool_calls),
             defer_model_check=True,
         )
         register_researcher_tools(researcher)

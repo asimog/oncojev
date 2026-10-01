@@ -1,12 +1,13 @@
-mode: deterministic
+mode: live
 block:
-  default_seconds: 600
-  handoff_reserve_seconds: 60
-  max_tool_calls: 100
-  max_source_calls: 20
+  default_seconds: 900
+  handoff_reserve_seconds: 90
+  max_tool_calls: 500
+  max_model_requests: 200
+  max_source_calls: 100
   max_jev_calls: 100
-  max_reasoner_calls: 5
-  max_sandbox_calls: 2
+  max_reasoner_calls: 10
+  max_sandbox_calls: 5
   max_download_bytes: 100000000
   max_cost: null
 director:

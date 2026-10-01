@@ -7,7 +7,7 @@ import httpx
 from pydantic import ValidationError
 from pydantic_ai.messages import ModelResponse,TextPart,ToolCallPart
 from pydantic_ai.models.function import DeltaToolCall,FunctionModel
-from src.block.manager import BlockManager
+from src.block.manager import BlockManager,HandoffRequired
 from src.block.models import BlockStatus
 from src.oncolab.catalogue import initial_oncolab_index
 from src.oncolab.models import OncoLabKind
@@ -16,7 +16,7 @@ from src.director.models import ResourceAllocation
 from src.dossier.models import Dossier
 from src.jev.client import DeterministicJevClient
 from src.jev.frontier import FrontierAction,FrontierPolicy
-from src.jev.models import JevExecutionFailure,JevFailureCategory,JevQuestionSpec,NoulDecision
+from src.jev.models import ChoiceDecision,JevExecutionFailure,JevFailureCategory,JevQuestionSpec,NoulDecision
 from src.ledger.events import LedgerEvent
 from src.ledger.store import Ledger
 from src.reasoner.models import Hypothesis,ReasonerOutput
@@ -27,8 +27,6 @@ from src.science.models import AnalysisSpec
 from src.reasoner.service import DeterministicReasoner
 from src.sources.public import GdcPublicSource,PublicLiteratureSource,XenaPublicSource
 from src.science.admission import admit_scientific_evidence
-from src.science.execution import GeneratedAnalysisCode
-from src.service import run_synthetic_vertical_slice
 from src.config.environment import load_local_environment
 from src.researcher.state import ProjectionSpec,ResearchState,StateFragment,project_state
 from src.oncolab.labskills import BlockSkillStore
@@ -57,19 +55,25 @@ def test_two_agents_and_model_policy_config():
  assert all(x.fallbacks==('openrouter:openrouter/free',) for x in roles)
  assert c.researcher.max_output_tokens==16000 and c.jev.http2
 def test_block_deadline_and_ledger():
- now=datetime(2026,9,30,tzinfo=UTC);clock=[now];m=BlockManager(now=lambda:clock[0]);b=m.create('o','why',ResourceAllocation(seconds=10));clock[0]=now+timedelta(seconds=11);assert m.status(b) is BlockStatus.EXPIRED
+ now=datetime(2026,9,30,tzinfo=UTC);clock=[now];m=BlockManager(now=lambda:clock[0]);b=m.create('o','why',ResourceAllocation(seconds=10,handoff_reserve_seconds=2));clock[0]=now+timedelta(seconds=9);assert m.status(b) is BlockStatus.HANDOFF
+ with pytest.raises(HandoffRequired):m.require_work_window(b)
+ assert m.complete(b,'soft_handoff').status is BlockStatus.COMPLETE
  with pytest.raises(ValidationError):b.deadline=now # type: ignore[misc]
  l=Ledger();e=LedgerEvent(event_type='x',occurred_at=now,payload={'v':1});l.append(e);e.payload['v']=2;assert l.history()[0].payload=={'v':1}
 def test_non_science_outputs_cannot_be_evidence():
- for x in (ReasonerOutput(interpretation='x',hypotheses=(Hypothesis(hypothesis_id='h',statement='x',within_scope=True,proposed_test='x'),),uncertainty='x'),GeneratedAnalysisCode(source='x'),NoulDecision(question_id='q',p_true=.5,model_requested='x',model_resolved='x',question_version='1',projection_id='x'),Dossier(block_id='b',objective='o',termination_reason='x',evidence_refs=(),preferred_continuation='x',preferred_continuation_reason='x')):
+ for x in (ReasonerOutput(interpretation='x',hypotheses=(Hypothesis(hypothesis_id='h',statement='x',within_scope=True,proposed_test='x'),),uncertainty='x'),NoulDecision(question_id='q',p_true=.5,model_requested='x',model_resolved='x',question_version='1',projection_id='x'),Dossier(block_id='b',objective='o',termination_reason='x',evidence_refs=(),preferred_continuation='x',preferred_continuation_reason='x')):
   with pytest.raises(AttributeError):admit_scientific_evidence(x) # type: ignore[arg-type]
 def test_parallel_jev_and_conservative_frontier():
  qs=(JevQuestionSpec(question_id='a',semantic_purpose='a',primitive='noul',projection_id='p',instructions='a',criteria={},question_version='1'),JevQuestionSpec(question_id='b',semantic_purpose='b',primitive='choice',projection_id='p',instructions='b',criteria={'ADVANCE':'a','DEFER':'d','NONE':'n'},question_version='1'));d=DeterministicJevClient().evaluate({},qs);assert len(d)==2;assert FrontierPolicy().decide('c',d,('p',)).action is FrontierAction.KEEP_ALIVE
+ negative=ChoiceDecision(question_id='negative',selected_option='NONE',probabilities={'ADVANCE':.01,'DEFER':.29,'NONE':.70},confidence=.70,model_requested='x',model_resolved='x',question_version='1',projection_id='p')
+ assert FrontierPolicy().decide('c',(negative,),('p',)).action is FrontierAction.REJECT_RETAIN
 def test_failure_and_local_question_status():
  assert JevExecutionFailure(question_id='q',category=JevFailureCategory.TIMEOUT,detail='x').category is JevFailureCategory.TIMEOUT
  with pytest.raises(ValidationError):JevQuestionSpec(question_id='q',semantic_purpose='q',primitive='noul',projection_id='p',instructions='x',criteria={},question_version='1',status='reusable')
-def test_vertical_slice():
- d=run_synthetic_vertical_slice(ROOT);assert d.evidence_refs and d.preferred_continuation=='replicate cohort' and d.recommended_next_blocks==('mechanistic experiment',)
+def test_synthetic_measurement_cannot_be_admitted_as_evidence():
+ from src.science.models import MeasuredResult
+ result=MeasuredResult(analysis_id='synthetic',values={'effect':1.0},provenance=('fixture',),origin='synthetic',input_sha256='0'*64)
+ with pytest.raises(ValueError,match='source-bound'):admit_scientific_evidence(result)
 def test_research_state_projection_is_deterministic_and_excludes_acquisition_records():
  state=ResearchState(block_id='b',objective='o').append('candidates',StateFragment(fragment_id='c',kind='candidate',summary='candidate',provenance=('test',))).append('acquisitions',StateFragment(fragment_id='a',kind='gdc',summary='one record',provenance=('test',)))
  first=project_state(state,ProjectionSpec(projection_name='candidate',candidate_id='c'));second=project_state(state,ProjectionSpec(projection_name='candidate',candidate_id='c'))
@@ -114,11 +118,18 @@ def test_researcher_instances_and_skill_selections_are_fresh_per_block():
  skills=BlockSkillStore();skills.start('first');assert skills.select('first','statistics')
  skills.start('second');assert skills.selected('second')==()
  first_index=initial_oncolab_index();second_index=initial_oncolab_index();assert first_index is not second_index
+
+def test_resource_budgets_are_isolated_per_block():
+ manager=BlockManager();first=manager.create('first','test',ResourceAllocation(seconds=60));second=manager.create('second','test',ResourceAllocation(seconds=60))
+ runtime=HarnessRuntime(manager=manager,jev=DeterministicJevClient(),science=ScienceExecutor(),reasoner=DeterministicReasoner(),max_jev_calls=1,max_reasoner_calls=1)
+ runtime.claim(first.block_id,'source',1)
+ with pytest.raises(RuntimeError,match='budget exhausted'):runtime.claim(first.block_id,'source',1)
+ runtime.claim(second.block_id,'source',1)
 def test_researcher_can_use_sandbox_tool_without_promoting_method():
  class FakeSandbox:
   def acquire_and_execute(self,request):
    invocation=SandboxInvocation(command=('python','method.py'),exit_status=0,stdout_sha256='o',stderr_sha256='e')
-   receipt=SandboxReceipt(repository_url=request.repository_url,commit_sha='a'*40,environment={'image':'test'},environment_sha256='environment',input_sha256='input',install=invocation,test=invocation,first_run=invocation,replay_run=invocation)
+   receipt=SandboxReceipt(repository_url=request.repository_url,commit_sha='a'*40,environment={'image':'test'},environment_sha256='e'*64,input_sha256='i'*64,install=invocation,test=invocation,first_run=invocation,replay_run=invocation)
    return SandboxMeasurementCandidate(candidate_id='candidate',receipt=receipt,values={'effect':1.0})
  manager=BlockManager();block=manager.create('sandbox objective','test',ResourceAllocation(seconds=60));runtime=HarnessRuntime(manager=manager,jev=DeterministicJevClient(),science=ScienceExecutor(),reasoner=DeterministicReasoner(),max_jev_calls=2,max_reasoner_calls=1,sandbox=FakeSandbox())
  runtime.research_state.start(block.block_id,block.objective);runtime.skills.start(block.block_id)
@@ -166,7 +177,7 @@ def test_harness_code_mode_runs_contract_tools_and_director_delegates():
    return ModelResponse(parts=[ToolCallPart('list_files',{'path':'.'},tool_call_id='researcher-coder')])
   if researcher_calls==1+(os.name=='posix'):
    assert 'run_code' in tools
-   return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await search_oncolab(query="regression", kinds=["statistical_method"], limit=3)\nawait describe_oncolab(capability_id="stat.statsmodels")\nawait acquire_gdc(endpoint="files", filters={"op":"in", "content":{"field":"files.data_type", "value":["Gene Expression Quantification"]}}, fields=["file_id"], size=1)\nawait search_xena(query="TCGA", limit=1)\nawait search_public_literature(query="oncology", limit=1)\nawait run_statistics(analysis_id="analysis", question="synthetic", estimand="difference", method="independent_t_test", inputs={"group_a":[1.0, 2.0, 3.0], "group_b":[4.0, 5.0, 6.0]})\nawait admit_measurement(analysis_id="analysis")\nawait create_line_figure(title="synthetic", x=[1.0, 2.0, 3.0], y=[1.0, 4.0, 9.0])\nawait block_status()\nawait evaluate_candidate(candidate_id="candidate", candidate_summary="synthetic subgroup")\nhypotheses = await generate_hypotheses(finding="effect found")\nawait request_scope_escalation(proposed_test="mechanistic experiment", rationale="beyond scope")\nawait complete_block(reason="researcher complete")\nhypotheses'},tool_call_id='researcher-code')])
+   return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await search_oncolab(query="regression", kinds=["statistical_method"], limit=3)\nawait describe_oncolab(capability_id="stat.statsmodels")\ngdc = await acquire_gdc(endpoint="files", filters={"op":"in", "content":{"field":"files.data_type", "value":["Gene Expression Quantification"]}}, fields=["file_id"], size=1)\nawait search_xena(query="TCGA", limit=1)\nawait search_public_literature(query="oncology", limit=1)\nawait measure_acquisition(acquisition_id=gdc["acquisition_id"], analysis_id="analysis")\nawait admit_measurement(analysis_id="analysis")\nawait create_line_figure(title="synthetic", x=[1.0, 2.0, 3.0], y=[1.0, 4.0, 9.0])\nawait block_status()\nawait evaluate_candidate(candidate_id="candidate", candidate_summary="synthetic subgroup")\nhypotheses = await generate_hypotheses(finding="effect found")\nawait request_scope_escalation(proposed_test="mechanistic experiment", rationale="beyond scope")\nawait complete_block(reason="researcher complete")\nhypotheses'},tool_call_id='researcher-code')])
   return ModelResponse(parts=[TextPart('researcher complete')])
  with agents.director.override(model=scripted(director_model)),agents.researcher.override(model=scripted(researcher_model)):
   result=agents.director.run_sync('allocate and investigate',deps=DirectorDeps(runtime))

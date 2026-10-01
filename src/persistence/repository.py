@@ -30,8 +30,8 @@ class ResearchRepository:
     def _append(self, kind: RecordKind, record_id: str, payload: dict[str, Any], block_id: str | None = None) -> StoredRecord:
         return self._store.append(StoredRecord(kind=kind, record_id=record_id, payload=payload, block_id=block_id))
 
-    def record_cycle(self, mission_id: str, mode: str, direction: str, block_ids: tuple[str, ...]) -> StoredRecord:
-        return self._append(RecordKind.CYCLE, mission_id, {"mode": mode, "direction": direction, "block_ids": list(block_ids)})
+    def record_cycle(self, mission_id: str, mode: str, direction: str, block_ids: tuple[str, ...], *, status: str = "complete", error_type: str | None = None) -> StoredRecord:
+        return self._append(RecordKind.CYCLE, mission_id, {"mode": mode, "direction": direction, "block_ids": list(block_ids), "status": status, "error_type": error_type})
 
     def record_block(self, block: Any) -> StoredRecord:
         return self._append(RecordKind.BLOCK, block.block_id, block.model_dump(mode="json"), block.block_id)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
@@ -46,8 +47,18 @@ def _model(role: str):
         tools = {tool.name for tool in info.function_tools}
         assert {"list_files", "shell", "run_code"} <= tools
         if calls == 1:
-            return ModelResponse(parts=[ToolCallPart("list_files", {"path": "."}, tool_call_id=f"{role}-coder")])
+            return ModelResponse(
+                parts=[
+                    ToolCallPart(
+                        "write_file",
+                        {"path": "coder-write-proof.txt", "content": f"{role} workspace is writable\n"},
+                        tool_call_id=f"{role}-write",
+                    )
+                ]
+            )
         if calls == 2:
+            return ModelResponse(parts=[ToolCallPart("list_files", {"path": "."}, tool_call_id=f"{role}-coder")])
+        if calls == 3:
             return ModelResponse(
                 parts=[
                     ToolCallPart(
@@ -78,7 +89,7 @@ def main() -> None:
 
     with agents.director.override(model=_model("director")):
         director = agents.director.run_sync("Inspect the workspace and OncoLab Index.", deps=DirectorDeps(runtime))
-    researcher_agent = agents.fresh_researcher()
+    researcher_agent = agents.fresh_researcher(block.block_id)
     with researcher_agent.override(model=_model("researcher")):
         researcher = researcher_agent.run_sync(
             "Inspect the workspace and OncoLab Index.", deps=ResearcherDeps(runtime, block.block_id)
@@ -86,6 +97,9 @@ def main() -> None:
 
     assert director.output == "director complete"
     assert researcher.output == "researcher complete"
+    assert Path("coder-write-proof.txt").read_text() == "director workspace is writable\n"
+    researcher_proof = Path("var/workspaces") / block.block_id / "coder-write-proof.txt"
+    assert researcher_proof.read_text() == "researcher workspace is writable\n"
     print(json.dumps({"director": director.output, "researcher": researcher.output, "workspace": "container"}))
 
 

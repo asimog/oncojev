@@ -1,9 +1,8 @@
 """One composition point that chooses deterministic or live services.
 
 Every role model comes from `config/models.yaml`; this module never hardcodes a
-model, provider, or credential. Deterministic mode needs no external service.
-A live request without credentials degrades to deterministic rather than
-producing a partial live run.
+model, provider, or credential. Autonomous mode fails closed unless every live
+provider credential is present. Deterministic services are explicit test fixtures.
 """
 
 from dataclasses import dataclass
@@ -19,6 +18,8 @@ from src.runtime.pydantic_ai.agents import OncoJevAgents, create_configured_agen
 from src.runtime.pydantic_ai.contracts import HarnessRuntime
 from src.runtime.pydantic_ai.providers import configured_model, model_settings
 from src.science.execution import ScienceExecutor
+from src.science.sandbox import DockerScientificSandbox, SandboxPolicy
+from src.sources.public import GdcPublicSource, PublicLiteratureSource, XenaPublicSource
 
 
 def build_jev_client(models: ModelsConfig, mode: RuntimeMode, environment: dict[str, str] | None = None) -> JevClient:
@@ -63,10 +64,19 @@ def build_harness_runtime(
         jev=build_jev_client(models, mode, source),
         science=ScienceExecutor(),
         reasoner=build_reasoner(models, mode, source),
+        max_tool_calls=policy.block.max_tool_calls,
+        max_model_requests=policy.block.max_model_requests,
+        handoff_reserve_seconds=policy.block.handoff_reserve_seconds,
+        max_cost=policy.block.max_cost,
         max_jev_calls=int(policy.block["max_jev_calls"] or 4),
         max_reasoner_calls=int(policy.block["max_reasoner_calls"] or 2),
         max_source_calls=int(policy.block["max_source_calls"] or 20),
         max_sandbox_calls=int(policy.block["max_sandbox_calls"] or 2),
+        oncolab_search_k=policy.oncolab.search_k,
+        sandbox=DockerScientificSandbox(SandboxPolicy(image=policy.sandbox.image, cpu=policy.sandbox.cpu, memory_mb=policy.sandbox.memory_mb, timeout_seconds=policy.sandbox.timeout_seconds)),
+        gdc=GdcPublicSource(max_download_bytes=policy.block.max_download_bytes),
+        xena=XenaPublicSource(max_download_bytes=policy.block.max_download_bytes),
+        literature=PublicLiteratureSource(max_download_bytes=policy.block.max_download_bytes),
     )
 
 
@@ -78,8 +88,11 @@ def build_system(
     manager: BlockManager | None = None,
     environment: dict[str, str] | None = None,
 ) -> ConfiguredSystem:
-    """Wire agents and runtime in one place so roles stay independent agents."""
+    """Wire the autonomous live system; offline fixtures are constructed explicitly in tests."""
+    if policy.mode is not RuntimeMode.LIVE:
+        raise RuntimeError("build_system requires live mode; deterministic fixtures must be explicit")
+    resolve_mode(policy.mode, environment)
     agents = create_configured_agents(models, max_tool_calls)
     runtime = build_harness_runtime(models, policy, manager=manager, environment=environment)
     runtime.researcher_factory = agents.fresh_researcher
-    return ConfiguredSystem(agents=agents, runtime=runtime, mode=resolve_mode(policy.mode, environment))
+    return ConfiguredSystem(agents=agents, runtime=runtime, mode=RuntimeMode.LIVE)

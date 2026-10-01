@@ -29,10 +29,14 @@ class ConditionMetrics(BaseModel, frozen=True):
     proposed_new_blocks: int = 0
     has_preferred_continuation: bool = False
     records: int = 0
+    source_bound_evidence: int = 0
+    jev_failures: int = 0
+    completed_blocks: int = 0
+    elapsed_seconds: float = 0.0
 
 
 class EvaluationReport(BaseModel, frozen=True):
     direction: str
     mode: str
     conditions: tuple[ConditionMetrics, ...] = Field(min_length=1)
-    provenance: tuple[str, ...] = ("evals-v1",)
+    provenance: tuple[str, ...] = ("evals-v2-live-autonomous",)

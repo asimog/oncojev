@@ -9,7 +9,10 @@ def model_settings(role: ModelRoleConfig) -> dict[str, Any]:
     settings: dict[str, Any] = {}
     if role.max_output_tokens is not None:
         settings["max_tokens"] = role.max_output_tokens
-    # Reasoning controls differ by provider and are intentionally not guessed here.
+    if role.timeout_seconds is not None:
+        settings["timeout"] = role.timeout_seconds
+    if role.reasoning.effort in {"minimal", "low", "medium", "high"}:
+        settings["thinking"] = role.reasoning.effort
     return settings
 
 

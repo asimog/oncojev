@@ -7,4 +7,4 @@ COPY --chown=oncojev:oncojev . .
 USER oncojev
 ENV HOME=/home/oncojev UV_CACHE_DIR=/tmp/uv-cache PATH="/app/.venv/bin:$PATH"
 RUN uv sync --frozen --no-dev
-CMD ["python", "-m", "src"]
+CMD ["python", "-m", "src", "serve"]

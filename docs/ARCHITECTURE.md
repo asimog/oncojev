@@ -28,13 +28,13 @@ flowchart TD
   DOS --> RM
 ```
 
-The global scope contains only Director Control, the OncoLab Index, and Research Memory. Control includes global allocation and deterministic block lifecycle. Director and Researcher are separate Pydantic AI agents. `BlockManager` is plain deterministic Python, owns hard deadlines and budgets, and is the only lifecycle authority.
+The global scope contains only Director Control, the OncoLab Index, and Research Memory. Control includes global allocation and deterministic block lifecycle. Director and Researcher are separate Pydantic AI agents. `BlockManager` owns soft handoff deadlines and per-block budgets. Entering the handoff window prevents new expensive work but never cancels an in-flight operation.
 
 Each JevBlock is the Researcher’s local scope. It contains capability discovery/use, acquisition, deterministic science, deterministic ResearchState, Jev projections/measurement, local deterministic frontier policy, Reasoner, optional sandboxed software, visualization, and dossier construction. There are no separate global Science, source, Jev, visualization, or sandbox planes.
 
 ## Agent harness
 
-In the Railway/Linux deployment, both agents compose Pydantic AI Harness `Coder` with `CodeMode`. Coder supplies repository tools in the non-root container workspace with a scrubbed child-command environment; Code Mode runs typed role-specific contract orchestration in Monty. Coder tools are not a path around typed acquisition, Science, evidence admission, or the credential-free scientific sandbox. Windows local development retains Monty Code Mode because Pydantic AI's `LocalWorkspace` backend is POSIX-only; validate Coder behavior through the Docker image. The Director allocates, inspects, and launches bounded JevBlocks. The Researcher operates block-local facilities. There is no deadline-extension tool.
+In the Railway/Linux deployment, both agents compose Pydantic AI Harness `Coder` with `CodeMode`. The Director receives a writable repository-root workspace and unrestricted shell. Each JevBlock receives a fresh writable Researcher workspace under `var/workspaces/<block-id>` for code, public GitHub repositories, and local investigation. Child commands receive a scrubbed environment. Code Mode exposes typed acquisition, Science, Jev, evidence, and lifecycle tools; only those typed paths can admit evidence. Windows local development retains Monty Code Mode because Pydantic AI's `LocalWorkspace` backend is POSIX-only; validate Coder behavior through the Docker image.
 
 Every block begins with a fresh immutable `ResearchState`. Public-provider records are reduced into typed summaries before state update. Jev receives only a deterministic JSON projection of that state, identified by a content-derived projection ID; it never receives provider JSON, dataframes, or shell output. Proven executions are bundled under `src/oncolab/proven/` and loaded by the shared OncoLab Index; this does not promote a broad OncoLab descriptor into a reusable capability.
 
@@ -57,15 +57,15 @@ Inside a JevBlock, the canonical pattern is deterministic candidate generation, 
 
 ## Live and deterministic modes
 
-One composition point, `src/runtime/pydantic_ai/factory.py`, chooses services from `config/models.yaml` and `config/runtime.yaml`. Deterministic mode needs no credential. Live mode requires both model-provider and Jev credentials; a live request without them degrades to deterministic rather than producing a partial live run. The Reasoner is an independent Pydantic AI sub-agent, and TypeSafe failures are operational (`JevOperationalFailure`), never decisions. Model-provider authentication and scientific-data authentication are disjoint domains (`src/config/authentication.py`).
+One composition point, `src/runtime/pydantic_ai/factory.py`, constructs the autonomous live system from strict repository-owned configuration. Missing provider credentials fail closed. Deterministic clients exist only as explicit test fixtures. The Reasoner is an independent Pydantic AI sub-agent, and TypeSafe failures are operational (`JevOperationalFailure`), never decisions.
 
 ## Persistence and application API
 
-`src/persistence/` stores typed record adapters in an append-only SQLite store whose triggers reject updates and deletes; domain contracts remain canonical and reconstruction returns typed views. `src/application/service.py` assembles read models, and `src/api/server.py` exposes them read-only. Neither persistence nor the API can admit evidence: `admit_scientific_evidence` remains reachable only from Science, and the architecture check enforces this.
+`src/persistence/` writes block, ledger, state, measurement, evidence, Jev, artifact, and dossier records as work occurs into append-only SQLite. Startup closes interrupted active blocks with an explicit recovery dossier rather than silently resuming or losing them. `src/application/service.py` assembles read models, and `src/api/server.py` exposes them read-only.
 
 ## Observability and evaluation
 
-`web/` is a Next.js App Router interface that renders a generated snapshot and visually separates observation, measurement, evidence, Jev judgment, hypothesis, and agent action; it contains no orchestration or admission logic. `src/evals/` compares science-only, science+Reasoner, and science+Jev+Reasoner conditions under the same broad directions and reports outcomes without declaring a winner.
+`web/` is a dynamic Next.js App Router interface that reads the live API server-side and uses the committed snapshot only as an offline fallback. `src/evals/` runs fresh autonomous conditions and reports source-bound evidence, failures, completion, and elapsed time without declaring a winner.
 
 ## Evolution
 

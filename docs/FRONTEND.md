@@ -1,6 +1,6 @@
 # Frontend
 
-`web/` is a Vercel-deployable TypeScript/Next.js observability interface. It is not a scientific authority, does not store scientific state, and contains no orchestration or evidence-admission logic.
+`web/` is a Vercel-deployable TypeScript/Next.js observability interface. It reads the live read-only API in server components, is not a scientific authority, and contains no orchestration or evidence-admission logic.
 
 ## Screens
 
@@ -13,7 +13,7 @@ The interface visually distinguishes six categories, each with its own colour an
 
 ## Data
 
-The UI renders a generated snapshot at `web/data/snapshot.json`, produced offline by `scripts/export_snapshot.py` from a deterministic scripted cycle. It reads domain read models through `web/lib/snapshot.ts`; it never imports backend modules.
+The UI reads `ONCOJEV_API_URL` (default `http://127.0.0.1:8080`) with uncached server-side requests. The generated `web/data/snapshot.json` remains an offline/build fallback, not the primary runtime data source.
 
 ## Development
 

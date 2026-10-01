@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { Legend } from "@/components/Section";
-import { data } from "@/lib/snapshot";
+import { getData } from "@/lib/snapshot";
+
+export const dynamic = "force-dynamic";
 
 function Metric({ label, value }: { label: string; value: number | string }) {
   return (
@@ -12,7 +14,8 @@ function Metric({ label, value }: { label: string; value: number | string }) {
   );
 }
 
-export default function OverviewPage() {
+export default async function OverviewPage() {
+  const data = await getData();
   const { overview, blocks, research_memory, conditions, generated_at } = data;
   return (
     <>

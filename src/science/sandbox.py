@@ -195,4 +195,7 @@ def validate_sandbox_candidate(candidate: SandboxMeasurementCandidate, analysis_
         analysis_id=analysis_id,
         values=candidate.values,
         provenance=("sandbox-replay-v1", candidate.receipt.repository_url, candidate.receipt.commit_sha, candidate.receipt.input_sha256, candidate.receipt.first_run.stdout_sha256),
+        origin="sandbox",
+        source_refs=(candidate.candidate_id,),
+        input_sha256=candidate.receipt.input_sha256,
     )

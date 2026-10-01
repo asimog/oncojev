@@ -1,29 +1,32 @@
 {
-  "generated_at": "2026-09-30T14:14:58.889533+00:00",
+  "generated_at": "2026-10-01T03:11:41.788442+00:00",
   "conditions": [
     "science_only",
     "science_reasoner",
     "science_jev_reasoner"
   ],
   "overview": {
-    "records": 21,
+    "records": 28,
     "blocks": 1,
     "cycles": 1,
     "dossiers": 1,
     "evidence": 2,
     "latest_cycle": {
       "block_ids": [
-        "a92dd249-2cfc-48f8-b46f-05461f3639a6"
+        "1c2a883b-107c-4c9c-9107-249a734d33be"
       ],
       "direction": "Investigate a public oncology direction relevant to the project thesis.",
-      "mode": "deterministic"
+      "error_type": null,
+      "mode": "deterministic",
+      "status": "complete"
     }
   },
   "research_memory": [
     {
       "provenance": [
-        "run-cycle-v1",
-        "Investigate a public oncology direction relevant to the project thesis."
+        "run-cycle-v2",
+        "Investigate a public oncology direction relevant to the project thesis.",
+        "1c2a883b-107c-4c9c-9107-249a734d33be"
       ],
       "summary": "Director allocated one bounded block and launched the Researcher."
     }
@@ -31,55 +34,240 @@
   "blocks": [
     {
       "summary": {
-        "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+        "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
         "block": {
-          "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
-          "deadline": "2026-09-30T14:24:58.827180Z",
+          "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+          "deadline": "2026-10-01T03:21:41.724436Z",
           "start": {
             "allocation": {
+              "handoff_reserve_seconds": 60,
               "seconds": 600
             },
-            "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
             "candidate_directions": [],
             "constraints": [],
-            "deadline": "2026-09-30T14:24:58.827180Z",
+            "deadline": "2026-10-01T03:21:41.724436Z",
             "known_uncertainties": [],
             "objective": "Assess a public treatment-resistance signal",
             "relevant_evidence_refs": [],
             "why_now": "No admitted evidence addresses the direction."
           },
-          "started_at": "2026-09-30T14:14:58.827180Z",
+          "started_at": "2026-10-01T03:11:41.724436Z",
           "status": "complete",
           "termination_reason": "researcher_complete"
         },
         "has_dossier": true
       },
       "reconstruction": {
-        "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+        "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
         "block": {
-          "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
-          "deadline": "2026-09-30T14:24:58.827180Z",
+          "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+          "deadline": "2026-10-01T03:21:41.724436Z",
           "start": {
             "allocation": {
+              "handoff_reserve_seconds": 60,
               "seconds": 600
             },
-            "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
             "candidate_directions": [],
             "constraints": [],
-            "deadline": "2026-09-30T14:24:58.827180Z",
+            "deadline": "2026-10-01T03:21:41.724436Z",
             "known_uncertainties": [],
             "objective": "Assess a public treatment-resistance signal",
             "relevant_evidence_refs": [],
             "why_now": "No admitted evidence addresses the direction."
           },
-          "started_at": "2026-09-30T14:14:58.827180Z",
+          "started_at": "2026-10-01T03:11:41.724436Z",
           "status": "complete",
           "termination_reason": "researcher_complete"
         },
         "state_revisions": [
           {
             "acquisitions": [],
-            "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+            "candidates": [],
+            "evidence_ids": [],
+            "measurements": [],
+            "objective": "Assess a public treatment-resistance signal",
+            "observations": [],
+            "prior_actions": [],
+            "provenance": [
+              "research-state-v1"
+            ],
+            "uncertainties": []
+          },
+          {
+            "acquisitions": [],
+            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+            "candidates": [],
+            "evidence_ids": [],
+            "measurements": [
+              {
+                "analysis_id": "summary",
+                "deterministic": true,
+                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
+                "origin": "source",
+                "provenance": [
+                  "acquisition-v1",
+                  "gdc",
+                  "record_count"
+                ],
+                "source_refs": [
+                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+                ],
+                "values": {
+                  "record_count": 2
+                }
+              }
+            ],
+            "objective": "Assess a public treatment-resistance signal",
+            "observations": [],
+            "prior_actions": [],
+            "provenance": [
+              "research-state-v1"
+            ],
+            "uncertainties": []
+          },
+          {
+            "acquisitions": [],
+            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+            "candidates": [],
+            "evidence_ids": [
+              "107363ef-b593-46be-93be-e63dd8db4571"
+            ],
+            "measurements": [
+              {
+                "analysis_id": "summary",
+                "deterministic": true,
+                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
+                "origin": "source",
+                "provenance": [
+                  "acquisition-v1",
+                  "gdc",
+                  "record_count"
+                ],
+                "source_refs": [
+                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+                ],
+                "values": {
+                  "record_count": 2
+                }
+              }
+            ],
+            "objective": "Assess a public treatment-resistance signal",
+            "observations": [],
+            "prior_actions": [],
+            "provenance": [
+              "research-state-v1"
+            ],
+            "uncertainties": []
+          },
+          {
+            "acquisitions": [],
+            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+            "candidates": [],
+            "evidence_ids": [
+              "107363ef-b593-46be-93be-e63dd8db4571"
+            ],
+            "measurements": [
+              {
+                "analysis_id": "summary",
+                "deterministic": true,
+                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
+                "origin": "source",
+                "provenance": [
+                  "acquisition-v1",
+                  "gdc",
+                  "record_count"
+                ],
+                "source_refs": [
+                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+                ],
+                "values": {
+                  "record_count": 2
+                }
+              },
+              {
+                "analysis_id": "replicate",
+                "deterministic": true,
+                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
+                "origin": "source",
+                "provenance": [
+                  "acquisition-v1",
+                  "gdc",
+                  "record_count"
+                ],
+                "source_refs": [
+                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+                ],
+                "values": {
+                  "record_count": 2
+                }
+              }
+            ],
+            "objective": "Assess a public treatment-resistance signal",
+            "observations": [],
+            "prior_actions": [],
+            "provenance": [
+              "research-state-v1"
+            ],
+            "uncertainties": []
+          },
+          {
+            "acquisitions": [],
+            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+            "candidates": [],
+            "evidence_ids": [
+              "107363ef-b593-46be-93be-e63dd8db4571",
+              "c2fb9df2-14e6-4240-8480-779358439f45"
+            ],
+            "measurements": [
+              {
+                "analysis_id": "summary",
+                "deterministic": true,
+                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
+                "origin": "source",
+                "provenance": [
+                  "acquisition-v1",
+                  "gdc",
+                  "record_count"
+                ],
+                "source_refs": [
+                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+                ],
+                "values": {
+                  "record_count": 2
+                }
+              },
+              {
+                "analysis_id": "replicate",
+                "deterministic": true,
+                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
+                "origin": "source",
+                "provenance": [
+                  "acquisition-v1",
+                  "gdc",
+                  "record_count"
+                ],
+                "source_refs": [
+                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+                ],
+                "values": {
+                  "record_count": 2
+                }
+              }
+            ],
+            "objective": "Assess a public treatment-resistance signal",
+            "observations": [],
+            "prior_actions": [],
+            "provenance": [
+              "research-state-v1"
+            ],
+            "uncertainties": []
+          },
+          {
+            "acquisitions": [],
+            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
             "candidates": [
               {
                 "fragment_id": "candidate",
@@ -91,38 +279,42 @@
               }
             ],
             "evidence_ids": [
-              "bd21ffc4-a168-41a9-b51e-83fbf4933707",
-              "51386489-7cca-4056-ae95-2dccf835f5b5"
+              "107363ef-b593-46be-93be-e63dd8db4571",
+              "c2fb9df2-14e6-4240-8480-779358439f45"
             ],
             "measurements": [
               {
                 "analysis_id": "summary",
                 "deterministic": true,
+                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
+                "origin": "source",
                 "provenance": [
-                  "pandas.Series",
-                  "summary"
+                  "acquisition-v1",
+                  "gdc",
+                  "record_count"
+                ],
+                "source_refs": [
+                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
                 ],
                 "values": {
-                  "mean": 2.5,
-                  "median": 2.5,
-                  "missing": 0,
-                  "n": 4,
-                  "standard_deviation": 1.2909944487358056
+                  "record_count": 2
                 }
               },
               {
-                "analysis_id": "ols",
+                "analysis_id": "replicate",
                 "deterministic": true,
+                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
+                "origin": "source",
                 "provenance": [
-                  "statsmodels.OLS",
-                  "ols"
+                  "acquisition-v1",
+                  "gdc",
+                  "record_count"
+                ],
+                "source_refs": [
+                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
                 ],
                 "values": {
-                  "intercept": 0.15000000000000013,
-                  "n": 4,
-                  "p_value": 0.0021716702451389834,
-                  "r_squared": 0.9956613756613757,
-                  "slope": 1.9399999999999995
+                  "record_count": 2
                 }
               }
             ],
@@ -140,70 +332,78 @@
           {
             "analysis_id": "summary",
             "deterministic": true,
+            "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
+            "origin": "source",
             "provenance": [
-              "pandas.Series",
-              "summary"
+              "acquisition-v1",
+              "gdc",
+              "record_count"
+            ],
+            "source_refs": [
+              "15425e22-cde3-4832-98bc-fe3b1c3fe681"
             ],
             "values": {
-              "mean": 2.5,
-              "median": 2.5,
-              "missing": 0,
-              "n": 4,
-              "standard_deviation": 1.2909944487358056
+              "record_count": 2
             }
           },
           {
-            "analysis_id": "ols",
+            "analysis_id": "replicate",
             "deterministic": true,
+            "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
+            "origin": "source",
             "provenance": [
-              "statsmodels.OLS",
-              "ols"
+              "acquisition-v1",
+              "gdc",
+              "record_count"
+            ],
+            "source_refs": [
+              "15425e22-cde3-4832-98bc-fe3b1c3fe681"
             ],
             "values": {
-              "intercept": 0.15000000000000013,
-              "n": 4,
-              "p_value": 0.0021716702451389834,
-              "r_squared": 0.9956613756613757,
-              "slope": 1.9399999999999995
+              "record_count": 2
             }
           }
         ],
         "evidence": [
           {
-            "admitted_at": "2026-09-30T14:14:58.865260Z",
-            "evidence_id": "bd21ffc4-a168-41a9-b51e-83fbf4933707",
+            "admitted_at": "2026-10-01T03:11:41.762436Z",
+            "evidence_id": "107363ef-b593-46be-93be-e63dd8db4571",
             "measurement": {
               "analysis_id": "summary",
               "deterministic": true,
+              "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
+              "origin": "source",
               "provenance": [
-                "pandas.Series",
-                "summary"
+                "acquisition-v1",
+                "gdc",
+                "record_count"
+              ],
+              "source_refs": [
+                "15425e22-cde3-4832-98bc-fe3b1c3fe681"
               ],
               "values": {
-                "mean": 2.5,
-                "median": 2.5,
-                "missing": 0,
-                "n": 4,
-                "standard_deviation": 1.2909944487358056
+                "record_count": 2
               }
             }
           },
           {
-            "admitted_at": "2026-09-30T14:14:58.867339Z",
-            "evidence_id": "51386489-7cca-4056-ae95-2dccf835f5b5",
+            "admitted_at": "2026-10-01T03:11:41.764434Z",
+            "evidence_id": "c2fb9df2-14e6-4240-8480-779358439f45",
             "measurement": {
-              "analysis_id": "ols",
+              "analysis_id": "replicate",
               "deterministic": true,
+              "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
+              "origin": "source",
               "provenance": [
-                "statsmodels.OLS",
-                "ols"
+                "acquisition-v1",
+                "gdc",
+                "record_count"
+              ],
+              "source_refs": [
+                "15425e22-cde3-4832-98bc-fe3b1c3fe681"
               ],
               "values": {
-                "intercept": 0.15000000000000013,
-                "n": 4,
-                "p_value": 0.0021716702451389834,
-                "r_squared": 0.9956613756613757,
-                "slope": 1.9399999999999995
+                "record_count": 2
               }
             }
           }
@@ -215,7 +415,7 @@
                 "model_requested": "deterministic-fixture",
                 "model_resolved": "deterministic-fixture",
                 "p_true": 0.72,
-                "projection_id": "candidate-v1-904c147d81d1675d",
+                "projection_id": "candidate-v1-030fc608aeb8e0cd",
                 "question_id": "candidate-relevance",
                 "question_version": "1"
               },
@@ -227,7 +427,7 @@
                   "ADVANCE": 0.56,
                   "DEFER": 0.44
                 },
-                "projection_id": "candidate-v1-904c147d81d1675d",
+                "projection_id": "candidate-v1-030fc608aeb8e0cd",
                 "question_id": "candidate-action",
                 "question_version": "1",
                 "selected_option": "ADVANCE"
@@ -239,64 +439,68 @@
         "artifacts": [],
         "ledger": [
           {
-            "event_id": "6ce6df82-5c72-40a8-8d99-44853ffc988f",
+            "event_id": "b22ef381-fd8d-4903-9953-d2ffe42d13f7",
             "event_type": "DirectorBlockAllocated",
-            "occurred_at": "2026-09-30T14:14:58.827180Z",
+            "occurred_at": "2026-10-01T03:11:41.725436Z",
             "payload": {
-              "deadline": "2026-09-30T14:24:58.827180+00:00",
+              "deadline": "2026-10-01T03:21:41.724436+00:00",
+              "handoff_at": "2026-10-01T03:20:41.724436+00:00",
               "objective": "Assess a public treatment-resistance signal"
             }
           },
           {
-            "event_id": "bf653689-a3d0-439e-b1c4-343a75ae8f19",
+            "event_id": "8c65d76c-de35-4aab-a221-74ee38eabbe5",
             "event_type": "ResearcherRunStarted",
-            "occurred_at": "2026-09-30T14:14:58.828225Z",
+            "occurred_at": "2026-10-01T03:11:41.726435Z",
             "payload": {
-              "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6"
+              "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+              "workspace": "var/workspaces/1c2a883b-107c-4c9c-9107-249a734d33be"
             }
           },
           {
-            "event_id": "34026596-18ac-4d81-9d7d-4f706f89bfc2",
+            "event_id": "2150f028-d571-4bb9-be2f-375896dc1b1c",
             "event_type": "ScienceMeasurement",
-            "occurred_at": "2026-09-30T14:14:58.864737Z",
+            "occurred_at": "2026-10-01T03:11:41.762436Z",
+            "payload": {
+              "acquisition_id": "15425e22-cde3-4832-98bc-fe3b1c3fe681",
+              "analysis_id": "summary",
+              "method": "acquisition_measurement"
+            }
+          },
+          {
+            "event_id": "c0adb448-3b60-40a7-9f45-0b30925451e0",
+            "event_type": "EvidenceAdmission",
+            "occurred_at": "2026-10-01T03:11:41.763434Z",
             "payload": {
               "analysis_id": "summary",
-              "method": "descriptive_summary"
+              "evidence_id": "107363ef-b593-46be-93be-e63dd8db4571"
             }
           },
           {
-            "event_id": "1fd5afe9-0e9c-45b1-bac3-dae0bc2f82c5",
-            "event_type": "EvidenceAdmission",
-            "occurred_at": "2026-09-30T14:14:58.865260Z",
-            "payload": {
-              "analysis_id": "summary",
-              "evidence_id": "bd21ffc4-a168-41a9-b51e-83fbf4933707"
-            }
-          },
-          {
-            "event_id": "b072c417-bfdb-4a0c-95a0-02cdc6d0f96e",
+            "event_id": "f24e5fc6-f181-4cdf-b80a-30f029fc8745",
             "event_type": "ScienceMeasurement",
-            "occurred_at": "2026-09-30T14:14:58.866818Z",
+            "occurred_at": "2026-10-01T03:11:41.764434Z",
             "payload": {
-              "analysis_id": "ols",
-              "method": "ordinary_least_squares"
+              "acquisition_id": "15425e22-cde3-4832-98bc-fe3b1c3fe681",
+              "analysis_id": "replicate",
+              "method": "acquisition_measurement"
             }
           },
           {
-            "event_id": "07700a3f-8340-4ded-85a6-76f5baf6b23a",
+            "event_id": "1d1e06a0-3fdb-4411-95e1-85f06c006658",
             "event_type": "EvidenceAdmission",
-            "occurred_at": "2026-09-30T14:14:58.867339Z",
+            "occurred_at": "2026-10-01T03:11:41.765436Z",
             "payload": {
-              "analysis_id": "ols",
-              "evidence_id": "51386489-7cca-4056-ae95-2dccf835f5b5"
+              "analysis_id": "replicate",
+              "evidence_id": "c2fb9df2-14e6-4240-8480-779358439f45"
             }
           },
           {
-            "event_id": "fad12fcc-83a4-472d-876b-c7537c9935ee",
+            "event_id": "40753045-82e9-4316-9d7b-da519f85a9bb",
             "event_type": "JevExecution",
-            "occurred_at": "2026-09-30T14:14:58.868384Z",
+            "occurred_at": "2026-10-01T03:11:41.766435Z",
             "payload": {
-              "projection_id": "candidate-v1-904c147d81d1675d",
+              "projection_id": "candidate-v1-030fc608aeb8e0cd",
               "question_ids": [
                 "candidate-relevance",
                 "candidate-action"
@@ -304,22 +508,22 @@
             }
           },
           {
-            "event_id": "e73c6566-bdac-46eb-bb70-142f048e8c4c",
+            "event_id": "df6f65fd-0ce7-4c38-9e06-e3c60241dab6",
             "event_type": "FrontierDecision",
-            "occurred_at": "2026-09-30T14:14:58.868384Z",
+            "occurred_at": "2026-10-01T03:11:41.766435Z",
             "payload": {
               "action": "keep_alive",
               "candidate_id": "candidate",
               "provenance": [
                 "candidate"
               ],
-              "rationale": "close choice distribution preserves beam"
+              "rationale": "close choice distribution preserves recall"
             }
           },
           {
-            "event_id": "217427cd-8de3-4e15-851e-8df5d6266fa0",
+            "event_id": "067c3446-3041-4a11-868f-000ff383942b",
             "event_type": "ReasonerOutput",
-            "occurred_at": "2026-09-30T14:14:58.868905Z",
+            "occurred_at": "2026-10-01T03:11:41.767434Z",
             "payload": {
               "hypotheses": [
                 {
@@ -340,32 +544,40 @@
             }
           },
           {
-            "event_id": "ca4166a4-8227-4c1c-808d-a4636499ea6b",
+            "event_id": "548579b5-0941-446c-a333-b2f0d30625dd",
             "event_type": "ResearcherCompletion",
-            "occurred_at": "2026-09-30T14:14:58.869955Z",
+            "occurred_at": "2026-10-01T03:11:41.767434Z",
             "payload": {
               "reason": "researcher_complete",
               "status": "complete"
             }
           },
           {
-            "event_id": "66a824e7-fe45-472e-85a1-d4d9392c7490",
+            "event_id": "38f8cdcf-89a1-41d9-a3a0-a4b582fc19b6",
             "event_type": "ResearcherRunCompleted",
-            "occurred_at": "2026-09-30T14:14:58.878985Z",
+            "occurred_at": "2026-10-01T03:11:41.777437Z",
             "payload": {
-              "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6"
+              "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be"
+            }
+          },
+          {
+            "event_id": "62ce9d0b-1031-458a-9df3-bdf581cd4245",
+            "event_type": "DossierHandoff",
+            "occurred_at": "2026-10-01T03:11:41.787438Z",
+            "payload": {
+              "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be"
             }
           }
         ],
         "dossier": {
           "analyses_performed": [
             "summary",
-            "ols"
+            "replicate"
           ],
-          "block_id": "a92dd249-2cfc-48f8-b46f-05461f3639a6",
+          "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
           "evidence_refs": [
-            "bd21ffc4-a168-41a9-b51e-83fbf4933707",
-            "51386489-7cca-4056-ae95-2dccf835f5b5"
+            "107363ef-b593-46be-93be-e63dd8db4571",
+            "c2fb9df2-14e6-4240-8480-779358439f45"
           ],
           "frontier_decisions": [
             "keep_alive"
@@ -380,11 +592,11 @@
           ],
           "objective": "Assess a public treatment-resistance signal",
           "positive_findings": [
-            "summary",
-            "ols"
+            "admitted evidence 107363ef-b593-46be-93be-e63dd8db4571",
+            "admitted evidence c2fb9df2-14e6-4240-8480-779358439f45"
           ],
           "preferred_continuation": "replicate cohort",
-          "preferred_continuation_reason": "Within-scope continuation derived deterministically from recorded events.",
+          "preferred_continuation_reason": "Within-scope continuation proposed by the Reasoner and recorded in the ledger.",
           "recommended_next_blocks": [
             "mechanistic experiment"
           ],

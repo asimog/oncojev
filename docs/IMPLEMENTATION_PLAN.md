@@ -52,7 +52,7 @@ This is OncoJev’s only implementation-phase and status tracker.
 
 **Scope:** Immutable provider-agnostic ResearchState, deterministic Jev projections, and block-local Researcher orchestration only.
 
-**Acceptance criteria:** Local decisions respect lifecycle, budgets, frontier policy, and scope escalation.
+**Acceptance criteria:** Local decisions respect per-block budgets, soft handoff windows, frontier policy, and scope escalation. No hard cancellation discards in-flight work.
 
 **Dependencies:** Phases 2–3.
 
@@ -70,7 +70,7 @@ This is OncoJev’s only implementation-phase and status tracker.
 
 **Dependencies:** Phases 2–4.
 
-**Completion evidence:** `tests/invariants/test_boundaries.py` covers the credential-free Docker sandbox, receipt fields, replay validation, and non-promotion; `scripts/verify_coder_container.py` ran the Director→Researcher Coder harness inside the hardened non-root image (read-only rootfs, writable tmpfs, no capability set) and printed `{"director": "director complete", "researcher": "researcher complete"}` with exit status 0.
+**Completion evidence:** `tests/invariants/test_boundaries.py` covers the credential-free Docker sandbox, receipt fields, replay validation, and non-promotion. In Linux, the Director has the writable repository-root Coder workspace and each block receives a fresh writable Researcher workspace under `var/workspaces/<block-id>`; provider credentials are omitted from child-command environments.
 
 ## 6. Live agent and Jev execution
 
@@ -84,7 +84,7 @@ This is OncoJev’s only implementation-phase and status tracker.
 
 **Dependencies:** Phases 2–5.
 
-**Completion evidence:** `src/runtime/pydantic_ai/factory.py` centralizes deterministic/live selection from `config/models.yaml` and `config/runtime.yaml`; the Reasoner is an independent Pydantic AI sub-agent (`src/reasoner/agent.py`); TypeSafe failures raise `JevOperationalFailure` and are recorded operationally, never as judgments; model-provider and scientific-data authentication are disjoint (`src/config/authentication.py`). `tests/invariants/test_live_mode.py` verifies all of this without any external service, and `scripts/run_live_cycle.py` runs a complete live cycle when credentials are configured.
+**Completion evidence:** `src/runtime/pydantic_ai/factory.py` constructs a fail-closed autonomous live system from strict configuration; the Reasoner remains independent; TypeSafe failures remain operational; model and scientific-data authentication remain disjoint. Python requires exactly one new block per cycle, launches a Researcher if the Director did not, and produces a deterministic terminal handoff. Live verification uses `.env.local` without logging secrets.
 
 ## 7. Persistence and application API
 
@@ -98,7 +98,7 @@ This is OncoJev’s only implementation-phase and status tracker.
 
 **Dependencies:** Phases 4 and 6.
 
-**Completion evidence:** `src/persistence/` stores typed records in an append-only SQLite store with database triggers rejecting updates/deletes; `src/application/service.py` exposes read models; `src/api/server.py` is a read-only stdlib HTTP API. `tests/invariants/test_persistence.py` verifies append-only enforcement, reconstruction, read-only routes, and that persistence/API cannot bypass evidence admission.
+**Completion evidence:** block, ledger, state, measurement, evidence, Jev, artifact, and dossier records are written through during execution to an append-only SQLite file. Restart recovery closes interrupted blocks explicitly. `python -m src serve` runs the autonomous worker and read-only API with a Railway health check.
 
 ## 8. Next.js observability UI
 
@@ -112,7 +112,7 @@ This is OncoJev’s only implementation-phase and status tracker.
 
 **Dependencies:** Phase 7.
 
-**Completion evidence:** `web/` is a Next.js App Router app that renders a generated snapshot (`scripts/export_snapshot.py`) and visually separates observation, measurement, evidence, Jev judgment, hypothesis, and agent action. `npm run build` succeeds and `tests/invariants/test_frontend.py` proves the frontend contains no orchestration or scientific-admission logic.
+**Completion evidence:** `web/` server components fetch live read models from `ONCOJEV_API_URL` with `no-store`; the generated snapshot is only an offline fallback. The standalone production build preserves epistemic categories and contains no orchestration or evidence-admission logic.
 
 ## 9. Autonomous research evaluation
 
@@ -126,4 +126,4 @@ This is OncoJev’s only implementation-phase and status tracker.
 
 **Dependencies:** Phases 3–8.
 
-**Completion evidence:** `src/evals/` runs the same broad directions under science-only, science+Reasoner, and science+Jev+Reasoner conditions with capability gating and a report that carries no `best`/`winner` field. `tests/invariants/test_evaluation.py` verifies the conditions differ only in semantic capabilities, all admitted evidence stays deterministic, the path is assembled dynamically, and provider/method changes need no architecture change.
+**Completion evidence:** `src/evals/` runs fresh autonomous conditions and reports source-bound evidence, Jev failures, completed blocks, dossiers, hypotheses, resource outcomes, and elapsed time without a hard-coded winner. Deterministic `FunctionModel` tests protect orchestration contracts; live evaluation uses the configured agents and services.

@@ -34,8 +34,10 @@ def test_frontend_distinguishes_all_epistemic_categories():
         assert f".badge-{category}" in styles
 
 
-def test_frontend_reads_only_the_generated_snapshot():
+def test_frontend_reads_live_api_with_offline_snapshot_fallback():
     snapshot = (WEB / "lib/snapshot.ts").read_text(encoding="utf-8")
     assert "@/data/snapshot.json" in snapshot
+    assert "ONCOJEV_API_URL" in snapshot
+    assert 'cache: "no-store"' in snapshot
     assert (WEB / "app/page.tsx").exists()
     assert any((WEB / "app/blocks").glob("*/page.tsx"))

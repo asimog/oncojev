@@ -62,13 +62,18 @@ def build_dossier(
         "evidence": len(evidence_ids),
     }
 
-    preferred = next((item for item in within if item), "replicate the measured association")
+    preferred = next((item for item in within if item), "review unresolved block state")
+    preferred_reason = (
+        "Within-scope continuation proposed by the Reasoner and recorded in the ledger."
+        if within
+        else "No within-scope continuation was recorded; Director review is required."
+    )
     return JevBlockDossier(
         block_id=block.block_id,
         objective=block.objective,
         termination_reason=termination_reason,
         evidence_refs=tuple(evidence_ids),
-        positive_findings=tuple(analyses),
+        positive_findings=tuple(f"admitted evidence {evidence_id}" for evidence_id in evidence_ids),
         hypotheses=tuple(hypotheses),
         unresolved_uncertainties=tuple(dict.fromkeys(uncertainties)),
         important_jev_measurements=tuple(jev_questions),
@@ -77,5 +82,5 @@ def build_dossier(
         resource_usage=resource_usage,
         recommended_next_blocks=tuple(dict.fromkeys(beyond)),
         preferred_continuation=preferred,
-        preferred_continuation_reason="Within-scope continuation derived deterministically from recorded events.",
+        preferred_continuation_reason=preferred_reason,
     )

@@ -44,17 +44,20 @@ Only reproducible deterministic measurements admitted by Science become `Scienti
 
 ## Running
 
-Deterministic mode needs no credentials. Live mode requires `OPENROUTER_API_KEY` (Director, Researcher, Reasoner) and `TYPESAFE_API_KEY` (Jev); a live request without them degrades to deterministic rather than producing a partial live run. Model-provider credentials are separate from any scientific-data authentication and are never shared with the scientific sandbox.
+The application runs autonomously in live mode. It requires `OPENROUTER_API_KEY` (Director, Researcher, Reasoner) and `TYPESAFE_API_KEY` (Jev) and fails closed when either is missing. Deterministic clients remain explicit test fixtures; they are not an autonomous fallback. Model-provider credentials are omitted from Coder child-command environments and the scientific sandbox.
 
 ```bash
-uv run python -m src                     # credential-free synthetic vertical slice
-uv run python scripts/run_live_cycle.py  # complete live Director -> Researcher cycle (needs keys)
-uv run python scripts/export_snapshot.py # regenerate the observability snapshot
+uv run python -m src cycle               # one durable autonomous Director -> Researcher cycle
+uv run python -m src serve               # autonomous worker plus read-only API
+uv run python scripts/run_live_cycle.py  # one live cycle persisted under var/
+uv run python scripts/export_snapshot.py # regenerate the offline UI fallback
 ```
 
-## First executable slice
+## Autonomous runtime
 
-The initial slice executes a credential-free synthetic run through deterministic block deadlines, parallel Jev questions, deterministic frontier policy, Science-only evidence admission, Reasoner hypotheses, and a typed Dossier handoff. In Railway's Linux container, both Director and Researcher use Pydantic AI Harness `Coder` plus `CodeMode`: Coder supplies bounded repository tools and a scrubbed command environment, while Code Mode runs typed OncoLab orchestration in Monty. Public GitHub methods execute separately in the credential-free Docker scientific sandbox.
+Python owns the autonomous cycle, requires exactly one new block, persists records as work occurs, and always produces a terminal dossier or a recorded failure. Deadlines are soft handoff boundaries: new expensive work stops in the reserve window while in-flight work and dossier construction finish. In Railway's Linux container, the Director has a writable repository-root Coder workspace and unrestricted shell; every JevBlock receives a fresh writable Researcher workspace under `var/workspaces/`. Code Mode exposes the typed OncoLab tools alongside those coding capabilities.
+
+Only source-bound acquisition measurements or replay-validated sandbox measurements can be admitted as evidence. Agent-provided arrays and generated code may support exploration but cannot cross the Science admission boundary.
 
 ## Development
 

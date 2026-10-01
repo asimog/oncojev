@@ -6,6 +6,7 @@ which capabilities the Researcher may use. No condition is declared best.
 """
 
 from collections.abc import Callable
+from time import perf_counter
 from typing import Any
 
 from src.block.manager import BlockManager
@@ -37,7 +38,7 @@ def apply_condition(runtime: HarnessRuntime, condition: EvaluationCondition) -> 
     return runtime
 
 
-def _metrics(condition: EvaluationCondition, store: SqliteResearchStore) -> ConditionMetrics:
+def _metrics(condition: EvaluationCondition, store: SqliteResearchStore, elapsed_seconds: float) -> ConditionMetrics:
     evidence = store.records(kind=RecordKind.EVIDENCE)
     deterministic = all(
         record.payload.get("measurement", {}).get("deterministic") is True for record in evidence
@@ -46,7 +47,7 @@ def _metrics(condition: EvaluationCondition, store: SqliteResearchStore) -> Cond
     dossiers = [record.payload for record in store.records(kind=RecordKind.DOSSIER)]
     return ConditionMetrics(
         condition=condition,
-        blocks=len(store.records(kind=RecordKind.BLOCK)),
+        blocks=len(store.block_ids()),
         measurements=len(store.records(kind=RecordKind.MEASUREMENT)),
         evidence=len(evidence),
         deterministic_evidence=deterministic,
@@ -57,6 +58,10 @@ def _metrics(condition: EvaluationCondition, store: SqliteResearchStore) -> Cond
         proposed_new_blocks=sum(len(payload.get("recommended_next_blocks", [])) for payload in dossiers),
         has_preferred_continuation=any(bool(payload.get("preferred_continuation")) for payload in dossiers),
         records=store.count(),
+        source_bound_evidence=sum(1 for record in evidence if record.payload.get("measurement", {}).get("origin") in {"source", "sandbox"}),
+        jev_failures=len(store.records(kind=RecordKind.JEV_FAILURE)),
+        completed_blocks=sum(1 for block_id in store.block_ids() if (latest := store.latest(RecordKind.BLOCK, block_id=block_id)) and latest.payload.get("status") == "complete"),
+        elapsed_seconds=elapsed_seconds,
     )
 
 
@@ -75,14 +80,15 @@ def evaluate_condition(
     apply_condition(runtime, condition)
     agents = (agents_factory or (lambda: create_configured_agents(models, 100)))()
     runtime.researcher = agents.researcher
-    system = ConfiguredSystem(agents=agents, runtime=runtime, mode=RuntimeMode.DETERMINISTIC)
+    system = ConfiguredSystem(agents=agents, runtime=runtime, mode=policy.mode)
     store = SqliteResearchStore()
     repository = ResearchRepository(store)
+    started = perf_counter()
     if runner is not None:
         runner(system, direction, repository, condition)
     else:
         run_cycle(system, direction, repository=repository, mission_id=condition.value)
-    return _metrics(condition, store)
+    return _metrics(condition, store, perf_counter() - started)
 
 
 def evaluate_direction(
@@ -107,7 +113,7 @@ def evaluate_direction(
         )
         for condition in conditions
     )
-    return EvaluationReport(direction=direction, mode="deterministic", conditions=metrics)
+    return EvaluationReport(direction=direction, mode=policy.mode.value, conditions=metrics)
 
 
 def evaluate_corpus(

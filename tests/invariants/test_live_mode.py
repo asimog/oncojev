@@ -15,7 +15,7 @@ from src.config.authentication import (
     resolve_mode,
 )
 from src.config.loader import load_models_config, load_runtime_config
-from src.config.models import RuntimeMode
+from src.config.models import RuntimeMode, SandboxConfig
 from src.director.models import ResourceAllocation
 from src.jev.client import DeterministicJevClient, TypeSafeJevClient
 from src.jev.failure import JevOperationalFailure, classify_jev_exception
@@ -24,7 +24,7 @@ from src.reasoner.agent import LiveReasoner
 from src.reasoner.service import DeterministicReasoner
 from src.runtime.pydantic_ai.agents import create_agents
 from src.runtime.pydantic_ai.contracts import HarnessRuntime, ResearcherDeps
-from src.runtime.pydantic_ai.factory import build_jev_client, build_reasoner, build_system
+from src.runtime.pydantic_ai.factory import build_harness_runtime, build_jev_client, build_reasoner, build_system
 from src.science.execution import ScienceExecutor
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -61,15 +61,18 @@ def scripted(function):
 def test_model_configuration_is_centralized_and_repo_owned():
     models = load_models_config(ROOT / "config/models.yaml")
     policy = load_runtime_config(ROOT / "config/runtime.yaml")
-    assert policy.mode is RuntimeMode.DETERMINISTIC
+    assert policy.mode is RuntimeMode.LIVE
     assert all(role.provider for role in (models.director, models.researcher, models.reasoner, models.jev))
 
 
-def test_deterministic_mode_needs_no_credentials_and_live_degrades_without_them():
+def test_deterministic_fixture_needs_no_credentials_and_live_fails_closed_without_them():
     models = load_models_config(ROOT / "config/models.yaml")
     assert isinstance(build_jev_client(models, RuntimeMode.DETERMINISTIC, {}), DeterministicJevClient)
-    assert isinstance(build_reasoner(models, RuntimeMode.LIVE, {}), DeterministicReasoner)
-    assert resolve_mode(RuntimeMode.LIVE, {"OPENROUTER_API_KEY": "k"}) is RuntimeMode.DETERMINISTIC
+    assert isinstance(build_reasoner(models, RuntimeMode.DETERMINISTIC, {}), DeterministicReasoner)
+    with pytest.raises(RuntimeError, match="requires OPENROUTER_API_KEY"):
+        build_reasoner(models, RuntimeMode.LIVE, {})
+    with pytest.raises(RuntimeError, match="requires OPENROUTER_API_KEY"):
+        resolve_mode(RuntimeMode.LIVE, {"OPENROUTER_API_KEY": "k"})
     assert resolve_mode(RuntimeMode.LIVE, LIVE_ENV) is RuntimeMode.LIVE
     assert live_providers_available(LIVE_ENV) and not live_providers_available({})
 
@@ -85,15 +88,31 @@ def test_authentication_domains_are_separate_and_disjoint():
     assert AuthenticationDomain.MODEL_PROVIDER != AuthenticationDomain.SCIENTIFIC_DATA
 
 
-def test_build_system_deterministic_needs_no_credentials_and_roles_stay_independent():
+def test_build_system_is_live_fail_closed_and_roles_stay_independent():
     models = load_models_config(ROOT / "config/models.yaml")
     policy = load_runtime_config(ROOT / "config/runtime.yaml")
-    system = build_system(models, policy, environment={})
-    assert system.mode is RuntimeMode.DETERMINISTIC
-    assert isinstance(system.runtime.jev, DeterministicJevClient)
-    assert isinstance(system.runtime.reasoner, DeterministicReasoner)
+    with pytest.raises(RuntimeError, match="requires OPENROUTER_API_KEY"):
+        build_system(models, policy, environment={})
+    system = build_system(models, policy, environment=LIVE_ENV)
+    assert system.mode is RuntimeMode.LIVE
+    assert isinstance(system.runtime.jev, TypeSafeJevClient)
+    assert isinstance(system.runtime.reasoner, LiveReasoner)
     assert system.agents.director is not system.agents.researcher
     assert system.runtime.researcher_factory is not None
+
+
+def test_runtime_applies_sandbox_configuration():
+    models = load_models_config(ROOT / "config/models.yaml")
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(
+        update={
+            "mode": RuntimeMode.DETERMINISTIC,
+            "sandbox": SandboxConfig(image="custom/science:locked", cpu=3, memory_mb=2048, timeout_seconds=77),
+        }
+    )
+    runtime = build_harness_runtime(models, policy, environment={})
+    assert runtime.sandbox.policy.image == "custom/science:locked"
+    assert runtime.sandbox.policy.cpu == 3
+    assert runtime.sandbox.policy.timeout_seconds == 77
 
 
 def test_typesafe_failure_is_operational_and_never_a_decision():

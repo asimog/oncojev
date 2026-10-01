@@ -6,12 +6,14 @@ from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 
 from src.config.loader import load_models_config, load_runtime_config
+from src.config.models import RuntimeMode
 from src.evals.corpus import DIRECTIONS
 from src.evals.harness import evaluate_corpus, evaluate_direction
 from src.evals.models import EvaluationCondition, EvaluationReport
 from src.persistence.repository import ResearchRepository
 from src.runtime.cycle import run_cycle
 from src.runtime.pydantic_ai.agents import create_agents
+from src.sources.models import AcquisitionRecord
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -34,6 +36,8 @@ def scripted(function):
 
 
 def _runner(system, direction, repository: ResearchRepository, condition: EvaluationCondition) -> None:
+    acquisition = AcquisitionRecord(source="gdc", request={"fixture": True}, records=({"file_id": "a"}, {"file_id": "b"}), provenance=("test-source",))
+    system.runtime.acquisitions[acquisition.acquisition_id] = acquisition
     director_calls = 0
     researcher_calls = 0
 
@@ -53,10 +57,10 @@ def _runner(system, direction, repository: ResearchRepository, condition: Evalua
         researcher_calls += 1
         if researcher_calls == 1:
             lines = [
-                'await run_statistics(analysis_id="summary", question="q", estimand="mean", method="descriptive_summary", inputs={"values": [1.0, 2.0, 3.0]})',
+                f'await measure_acquisition(acquisition_id="{acquisition.acquisition_id}", analysis_id="summary")',
                 'await admit_measurement(analysis_id="summary")',
-                'await run_statistics(analysis_id="ols", question="q", estimand="slope", method="ordinary_least_squares", inputs={"x": [1.0, 2.0, 3.0], "y": [2.0, 4.0, 6.0]})',
-                'await admit_measurement(analysis_id="ols")',
+                f'await measure_acquisition(acquisition_id="{acquisition.acquisition_id}", analysis_id="replicate")',
+                'await admit_measurement(analysis_id="replicate")',
             ]
             if condition is not EvaluationCondition.SCIENCE_ONLY:
                 lines.append('await generate_hypotheses(finding="measured association")')
@@ -75,7 +79,7 @@ def _evaluate(direction: str) -> EvaluationReport:
     return evaluate_direction(
         direction,
         models=load_models_config(ROOT / "config/models.yaml"),
-        policy=load_runtime_config(ROOT / "config/runtime.yaml"),
+        policy=load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC}),
         agents_factory=lambda: create_agents("test", "test"),
         environment={},
         runner=_runner,
@@ -98,6 +102,7 @@ def test_conditions_differ_only_in_semantic_capabilities_and_are_all_determinist
     for metrics in report.conditions:
         assert metrics.measurements == 2
         assert metrics.evidence == 2
+        assert metrics.source_bound_evidence == 2
         assert metrics.deterministic_evidence is True
         assert metrics.dossiers == 1
         assert metrics.has_preferred_continuation is True
@@ -125,7 +130,7 @@ def test_evaluation_corpus_runs_reproducibly_in_deterministic_mode():
     reports = evaluate_corpus(
         DIRECTIONS,
         models=load_models_config(ROOT / "config/models.yaml"),
-        policy=load_runtime_config(ROOT / "config/runtime.yaml"),
+        policy=load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC}),
         agents_factory=lambda: create_agents("test", "test"),
         environment={},
         runner=_runner,

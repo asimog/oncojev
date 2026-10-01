@@ -44,9 +44,9 @@ def live_providers_available(environment: Mapping[str, str] | None = None) -> bo
 
 
 def resolve_mode(requested: RuntimeMode, environment: Mapping[str, str] | None = None) -> RuntimeMode:
-    """A live request without credentials degrades to deterministic, never to a partial live run."""
+    """Resolve an explicit mode; autonomous live mode fails closed without credentials."""
     if requested is RuntimeMode.LIVE and not live_providers_available(environment):
-        return RuntimeMode.DETERMINISTIC
+        raise RuntimeError("live mode requires OPENROUTER_API_KEY and TYPESAFE_API_KEY")
     return requested
 
 

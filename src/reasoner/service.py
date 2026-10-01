@@ -6,13 +6,13 @@ from src.reasoner.models import Hypothesis, ReasonerOutput
 
 
 class ReasonerService(Protocol):
-    def generate(self, objective: str, finding: str) -> ReasonerOutput: ...
+    async def generate(self, objective: str, finding: str) -> ReasonerOutput: ...
 
 
 class DeterministicReasoner:
     """Credential-free fixture used by deterministic mode and tests."""
 
-    def generate(self, objective: str, finding: str) -> ReasonerOutput:
+    async def generate(self, objective: str, finding: str) -> ReasonerOutput:
         return ReasonerOutput(
             interpretation=finding,
             uncertainty="Replication needed.",

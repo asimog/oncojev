@@ -3,14 +3,12 @@ import { notFound } from "next/navigation";
 
 import { Row, Section } from "@/components/Section";
 import { categoriseEvent } from "@/lib/categories";
-import { data, findBlock } from "@/lib/snapshot";
+import { findBlock } from "@/lib/snapshot";
 
-export function generateStaticParams() {
-  return data.blocks.map((block) => ({ blockId: block.reconstruction.block_id }));
-}
+export const dynamic = "force-dynamic";
 
-export default function BlockPage({ params }: { params: { blockId: string } }) {
-  const view = findBlock(params.blockId);
+export default async function BlockPage({ params }: { params: { blockId: string } }) {
+  const view = await findBlock(params.blockId);
   if (!view) {
     notFound();
   }

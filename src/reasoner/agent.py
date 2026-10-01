@@ -32,6 +32,6 @@ class LiveReasoner:
             defer_model_check=True,
         )
 
-    def generate(self, objective: str, finding: str) -> ReasonerOutput:
-        result = self._agent.run_sync(f"Objective: {objective}\nFinding: {finding}")
+    async def generate(self, objective: str, finding: str) -> ReasonerOutput:
+        result = await self._agent.run(f"Objective: {objective}\nFinding: {finding}")
         return result.output

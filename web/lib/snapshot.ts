@@ -90,8 +90,41 @@ export interface SnapshotShape {
   blocks: BlockView[];
 }
 
-export const data = snapshot as unknown as SnapshotShape;
+const fallback = snapshot as unknown as SnapshotShape;
+const apiBase = process.env.ONCOJEV_API_URL ?? "http://127.0.0.1:8080";
 
-export function findBlock(blockId: string): BlockView | undefined {
+async function api<T>(path: string): Promise<T> {
+  const response = await fetch(`${apiBase}${path}`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`OncoJev API ${path} returned ${response.status}`);
+  return response.json() as Promise<T>;
+}
+
+export async function getData(): Promise<SnapshotShape> {
+  try {
+    const [overview, blockList, memory] = await Promise.all([
+      api<SnapshotShape["overview"]>("/api/overview"),
+      api<{ blocks: BlockView["summary"][] }>("/api/blocks"),
+      api<{ research_memory: SnapshotShape["research_memory"] }>("/api/research-memory"),
+    ]);
+    const blocks = await Promise.all(
+      blockList.blocks.map(async (summary) => ({
+        summary,
+        reconstruction: await api<BlockView["reconstruction"]>(`/api/blocks/${encodeURIComponent(summary.block_id)}/reconstruction`),
+      })),
+    );
+    return {
+      generated_at: new Date().toISOString(),
+      conditions: fallback.conditions,
+      overview,
+      research_memory: memory.research_memory,
+      blocks,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+export async function findBlock(blockId: string): Promise<BlockView | undefined> {
+  const data = await getData();
   return data.blocks.find((block) => block.reconstruction.block_id === blockId);
 }

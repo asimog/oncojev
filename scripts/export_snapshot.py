@@ -30,6 +30,7 @@ from src.runtime.pydantic_ai.agents import create_agents
 from src.runtime.pydantic_ai.contracts import HarnessRuntime
 from src.runtime.pydantic_ai.factory import ConfiguredSystem
 from src.science.execution import ScienceExecutor
+from src.sources.models import AcquisitionRecord
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -63,6 +64,8 @@ def _run_scripted_cycle() -> tuple[SqliteResearchStore, ResearchApplication]:
         max_jev_calls=4,
         max_reasoner_calls=2,
     )
+    acquisition = AcquisitionRecord(source="gdc", request={"snapshot": True}, records=({"file_id": "demo-a"}, {"file_id": "demo-b"}), provenance=("offline-snapshot",))
+    runtime.acquisitions[acquisition.acquisition_id] = acquisition
     agents = create_agents("test", "test")
     runtime.researcher = agents.researcher
     system = ConfiguredSystem(agents=agents, runtime=runtime, mode=RuntimeMode.DETERMINISTIC)
@@ -86,10 +89,10 @@ def _run_scripted_cycle() -> tuple[SqliteResearchStore, ResearchApplication]:
         if researcher_calls == 1:
             code = "\n".join(
                 [
-                    'await run_statistics(analysis_id="summary", question="q", estimand="mean", method="descriptive_summary", inputs={"values": [1.0, 2.0, 3.0, 4.0]})',
+                    f'await measure_acquisition(acquisition_id="{acquisition.acquisition_id}", analysis_id="summary")',
                     'await admit_measurement(analysis_id="summary")',
-                    'await run_statistics(analysis_id="ols", question="q", estimand="slope", method="ordinary_least_squares", inputs={"x": [1.0, 2.0, 3.0, 4.0], "y": [2.1, 3.9, 6.2, 7.8]})',
-                    'await admit_measurement(analysis_id="ols")',
+                    f'await measure_acquisition(acquisition_id="{acquisition.acquisition_id}", analysis_id="replicate")',
+                    'await admit_measurement(analysis_id="replicate")',
                     'await evaluate_candidate(candidate_id="candidate", candidate_summary="synthetic subgroup signal")',
                     'await generate_hypotheses(finding="Measured association with a modest effect")',
                     'await complete_block(reason="researcher_complete")',
