@@ -185,7 +185,7 @@ def test_researcher_can_use_sandbox_tool_without_promoting_method(tmp_path):
   nonlocal calls
   calls+=1
   if calls==1:
-   return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await load_research_skills(need="github reproducibility")\ncandidate = await acquire_github_scientific_method(capability_need="novel method", why_existing_capabilities_are_inadequate="no installed method fits", repository_url="https://github.com/example/public-method", requested_ref="main", install_command=["python", "-m", "pip", "install", "."], test_command=["python", "-m", "pytest"], execute_command=["python", "method.py", "/input/request.json"], input_json={"x": [1]})\nawait validate_sandbox_measurement(candidate_id=candidate["candidate_id"], analysis_id="sandbox-analysis")\nawait admit_measurement(analysis_id="sandbox-analysis")\ncandidate'},tool_call_id='sandbox-code')])
+   return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await load_research_skills(need="github reproducibility")\ncandidate = await acquire_github_scientific_method(capability_need="statistics novel method", why_existing_capabilities_are_inadequate="installed array statistics do not estimate the requested quantity", repository_url="https://github.com/example/public-method", requested_ref="main", install_command=["python", "-m", "pip", "install", "."], test_command=["python", "-m", "pytest"], execute_command=["python", "method.py", "/input/request.json"], input_json={"x": [1]})\nawait validate_sandbox_measurement(candidate_id=candidate["candidate_id"], analysis_id="sandbox-analysis")\nawait admit_measurement(analysis_id="sandbox-analysis")\ncandidate'},tool_call_id='sandbox-code')])
   return ModelResponse(parts=[TextPart('sandbox complete')])
  researcher=agents.fresh_researcher()
  with researcher.override(model=scripted(model)):
@@ -244,3 +244,53 @@ def test_harness_code_mode_runs_contract_tools_and_director_delegates():
  assert {'DirectorBlockAllocated','CapabilityInvocation','CapabilityResult','ScienceMeasurement','EvidenceAdmission','JevExecution','FrontierDecision','ReasonerOutput','ScopeEscalationRequested','ResearcherCompletion'}<=event_types
  gdc_request=next(request for request in seen if request.url.host=='api.gdc.cancer.gov');assert 'x-auth-token' not in gdc_request.headers and b'"files.access"' in gdc_request.content and b'"open"' in gdc_request.content
  xena_request=next(request for request in seen if request.url.host=='ucscpublic.xenahubs.net');assert xena_request.method=='POST' and xena_request.url.path=='/data/' and xena_request.headers['content-type']=='text/plain'
+
+
+def test_semantic_method_tools_keep_routes_uncertainty_and_replayable_lineage(tmp_path):
+    from src.persistence.store import SqliteResearchStore
+    from src.persistence.repository import ResearchRepository
+    from src.persistence.reconstruct import reconstruct_block
+    from src.sources.models import AcquisitionRecord
+    store=SqliteResearchStore(tmp_path/'semantic.sqlite3');repo=ResearchRepository(store)
+    manager=BlockManager();block=manager.create('paired association','test',ResourceAllocation(seconds=300))
+    runtime=HarnessRuntime(manager=manager,jev=DeterministicJevClient(),science=ScienceExecutor(),reasoner=DeterministicReasoner(),max_jev_calls=10,max_reasoner_calls=1,repository=repo)
+    repo.record_block(block);runtime.research_state.start(block.block_id,block.objective)
+    record=AcquisitionRecord(source='fixture',request={},records=({'x':1,'y':2},{'x':2,'y':4}),provenance=('fixture',))
+    runtime.retain_acquisition(block.block_id,record)
+    responses=[]
+    async def model(messages,info):
+        if not any(isinstance(m,ModelResponse) for m in messages):
+            code=f'page = await search_oncolab_page(query="paired association", limit=2)\ncontract = await describe_oncolab(capability_id="stat.scipy")\nfit = await assess_method(capability_id="stat.scipy", need={{"estimand":"correlation","design":"paired"}}, acquisition_ids=["{record.acquisition_id}"], operation="pearson_correlation")\nmissing = await assess_method(capability_id="stat.scipy", need={{"estimand":"correlation"}}, acquisition_ids=[])\nmeta = await assess_method(capability_id="stat.method.correlation", need={{"estimand":"correlation"}})\nawait assess_representation(acquisition_id="{record.acquisition_id}", need={{"estimand":"paired correlation"}})\nfirst = await assess_hypothesis(hypothesis="X relates to Y", proposed_test="paired correlation")\nduplicate = await assess_hypothesis(hypothesis=" X  relates to Y ", proposed_test="paired correlation")\nassert duplicate["exact_duplicate"]\nassert not missing["checks"]["eligible"]\nassert not meta["checks"]["eligible"]\nassert fit["checks"]["eligible"]\nfit'
+            return ModelResponse(parts=[ToolCallPart('run_code',{'code':code},tool_call_id='selection')])
+        responses.extend(str(p.content) for m in messages for p in m.parts if hasattr(p,'content'))
+        return ModelResponse(parts=[TextPart('done')])
+    agent=create_agents('test','test').researcher
+    with agent.override(model=scripted(model)):agent.run_sync('select method',deps=ResearcherDeps(runtime,block.block_id))
+    assert not any('AssertionError' in s or 'Exception:' in s or 'Type error' in s for s in responses),responses[-1]
+    assert runtime.resources(block.block_id)['jev']['attempted']==5
+    assert runtime.resources(block.block_id)['jev_questions']['attempted']==16
+    store.close();store=SqliteResearchStore(tmp_path/'semantic.sqlite3');view=reconstruct_block(store,block.block_id)
+    assert len(view.jev_calls)==5 and not view.evidence
+    assert all(c['projection_sha256'] and c['question_hashes'] for c in view.jev_calls)
+    assert any(h['action']=='defer' for h in view.candidate_history)
+    assert any(h['action']=='keep_alive' for h in view.candidate_history)
+    assert all(len(p['returned_ids'])<=2 for p in view.index_receipts if p['operation']=='search_page')
+    store.close()
+
+
+def test_oncolab_continuation_recovers_zero_overlap_candidates_and_rejects_stale_cursor():
+    from src.oncolab.registry import OncoLabIndex
+    original=initial_oncolab_index()
+    page=original.search_page('unseen-synonym',limit=1)
+    ids=[]
+    while True:
+        ids.extend(c.capability_id for c in page.cards)
+        if page.exhausted:break
+        page=original.search_page('unseen-synonym',limit=20,continuation=page.continuation)
+    assert len(set(ids))==original.count()
+    assert 'stat.scipy' in ids
+    cursor=original.search_page('unseen-synonym',limit=1).continuation
+    with pytest.raises(ValueError):original.search_page('different-query',continuation=cursor)
+    changed=original.describe('stat.scipy').model_copy(update={'purpose':'changed scientific contract'})
+    index=OncoLabIndex((changed,))
+    with pytest.raises(ValueError):index.search_page('unseen-synonym',continuation=cursor)

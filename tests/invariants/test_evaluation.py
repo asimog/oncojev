@@ -185,3 +185,21 @@ def test_failed_condition_preserves_partial_results_and_continues(failure):
         assert first.completed_blocks == 0 and first.incomplete_cycles == 1
     else:
         assert first.completed_blocks == 1 and first.failed_cycles == 0
+
+
+def test_selection_evaluation_exposes_recall_unknown_denominators_and_non_gdc_space():
+    from src.evals.selection import evaluate_selection,SelectionTask
+    from src.runtime.pydantic_ai.contracts import HarnessRuntime
+    from src.block.manager import BlockManager
+    from src.director.models import ResourceAllocation
+    from src.jev.client import DeterministicJevClient
+    from src.reasoner.service import DeterministicReasoner
+    from src.science.execution import ScienceExecutor
+    manager=BlockManager();block=manager.create('select','test',ResourceAllocation(seconds=300))
+    runtime=HarnessRuntime(manager=manager,jev=DeterministicJevClient(),science=ScienceExecutor(),reasoner=DeterministicReasoner(),max_jev_calls=100,max_reasoner_calls=1,oncolab_candidate_k=200)
+    report=evaluate_selection(runtime,block.block_id,condition='deterministic')
+    assert 'winner' not in report
+    assert all(row['retrieval_recall']==1 for row in report['rows'] if row['labels'])
+    assert any(row['information_space']=='literature' for row in report['rows'])
+    assert all(row['downstream_scientific_utility'] is None and row['cost'] is None for row in report['rows'])
+    assert next(row for row in report['rows'] if row['task_id']=='unimplemented-survival')['retrieval_recall'] is None

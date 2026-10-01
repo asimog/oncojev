@@ -78,3 +78,18 @@ class MemoryFilters(BaseModel, frozen=True):
     topic: str | None = None
     since: AwareDatetime | None = None
     until: AwareDatetime | None = None
+
+
+class MemoryRetrievalReceipt(BaseModel, frozen=True):
+    receipt_id: str
+    query: str
+    mission_id: str | None
+    cycle_id: str | None
+    block_id: str | None
+    digest_ids: tuple[str, ...]
+    status: str
+    failure_type: str | None = None
+    semantic_call_ids: tuple[str, ...] = ()
+    resources: dict[str, Any]
+    duration_ms: float = Field(ge=0)
+    retrieval_version: str = "memory-retrieval-v2"

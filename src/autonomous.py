@@ -70,7 +70,8 @@ def recover_interrupted_blocks(repository: ResearchRepository) -> tuple[str, ...
             stored_events = (*stored_events, event)
         state_record = repository.store.latest(RecordKind.STATE_REVISION, block_id=block_id)
         state = ResearchState.model_validate(state_record.payload) if state_record else None
-        repository.record_terminal(block, build_dossier(block, stored_events, state, block.termination_reason or "recovered_after_interruption"))
+        evidence_records={r.record_id:r.payload for r in repository.store.records(kind=RecordKind.EVIDENCE,block_id=block_id)}
+        repository.record_terminal(block, build_dossier(block, stored_events, state, block.termination_reason or "recovered_after_interruption",evidence_records=evidence_records))
         recovered.append(block_id)
     finished = {r.record_id for r in repository.store.records(kind=RecordKind.CYCLE)}
     for started in repository.store.records(kind=RecordKind.CYCLE_START):

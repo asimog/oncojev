@@ -45,6 +45,7 @@ from src.oncolab.labskills import BlockSkillStore
 from src.memory.service import ResearchMemory
 from src.memory.models import MemoryFilters, MemoryReference
 from src.provenance import canonical_bytes
+from src.runtime.pydantic_ai.search_tools import register_search_page, register_local_semantic_tools, semantic_memory_context
 
 
 def is_director_truncation(error: Exception) -> bool:
@@ -114,10 +115,24 @@ class HarnessRuntime:
     mission_id: str | None = None
     cycle_id: str | None = None
     memory_limit: int = 20
+    oncolab_candidate_k: int = 80
+    memory_jev_calls: int = 4
+    memory_jev_questions: int = 20
+    memory_jev_bytes: int = 131072
+    memory_jev_seconds: float = 20
+    memory_elapsed: float = 0
+    method_assessments: dict[str, dict[str, Any]] = field(default_factory=dict)
     _counts: dict[str, int] = field(default_factory=dict)
 
     def memory_service(self):
         return ResearchMemory(self.repository.store) if self.repository is not None else None
+
+    def claim_memory_measurement(self, questions, payload_bytes):
+        limits={"memory_jev":(1,self.memory_jev_calls),"memory_questions":(questions,self.memory_jev_questions),
+                "memory_bytes":(payload_bytes,self.memory_jev_bytes)}
+        if self.memory_elapsed>=self.memory_jev_seconds or any(self._counts.get(k,0)+v>limit for k,(v,limit) in limits.items()):
+            raise WorkStopped("memory_retrieval_budget_exhausted")
+        for k,(v,limit) in limits.items():self._counts[k]=self._counts.get(k,0)+v
 
     def researcher_prompt(self, block_id):
         block = self.manager.block(block_id)
@@ -290,7 +305,7 @@ def register_memory_tools(agent):
     async def search_research_memory(ctx: RunContext[Any], query: str = "", filters: dict[str, Any] | None = None, limit: int = 10) -> dict[str, Any]:
         """Search historical typed outcomes by mission/entity/topic/time; bounded context, not evidence."""
         memory = ctx.deps.runtime.memory_service()
-        return memory.context(query, limit=min(limit, ctx.deps.runtime.memory_limit), **MemoryFilters.model_validate(filters or {}).model_dump()).model_dump(mode="json") if memory else {"digests": []}
+        return semantic_memory_context(ctx.deps.runtime, query, limit=min(limit, ctx.deps.runtime.memory_limit), block_id=getattr(ctx.deps,"block_id",None), **MemoryFilters.model_validate(filters or {}).model_dump())
 
     @agent.tool
     async def resolve_memory_reference(ctx: RunContext[Any], reference: MemoryReference) -> dict[str, Any] | None:
@@ -330,6 +345,7 @@ def register_director_tools(
     agent: Agent[DirectorDeps, str],
 ) -> None:
     register_memory_tools(agent)
+    register_search_page(agent)
     @agent.tool
     async def search_oncolab(
         ctx: RunContext[DirectorDeps], query: str = "", kinds: list[OncoLabKind] = [], tags: list[str] = [], limit: int = 8
@@ -339,7 +355,7 @@ def register_director_tools(
         ctx.deps.runtime.index_receipt("director", "search", query=query, kinds=tuple(kinds), tags=tuple(tags),
                                       requested_limit=limit, effective_limit=min(limit, ctx.deps.runtime.oncolab_search_k),
                                       returned_ids=tuple(m.capability_id for m in matches))
-        return [match.model_dump(mode="json") for match in matches]
+        return [ctx.deps.runtime.oncolab.card(match).model_dump(mode="json") for match in matches]
 
     @agent.tool
     async def describe_oncolab(ctx: RunContext[DirectorDeps], capability_id: str) -> dict[str, Any] | None:
@@ -358,7 +374,7 @@ def register_director_tools(
         runtime = ctx.deps.runtime
         block = runtime.manager.allocate(
             objective, why_now, seconds, mission_id=runtime.mission_id, cycle_id=runtime.cycle_id,
-            memory=runtime.memory_service().start_context(objective) if runtime.memory_service() else None,
+            memory=runtime.memory_service().start_context(objective, context=semantic_memory_context(runtime,objective)) if runtime.memory_service() else None,
             entities=tuple(entities), topics=tuple(topics),
         )
         state = runtime.research_state.start(block.block_id, block.objective)
@@ -375,8 +391,7 @@ def register_director_tools(
                                    since: datetime | None = None, until: datetime | None = None) -> dict[str, Any]:
         """Retrieve bounded typed outcomes by relevance and filters, never legacy prose as facts."""
         memory = ctx.deps.runtime.memory_service()
-        return memory.context(query, limit=min(limit, ctx.deps.runtime.memory_limit), mission_id=mission_id,
-                              entity=entity, topic=topic, since=since, until=until).model_dump(mode="json") if memory else {"digests": []}
+        return semantic_memory_context(ctx.deps.runtime, query, limit=min(limit,ctx.deps.runtime.memory_limit), mission_id=mission_id, entity=entity, topic=topic, since=since, until=until)
 
     @agent.tool
     async def inspect_block(
@@ -429,6 +444,8 @@ def register_researcher_tools(
     agent: Agent[ResearcherDeps, str],
 ) -> None:
     register_memory_tools(agent)
+    register_search_page(agent)
+    semantic_tools=register_local_semantic_tools(agent)
     def block_for(ctx: RunContext[ResearcherDeps]):
         return ctx.deps.runtime.manager.block(ctx.deps.block_id)
 
@@ -483,7 +500,7 @@ def register_researcher_tools(
         runtime.index_receipt("researcher", "search", block_id=ctx.deps.block_id, query=query, kinds=tuple(kinds),
                               tags=tuple(tags), requested_limit=limit, effective_limit=effective,
                               returned_ids=tuple(m.capability_id for m in matches))
-        return [match.model_dump(mode="json") for match in matches]
+        return [runtime.oncolab.card(match).model_dump(mode="json") for match in matches]
 
     @agent.tool
     async def describe_oncolab(ctx: RunContext[ResearcherDeps], capability_id: str) -> dict[str, Any] | None:
@@ -567,9 +584,10 @@ def register_researcher_tools(
         runtime.index_receipt("researcher", "search", block_id=ctx.deps.block_id, query=capability_need,
                               requested_limit=20, effective_limit=runtime.oncolab_search_k,
                               returned_ids=tuple(m.capability_id for m in matches))
-        installed = [item.capability_id for item in matches if item.availability.value == "installed"]
-        if installed:
-            raise ValueError(f"existing installed capabilities must be considered first: {installed}")
+        # Installed lexical overlap is neither adequacy nor authority. Retain the
+        # alternatives/known assessments and the Researcher's explicit rationale.
+        append(ctx, "ExternalMethodInadequacy", {"need":capability_need,"rationale":why_existing_capabilities_are_inadequate,
+            "alternatives":[{"capability_id":m.capability_id,"assessment":runtime.method_assessments.get(f"{ctx.deps.block_id}:{m.capability_id}")} for m in matches]})
         runtime.claim(ctx.deps.block_id, "sandbox", runtime.max_sandbox_calls)
         request = GithubMethodRequest(repository_url=repository_url, requested_ref=requested_ref, install_command=tuple(install_command), test_command=tuple(test_command), execute_command=tuple(execute_command), input_json=input_json)
         request_id = str(uuid4())
@@ -837,6 +855,13 @@ def register_researcher_tools(
             append(ctx, "ReasonerFailure", {"error_type": type(error).__name__})
             raise
         append(ctx, "ReasonerOutput", output.model_dump(mode="json"))
+        if runtime.enable_jev:
+            for hypothesis in output.hypotheses[:5]:
+                try:
+                    await semantic_tools["assess_hypothesis"](ctx,hypothesis.statement,hypothesis.proposed_test)
+                except Exception as error:
+                    append(ctx,"HypothesisAlignmentUnavailable",{"error_type":type(error).__name__})
+                    break
         return output.model_dump(mode="json")
 
     @agent.tool

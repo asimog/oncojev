@@ -326,7 +326,7 @@ def test_legacy_failure_correction_preserves_original_records():
     assert memory.search("legacy")[0].digest_id != old_digest.digest_id
     assert memory.get_dossier(block.block_id)["lifecycle_status"] == "failed"
     large = ResearchState(block_id=block.block_id, objective=block.objective,
-        uncertainties=tuple(StateFragment(fragment_id=str(i), kind="uncertainty", summary="unknown Î©" * 1000, provenance=("fixture",)) for i in range(50)))
+        uncertainties=tuple(StateFragment(fragment_id=str(i), kind="uncertainty", summary="unknown ÃŽÂ©" * 1000, provenance=("fixture",)) for i in range(50)))
     repository.record_state_revision(large)
     memory.backfill()
     context = memory.context("legacy")
@@ -749,4 +749,69 @@ def test_restart_resolves_exact_acquisition_input_and_preallocation_index_receip
         execution_reference=ExecutionReference(kind="measurement", value="missing", block_id=block_id, sha256="0"*64), evidence=("test",))
     with pytest.raises(ValueError, match="unresolved measurement"):
         ResearchRepository(store).record_verification(missing)
+    store.close()
+
+
+@pytest.mark.parametrize("failure", [False, True])
+def test_statement_support_remains_terminal_under_semantic_failure(tmp_path, failure):
+    from src.dossier.builder import build_dossier
+    from src.runtime.pydantic_ai.agents import create_agents
+    from src.runtime.pydantic_ai.contracts import ResearcherDeps
+    from src.sources.models import AcquisitionRecord
+    from src.jev.failure import JevOperationalFailure
+    from src.jev.models import JevExecutionFailure,JevFailureCategory
+    manager=BlockManager();block=manager.create('response slice','test',ResourceAllocation(seconds=300))
+    store=SqliteResearchStore(tmp_path/'statements.sqlite3');repo=ResearchRepository(store)
+    runtime=HarnessRuntime(manager=manager,jev=DeterministicJevClient(),science=ScienceExecutor(),reasoner=DeterministicReasoner(),max_jev_calls=5,max_reasoner_calls=1,repository=repo)
+    repo.record_block(block);runtime.research_state.start(block.block_id,block.objective)
+    record=AcquisitionRecord(source='fixture',request={},records=({'x':1},),provenance=('fixture',))
+    runtime.retain_acquisition(block.block_id,record)
+    if failure:
+        class FailedJev:
+            def evaluate(self,state,questions):
+                raise JevOperationalFailure(tuple(JevExecutionFailure(question_id=q.question_id,category=JevFailureCategory.TRANSPORT,detail='fixture') for q in questions))
+        runtime.jev=FailedJev()
+    async def model(messages,info):
+        if not any(isinstance(m,ModelResponse) for m in messages):
+            code=f'm = await measure_acquisition(acquisition_id="{record.acquisition_id}", analysis_id="slice")\ne = await admit_measurement(analysis_id="slice")\nawait record_dossier_statement(statement="This slice contains one response row", epistemic_type="descriptive", evidence_ids=[e["evidence_id"]])\nawait record_dossier_statement(statement="A hypothesis without resolved support", epistemic_type="hypothesis", evidence_ids=["missing"])\nawait complete_block(reason="handoff")'
+            return ModelResponse(parts=[ToolCallPart('run_code',{'code':code},tool_call_id='statement')])
+        return ModelResponse(parts=[TextPart('done')])
+    agent=create_agents('test','test').researcher
+    with agent.override(model=scripted(model)):agent.run_sync('summarize',deps=ResearcherDeps(runtime,block.block_id))
+    evidence_records={r.record_id:r.payload for r in store.records(kind=RecordKind.EVIDENCE,block_id=block.block_id)}
+    dossier=build_dossier(manager.block(block.block_id),manager.ledger(block.block_id).history(),runtime.research_state.get(block.block_id),'handoff',evidence_records=evidence_records)
+    assert len(dossier.statements)==3
+    assert dossier.statements[1].semantic_status==('unavailable' if failure else 'measured')
+    assert dossier.statements[2].unresolved_refs==('missing',)
+    repo.record_terminal(manager.block(block.block_id),dossier)
+    store.close();store=SqliteResearchStore(tmp_path/'statements.sqlite3')
+    view=reconstruct_block(store,block.block_id)
+    assert len(view.dossier['statements'])==3 and len(view.evidence)==1
+    assert bool(view.jev_failures)==failure
+    store.close()
+
+
+@pytest.mark.parametrize("failure", [False, True])
+def test_semantic_memory_has_separate_global_budget_and_deterministic_fallback(tmp_path, failure):
+    from src.runtime.pydantic_ai.search_tools import semantic_memory_context
+    from src.memory.service import ResearchMemory
+    store=SqliteResearchStore(tmp_path/'memory-semantic.sqlite3');repo=ResearchRepository(store)
+    repo.record_cycle('m','live','melanoma expression',(),status='failed',error_type='SourceUnavailable')
+    memory=ResearchMemory(store);memory.backfill()
+    system=cycle_system();runtime=system.runtime;runtime.repository=repo;runtime.memory_jev_calls=1;runtime.memory_jev_questions=5
+    if failure:
+        class FailedJev:
+            def evaluate(self,state,questions):raise TimeoutError('fixture timeout')
+        runtime.jev=FailedJev()
+    context=semantic_memory_context(runtime,'melanoma expression')
+    assert context['digests'][0]['failure_reason']=='SourceUnavailable'
+    assert context['semantic_status']==('deterministic_fallback' if failure else 'measured_context')
+    assert runtime._counts['memory_jev']==1 and runtime._counts['memory_questions']==5
+    again=semantic_memory_context(runtime,'melanoma expression')
+    assert again['semantic_status']=='deterministic_fallback' and again['semantic_failure']=='WorkStopped'
+    assert again['digests']==memory.context('melanoma expression').model_dump(mode='json')['digests']
+    assert not runtime.manager.blocks() and not store.records(kind=RecordKind.EVIDENCE)
+    calls=store.records(kind=RecordKind.JEV_CALL)
+    assert len(calls)==2 and calls[-1].block_id is None
+    assert len(store.records(kind=RecordKind.MEMORY_RETRIEVAL))==2
     store.close()

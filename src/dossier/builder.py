@@ -8,7 +8,7 @@ must never be treated as a measurement.
 from collections.abc import Sequence
 
 from src.block.models import JevBlock, run_outcome
-from src.dossier.models import JevBlockDossier
+from src.dossier.models import JevBlockDossier, DossierStatement
 from src.ledger.events import LedgerEvent
 from src.researcher.state import ResearchState
 
@@ -22,6 +22,7 @@ def build_dossier(
     events: Sequence[LedgerEvent],
     state: ResearchState | None,
     termination_reason: str,
+    evidence_records: dict | None = None,
 ) -> JevBlockDossier:
     """Assemble one dossier from recorded events and immutable state."""
     evidence_ids = list(state.evidence_ids) if state is not None else []
@@ -80,7 +81,18 @@ def build_dossier(
         if within
         else "No within-scope continuation was recorded; Director review is required."
     )
+    statements=[DossierStatement(statement_id=f"evidence:{identity}",statement=f"admitted evidence {identity}",epistemic_type="descriptive",
+        evidence_refs=(identity,),unresolved_refs=() if evidence_records and identity in evidence_records else (identity,)) for identity in evidence_ids]
+    if state is not None:
+        for fragment in state.candidates:
+            if fragment.kind=="dossier_statement":
+                statement=DossierStatement.model_validate(fragment.details)
+                # Resolve again at terminal handoff; a prior semantic check is not
+                # a guarantee that references remain available.
+                unresolved=tuple(i for i in statement.evidence_refs if not evidence_records or i not in evidence_records)
+                statements.append(statement.model_copy(update={"unresolved_refs":unresolved}))
     return JevBlockDossier(
+        statements=tuple(statements),
         lifecycle_status=block.status,
         run_outcome=run_outcome(events),
         operational_failures=tuple({"event_type": event.event_type, **event.payload} for event in events

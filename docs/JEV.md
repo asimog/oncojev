@@ -30,3 +30,24 @@ Candidate question templates are version 2; frontier policy remains
 call/projection linkage, full distributions, policy version and rationale.
 KEEP_ALIVE and REJECT_RETAIN are semantic search history, never a scientific
 negative finding, evidence admission or authority to extend scope/deadlines.
+
+F4 adds local, versioned contracts in `src/jev/questions.py`: method fit, available
+representation sufficiency, hypothesis/test alignment, individual statement
+support/overstatement, and selected memory relevance/duplication/contradiction/
+gaps/uncertainty. Independent questions share bounded state in one native batch.
+`semantic-frontier-v2` extends the existing policy; it retains ambiguous alternatives
+and expresses ESCALATE only as a bounded recommendation. Actual route, access and
+input checks remain Python decisions. Failed batches never supply a negative
+judgment. Exact normalized hypothesis/test duplicates precede semantic comparison.
+
+Statement references resolve before measurement; semantic failure cannot stop
+terminal dossier creation. Global memory semantics runs after F3 retrieval under
+separate call/question/byte/time limits and falls back to deterministic ordering.
+Native distributions and operational receipts remain durable even when context
+contains only bounded receipt references. No new Director acquisition tools exist.
+
+The TypeSafe skill-suggestion, rerank and citation-check cookbooks informed compact
+shortlist expansion, recall-before-reranking and per-statement checks. Cookbook
+thresholds were not adopted as scientific validation. The scoped provider report
+is `src/evals/results/f4-selection.json`; equal useful-candidate recall in these
+five tasks is not evidence of downstream scientific advantage.

@@ -14,6 +14,7 @@ from src.config.models import RuntimeMode
 from src.dossier.builder import build_dossier
 from src.dossier.models import JevBlockDossier
 from src.persistence.repository import ResearchRepository
+from src.persistence.records import RecordKind
 from src.runtime.pydantic_ai.factory import ConfiguredSystem, bind_repository
 from src.runtime.pydantic_ai.contracts import DirectorDeps, ResearcherDeps, is_director_truncation
 from src.provenance import canonical_bytes
@@ -72,7 +73,8 @@ def run_cycle(
     try:
         limits = system.runtime.usage_limits("director")
         memory = system.runtime.memory_service()
-        context = memory.context(direction, limit=min(5, system.runtime.memory_limit)).model_dump(mode="json") if memory else {"digests": []}
+        from src.runtime.pydantic_ai.search_tools import semantic_memory_context
+        context = semantic_memory_context(system.runtime,direction,limit=min(5,system.runtime.memory_limit))
         prompt = DIRECTOR_PROMPT.format(direction=direction) + "\nRetrieved structured memory (context, not evidence):\n" + canonical_bytes(context).decode("utf-8")
         result = system.agents.director.run_sync(prompt,
                                                 deps=DirectorDeps(system.runtime), usage_limits=limits, usage=system.runtime.director_usage)
@@ -131,7 +133,8 @@ def run_cycle(
             state = system.runtime.research_state.get(block.block_id)
         except KeyError:
             pass
-        dossier = build_dossier(block, events, state, block.termination_reason or "unknown")
+        evidence_records={r.record_id:r.payload for r in repository.store.records(kind=RecordKind.EVIDENCE,block_id=block.block_id)} if repository else {i:e.model_dump(mode="json") for i,e in system.runtime.evidence.items() if state and i in state.evidence_ids}
+        dossier = build_dossier(block, events, state, block.termination_reason or "unknown", evidence_records=evidence_records)
         if repository is not None:
             repository.record_terminal(block, dossier)
         system.runtime.append_event(block.block_id, "DossierHandoff", {"block_id": block.block_id, "status": block.status.value})

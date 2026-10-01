@@ -35,6 +35,7 @@ class RecordKind(StrEnum):
     DOSSIER = "dossier"
     RESEARCH_MEMORY = "research_memory"
     MEMORY_DIGEST = "memory_digest"
+    MEMORY_RETRIEVAL = "memory_retrieval"
 
 
 class StoredRecord(BaseModel, frozen=True):

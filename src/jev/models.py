@@ -4,7 +4,7 @@ from typing import Any
 from datetime import datetime
 from pydantic import BaseModel,Field,model_validator
 class JevQuestionSpec(BaseModel,frozen=True):
- question_id:str; semantic_purpose:str; primitive:Literal["noul","choice","score"]; projection_id:str; instructions:str; criteria:object; question_version:str; known_exclusions:tuple[str,...]=(); failure_semantics:str="failure is not judgment"; provenance:tuple[str,...]=(); status:Literal["local"]="local"
+ question_id:str; semantic_purpose:str; primitive:Literal["noul","choice","score"]; projection_id:str; instructions:str|dict[str,Any]|list[Any]; criteria:object; question_version:str; known_exclusions:tuple[str,...]=(); failure_semantics:str="failure is not judgment"; provenance:tuple[str,...]=(); status:Literal["local"]="local"
  @model_validator(mode="after")
  def criteria_match_primitive(self)->"JevQuestionSpec":
   if self.primitive=="noul" and (not isinstance(self.criteria,dict) or not set(self.criteria).issubset({"true","false"})):
@@ -24,7 +24,11 @@ class JevExecutionFailure(BaseModel,frozen=True): question_id:str; category:JevF
 
 class JevCallReceipt(BaseModel, frozen=True):
  call_id:str
- block_id:str
+ block_id:str|None
+ mission_id:str|None=None
+ cycle_id:str|None=None
+ context_type:str="candidate"
+ context_identity:str|None=None
  candidate_id:str
  candidate_summary:str
  started_at:datetime

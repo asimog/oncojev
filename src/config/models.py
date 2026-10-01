@@ -71,6 +71,10 @@ class RetrievalConfig(StrictModel):
     max_code_mode_executions: int = Field(default=30, ge=0)
     max_code_mode_tool_calls: int = Field(default=100, ge=0)
     max_cost: float | None = Field(default=None, gt=0)
+    max_memory_jev_calls: int = Field(default=4, ge=0, le=100)
+    max_memory_jev_questions: int = Field(default=20, ge=0, le=500)
+    max_memory_jev_bytes: int = Field(default=131072, ge=0)
+    max_memory_jev_seconds: float = Field(default=20, ge=0)
 
 
 class CycleBudgetConfig(StrictModel):
@@ -81,6 +85,7 @@ class CycleBudgetConfig(StrictModel):
 
 class SearchConfig(StrictModel):
     search_k: int = Field(default=20, ge=1, le=20)
+    candidate_k: int = Field(default=80, ge=1, le=200)
 
 
 class JevConfig(SearchConfig):

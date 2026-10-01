@@ -24,3 +24,10 @@ durable receipts alongside bundles and deduplicates verification identities.
 Historical artifacts explicitly disclose missing inputs. Execution observation,
 validated measurement and exploratory artifact creation do not promote a family
 or a local method into reusable capability.
+
+Progressive search returns compact cards with a contract hash and explicit
+snapshot-bound continuation. The response cap is separate from the configured
+candidate budget. Zero lexical overlap stays reachable on later pages; lexical
+ranking is not a suitability judgment. Describe selected IDs to obtain contracts
+and declared routes. Execution checks distinguish metadata-only, access, missing
+inputs and callable operation prerequisites. Library installation is not authority.

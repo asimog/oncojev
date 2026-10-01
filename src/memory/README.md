@@ -30,3 +30,5 @@ The service owns one Director Agent per process through the factory. It passes n
 previous message history (retention bound: zero); persisted structured memory
 remains authoritative after restart. Each cycle has a new runtime, and each block
 has a fresh Researcher, state, skill selections and usage budgets.
+
+Semantic annotations follow deterministic retrieval of selected digests. Separate global retrieval budgets bound calls, questions, bytes and elapsed time. Failures return F3 ordering with operational receipts. Native answers remain in Jev receipts; no whole-memory context or evidence authority is introduced.

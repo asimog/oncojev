@@ -239,9 +239,9 @@ class ResearchMemory:
             context = context.model_copy(update={"digests": context.digests[:-1], "omitted_digests": context.omitted_digests + 1})
         return context
 
-    def start_context(self, objective):
-        context = self.context(objective, limit=5)
-        views = context.digests
+    def start_context(self, objective, context=None):
+        context = context or self.context(objective, limit=5).model_dump(mode="json")
+        views = context["digests"]
         refs = tuple(MemoryReference.model_validate(r) for d in views for r in d["references"])
         refs = tuple({r.seq: r for r in refs}.values())[:20]
         for ref in refs:
@@ -250,7 +250,7 @@ class ResearchMemory:
             prior_failures=tuple(i["summary"] for d in views for i in d["operational_blockers"])[:20],
             uncertainties=tuple(i["summary"] for d in views for i in d["uncertainties"])[:20],
             candidate_directions=tuple(i["summary"] for d in views for i in (*d["candidates"], *d["continuation_proposals"]))[:20],
-            limitations=tuple(dict.fromkeys(s for d in views for s in d["limitations"]))[:20], omitted_digests=context.omitted_digests)
+            limitations=tuple(dict.fromkeys(s for d in views for s in d["limitations"]))[:20], omitted_digests=context["omitted_digests"])
         while len(canonical_bytes(start.model_dump(mode="json"))) > 16384:
             field = max(("prior_failures", "uncertainties", "candidate_directions", "limitations", "references"),
                         key=lambda f: len(canonical_bytes(getattr(start, f) if f != "references" else [r.model_dump(mode="json") for r in start.references])))

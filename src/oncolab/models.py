@@ -58,7 +58,7 @@ class OncoLabResourceClass(StrEnum):
 class OncoLabDescriptor(BaseModel, frozen=True):
     """Planning metadata only; descriptor presence never grants execution authority."""
 
-    capability_id: str = Field(min_length=1)
+    capability_id: str = Field(min_length=1, max_length=200)
     name: str = Field(min_length=1)
     kind: OncoLabKind
     purpose: str = Field(min_length=1)
@@ -84,6 +84,32 @@ class OncoLabCapabilityStatus(StrEnum):
     CANDIDATE = "candidate"
     VALIDATED = "validated"
     REUSABLE = "reusable"
+
+
+class OncoLabCard(BaseModel, frozen=True):
+    """Discovery only. Expand the ID before execution selection."""
+    capability_id: str
+    name: str
+    kind: OncoLabKind
+    purpose: str
+    tags: tuple[str, ...]
+    applicability: str
+    input_summary: str
+    limitations: tuple[str, ...]
+    availability: OncoLabAvailability
+    execution_mode: OncoLabExecutionMode
+    access_policy: OncoLabAccessPolicy
+    contract_sha256: str
+    truncated: bool = False
+
+
+class OncoLabPage(BaseModel, frozen=True):
+    cards: tuple[OncoLabCard, ...]
+    snapshot_id: str
+    retrieval_version: str = "oncolab-retrieval-v2"
+    continuation: str | None = None
+    exhausted: bool
+    total_candidates: int
 
 
 class ScientificCapability(BaseModel, frozen=True):

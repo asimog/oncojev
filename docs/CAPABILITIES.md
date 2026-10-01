@@ -110,3 +110,5 @@ limits enforce reported costs; usage records flag incomplete cost reporting.
 Denied work returns a non-retryable handoff directive before side effects;
 inspection and deterministic finalization remain available. Hard SDK limits may
 end the agent run, after which Python still records its outcome and partial dossier.
+
+F4 exposes progressive OncoLab cards and explicit contract expansion, plus local method, representation, hypothesis/test and statement-support measurements. Local semantic contracts are not promoted capabilities. External GitHub acquisition retains inadequacy rationale and alternatives; installed lexical overlap no longer vetoes an unmet need. Existing sandbox, credential and allocation limits apply.

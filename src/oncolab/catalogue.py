@@ -3,6 +3,7 @@ from src.oncolab.models import (
     OncoLabExecutionMode, OncoLabKind, OncoLabResourceClass,
 )
 from src.oncolab.registry import OncoLabIndex
+from src.oncolab.execution import ROUTES
 
 
 def _oncolab_descriptor(capability_id: str, name: str, kind: OncoLabKind, purpose: str, tags: tuple[str, ...], source: str, *, availability: OncoLabAvailability = OncoLabAvailability.KNOWN, execution_mode: OncoLabExecutionMode = OncoLabExecutionMode.METADATA_ONLY, access_policy: OncoLabAccessPolicy = OncoLabAccessPolicy.REVIEW_REQUIRED, resource_class: OncoLabResourceClass = OncoLabResourceClass.SMALL, limitations: tuple[str, ...] = ("Descriptor only; no executable wrapper is implemented.",)) -> OncoLabDescriptor:
@@ -101,4 +102,15 @@ def initial_oncolab_index() -> OncoLabIndex:
         *(_oncolab_descriptor(f"gdc.workflow.{name.lower().replace(' ', '-').replace('/', '-')}", f"GDC {name}", OncoLabKind.SCIENTIFIC_METHOD, f"Workflow/data-artifact semantics for {name}.", ("gdc", "workflow", "bioinformatics"), "gdc/gdcdatamodel2/src/gdcdatamodel2/models", limitations=("Reference only; no workflow execution is implemented.",)) for name in gdc_artifacts),
         *(_oncolab_descriptor(f"stat.method.{name.lower().replace(' ', '-').replace('/', '-')}", name.title(), OncoLabKind.STATISTICAL_METHOD, f"Statistical method-family descriptor for {name}.", ("statistics", "method", "planning"), "skills/statistical-methods/README.md", limitations=("Method selection requires a defined estimand and diagnostics.", "No executable wrapper is implemented.")) for name in statistical_methods),
     )
-    return OncoLabIndex((*descriptors, *additions)).load_verification_records()
+    def actual_contract(d):
+        routes=ROUTES.get(d.capability_id)
+        if not routes:return d
+        local=d.capability_id in {"science.acquisition-summary","stat.scipy","stat.pandas","stat.statsmodels","visualization.scientific"}
+        operations=", ".join(r.operation or r.tool for r in routes)
+        limitations=tuple(x for x in d.limitations if "future" not in x and "no executable" not in x.lower() and "No GDC wrapper" not in x)
+        return d.model_copy(update={"input_contract":"Typed tool inputs: "+"; ".join(f"{r.operation or r.tool}: {', '.join(r.required_inputs) or 'bounded request'}" for r in routes),
+            "applicability":"Only application routes: "+operations,"assumptions":("Required inputs, assumptions and access must be checked for the selected operation.",),
+            "limitations":(*limitations,"Library-wide functionality is not exposed; exploratory arrays are not evidence." if any(r.exploratory for r in routes) else "Execution is limited to the declared typed route."),
+            "execution_mode":OncoLabExecutionMode.REMOTE_API if d.capability_id=="literature.public" else d.execution_mode,
+            "access_policy":OncoLabAccessPolicy.LOCAL_ONLY if local else OncoLabAccessPolicy.PUBLIC})
+    return OncoLabIndex(actual_contract(d) for d in (*descriptors, *additions)).load_verification_records()

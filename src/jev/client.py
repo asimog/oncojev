@@ -142,18 +142,18 @@ class DeterministicJevClient:
                 out.append(
                     ChoiceDecision(
                         **context,
-                        selected_option="ADVANCE",
-                        probabilities={"ADVANCE": 0.56, "DEFER": 0.44},
-                        confidence=0.56,
+                        selected_option=next(iter(question.criteria)),
+                        probabilities={key:1/len(question.criteria) for key in question.criteria},
+                        confidence=1/len(question.criteria),
                     )
                 )
             else:
                 out.append(
                     ScoreDecision(
                         **context,
-                        expected_score=2.7,
-                        level_probabilities={0: 0.05, 1: 0.1, 2: 0.2, 3: 0.45, 4: 0.2},
-                        confidence=0.65,
+                        expected_score=(len(question.criteria)-1)/2,
+                        level_probabilities={i:1/len(question.criteria) for i in range(len(question.criteria))},
+                        confidence=1/len(question.criteria),
                     )
                 )
         return tuple(out)

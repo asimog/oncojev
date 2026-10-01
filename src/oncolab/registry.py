@@ -2,11 +2,16 @@ from collections.abc import Iterable
 from pathlib import Path
 from uuid import uuid4
 import hashlib
+import base64
+import json
+import re
 from typing import Literal
 
 from pydantic import BaseModel, Field
 import yaml
-from src.oncolab.models import OncoLabDescriptor, OncoLabKind
+from src.oncolab.models import OncoLabDescriptor, OncoLabKind, OncoLabCard, OncoLabPage
+from src.provenance import content_hash
+from src.oncolab.execution import ROUTES
 from src.provenance import ExecutionReference
 
 
@@ -35,6 +40,10 @@ class IndexReceipt(BaseModel, frozen=True):
     block_id: str | None = None
     mission_id: str | None = None
     cycle_id: str | None = None
+    snapshot_id: str | None = None
+    retrieval_version: str | None = None
+    continuation: str | None = None
+    contract_hashes: dict[str, str] = Field(default_factory=dict)
 
 
 class OncoLabIndex:
@@ -79,6 +88,54 @@ class OncoLabIndex:
     def describe(self, capability_id: str) -> OncoLabDescriptor | None:
         return self._by_id.get(capability_id)
 
+    @property
+    def snapshot_id(self) -> str:
+        return content_hash([d.model_dump(mode="json") for d in self._items])
+
+    def card(self, descriptor: OncoLabDescriptor) -> OncoLabCard:
+        data = {"purpose": descriptor.purpose, "applicability": descriptor.applicability,
+                "input_summary": descriptor.input_contract}
+        return OncoLabCard(capability_id=descriptor.capability_id, name=descriptor.name[:120], kind=descriptor.kind,
+            tags=tuple(t[:64] for t in descriptor.tags[:12]), limitations=tuple(s[:240] for s in descriptor.limitations[:3]),
+            availability=descriptor.availability, execution_mode=descriptor.execution_mode, access_policy=descriptor.access_policy,
+            contract_sha256=content_hash(descriptor.model_dump(mode="json")),
+            truncated=any(len(v)>320 for v in data.values()) or len(descriptor.tags)>12 or len(descriptor.limitations)>3 or len(descriptor.name)>120 or any(len(t)>64 for t in descriptor.tags)
+                      or any(len(v)>240 for v in descriptor.limitations),
+            **{k:v[:320] for k,v in data.items()})
+
+    def search_page(self, query: str = "", *, kinds=(), tags=(), limit: int = 8, continuation: str | None = None) -> OncoLabPage:
+        """Progressive high-recall discovery. Zero-overlap candidates remain browsable.
+
+        Cursor binds query/filters and snapshot; changing contracts invalidates it.
+        Each response remains bounded regardless of catalogue capacity.
+        """
+        if not 1 <= limit <= self.max_results or len(query)>4000:
+            raise ValueError("invalid search bound")
+        identity = content_hash({"query":query, "kinds":sorted(map(str,kinds)), "tags":sorted(tags), "snapshot":self.snapshot_id})
+        offset = 0
+        if continuation:
+            try:
+                cursor=json.loads(base64.urlsafe_b64decode(continuation))
+                if cursor["identity"] != identity or not isinstance(cursor["offset"],int) or cursor["offset"]<0:
+                    raise ValueError("stale or changed search cursor")
+                offset=cursor["offset"]
+            except (ValueError, KeyError, TypeError) as error:
+                raise ValueError("invalid continuation") from error
+        def terms(text):
+            return set(re.findall(r"[a-z0-9]+",text.lower()))
+        wanted=terms(query)
+        ranked=[]
+        for d in self._items:
+            if kinds and d.kind not in kinds or tags and not set(t.lower() for t in tags).issubset(t.lower() for t in d.tags):
+                continue
+            text=" ".join((d.name,d.purpose,d.input_contract,d.output_contract,d.applicability,*d.tags))
+            ranked.append((len(wanted & terms(text)),d))
+        ranked.sort(key=lambda pair:(-pair[0],pair[1].capability_id))
+        end=min(offset+limit,len(ranked))
+        cursor=base64.urlsafe_b64encode(json.dumps({"identity":identity,"offset":end},separators=(",",":")).encode()).decode() if end<len(ranked) else None
+        return OncoLabPage(cards=tuple(self.card(d) for _,d in ranked[offset:end]),snapshot_id=self.snapshot_id,
+                          continuation=cursor,exhausted=cursor is None,total_candidates=len(ranked))
+
     def describe_with_verification(self, capability_id: str) -> dict[str, object] | None:
         """Return one bounded agent-safe view of a descriptor and its verification history."""
         descriptor = self.describe(capability_id)
@@ -87,6 +144,8 @@ class OncoLabIndex:
         records = self.verification_records(capability_id)
         return {
             "descriptor": descriptor.model_dump(mode="json"),
+            "contract_sha256": content_hash(descriptor.model_dump(mode="json")),
+            "execution_routes": [r.model_dump(mode="json") for r in ROUTES.get(capability_id, ())],
             "verification": [record.model_dump(mode="json") for record in records[-20:]],
             "omitted_verifications": max(0, len(records)-20),
         }
