@@ -46,16 +46,17 @@ class ResearchRepository:
 
     def record_terminal(self, block: JevBlock, dossier: JevBlockDossier) -> None:
         """Atomically append closure and dossier; a dossier by itself is insufficient."""
-        latest = self.store.latest(RecordKind.BLOCK, block_id=block.block_id)
-        saved = self.store.latest(RecordKind.DOSSIER, block_id=block.block_id)
-        payload = block.model_dump(mode="json")
-        summary = dossier.model_dump(mode="json")
-        if latest and saved and latest.payload == payload and saved.payload == summary:
-            return
-        self.store.append_many((
-            StoredRecord(kind=RecordKind.BLOCK, record_id=block.block_id, block_id=block.block_id, payload=payload),
-            StoredRecord(kind=RecordKind.DOSSIER, record_id=block.block_id, block_id=block.block_id, payload=summary),
-        ))
+        with self.store.transaction():
+            latest = self.store.latest(RecordKind.BLOCK, block_id=block.block_id)
+            saved = self.store.latest(RecordKind.DOSSIER, block_id=block.block_id)
+            payload = block.model_dump(mode="json")
+            summary = dossier.model_dump(mode="json")
+            if latest and saved and latest.payload == payload and saved.payload == summary:
+                return
+            self.store.append_many((
+                StoredRecord(kind=RecordKind.BLOCK, record_id=block.block_id, block_id=block.block_id, payload=payload),
+                StoredRecord(kind=RecordKind.DOSSIER, record_id=block.block_id, block_id=block.block_id, payload=summary),
+            ))
 
     def record_block(self, block: Any) -> StoredRecord:
         return self._append(RecordKind.BLOCK, block.block_id, block.model_dump(mode="json"), block.block_id)

@@ -248,9 +248,10 @@ def test_cycle_terminal_outcomes(scenario):
     assert len(blocks) == (0 if scenario in {"before_allocation", "no_allocation"} else 1)
     for block in blocks:
         view = reconstruct_block(repository.store, block.block_id)
-        assert view.complete is succeeds
+        researcher_completed = researcher_calls > 0 and scenario not in {"handoff_failure", "fallback_failure"}
+        assert view.complete is researcher_completed
         assert view.dossier["objective_attainment"] == "unknown"
-        assert view.block["status"] == ("complete" if succeeds else "failed")
+        assert view.block["status"] == ("complete" if researcher_completed else "failed")
         if scenario == "handoff_failure":
             assert view.run_outcome.value == "failed"
             assert any(e["event_type"] == "ResearcherHandoffRequested" for e in view.ledger)
@@ -1167,3 +1168,54 @@ def test_cycle_shutdown_drains_active_research_and_persists_before_reopen(tmp_pa
         assert view.run_outcome.value == "completed"
     finally:
         reopened.store.close()
+
+
+@pytest.mark.parametrize("researcher_fails", [False, True])
+def test_researcher_terminal_bundle_is_visible_before_director_turn_returns(researcher_fails):
+    import asyncio
+    from src.runtime.cycle import run_cycle_async
+
+    system = cycle_system()
+    repo = ResearchRepository(SqliteResearchStore())
+    calls = 0
+    observed_terminal = []
+
+    async def director(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code":
+                'b = await allocate_block(objective="terminal visibility", why_now="test", seconds=60)\n'
+                'await launch_researcher(block_id=b["block_id"])'}, tool_call_id="start")])
+        active = system.runtime.active_research
+        await active.task
+        terminal = repo.store.latest(RecordKind.DOSSIER, block_id=active.block_id)
+        assert terminal is not None, "Director turn is delaying terminal persistence"
+        view = reconstruct_block(repo.store, active.block_id)
+        assert view.run_outcome.value == ("failed" if researcher_fails else "completed")
+        assert view.block["status"] == ("failed" if researcher_fails else "complete")
+        assert not repo.store.records(kind=RecordKind.CYCLE)
+        observed_terminal.append(terminal.seq)
+        return ModelResponse(parts=[TextPart("Director reviewed the persisted outcome")])
+
+    async def researcher(messages, info):
+        if researcher_fails:
+            raise ValueError("investigation failed")
+        return ModelResponse(parts=[TextPart("investigation returned")])
+
+    async def run():
+        with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+            if researcher_fails:
+                with pytest.raises(ValueError, match="investigation failed"):
+                    await run_cycle_async(system, "direction", repository=repo)
+            else:
+                await run_cycle_async(system, "direction", repository=repo)
+
+    try:
+        asyncio.run(run())
+        assert calls == 2
+        assert len(observed_terminal) == 1, "Director turn is delaying terminal persistence"
+        assert len(repo.store.records(kind=RecordKind.DOSSIER)) == 1
+        assert len(repo.store.records(kind=RecordKind.CYCLE)) == 1
+    finally:
+        repo.store.close()

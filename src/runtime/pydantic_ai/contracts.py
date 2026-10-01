@@ -7,6 +7,7 @@ remains the authority for deadlines, frontier policy, and evidence admission.
 import asyncio
 import threading
 from collections.abc import Callable
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -74,6 +75,7 @@ class ActiveResearchContext:
     task: asyncio.Task | None = None
     error: Exception | None = None
     output: str | None = None
+    dossier: Any = None
 
     def handle(self):
         return {"run_id": self.run_id, "block_id": self.block_id,
@@ -340,13 +342,32 @@ class HarnessRuntime:
                 deps=ResearcherDeps(self, active.block_id), usage=self.researcher_budget(active.block_id),
                 usage_limits=self.usage_limits("researcher"))
             active.output = result.output
-            self.complete_researcher(active.block_id)
         except asyncio.CancelledError:
-            self.append_event(active.block_id, "ResearcherRunFailed", {"error_type": "CancelledError"})
             active.error = RuntimeError("Researcher cancelled by aggregate shutdown")
         except Exception as error:
             active.error = error
-            self.append_event(active.block_id, "ResearcherRunFailed", {"error_type": type(error).__name__})
+        # No await/foreign authority inside this terminal transaction. Run receipt,
+        # outcome and dossier are visible together to API readers and recovery.
+        transaction = self.repository.store.transaction() if self.repository else nullcontext()
+        with transaction:
+            if active.error is None:
+                self.complete_researcher(active.block_id)
+            else:
+                self.append_event(active.block_id, "ResearcherRunFailed", {"error_type": type(active.error).__name__})
+                self.manager.finalize(self.manager.block(active.block_id), BlockStatus.FAILED, "researcher_failed")
+            from src.dossier.builder import build_dossier
+            block = self.manager.block(active.block_id)
+            self.append_event(active.block_id, "ModelUsage", self.usage_summary())
+            state = self.research_state.get(block.block_id)
+            evidence = {r.record_id: r.payload for r in self.repository.store.records(kind=RecordKind.EVIDENCE, block_id=block.block_id)} if self.repository else {
+                i: e.model_dump(mode="json") for i, e in self.evidence.items() if i in state.evidence_ids}
+            dossier = build_dossier(block, self.manager.ledger(block.block_id).history(), state,
+                                    block.termination_reason or "unknown", evidence_records=evidence)
+            if self.repository:
+                self.repository.record_terminal(block, dossier)
+            self.append_event(block.block_id, "DossierHandoff", {"block_id": block.block_id, "status": block.status.value})
+        active.dossier = dossier
+
 
     def start_researcher(self, block_id: str, launched_by: str) -> None:
         if any(event.event_type == "ResearcherRunStarted" for event in self.manager.ledger(block_id).history()):

@@ -7,6 +7,7 @@ convention. No domain policy lives here.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from pathlib import Path
 import json
 import sqlite3
@@ -38,15 +39,34 @@ class SqliteResearchStore:
     def __init__(self, path: str | Path = ":memory:") -> None:
         self._connection = sqlite3.connect(str(path), check_same_thread=False)
         self._lock = threading.RLock()
+        self._transaction_depth = 0
         self._connection.executescript(_SCHEMA)
         self._connection.commit()
+
+    @contextmanager
+    def transaction(self):
+        """Serialize a synchronous owner workflow and commit only its outer boundary."""
+        with self._lock:
+            outer = self._transaction_depth == 0
+            self._transaction_depth += 1
+            try:
+                yield
+            except BaseException:
+                if outer:
+                    self._connection.rollback()
+                raise
+            else:
+                if outer:
+                    self._connection.commit()
+            finally:
+                self._transaction_depth -= 1
 
     def append(self, record: StoredRecord) -> StoredRecord:
         return self.append_many((record,))[0]
 
     def append_many(self, records: tuple[StoredRecord, ...]) -> tuple[StoredRecord, ...]:
         """Commit a terminal bundle atomically, including rollback on append failure."""
-        with self._lock, self._connection:
+        with self.transaction():
             saved = []
             for record in records:
                 cursor = self._connection.execute(

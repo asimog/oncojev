@@ -139,6 +139,9 @@ async def run_cycle_async(
         block = manager.block(original.block_id)
         system.runtime.append_event(block.block_id, "ModelUsage", system.runtime.usage_summary())
         events = manager.ledger(block.block_id).history()
+        if active is not None and active.block_id == block.block_id and active.dossier is not None:
+            dossiers.append(active.dossier)
+            continue
         if failure:
             reason = "researcher_failed" if run_outcome(events) is RunOutcome.FAILED else (
                 "invalid_block_count" if len(new_blocks) != 1 else "director_failed" if director_outcome is DirectorOutcome.FAILED else "researcher_incomplete")
