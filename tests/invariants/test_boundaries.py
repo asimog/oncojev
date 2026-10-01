@@ -70,6 +70,87 @@ def test_parallel_jev_and_conservative_frontier():
 def test_failure_and_local_question_status():
  assert JevExecutionFailure(question_id='q',category=JevFailureCategory.TIMEOUT,detail='x').category is JevFailureCategory.TIMEOUT
  with pytest.raises(ValidationError):JevQuestionSpec(question_id='q',semantic_purpose='q',primitive='noul',projection_id='p',instructions='x',criteria={},question_version='1',status='reusable')
+
+def test_star_counts_parse_preserves_source_units_versions_missingness_and_no_matrix_claim(tmp_path):
+    """Actual acquisition/Science parser/representation route, including rejected bytes."""
+    import asyncio, hashlib
+    from src.persistence.store import SqliteResearchStore
+    from src.persistence.repository import ResearchRepository
+    from src.persistence.reconstruct import reconstruct_block
+    from src.persistence.records import RecordKind
+    from src.science.representation import parse_gdc_star_counts
+    from src.science.models import InvalidAnalysis
+    from src.sources.models import ScientificArtifact
+    from src.application.export import render_snapshot
+    columns='gene_id\tgene_name\tgene_type\tunstranded\tstranded_first\tstranded_second\ttpm_unstranded\tfpkm_unstranded\tfpkm_uq_unstranded\n'
+    gene1='ENSG00000000003.15';gene2='ENSG00000000005.6'
+    row1=gene1+'\tTSPAN6\tprotein_coding\t2642\t1\t2641\t49.9587\t12.2089\t12.7152\n'
+    row2=gene2+'\tTNMD\tprotein_coding\t0\t0\t0\t0\t0\t0\n'
+    data=('# gene-model: GENCODE v36\n'+columns+'N_unmapped\t\t\t7\t7\t7\t\t\t\n'+row1+row2).encode()
+    invalid_data=data+row1.encode()
+    good_id='11111111-1111-4111-8111-111111111111';bad_id='22222222-2222-4222-8222-222222222222'
+    class Stream(httpx.AsyncByteStream):
+        def __init__(self,body): self.body=body
+        async def __aiter__(self): yield self.body
+    def transport(request):
+        identity=request.url.path.rsplit('/',1)[-1];body=invalid_data if identity==bad_id else data
+        if request.url.path.startswith('/files/'):
+            return httpx.Response(200,json={'data':{'file_id':identity,'access':'open','file_size':len(body),
+                'md5sum':hashlib.md5(body).hexdigest(),'data_format':'TSV','data_type':'Gene Expression Quantification',
+                'analysis':{'workflow_type':'STAR - Counts'}}})
+        return httpx.Response(200,stream=Stream(body))
+    store=SqliteResearchStore(tmp_path/'star.sqlite3');repository=ResearchRepository(store)
+    manager=BlockManager();block=manager.create('inspect selected expression genes','parse contract',ResourceAllocation(seconds=300))
+    repository.record_block(block)
+    runtime=HarnessRuntime(manager=manager,jev=DeterministicJevClient(),science=ScienceExecutor(),reasoner=DeterministicReasoner(),
+        repository=repository,gdc=GdcPublicSource(httpx.MockTransport(transport)),max_jev_calls=10,max_reasoner_calls=1)
+    responses=[]
+    async def model(messages,info):
+        if not any(isinstance(m,ModelResponse) for m in messages):
+            code=(f'artifact = await acquire_gdc_file(file_id="{good_id}",format="tsv")\n'
+                f'parsed = await parse_gdc_star_counts(artifact_id=artifact["artifact_id"],gene_ids=["{gene1}","{gene2}","ENSG00000000003.14"])\n'
+                'assert parsed["records"][0]["unstranded"] == 2642\nassert parsed["records"][0]["tpm_unstranded"] == 49.9587\n'
+                'assert parsed["records"][1]["tpm_unstranded"] == 0\nassert parsed["receipt"]["missing_gene_ids"] == ["ENSG00000000003.14"]\n'
+                'need = {"estimand":"selected gene expression", "representation":"gene_summary","entity_unit":"gene_in_file","entity_key":"gene_id","fields":{"expression":"tpm_unstranded"},"numeric_roles":["expression"],"units":{"expression":"TPM"}}\n'
+                'fit = await assess_representation(acquisition_id=parsed["acquisition_id"],need=need)\nassert fit["checks"]["eligible"]\n'
+                'need["fields"]["expression"] = "unstranded"\n'
+                'wrong = await assess_representation(acquisition_id=parsed["acquisition_id"],need=need)\nassert not wrong["checks"]["eligible"]\nassert wrong["frontier"]["action"] == "defer"\n'
+                'need["fields"]["expression"] = "tpm_unstranded"\nneed["representation"] = "expression_matrix"\n'
+                'matrix = await assess_representation(acquisition_id=parsed["acquisition_id"],need=need)\nassert not matrix["checks"]["eligible"]\n'
+                f'bad = await acquire_gdc_file(file_id="{bad_id}",format="tsv")\n'
+                f'await parse_gdc_star_counts(artifact_id=bad["artifact_id"],gene_ids=["{gene1}"])')
+            return ModelResponse(parts=[ToolCallPart('run_code',{'code':code},tool_call_id='star')])
+        responses.extend(str(p.content) for m in messages for p in m.parts if hasattr(p,'content'))
+        return ModelResponse(parts=[TextPart('source parsing inspected; cohort interpretation unresolved')])
+    agent=create_agents('test','test').researcher
+    with agent.override(model=scripted(model)):asyncio.run(agent.run('parse owned expression bytes',deps=ResearcherDeps(runtime,block.block_id)))
+    assert not any('AssertionError' in s or 'Type error' in s for s in responses),responses
+    assert any('duplicate STAR entity identity' in s for s in responses),responses
+    parses=store.records(kind=RecordKind.REPRESENTATION_PARSE,block_id=block.block_id)
+    assert len(parses)==1 and parses[0].payload['source_gene_count']==2
+    assert not store.records(kind=RecordKind.MEASUREMENT) and not store.records(kind=RecordKind.EVIDENCE)
+    failures=[e for e in manager.ledger(block.block_id).history() if e.event_type=='CapabilityFailure']
+    assert len(failures)==1 and failures[0].payload['error_type']=='InvalidAnalysis'
+    artifact=repository.resolve_scientific_artifact(block.block_id,parses[0].payload['input_reference']['value'])
+    for replacement in ('nan','-1'):
+        import base64
+        changed=data.replace(b'49.9587',replacement.encode())
+        malformed=ScientificArtifact.model_validate(artifact.model_dump(mode='json')|{'content_base64':base64.b64encode(changed).decode(),
+            'size_bytes':len(changed),'byte_sha256':hashlib.sha256(changed).hexdigest()})
+        with pytest.raises(InvalidAnalysis,match='finite nonnegative'):parse_gdc_star_counts(malformed,(gene1,))
+    large=columns.encode()+b''.join(f'ENSG{i}\tG\tprotein_coding\t0\t0\t0\t0\t0\t0\n'.encode() for i in range(100001))
+    oversized=ScientificArtifact.model_validate(artifact.model_dump(mode='json')|{'content_base64':base64.b64encode(large).decode(),
+        'size_bytes':len(large),'byte_sha256':hashlib.sha256(large).hexdigest()})
+    with pytest.raises(InvalidAnalysis,match='gene row bound'):parse_gdc_star_counts(oversized,(gene1,))
+    store.close();store=SqliteResearchStore(tmp_path/'star.sqlite3')
+    view=reconstruct_block(store,block.block_id)
+    assert view.parsed_representations[0]['byte_sha256']==hashlib.sha256(data).hexdigest()
+    selected=next(a for a in view.acquisitions if a['source']=='gdc-star-counts')
+    assert selected['records'][0]['gene_id']==gene1 and selected['records'][1]['unstranded']==0
+    assert not selected['coverage']['complete']
+    exported=b''.join(render_snapshot(store).values())
+    assert b'representation_parse' in exported and b'GENCODE v36' in exported and b'content_base64' not in exported
+    store.close()
 def test_synthetic_measurement_cannot_be_admitted_as_evidence():
  from src.science.models import MeasuredResult
  result=MeasuredResult(analysis_id='synthetic',values={'effect':1.0},provenance=('fixture',),origin='synthetic',input_sha256='0'*64)

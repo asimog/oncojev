@@ -38,12 +38,17 @@ def assess_retained_representation(record: AcquisitionRecord, need: Representati
     rows = record.records[:100]
     endpoint = record.coverage.endpoint if record.coverage else None
     unit = {"files": "file", "cases": "case", "projects": "project", "annotations": "annotation"}.get(endpoint) if record.source == "gdc" else None
+    parsed_star = record.source == "gdc-star-counts" and record.request.get("parser_version") == "gdc-star-gene-selection-v1"
+    if parsed_star: unit = "gene_in_file"
     metadata = record.source in {"gdc", "xena"}
     profile = {"acquisition_id": record.acquisition_id, "source": record.source,
         "content_sha256": record.content_sha256, "request": record.request,
-        "observed_representation": "metadata" if metadata else "structured_rows",
+        "observed_representation": "gene_summary" if parsed_star else "metadata" if metadata else "structured_rows",
         "entity_unit": unit, "inspected_rows": len(rows), "omitted_rows": max(0, len(record.records)-len(rows)),
         "coverage": record.coverage.model_dump(mode="json") if record.coverage else None}
+    if parsed_star:
+        profile.update({key: record.request[key] for key in ("parser_version", "input_artifact", "byte_sha256",
+            "selected_gene_ids", "missing_gene_ids", "source_gene_count", "gene_model")})
     gaps = []
     def gap(code, requirement, observed=None):
         gaps.append({"code": code, "requirement": requirement, "observed": observed})
@@ -51,7 +56,9 @@ def assess_retained_representation(record: AcquisitionRecord, need: Representati
         gap("unspecified_representation", "declare the representation required by the estimand")
     elif metadata and need.representation != "metadata":
         gap("metadata_only", need.representation, "metadata does not contain acquired assay bytes or a validated parsed matrix")
-    elif not metadata and need.representation not in {"metadata", "paired_data"}:
+    elif parsed_star and need.representation not in {"gene_summary", "paired_data"}:
+        gap("unsupported_derived_representation", need.representation, "one parsed file cannot establish a sample/cohort matrix or another assay")
+    elif not parsed_star and not metadata and need.representation not in {"metadata", "paired_data"}:
         gap("unmeasured_assay_schema", need.representation, "structured rows alone do not establish a modality contract")
     if not rows:
         gap("empty_inspected_response", "nonempty retained inputs")

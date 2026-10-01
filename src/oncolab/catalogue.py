@@ -22,6 +22,12 @@ def _oncolab_descriptor(capability_id: str, name: str, kind: OncoLabKind, purpos
 
 def initial_oncolab_index() -> OncoLabIndex:
     descriptors = (
+        _oncolab_descriptor("transform.gdc-star-counts", "GDC STAR Counts gene selection", OncoLabKind.TRANSFORMATION,
+            "Parse one explicitly open retained augmented STAR Counts TSV, preserving exact gene IDs and count/TPM/FPKM units.",
+            ("gdc", "expression", "star", "gene", "representation"), "src/science/representation.py",
+            availability=OncoLabAvailability.INSTALLED, execution_mode=OncoLabExecutionMode.LOCAL_PYTHON,
+            access_policy=OncoLabAccessPolicy.LOCAL_ONLY,
+            limitations=("No sample/cohort matrix, case join, identifier remapping or normalization conversion.",)),
         _oncolab_descriptor("science.source-paired","Source-resolved paired association",OncoLabKind.STATISTICAL_METHOD,
             "Pearson correlation or simple OLS over complete paired rows with unique entity keys from one owned acquisition.",
             ("paired","association","correlation","regression"),"src/science/execution.py",availability=OncoLabAvailability.INSTALLED,

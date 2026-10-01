@@ -18,6 +18,7 @@ class ExecutionRoute(BaseModel, frozen=True):
 
 
 ROUTES = {
+    "transform.gdc-star-counts": (ExecutionRoute(tool="parse_gdc_star_counts", required_inputs=("artifact",)),),
     "source.gdc-file": (ExecutionRoute(tool="acquire_gdc_file",required_inputs=("open_file_id",)),),
     "science.source-paired": (
         ExecutionRoute(tool="run_source_analysis",operation="pearson_correlation",required_inputs=("acquisition","x","y"),minimum_rows=2),

@@ -114,7 +114,7 @@ class GdcPublicSource:
         declared=None;size=0;metadata_bytes=None;status='failed';error_type=None
         try:
             metadata=await bounded_response(self._client,"GET",f"/files/{file_id}",self._max_download_bytes,self.meter,
-                params={"fields":"file_id,access,file_name,data_format,md5sum,file_size"})
+                params={"fields":"file_id,access,file_name,data_format,data_type,analysis.workflow_type,md5sum,file_size"})
             metadata_bytes=len(metadata.content)
             info=metadata.json().get("data",{})
             declared=info.get('file_size')

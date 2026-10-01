@@ -9,6 +9,35 @@ from src.provenance import ExecutionReference, content_hash
 
 def register_scientific_tools(agent):
     @agent.tool
+    async def parse_gdc_star_counts(ctx: RunContext[Any], artifact_id: str, gene_ids: list[str]) -> dict[str, Any]:
+        """Parse selected exact gene IDs from an owned open GDC STAR Counts artifact."""
+        from uuid import uuid4
+        from src.science.representation import parse_gdc_star_counts as parse
+        runtime=ctx.deps.runtime;block_id=ctx.deps.block_id
+        if runtime.repository is None: raise ValueError("source parsing requires durable storage")
+        runtime.claim(block_id,"tool",runtime.max_tool_calls)
+        artifact=runtime.repository.resolve_scientific_artifact(block_id,artifact_id)
+        call_id=str(uuid4());capability="transform.gdc-star-counts"
+        runtime.index_receipt("researcher","execute",block_id=block_id,selected_id=capability)
+        runtime.append_event(block_id,"CapabilityInvocation",{"invocation_id":call_id,"capability_id":capability,"artifact_id":artifact_id})
+        try:
+            record,receipt=await runtime.heavy_operation(block_id,parse,artifact.model_copy(deep=True),tuple(gene_ids))
+            with runtime.repository.store.transaction():
+                runtime.retain_acquisition(block_id,record)
+                runtime.repository.record_immutable(RecordKind.REPRESENTATION_PARSE,record.acquisition_id,receipt,block_id)
+        except Exception as error:
+            runtime.append_event(block_id,"CapabilityFailure",{"invocation_id":call_id,"capability_id":capability,"error_type":type(error).__name__})
+            raise
+        runtime.append_event(block_id,"CapabilityResult",{"invocation_id":call_id,"capability_id":capability,"acquisition_id":record.acquisition_id,
+            "input_artifact_id":artifact_id,"parser_version":receipt.parser_version,"selected_rows":len(record.records),"missing_gene_ids":receipt.missing_gene_ids})
+        try: state=runtime.research_state.get(block_id)
+        except KeyError: state=runtime.research_state.start(block_id,runtime.manager.block(block_id).objective)
+        runtime.persist_state(state.append("acquisitions",StateFragment(fragment_id=record.acquisition_id,kind="gene_summary",
+            summary="Source-bound selected genes in one STAR Counts file; sample/cohort linkage remains unknown.",
+            provenance=(artifact_id,record.acquisition_id),details=receipt.model_dump(mode="json"))))
+        return {"acquisition_id":record.acquisition_id,"receipt":receipt.model_dump(mode="json"),"records":record.records}
+
+    @agent.tool
     async def combine_acquisition_pages(ctx:RunContext[Any],acquisition_ids:list[str])->dict[str,Any]:
         """Combine contiguous ordered source pages; rejects overlap, changing totals and mixed queries."""
         from src.sources.coverage import combine_pages

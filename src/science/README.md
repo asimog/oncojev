@@ -59,6 +59,11 @@ and simple OLS contracts, not biological corroboration or other operation famili
 when a follow-up is requested, so the Researcher can use its outcome immediately.
 
 Exact scientific bytes remain in append-only ScientificArtifact records.
+`representation.py` parses explicitly identified GDC augmented STAR Counts TSVs
+into source-bound selected-gene records. Counts and normalized expression retain
+separate units; exact gene versions and missing genes survive. This is a single-file
+gene summary, with no inferred sample/case linkage, cohort matrix or biological
+validation. Its parse receipt is distinct from a measurement or evidence admission.
 External sandbox requests retain copies and validate their identities; execution
 mounts are read-only and network-disabled. The local backend accepts declared
 retained wheel hashes; exploratory Docker installation is not complete reusable

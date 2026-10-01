@@ -28,6 +28,7 @@ class BlockReconstruction(BaseModel, frozen=True):
     scientific_artifacts: tuple[dict[str, Any], ...] = ()
     scientific_attempts: tuple[dict[str, Any], ...] = ()
     method_candidates: tuple[dict[str, Any], ...] = ()
+    parsed_representations: tuple[dict[str, Any], ...] = ()
     literature: tuple[dict[str, Any], ...] = ()
     literature_contexts: tuple[dict[str, Any], ...] = ()
     followup_plans: tuple[dict[str, Any], ...] = ()
@@ -112,6 +113,7 @@ def _reconstruct_block(store: SqliteResearchStore, block_id: str) -> BlockRecons
         acquisitions=acquisitions, scientific_artifacts=payloads(RecordKind.SCIENTIFIC_ARTIFACT),
         scientific_attempts=payloads(RecordKind.SCIENTIFIC_ATTEMPT), literature=payloads(RecordKind.LITERATURE), literature_contexts=payloads(RecordKind.LITERATURE_CONTEXT),
         method_candidates=payloads(RecordKind.METHOD_CANDIDATES),
+        parsed_representations=payloads(RecordKind.REPRESENTATION_PARSE),
         followup_plans=payloads(RecordKind.FOLLOWUP_PLAN),scientific_followups=payloads(RecordKind.FOLLOWUP_RESULT),
         sandbox_requests=payloads(RecordKind.SANDBOX_REQUEST), sandbox_candidates=candidates,
         verifications=payloads(RecordKind.VERIFICATION), index_receipts=receipts, jev_calls=tuple(calls.values()),
