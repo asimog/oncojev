@@ -1,11 +1,15 @@
 # Scientific execution
 
 `ScienceExecutor` executes typed deterministic analyses; `admit_scientific_evidence`
-is the admission boundary. `DockerScientificSandbox` is the current external
-executor: compatible HTTPS GitHub repositories resolve to commits, install in a
-credential-free environment and run tests/two command replays without network.
-Typed candidates require explicit validation before admission. The local-venv
-backend and promotion-grade qualification are not implemented.
+is the admission boundary. External execution supports Docker and a fail-closed
+Linux x86_64 local-venv backend selected by configuration. Both retain immutable
+public GitHub commits, exact inputs, command/output identities and replay receipts;
+typed candidates require explicit validation before admission. Local experiments
+use fresh Python environments, offline retained wheels, Landlock read-only inputs,
+scrubbed environments and seccomp single-process execution with no networking.
+Tests/execution write only bounded inherited stdout/stderr. Source builds,
+subprocesses, threads and filesystem output are unsupported on this backend.
+Fresh qualification and scientific fidelity remain separate governance gates.
 
 Science alone admits evidence. Stored-source summaries count valid, absent, null,
 invalid-type and nonfinite classifications; undefined means/SD stay null with a

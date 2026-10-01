@@ -175,6 +175,10 @@ def build_harness_runtime(
                 paths.append(runtime.repository.store.path.parent)
         return runtime.service_resources.reserve_download(owner, declared, workspace_used=used,
             durable_used=durable, paths=tuple(paths), archive_limit=policy.retention.max_archive_bytes)
+    if policy.sandbox.provider == "local_venv":
+        from src.science.local import LocalVenvScientificBackend
+        from pathlib import Path
+        runtime.sandbox = LocalVenvScientificBackend(Path(__file__).resolve().parents[3] / "var" / "workspaces", runtime.sandbox.policy)
     runtime.gdc.reserve = reserve_file
     runtime.gdc.transfer_receipt = lambda owner, detail: runtime.append_event(owner, "DataTransferReceipt", detail)
     return runtime

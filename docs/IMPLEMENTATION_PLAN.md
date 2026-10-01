@@ -1,6 +1,6 @@
 # Next-stage autonomous laboratory implementation plan
 
-**Stage status: IN PROGRESS - H0/H1 DONE; H2-H9 PARTIAL; H10-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
+**Stage status: IN PROGRESS - H0/H1 DONE; H2-H10 PARTIAL; H11-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
 
 The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](references/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
@@ -83,7 +83,7 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 | H7 — bio.tools, EDAM and measured search expansion (D6) | P1, capability retrieval | Build: H5 and H4 baseline policy primitives. Return-pass proof: H13 scale/coverage evidence. | PARTIAL: bounded discovery/live smoke; R3/D6 evaluation return work below |
 | H8 — ecosystem enrichment | P2, scoped adapters | H7 | PARTIAL: targeted metadata/live smokes; R4 operation-reference return work below |
 | H9 — governed capability promotion/review (D1) | P1, governance | Build: H5/H7/H8 as applicable. Acceptance: H10a/D8 promotion-grade qualification, measured H13 utility and applicable H11 deployment proof. | PARTIAL: proposal/rejection path; accepted qualified reuse awaits return proof |
-| H10 — execution backend, scientific operations and dependency locking (D7/D8) | P0 for Railway execution, scientific correctness | Build: H2 and existing F5 admission; H6 inputs for selected science. Return-pass proof: scoped H13 evaluation; deployment in H11. | PLANNED |
+| H10 — execution backend, scientific operations and dependency locking (D7/D8) | P0 for Railway execution, scientific correctness | Build: H2 and existing F5 admission; H6 inputs for selected science. Return-pass proof: scoped H13 evaluation; deployment in H11. | PARTIAL: confined Linux exploratory backend; qualification/scientific expansion return proof remains |
 | H11 — durable Railway deployment/confinement | P0 for deployment, operations | H2/H3/H5/H10 | PLANNED |
 | H12 — oncojevlab export/publication | P2, observability | H3/H4/H5/H9/H11 records | PLANNED |
 | H13 — semantic/scientific evaluation corpus | P1, evaluation | Build alongside H4/H6–H10 baselines; return scoped proof to owners. Full-system conditions after H11/H12. | PLANNED |
@@ -345,6 +345,11 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 **Acceptance:** evidence-linked repeated use/utility and governed accept/reject behavior are exercised end-to-end, including missing reproducibility, changed scope, failure history, overlap and absent deployment proof. A rejection/not-eligible outcome is recorded in H9 with the failed prerequisites; it is not a separate deferred item or a claim of reusable delivery. Existing persistence and admission boundaries remain the primary test owners.
 
 ### H10 — Scientific execution, dependency locking and additional scientific operations
+
+**Delivered backend batch (2026-10-02):** configurable Docker/local-venv execution shares the existing candidate/replay/validation/admission contract. Local acquisition retains exact commit/archive and optional pre-acquired SHA-256 wheels; installation is offline. Fresh per-experiment Python environments run behind Landlock and x86_64 seccomp, scrubbed credentials, memory/CPU/file-output/wall limits, single-process execution and reserved owner-charged downloads. Tests/execution have no filesystem writes; subprocess/thread/source-build methods are explicitly unsupported, with no unconfined fallback. Coder roles retain their original boundary through a shared Landlock helper.
+
+**Proof:** `scripts/verify_local_science.py` passed in Linux 6.6.114.1 with actual secret/peer/app/network/process denial and fresh-environment replay (fixture transport). Both roles passed `scripts/verify_coder_container.py`. Live TheAlgorithms/Python commit `84b73d08f8bfa4e6bfae0243369c24f5a7539745`, canonical `maths/average_mean.py` doctests and independently documented seven-number mean reproduced 12.0; acquired 8,458,502 bytes, archive SHA-256 `91b2aaf320b55c894de95f853b5d6193b4cedf090d2a9ccd01d51530871de516`. This is exploratory computation/connectivity proof, not cancer utility, reusable qualification or Railway confinement. Historical Docker content identity is preserved. H10a recoverable qualification, R6 adverse/changed-input fidelity, D7 scientific gates, operational disk failure and H11 target proof remain open.
+
 
 **Owner:** `src/science/{sandbox,models,execution,admission}.py`, artifact references, runtime factory/scientific tools, `src/config/{models,authentication}.py`, `config/runtime.yaml`, Dockerfile and retention.
 

@@ -11,7 +11,7 @@ import subprocess
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator, computed_field
@@ -40,6 +40,11 @@ class SandboxPolicy(BaseModel, frozen=True):
     timeout_seconds: int = Field(default=300, ge=10, le=1800)
 
 
+class LockedWheel(BaseModel, frozen=True):
+    url: str = Field(pattern=r"^https://files\.pythonhosted\.org/[^ ?#]+\.whl$")
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
 class GithubMethodRequest(BaseModel, frozen=True):
     repository_url: str
     requested_ref: str = "HEAD"
@@ -48,6 +53,7 @@ class GithubMethodRequest(BaseModel, frozen=True):
     execute_command: tuple[str, ...]
     input_json: dict[str, Any]
     input_artifacts: tuple[ScientificArtifact,...] = ()
+    dependency_wheels: tuple[LockedWheel,...] = Field(default=(), max_length=30)
 
     def input_identity(self) -> str:
         for artifact in self.input_artifacts:artifact.validate_bytes()
@@ -85,6 +91,7 @@ class SandboxInvocation(BaseModel, frozen=True):
     exit_status: int
     stdout_sha256: str
     stderr_sha256: str
+    effective_command: tuple[str,...] | None = None
 
 
 class SandboxReceipt(BaseModel, frozen=True):
@@ -112,14 +119,22 @@ class SandboxMeasurementCandidate(BaseModel, frozen=True):
     @computed_field
     @property
     def content_sha256(self) -> str:
-        return _canonical_hash({"repository": self.receipt.repository_url, "commit": self.receipt.commit_sha,
+        identity = {"repository": self.receipt.repository_url, "commit": self.receipt.commit_sha,
             "input": self.receipt.input_sha256, "values": self.values, "image": self.receipt.environment.get("image"),
             "cpu": self.receipt.environment.get("cpu"), "memory_mb": self.receipt.environment.get("memory_mb"),
-            "commands": [self.receipt.install.command, self.receipt.test.command, self.receipt.first_run.command]})
+            "commands": [self.receipt.install.command, self.receipt.test.command, self.receipt.first_run.command]}
+        if self.receipt.environment.get("backend") == "local_venv":
+            identity["environment"] = self.receipt.environment_sha256
+        return _canonical_hash(identity)
 
 
 class SandboxError(RuntimeError):
     pass
+
+
+class ScientificExecutionBackend(Protocol):
+    def acquire_and_execute(self, request: GithubMethodRequest) -> SandboxMeasurementCandidate: ...
+    def replay(self, candidate: SandboxMeasurementCandidate) -> SandboxMeasurementCandidate: ...
 
 
 class DockerScientificSandbox:
@@ -250,8 +265,19 @@ def validate_sandbox_candidate(candidate: SandboxMeasurementCandidate, analysis_
     receipt = candidate.receipt
     if candidate.request is None or candidate.policy is None or candidate.output_json is None:
         raise SandboxError("candidate lacks replayable request, policy or output")
-    if not SHA.fullmatch(receipt.commit_sha) or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(receipt.environment.get("image"))):
-        raise SandboxError("candidate environment and commit must be immutable")
+    if not SHA.fullmatch(receipt.commit_sha):raise SandboxError("candidate commit must be immutable")
+    backend=receipt.environment.get('backend','docker')
+    if backend=='docker':
+        if not re.fullmatch(r"sha256:[0-9a-f]{64}",str(receipt.environment.get('image'))):
+            raise SandboxError("candidate environment and commit must be immutable")
+    elif backend=='local_venv':
+        required=('python_sha256','archive_sha256','dependencies_sha256','executor_version','platform')
+        if any(not receipt.environment.get(k) for k in required) or receipt.environment.get('network')!='disabled_for_install_test_execute':
+            raise SandboxError('incomplete confined local environment identity')
+        if receipt.environment.get('confinement')!='landlock-seccomp-single-process-v1':raise SandboxError('unqualified local confinement')
+        if receipt.environment.get('dependencies_sha256')!=content_hash([w.model_dump(mode='json') for w in candidate.request.dependency_wheels]):
+            raise SandboxError('local dependency identity mismatch')
+    else:raise SandboxError('unsupported scientific execution backend')
     if receipt.repository_url != candidate.request.repository_url or receipt.input_sha256 != candidate.request.input_identity():
         raise SandboxError("sandbox input identity mismatch")
     if receipt.environment_sha256 != _canonical_hash(receipt.environment):

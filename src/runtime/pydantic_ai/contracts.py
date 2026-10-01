@@ -36,7 +36,7 @@ from src.reasoner.service import ReasonerService
 from src.science.admission import admit_scientific_evidence
 from src.science.execution import ScienceExecutor
 from src.science.models import AnalysisSpec, MeasuredResult
-from src.science.sandbox import DockerScientificSandbox, GithubMethodRequest, SandboxMeasurementCandidate, validate_sandbox_candidate
+from src.science.sandbox import DockerScientificSandbox, ScientificExecutionBackend, GithubMethodRequest, SandboxMeasurementCandidate, validate_sandbox_candidate
 from src.sources.models import AcquisitionRecord
 from src.persistence.records import RecordKind
 from src.persistence.repository import ResearchRepository
@@ -139,7 +139,7 @@ class HarnessRuntime:
     sandbox_owners: dict[str, str] = field(default_factory=dict)
     research_state: ResearchStateStore = field(default_factory=ResearchStateStore)
     skills: BlockSkillStore = field(default_factory=BlockSkillStore)
-    sandbox: DockerScientificSandbox = field(default_factory=DockerScientificSandbox)
+    sandbox: ScientificExecutionBackend = field(default_factory=DockerScientificSandbox)
     sandbox_candidates: dict[str, SandboxMeasurementCandidate] = field(default_factory=dict)
     researcher: Agent["ResearcherDeps", str] | None = None
     researcher_factory: Callable[[str | None], Agent["ResearcherDeps", str]] | None = None
@@ -851,7 +851,24 @@ def register_researcher_tools(
         call_id = invocation(ctx, "software.github-scientific", request_id=request_id)
         append(ctx, "GithubAcquisitionStarted", {"invocation_id": call_id, "request_id": request_id, "request_sha256": content_hash(request.model_dump(mode="json")), "repository_url": request.repository_url, "requested_ref": request.requested_ref, "capability_need": capability_need})
         try:
-            candidate = await runtime.heavy_operation(ctx.deps.block_id, runtime.sandbox.acquire_and_execute, request.model_copy(deep=True))
+            from src.science.local import LocalVenvScientificBackend
+            if isinstance(runtime.sandbox, LocalVenvScientificBackend):
+                owner = ctx.deps.block_id
+                backend = LocalVenvScientificBackend(runtime.sandbox.root / owner / "experiments", runtime.sandbox.policy,
+                    workspace_limit=runtime.service_resources.max_workspace_bytes)
+                with runtime.gdc.reserve(owner, None) as reservation:
+                    backend.download_limit = reservation.capacity
+                    try:
+                        candidate = await runtime.heavy_operation(owner, backend.acquire_and_execute, request.model_copy(deep=True))
+                    finally:
+                        try:
+                            reservation.consume(backend.downloaded)
+                        finally:
+                            runtime.service_resources.charge_download(owner, backend.downloaded)
+                            append(ctx, "ScientificTransferReceipt", {"consumed_bytes": backend.downloaded,
+                                "reserved_bytes": reservation.capacity, "backend": "local_venv"})
+            else:
+                candidate = await runtime.heavy_operation(ctx.deps.block_id, runtime.sandbox.acquire_and_execute, request.model_copy(deep=True))
             if runtime.repository is not None:
                 runtime.repository.record_immutable(RecordKind.SANDBOX_CANDIDATE, candidate.candidate_id, candidate, ctx.deps.block_id)
         except Exception as error:
