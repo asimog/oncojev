@@ -32,7 +32,7 @@ def main() -> None:
     models = load_models_config(ROOT / "config/models.yaml")
     policy = load_runtime_config(ROOT / "config/runtime.yaml")
     live_policy = policy.model_copy(update={"mode": RuntimeMode.LIVE})
-    system = build_system(models, live_policy, max_tool_calls=int(policy.block["max_tool_calls"] or 100))
+    system = build_system(models, live_policy)
     (ROOT / "var").mkdir(exist_ok=True)
     store = SqliteResearchStore(ROOT / "var" / "oncojev.sqlite3")
     repository = ResearchRepository(store)
@@ -51,6 +51,9 @@ def main() -> None:
                 "director_output": result.director_output,
                 "block_ids": list(result.block_ids),
                 "dossiers": [dossier.model_dump(mode="json") for dossier in result.dossiers],
+                "status": result.status.value,
+                "director_outcome": result.director_outcome.value,
+                "director_error_type": result.director_error_type,
             },
             indent=2,
         )

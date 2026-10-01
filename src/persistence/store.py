@@ -42,20 +42,21 @@ class SqliteResearchStore:
         self._connection.commit()
 
     def append(self, record: StoredRecord) -> StoredRecord:
-        with self._lock:
-            cursor = self._connection.execute(
-                "INSERT INTO records (kind, block_id, record_id, recorded_at, schema_version, payload) VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    record.kind.value,
-                    record.block_id,
-                    record.record_id,
-                    record.recorded_at.isoformat(),
-                    record.schema_version,
-                    json.dumps(record.payload, sort_keys=True, default=str),
-                ),
-            )
-            self._connection.commit()
-        return record.model_copy(update={"seq": int(cursor.lastrowid)})
+        return self.append_many((record,))[0]
+
+    def append_many(self, records: tuple[StoredRecord, ...]) -> tuple[StoredRecord, ...]:
+        """Commit a terminal bundle atomically, including rollback on append failure."""
+        with self._lock, self._connection:
+            saved = []
+            for record in records:
+                cursor = self._connection.execute(
+                    "INSERT INTO records (kind, block_id, record_id, recorded_at, schema_version, payload) VALUES (?, ?, ?, ?, ?, ?)",
+                    (record.kind.value, record.block_id, record.record_id,
+                     record.recorded_at.isoformat(), record.schema_version,
+                     json.dumps(record.payload, sort_keys=True, default=str)),
+                )
+                saved.append(record.model_copy(update={"seq": int(cursor.lastrowid)}))
+        return tuple(saved)
 
     def records(
         self, *, kind: RecordKind | None = None, block_id: str | None = None

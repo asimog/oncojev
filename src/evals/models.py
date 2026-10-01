@@ -8,6 +8,7 @@ not a hardcoded expectation.
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
+from src.block.models import CycleStatus
 
 
 class EvaluationCondition(StrEnum):
@@ -33,6 +34,11 @@ class ConditionMetrics(BaseModel, frozen=True):
     jev_failures: int = 0
     completed_blocks: int = 0
     elapsed_seconds: float = 0.0
+    status: CycleStatus = CycleStatus.COMPLETE
+    error_type: str | None = None
+    failed_cycles: int = 0
+    incomplete_cycles: int = 0
+    cycles: int = 0
 
 
 class EvaluationReport(BaseModel, frozen=True):

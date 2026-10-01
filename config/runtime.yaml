@@ -1,18 +1,34 @@
 mode: live
 block:
   default_seconds: 900
+  min_seconds: 300
+  max_seconds: 3600
   handoff_reserve_seconds: 90
   max_tool_calls: 500
   max_model_requests: 200
+  max_provider_tool_calls: 500
+  max_code_mode_executions: 100
+  max_code_mode_tool_calls: 100
   max_source_calls: 100
   max_jev_calls: 100
+  max_jev_questions: 200
   max_reasoner_calls: 10
+  max_reasoner_model_requests: 10
   max_sandbox_calls: 5
   max_download_bytes: 100000000
   max_cost: null
 director:
+  max_model_requests: 50
+  max_provider_tool_calls: 100
+  max_code_mode_executions: 30
+  max_code_mode_tool_calls: 100
+  max_cost: null
   retrieval_k: 20
   semantic_frontier_k: 8
+cycle:
+  max_model_requests: 300
+  max_provider_tool_calls: 700
+  max_cost: null
 oncolab:
   search_k: 20
 jev:

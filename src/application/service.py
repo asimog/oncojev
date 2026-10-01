@@ -8,7 +8,7 @@ operations remain in the domain and are unreachable from the API.
 from typing import Any
 
 from src.persistence.records import RecordKind
-from src.persistence.reconstruct import BlockReconstruction, reconstruct_block
+from src.persistence.reconstruct import BlockReconstruction, reconstruct_block, effective_cycle
 from src.persistence.repository import ResearchRepository
 from src.persistence.store import SqliteResearchStore
 
@@ -29,19 +29,20 @@ class ResearchApplication:
             "cycles": len(self._store.records(kind=RecordKind.CYCLE)),
             "dossiers": len(self._store.records(kind=RecordKind.DOSSIER)),
             "evidence": len(self._store.records(kind=RecordKind.EVIDENCE)),
-            "latest_cycle": latest_cycle.payload if latest_cycle else None,
+            "latest_cycle": effective_cycle(self._store, latest_cycle.payload) if latest_cycle else None,
         }
 
     def blocks(self) -> tuple[dict[str, Any], ...]:
         views = []
         for block_id in self._store.block_ids():
-            block = self._store.latest(RecordKind.BLOCK, block_id=block_id)
-            dossier = self._store.latest(RecordKind.DOSSIER, block_id=block_id)
+            view = reconstruct_block(self._store, block_id)
             views.append(
                 {
                     "block_id": block_id,
-                    "block": block.payload if block else None,
-                    "has_dossier": dossier is not None,
+                    "block": view.block,
+                    "has_dossier": view.dossier is not None,
+                    "run_outcome": view.run_outcome.value,
+                    "complete": view.complete,
                 }
             )
         return tuple(views)

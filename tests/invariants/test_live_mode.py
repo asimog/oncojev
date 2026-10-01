@@ -177,3 +177,198 @@ def test_jev_failure_is_recorded_operationally_and_yields_no_frontier_or_evidenc
     assert "JevExecutionFailure" in events
     assert "FrontierDecision" not in events
     assert "EvidenceAdmission" not in events
+    resources = runtime.resources(block.block_id)
+    assert resources["jev"]["attempted"] == 1 and resources["jev"]["remaining"] == 1
+    assert resources["jev_questions"]["attempted"] == 2
+
+
+@pytest.mark.parametrize("resource,code", [
+    ("source", 'await acquire_gdc(endpoint="files", filters={}, fields=["file_id"])'),
+    ("jev", 'await evaluate_candidate(candidate_id="c", candidate_summary="unknown")'),
+    ("jev_questions", 'await evaluate_candidate(candidate_id="c", candidate_summary="unknown")'),
+    ("reasoner", 'await generate_hypotheses(finding="unknown")'),
+    ("tool", 'await create_line_figure(title="denied", x=[1.0], y=[1.0])'),
+    ("sandbox", 'await acquire_github_scientific_method(capability_need="newzzz", why_existing_capabilities_are_inadequate="missing method", repository_url="https://github.com/example/method", requested_ref="main", install_command=["true"], test_command=["true"], execute_command=["true"], input_json={})'),
+])
+def test_zero_resource_budgets_stop_before_side_effects_and_allow_handoff(resource, code, monkeypatch):
+    models = load_models_config(ROOT / "config/models.yaml")
+    policy = load_runtime_config(ROOT / "config/runtime.yaml")
+    field = "max_jev_questions" if resource == "jev_questions" else f"max_{resource}_calls"
+    policy = policy.model_copy(update={"mode": RuntimeMode.DETERMINISTIC,
+                                      "block": policy.block.model_copy(update={field: 0})})
+    runtime = build_harness_runtime(models, policy, environment={})
+    assert getattr(runtime, field) == 0
+    block = runtime.manager.allocate("bounded work", "test")
+    effects = []
+
+    def effect(*args, **kwargs):
+        effects.append(resource)
+        raise RuntimeError("side effect started")
+
+    async def async_effect(*args, **kwargs):
+        return effect(*args, **kwargs)
+
+    monkeypatch.setattr(runtime.gdc, "search", async_effect)
+    monkeypatch.setattr(runtime.jev, "evaluate", effect)
+    monkeypatch.setattr(runtime.reasoner, "generate", async_effect)
+    monkeypatch.setattr(runtime.sandbox, "acquire_and_execute", effect)
+    monkeypatch.setattr("src.runtime.pydantic_ai.contracts.line_figure", effect)
+    calls = 0
+
+    async def model(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": f'result = {code}\nassert result["retryable"] == False\nawait block_status()\nawait complete_block(reason="budget handoff")'}, tool_call_id="blocked")])
+        return ModelResponse(parts=[TextPart("done")])
+
+    agent = create_agents("test", "test").researcher
+    with agent.override(model=scripted(model)):
+        agent.run_sync("bounded work", deps=ResearcherDeps(runtime, block.block_id))
+    assert not effects
+    events = runtime.manager.ledger(block.block_id).history()
+    assert any(e.event_type == "WorkNotStarted" and e.payload["retryable"] is False for e in events)
+    assert any(e.event_type == "ResearcherHandoffRequested" for e in events)
+
+
+def test_factory_allocation_defaults_and_bounds_are_enforced_through_tools():
+    from src.runtime.pydantic_ai.contracts import DirectorDeps
+
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    runtime = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, environment={})
+    calls = 0
+
+    async def model(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            code = ('try:\n'
+                    '    await allocate_block(objective="oversized", why_now="test", seconds=3601)\n'
+                    'except Exception:\n'
+                    '    pass\n'
+                    'await allocate_block(objective="default duration", why_now="test")')
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": code}, tool_call_id="allocation")])
+        return ModelResponse(parts=[TextPart("allocated")])
+
+    agent = create_agents("test", "test").director
+    with agent.override(model=scripted(model)):
+        agent.run_sync("allocate", deps=DirectorDeps(runtime))
+    blocks = runtime.manager.blocks()
+    assert len(blocks) == 1
+    assert blocks[0].start.allocation.seconds == 900
+    assert blocks[0].start.allocation.handoff_reserve_seconds == 90
+
+
+@pytest.mark.parametrize("limit", ["max_provider_tool_calls", "max_code_mode_executions", "max_code_mode_tool_calls"])
+def test_zero_framework_budgets_deny_code_before_source_execution(limit, monkeypatch):
+    from pydantic_ai.messages import ToolReturnPart
+
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    runtime = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, environment={})
+    if limit != "max_code_mode_tool_calls":
+        setattr(runtime, limit, 0)
+    block = runtime.manager.allocate("framework budget", "test")
+    effects = []
+
+    async def source(*args, **kwargs):
+        effects.append("source")
+        raise RuntimeError("source started")
+
+    monkeypatch.setattr(runtime.gdc, "search", source)
+    calls = 0
+
+    async def model(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": 'await acquire_gdc(endpoint="files", filters={}, fields=["file_id"])'}, tool_call_id="denied")])
+        return ModelResponse(parts=[TextPart("handoff")])
+
+    agent = create_agents("test", "test", max_tool_calls=0 if limit == "max_code_mode_tool_calls" else 100).researcher
+    with agent.override(model=scripted(model)):
+        result = agent.run_sync("investigate", deps=ResearcherDeps(runtime, block.block_id))
+    returns = [part.content for message in result.new_messages() for part in message.parts if isinstance(part, ToolReturnPart)]
+    assert any(isinstance(value, dict) and value.get("retryable") is False for value in returns)
+    assert not effects
+    assert runtime.resources(block.block_id)["source"]["attempted"] == 0
+
+
+def test_live_reasoner_requests_consume_researcher_allocation():
+    from pydantic_ai.exceptions import UsageLimitExceeded
+    from pydantic_ai.models.test import TestModel
+    from src.runtime.pydantic_ai.reasoner import BudgetedLiveReasoner
+
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    runtime = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, environment={})
+    runtime.max_model_requests = 2
+    runtime.reasoner = BudgetedLiveReasoner(TestModel(custom_output_args={
+        "interpretation": "unknown", "uncertainty": "needs measurement",
+        "hypotheses": [{"hypothesis_id": "h", "statement": "possible signal", "within_scope": True, "proposed_test": "measure"}],
+    }))
+    block = runtime.manager.allocate("Reasoner accounting", "test")
+    calls = 0
+
+    async def model(messages, info):
+        nonlocal calls
+        calls += 1
+        return ModelResponse(parts=[ToolCallPart("run_code", {"code": 'await generate_hypotheses(finding="unknown")'}, tool_call_id="reasoner")])
+
+    agent = create_agents("test", "test").researcher
+    with agent.override(model=scripted(model)):
+        with pytest.raises(UsageLimitExceeded):
+            agent.run_sync("investigate", deps=ResearcherDeps(runtime, block.block_id), usage_limits=runtime.usage_limits("researcher"))
+    assert calls == 1
+    assert runtime.researcher_usage[block.block_id].requests == 1
+    assert runtime.reasoner_usage[block.block_id].requests == 1
+    assert runtime.total_usage().requests == 2
+    assert any(event.event_type == "ReasonerOutput" for event in runtime.manager.ledger(block.block_id).history())
+
+
+def test_allocation_configuration_rejects_inconsistent_bounds():
+    from pydantic import ValidationError
+    from src.config.models import BlockConfig
+
+    for options in ({"default_seconds": 3601}, {"min_seconds": 1000}, {"handoff_reserve_seconds": 300}):
+        with pytest.raises(ValidationError):
+            BlockConfig(**options)
+
+
+def test_handoff_preserves_in_flight_source_result_and_blocks_next_request():
+    from datetime import UTC, datetime, timedelta
+    import httpx
+    from src.sources.public import GdcPublicSource
+
+    clock = [datetime(2026, 10, 1, tzinfo=UTC)]
+    manager = BlockManager(now=lambda: clock[0])
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    runtime = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, manager=manager, environment={})
+    block = manager.allocate("in-flight work", "test")
+    requests = []
+
+    async def transport(request):
+        requests.append(request)
+        clock[0] = block.handoff_at + timedelta(seconds=1)
+        return httpx.Response(200, json={"data": {"hits": [{"file_id": "a"}]}})
+
+    runtime.gdc = GdcPublicSource(httpx.MockTransport(transport))
+    calls = 0
+
+    async def model(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            code = ('first = await acquire_gdc(endpoint="files", filters={}, fields=["file_id"])\n'
+                    'second = await acquire_gdc(endpoint="files", filters={}, fields=["file_id"])\n'
+                    'assert second["retryable"] == False\n'
+                    'await block_status()\n'
+                    'await complete_block(reason="soft handoff")')
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": code}, tool_call_id="handoff")])
+        return ModelResponse(parts=[TextPart("done")])
+
+    agent = create_agents("test", "test").researcher
+    with agent.override(model=scripted(model)):
+        agent.run_sync("investigate", deps=ResearcherDeps(runtime, block.block_id))
+    assert len(requests) == 1
+    assert len(runtime.acquisitions) == 1
+    assert runtime.resources(block.block_id)["source"]["attempted"] == 1
+    assert any(e.event_type == "ResearcherHandoffRequested" for e in manager.ledger(block.block_id).history())

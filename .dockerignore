@@ -8,6 +8,10 @@ __pycache__
 .env.*
 !.env.example
 .upstream
+.logfire
+.ssh
+.aws
+.codex
 var
 dist
 build

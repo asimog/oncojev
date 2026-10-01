@@ -7,7 +7,7 @@ must never be treated as a measurement.
 
 from collections.abc import Sequence
 
-from src.block.models import JevBlock
+from src.block.models import JevBlock, run_outcome
 from src.dossier.models import JevBlockDossier
 from src.ledger.events import LedgerEvent
 from src.researcher.state import ResearchState
@@ -61,6 +61,10 @@ def build_dossier(
         "sandbox_calls": len(_payloads(events, "GithubAcquisitionCompleted")),
         "evidence": len(evidence_ids),
     }
+    for payload in _payloads(events, "ResourceAttempt"):
+        name = payload.get("resource")
+        if isinstance(name, str):
+            resource_usage[f"{name}_attempts"] = max(resource_usage.get(f"{name}_attempts", 0), int(payload["attempt"]))
 
     preferred = next((item for item in within if item), "review unresolved block state")
     preferred_reason = (
@@ -69,6 +73,10 @@ def build_dossier(
         else "No within-scope continuation was recorded; Director review is required."
     )
     return JevBlockDossier(
+        lifecycle_status=block.status,
+        run_outcome=run_outcome(events),
+        operational_failures=tuple({"event_type": event.event_type, **event.payload} for event in events
+                                   if event.event_type in {"ResearcherRunFailed", "DirectorRunFailed", "DirectorRunTruncated", "InterruptedBlockRecovered", "CycleFinalizationFailed"}),
         block_id=block.block_id,
         objective=block.objective,
         termination_reason=termination_reason,

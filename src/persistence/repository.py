@@ -7,6 +7,7 @@ repository cannot create evidence: `record_evidence` accepts an already-admitted
 """
 
 from typing import Any
+from src.block.models import CycleStatus, DirectorOutcome, JevBlock
 
 from src.dossier.models import JevBlockDossier
 from src.evidence.models import ScientificEvidence
@@ -30,8 +31,28 @@ class ResearchRepository:
     def _append(self, kind: RecordKind, record_id: str, payload: dict[str, Any], block_id: str | None = None) -> StoredRecord:
         return self._store.append(StoredRecord(kind=kind, record_id=record_id, payload=payload, block_id=block_id))
 
-    def record_cycle(self, mission_id: str, mode: str, direction: str, block_ids: tuple[str, ...], *, status: str = "complete", error_type: str | None = None) -> StoredRecord:
-        return self._append(RecordKind.CYCLE, mission_id, {"mode": mode, "direction": direction, "block_ids": list(block_ids), "status": status, "error_type": error_type})
+    def record_cycle_start(self, mission_id: str, mode: str, direction: str, *, cycle_id: str | None = None) -> StoredRecord:
+        return self._append(RecordKind.CYCLE_START, cycle_id or mission_id, {"mode": mode, "direction": direction, "mission_id": mission_id})
+
+    def record_cycle(self, mission_id: str, mode: str, direction: str, block_ids: tuple[str, ...], *, status: CycleStatus = CycleStatus.COMPLETE, error_type: str | None = None, director_outcome: DirectorOutcome = DirectorOutcome.RETURNED, director_error_type: str | None = None, cycle_id: str | None = None) -> StoredRecord:
+        receipt_id = cycle_id or mission_id
+        existing = next((r for r in self.store.records(kind=RecordKind.CYCLE) if r.record_id == receipt_id), None)
+        if existing is not None:
+            return existing
+        return self._append(RecordKind.CYCLE, receipt_id, {"mission_id": mission_id, "mode": mode, "direction": direction, "block_ids": list(block_ids), "status": CycleStatus(status).value, "error_type": error_type, "director_outcome": director_outcome.value, "director_error_type": director_error_type})
+
+    def record_terminal(self, block: JevBlock, dossier: JevBlockDossier) -> None:
+        """Atomically append closure and dossier; a dossier by itself is insufficient."""
+        latest = self.store.latest(RecordKind.BLOCK, block_id=block.block_id)
+        saved = self.store.latest(RecordKind.DOSSIER, block_id=block.block_id)
+        payload = block.model_dump(mode="json")
+        summary = dossier.model_dump(mode="json")
+        if latest and saved and latest.payload == payload and saved.payload == summary:
+            return
+        self.store.append_many((
+            StoredRecord(kind=RecordKind.BLOCK, record_id=block.block_id, block_id=block.block_id, payload=payload),
+            StoredRecord(kind=RecordKind.DOSSIER, record_id=block.block_id, block_id=block.block_id, payload=summary),
+        ))
 
     def record_block(self, block: Any) -> StoredRecord:
         return self._append(RecordKind.BLOCK, block.block_id, block.model_dump(mode="json"), block.block_id)

@@ -15,6 +15,9 @@ from src.evals.models import ConditionMetrics, EvaluationCondition, EvaluationRe
 from src.persistence.records import RecordKind
 from src.persistence.repository import ResearchRepository
 from src.persistence.store import SqliteResearchStore
+from src.persistence.reconstruct import reconstruct_block, effective_cycle
+from src.block.models import CycleStatus, DirectorOutcome
+from src.autonomous import recover_interrupted_blocks
 from src.runtime.cycle import run_cycle
 from src.runtime.pydantic_ai.agents import OncoJevAgents, create_configured_agents
 from src.runtime.pydantic_ai.contracts import HarnessRuntime
@@ -45,6 +48,9 @@ def _metrics(condition: EvaluationCondition, store: SqliteResearchStore, elapsed
     )
     ledger = [record.payload for record in store.records(kind=RecordKind.LEDGER_EVENT)]
     dossiers = [record.payload for record in store.records(kind=RecordKind.DOSSIER)]
+    cycles = [effective_cycle(store, r.payload) for r in store.records(kind=RecordKind.CYCLE)]
+    failed = [c for c in cycles if c.get("status") == "failed"]
+    incomplete = [c for c in cycles if c.get("status") == "incomplete"]
     return ConditionMetrics(
         condition=condition,
         blocks=len(store.block_ids()),
@@ -60,7 +66,11 @@ def _metrics(condition: EvaluationCondition, store: SqliteResearchStore, elapsed
         records=store.count(),
         source_bound_evidence=sum(1 for record in evidence if record.payload.get("measurement", {}).get("origin") in {"source", "sandbox"}),
         jev_failures=len(store.records(kind=RecordKind.JEV_FAILURE)),
-        completed_blocks=sum(1 for block_id in store.block_ids() if (latest := store.latest(RecordKind.BLOCK, block_id=block_id)) and latest.payload.get("status") == "complete"),
+        completed_blocks=sum(reconstruct_block(store, block_id).complete for block_id in store.block_ids()),
+        status=CycleStatus.FAILED if failed else CycleStatus.INCOMPLETE if incomplete else CycleStatus.COMPLETE,
+        error_type=(failed or incomplete or [{}])[-1].get("error_type"),
+        failed_cycles=len(failed), incomplete_cycles=len(incomplete),
+        cycles=len(cycles),
         elapsed_seconds=elapsed_seconds,
     )
 
@@ -76,19 +86,50 @@ def evaluate_condition(
     runner: Runner | None = None,
 ) -> ConditionMetrics:
     manager = BlockManager()
-    runtime = build_harness_runtime(models, policy, manager=manager, environment=environment)
-    apply_condition(runtime, condition)
-    agents = (agents_factory or (lambda: create_configured_agents(models, 100)))()
-    runtime.researcher = agents.researcher
-    system = ConfiguredSystem(agents=agents, runtime=runtime, mode=policy.mode)
     store = SqliteResearchStore()
     repository = ResearchRepository(store)
     started = perf_counter()
-    if runner is not None:
-        runner(system, direction, repository, condition)
-    else:
-        run_cycle(system, direction, repository=repository, mission_id=condition.value)
-    return _metrics(condition, store, perf_counter() - started)
+    try:
+        try:
+            runtime = build_harness_runtime(models, policy, manager=manager, environment=environment)
+            runtime.repository = repository
+            runtime.mission_id = condition.value
+            apply_condition(runtime, condition)
+            agents = (agents_factory or (lambda: create_configured_agents(models, policy.director.max_code_mode_tool_calls,
+                                                                          policy.block.max_code_mode_tool_calls)))()
+            runtime.researcher = agents.researcher
+            system = ConfiguredSystem(agents=agents, runtime=runtime, mode=policy.mode)
+            if runner is not None:
+                runner(system, direction, repository, condition)
+            else:
+                run_cycle(system, direction, repository=repository, mission_id=condition.value)
+            if not store.records(kind=RecordKind.CYCLE):
+                for block in manager.blocks():
+                    if store.latest(RecordKind.BLOCK, block_id=block.block_id) is None:
+                        repository.record_block(block)
+                pending = store.latest(RecordKind.CYCLE_START)
+                repository.record_cycle(pending.payload.get("mission_id", pending.record_id) if pending else condition.value, policy.mode.value, direction,
+                                        tuple(b.block_id for b in manager.blocks()), status=CycleStatus.INCOMPLETE,
+                                        error_type="MissingCycleReceipt", director_outcome=DirectorOutcome.UNKNOWN,
+                                        cycle_id=pending.record_id if pending else None)
+                recover_interrupted_blocks(repository)
+        except Exception as error:
+            # run_cycle already writes its receipt. Custom runners may fail
+            # outside that owner; persist their partial work without duplicating it.
+            if not store.records(kind=RecordKind.CYCLE):
+                for block in manager.blocks():
+                    if store.latest(RecordKind.BLOCK, block_id=block.block_id) is None:
+                        repository.record_block(block)
+                pending = store.latest(RecordKind.CYCLE_START)
+                repository.record_cycle(pending.payload.get("mission_id", pending.record_id) if pending else condition.value, policy.mode.value, direction, tuple(b.block_id for b in manager.blocks()),
+                                        status=CycleStatus.FAILED, error_type=type(error).__name__, director_outcome=DirectorOutcome.FAILED,
+                                        cycle_id=pending.record_id if pending else None)
+                recover_interrupted_blocks(repository)
+            metrics = _metrics(condition, store, perf_counter() - started)
+            return metrics.model_copy(update={"status": CycleStatus.FAILED, "error_type": metrics.error_type or type(error).__name__})
+        return _metrics(condition, store, perf_counter() - started)
+    finally:
+        store.close()
 
 
 def evaluate_direction(

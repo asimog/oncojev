@@ -14,6 +14,8 @@ from pydantic import BaseModel, Field
 
 class RecordKind(StrEnum):
     CYCLE = "cycle"
+    CYCLE_START = "cycle_start"
+    OUTCOME_CORRECTION = "outcome_correction"
     BLOCK = "block"
     STATE_REVISION = "state_revision"
     CAPABILITY_INVOCATION = "capability_invocation"

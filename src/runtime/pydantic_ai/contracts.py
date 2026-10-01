@@ -8,9 +8,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
+from decimal import Decimal
+from pydantic_ai.usage import RunUsage, UsageLimits
 
 from pydantic_ai import Agent, RunContext
-
+from pydantic_ai.exceptions import IncompleteToolCall, UsageLimitExceeded
 from src.block.manager import BlockManager
 from src.block.models import BlockStatus
 from src.oncolab.catalogue import initial_oncolab_index
@@ -38,6 +40,19 @@ from src.researcher.state import ProjectionSpec, ResearchStateStore, StateFragme
 from src.oncolab.labskills import BlockSkillStore
 
 
+def is_director_truncation(error: Exception) -> bool:
+    """Classify installed budget/token truncation exceptions, never generic errors."""
+    return isinstance(error, (UsageLimitExceeded, IncompleteToolCall))
+
+
+class WorkStopped(RuntimeError):
+    """A deterministic, non-retryable directive issued before any work starts."""
+    def __init__(self, reason: str, resource: str | None = None):
+        self.directive = {"status": "handoff_required", "reason": reason, "resource": resource,
+                          "retryable": False, "next_action": "inspect partial results and request complete_block"}
+        super().__init__(reason.replace("_", " "))
+
+
 @dataclass
 class HarnessRuntime:
     manager: BlockManager
@@ -46,8 +61,22 @@ class HarnessRuntime:
     reasoner: ReasonerService
     max_jev_calls: int
     max_reasoner_calls: int
+    max_reasoner_model_requests: int = 10
     max_tool_calls: int = 100
     max_model_requests: int = 200
+    max_provider_tool_calls: int = 500
+    max_code_mode_executions: int = 100
+    max_jev_questions: int = 200
+    director_request_limit: int = 50
+    director_tool_limit: int = 100
+    director_code_limit: int = 30
+    director_cost_limit: float | None = None
+    cycle_request_limit: int = 300
+    cycle_tool_limit: int = 700
+    cycle_cost_limit: float | None = None
+    director_usage: RunUsage = field(default_factory=RunUsage)
+    researcher_usage: dict[str, RunUsage] = field(default_factory=dict)
+    reasoner_usage: dict[str, RunUsage] = field(default_factory=dict)
     handoff_reserve_seconds: int = 60
     max_cost: float | None = None
     max_source_calls: int = 20
@@ -71,15 +100,74 @@ class HarnessRuntime:
     researcher_factory: Callable[[str | None], Agent["ResearcherDeps", str]] | None = None
     enable_jev: bool = True
     enable_reasoner: bool = True
+    mission_id: str | None = None
+    cycle_id: str | None = None
     _counts: dict[str, int] = field(default_factory=dict)
 
     def claim(self, block_id: str, resource: str, limit: int) -> None:
-        self.manager.require_work_window(self.manager.block(block_id))
+        self.check_work(block_id, {resource: (1, limit)})
         key = f"{block_id}:{resource}"
         count = self._counts.get(key, 0) + 1
-        if count > limit:
-            raise RuntimeError(f"{resource} budget exhausted")
         self._counts[key] = count
+        self.append_event(block_id, "ResourceAttempt", {"resource": resource, "attempt": count, "limit": limit})
+
+    def check_work(self, block_id: str, resources: dict[str, tuple[int, int]] | None = None) -> None:
+        reason = "soft_deadline_handoff" if self.manager.status(self.manager.block(block_id)) is not BlockStatus.ACTIVE else None
+        exhausted = next((name for name, (amount, limit) in (resources or {}).items()
+                          if self._counts.get(f"{block_id}:{name}", 0) + amount > limit), None)
+        if reason or exhausted:
+            stopped = WorkStopped(reason or "budget_exhausted", exhausted)
+            self.manager.request_handoff(self.manager.block(block_id))
+            self.append_event(block_id, "WorkNotStarted", stopped.directive)
+            raise stopped
+
+    def resources(self, block_id: str) -> dict[str, dict[str, int]]:
+        limits = {"source": self.max_source_calls, "sandbox": self.max_sandbox_calls,
+                  "tool": self.max_tool_calls, "jev": self.max_jev_calls,
+                  "jev_questions": self.max_jev_questions, "reasoner": self.max_reasoner_calls}
+        return {name: {"attempted": self._counts.get(f"{block_id}:{name}", 0),
+                       "remaining": max(0, limit - self._counts.get(f"{block_id}:{name}", 0)), "limit": limit}
+                for name, limit in limits.items()}
+
+    def total_usage(self) -> RunUsage:
+        total = RunUsage()
+        for usage in (self.director_usage, *self.researcher_usage.values(), *self.reasoner_usage.values()):
+            total.incr(usage)
+        return total
+
+    def usage_summary(self) -> dict[str, Any]:
+        def summary(usage):
+            return {"requests": usage.requests, "tool_calls": usage.tool_calls,
+                    "input_tokens": usage.input_tokens, "output_tokens": usage.output_tokens,
+                    "reported_cost": str(usage.cost) if usage.cost is not None else None}
+        total = self.total_usage()
+        def budget(used, limit):
+            return {"attempted": used, "remaining": max(0, limit - used), "limit": limit}
+        def role_budget(key, requests, request_limit, tool_limit, code_limit):
+            return {"model_requests": budget(requests, request_limit),
+                    "provider_tools": budget(self._counts.get(f"{key}:provider_tools", 0), tool_limit),
+                    "code_mode_executions": budget(self._counts.get(f"{key}:code_mode_executions", 0), code_limit)}
+        budgets = {"director": role_budget("director", self.director_usage.requests, self.director_request_limit,
+                                            self.director_tool_limit, self.director_code_limit),
+                   "allocations": {key: role_budget(key, usage.requests + self.reasoner_usage.get(key, RunUsage()).requests,
+                                                   self.max_model_requests, self.max_provider_tool_calls, self.max_code_mode_executions)
+                                   for key, usage in self.researcher_usage.items()},
+                   "cycle": {"model_requests": budget(total.requests, self.cycle_request_limit),
+                             "provider_tools": budget(self._counts.get("cycle:provider_tools", 0), self.cycle_tool_limit)}}
+        return {"director": summary(self.director_usage),
+                "researchers": {key: summary(value) for key, value in self.researcher_usage.items()},
+                "reasoners": {key: summary(value) for key, value in self.reasoner_usage.items()},
+                "total": summary(total), "cost_complete": self._counts.get("cycle:cost_reports", 0) == total.requests,
+                "provider_tool_attempts": self._counts.get("cycle:provider_tools", 0), "budgets": budgets}
+
+    def usage_limits(self, role: str) -> UsageLimits:
+        cost = self.director_cost_limit if role == "director" else self.max_cost
+        return UsageLimits(request_limit=self.director_request_limit if role == "director" else self.max_model_requests,
+                           tool_calls_limit=self.director_tool_limit if role == "director" else self.max_provider_tool_calls,
+                           cost_limit=Decimal(str(cost)) if cost is not None else None)
+
+    def researcher_budget(self, block_id: str) -> RunUsage:
+        return self.researcher_usage.setdefault(block_id, RunUsage())
 
     def append_event(self, block_id: str, event_type: str, payload: dict[str, Any]) -> LedgerEvent:
         event = LedgerEvent(event_type=event_type, occurred_at=datetime.now(UTC), payload=payload)
@@ -93,6 +181,24 @@ class HarnessRuntime:
         if self.repository is not None:
             self.repository.record_state_revision(saved)
         return saved
+
+    def start_researcher(self, block_id: str, launched_by: str) -> None:
+        if any(event.event_type == "ResearcherRunStarted" for event in self.manager.ledger(block_id).history()):
+            self.append_event(block_id, "ResearcherLaunchRejected", {"reason": "no_retry_contract"})
+            raise RuntimeError("Researcher already launched for this block; retries are forbidden")
+        self.manager.require_work_window(self.manager.block(block_id))
+        self.append_event(block_id, "ResearcherRunStarted", {"block_id": block_id, "launched_by": launched_by, "workspace": f"var/workspaces/{block_id}"})
+
+    def complete_researcher(self, block_id: str) -> None:
+        self.append_event(block_id, "ResearcherRunCompleted", {"block_id": block_id})
+        block = self.manager.block(block_id)
+        requests = [e for e in self.manager.ledger(block_id).history() if e.event_type == "ResearcherHandoffRequested"]
+        reason = requests[-1].payload["reason"] if requests else (
+            "soft_deadline_handoff" if self.manager.status(block) is BlockStatus.HANDOFF else "researcher_returned")
+        completed = self.manager.complete(block, reason)
+        self.append_event(block_id, "ResearcherCompletion", {"status": completed.status.value, "reason": reason})
+        if self.repository is not None:
+            self.repository.record_block(completed)
 
 
 @dataclass(frozen=True)
@@ -124,19 +230,19 @@ def register_director_tools(
 
     @agent.tool
     async def allocate_block(
-        ctx: RunContext[DirectorDeps], objective: str, why_now: str, seconds: int
+        ctx: RunContext[DirectorDeps], objective: str, why_now: str, seconds: int | None = None
     ) -> dict[str, Any]:
         """Create a bounded block. Only BlockManager computes its deadline."""
         runtime = ctx.deps.runtime
-        block = runtime.manager.create(
-            objective, why_now, ResourceAllocation(seconds=seconds, handoff_reserve_seconds=min(runtime.handoff_reserve_seconds, max(0, seconds - 1)))
+        block = runtime.manager.allocate(
+            objective, why_now, seconds, mission_id=runtime.mission_id, cycle_id=runtime.cycle_id
         )
         state = runtime.research_state.start(block.block_id, block.objective)
         runtime.skills.start(block.block_id)
         if runtime.repository is not None:
             runtime.repository.record_block(block)
             runtime.repository.record_state_revision(state)
-        runtime.append_event(block.block_id, "DirectorBlockAllocated", {"objective": objective, "deadline": block.deadline.isoformat(), "handoff_at": block.handoff_at.isoformat()})
+        runtime.append_event(block.block_id, "DirectorBlockAllocated", {"objective": objective, "deadline": block.deadline.isoformat(), "handoff_at": block.handoff_at.isoformat(), "mission_id": runtime.mission_id, "cycle_id": runtime.cycle_id})
         return block.model_dump(mode="json")
 
     @agent.tool
@@ -159,6 +265,8 @@ def register_director_tools(
             "block": block.model_dump(mode="json"),
             "status": manager.status(block).value,
             "remaining_seconds": int(manager.remaining(block).total_seconds()),
+            "resources": ctx.deps.runtime.resources(block_id),
+            "model_usage": ctx.deps.runtime.usage_summary(),
             "ledger": [event.model_dump(mode="json") for event in manager.ledger(block_id).history()],
         }
 
@@ -171,27 +279,20 @@ def register_director_tools(
         block = runtime.manager.block(block_id)
         if runtime.manager.status(block) is not BlockStatus.ACTIVE:
             raise RuntimeError("cannot launch a non-active block")
-        researcher = runtime.researcher_factory(block_id) if runtime.researcher_factory else runtime.researcher
-        if researcher is None:
-            raise RuntimeError("Researcher agent is not configured")
-        ledger = runtime.manager.ledger(block_id)
-        runtime.append_event(block_id, "ResearcherRunStarted", {"block_id": block_id, "workspace": f"var/workspaces/{block_id}"})
+        runtime.start_researcher(block_id, "director")
         try:
+            researcher = runtime.researcher_factory(block_id) if runtime.researcher_factory else runtime.researcher
+            if researcher is None:
+                raise RuntimeError("Researcher agent is not configured")
             result = await researcher.run(
                 f"Investigate block {block_id}: {block.objective}",
                 deps=ResearcherDeps(runtime=runtime, block_id=block_id),
-                usage=ctx.usage,
+                usage=runtime.researcher_budget(block_id), usage_limits=runtime.usage_limits("researcher"),
             )
         except Exception as error:
             runtime.append_event(block_id, "ResearcherRunFailed", {"error_type": type(error).__name__})
             raise
-        runtime.append_event(block_id, "ResearcherRunCompleted", {"block_id": block_id})
-        if runtime.manager.status(block) is not BlockStatus.COMPLETE:
-            reason = "soft_deadline_handoff" if runtime.manager.status(block) is BlockStatus.HANDOFF else "researcher_returned"
-            completed = runtime.manager.complete(block, reason)
-            runtime.append_event(block_id, "ResearcherCompletion", {"status": completed.status.value, "reason": reason})
-            if runtime.repository is not None:
-                runtime.repository.record_block(completed)
+        runtime.complete_researcher(block_id)
         return result.output
 
 
@@ -313,6 +414,7 @@ def register_researcher_tools(
     @agent.tool
     async def validate_sandbox_measurement(ctx: RunContext[ResearcherDeps], candidate_id: str, analysis_id: str) -> dict[str, Any]:
         """Turn a replay-stable sandbox candidate into a deterministic MeasuredResult; this is not evidence admission."""
+        ctx.deps.runtime.claim(ctx.deps.block_id, "tool", ctx.deps.runtime.max_tool_calls)
         candidate = ctx.deps.runtime.sandbox_candidates[candidate_id]
         measurement = validate_sandbox_candidate(candidate, analysis_id)
         ctx.deps.runtime.measurements[(ctx.deps.block_id, analysis_id)] = measurement
@@ -374,8 +476,8 @@ def register_researcher_tools(
     @agent.tool
     async def create_line_figure(ctx: RunContext[ResearcherDeps], title: str, x: list[float], y: list[float]) -> dict[str, Any]:
         """Create a deterministic SVG FigureArtifact; visual artifacts are never scientific evidence."""
-        artifact = line_figure(title, x, y)
         ctx.deps.runtime.claim(ctx.deps.block_id, "tool", ctx.deps.runtime.max_tool_calls)
+        artifact = line_figure(title, x, y)
         ctx.deps.runtime.artifacts.setdefault(ctx.deps.block_id, {})[artifact.artifact_id] = artifact
         if ctx.deps.runtime.repository is not None:
             ctx.deps.runtime.repository.record_artifact(ctx.deps.block_id, artifact)
@@ -391,6 +493,8 @@ def register_researcher_tools(
             "block_id": block.block_id,
             "status": ctx.deps.runtime.manager.status(block).value,
             "remaining_seconds": int(ctx.deps.runtime.manager.remaining(block).total_seconds()),
+            "resources": ctx.deps.runtime.resources(block.block_id),
+            "model_usage": ctx.deps.runtime.usage_summary(),
         }
 
     @agent.tool
@@ -401,7 +505,11 @@ def register_researcher_tools(
         runtime = ctx.deps.runtime
         if not runtime.enable_jev:
             raise RuntimeError("Jev measurement is disabled in this evaluation condition")
+        runtime.check_work(ctx.deps.block_id, {"jev": (1, runtime.max_jev_calls), "jev_questions": (2, runtime.max_jev_questions)})
         runtime.claim(ctx.deps.block_id, "jev", runtime.max_jev_calls)
+        key = f"{ctx.deps.block_id}:jev_questions"
+        runtime._counts[key] = runtime._counts.get(key, 0) + 2
+        append(ctx, "ResourceAttempt", {"resource": "jev_questions", "attempt": runtime._counts[key], "limit": runtime.max_jev_questions})
         questions = (
             JevQuestionSpec(
                 question_id=f"{candidate_id}-relevance",
@@ -455,11 +563,30 @@ def register_researcher_tools(
     ) -> dict[str, Any]:
         """Generate alternatives; beyond-scope hypotheses become proposals, never new scope."""
         runtime = ctx.deps.runtime
+        from src.runtime.pydantic_ai.reasoner import BudgetedLiveReasoner
         if not runtime.enable_reasoner:
             raise RuntimeError("Reasoner is disabled in this evaluation condition")
+        usage = runtime.reasoner_usage.setdefault(ctx.deps.block_id, RunUsage())
+        researcher_usage = runtime.researcher_budget(ctx.deps.block_id)
+        remaining = min(runtime.max_reasoner_model_requests,
+                        runtime.max_model_requests - researcher_usage.requests - usage.requests,
+                        runtime.cycle_request_limit - runtime.total_usage().requests)
+        if isinstance(runtime.reasoner, BudgetedLiveReasoner) and remaining <= 0:
+            raise WorkStopped("reasoner_model_budget_exhausted", "reasoner")
         runtime.claim(ctx.deps.block_id, "reasoner", runtime.max_reasoner_calls)
         try:
-            output = await runtime.reasoner.generate(block_for(ctx).objective, finding)
+            if isinstance(runtime.reasoner, BudgetedLiveReasoner):
+                budgets = []
+                if runtime.max_cost is not None:
+                    budgets.append(runtime.max_cost - float(researcher_usage.cost or 0))
+                if runtime.cycle_cost_limit is not None:
+                    budgets.append(float(usage.cost or 0) + runtime.cycle_cost_limit - float(runtime.total_usage().cost or 0))
+                cost_limit = min(budgets) if budgets else None
+                output = await runtime.reasoner.generate(block_for(ctx).objective, finding, usage=usage, deps=ctx.deps,
+                    usage_limits=UsageLimits(request_limit=usage.requests + remaining, tool_calls_limit=0,
+                                             cost_limit=Decimal(str(cost_limit)) if cost_limit is not None else None))
+            else:
+                output = await runtime.reasoner.generate(block_for(ctx).objective, finding)
         except Exception as error:
             append(ctx, "ReasonerFailure", {"error_type": type(error).__name__})
             raise
@@ -476,9 +603,9 @@ def register_researcher_tools(
 
     @agent.tool
     async def complete_block(ctx: RunContext[ResearcherDeps], reason: str) -> dict[str, Any]:
-        """Ask deterministic BlockManager to finish the current block without extending it."""
-        completed = ctx.deps.runtime.manager.complete(block_for(ctx), reason)
-        append(ctx, "ResearcherCompletion", {"status": completed.status.value, "reason": completed.termination_reason})
+        """Request handoff; closure requires a successful Researcher return receipt."""
+        completed = ctx.deps.runtime.manager.request_handoff(block_for(ctx))
+        append(ctx, "ResearcherHandoffRequested", {"reason": reason})
         if ctx.deps.runtime.repository is not None:
             ctx.deps.runtime.repository.record_block(completed)
         return completed.model_dump(mode="json")

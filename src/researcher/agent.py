@@ -8,5 +8,8 @@ RESEARCHER_INSTRUCTIONS = (
     "Start each block with no selected procedural skills; load only skills relevant to the current need. "
     "Use public GitHub software only after OncoLab Index search shows no adequate installed method, and only through the isolated sandbox. "
     "You also have a fresh writable block workspace with Coder tools and shell. Clone public GitHub repositories there when useful, "
-    "while using typed tools for evidence admission and preserving uncertainty."
+    "while using typed tools for evidence admission and preserving uncertainty. "
+    "The application tree and other workspaces are inaccessible for writes. "
+    "When a tool returns a non-retryable handoff directive, stop new expensive work, "
+    "inspect existing records and request complete_block; do not retry or extend the deadline."
 )

@@ -1,6 +1,8 @@
 """Phase 9: dynamic research evaluation across capability conditions."""
 
 from pathlib import Path
+import pytest
+from pydantic_ai.exceptions import UsageLimitExceeded
 
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
@@ -35,7 +37,7 @@ def scripted(function):
     return FunctionModel(function=function, stream_function=stream)
 
 
-def _runner(system, direction, repository: ResearchRepository, condition: EvaluationCondition) -> None:
+def _runner(system, direction, repository: ResearchRepository, condition: EvaluationCondition, *, fail_researcher=False) -> None:
     acquisition = AcquisitionRecord(source="gdc", request={"fixture": True}, records=({"file_id": "a"}, {"file_id": "b"}), provenance=("test-source",))
     system.runtime.acquisitions[acquisition.acquisition_id] = acquisition
     director_calls = 0
@@ -46,7 +48,7 @@ def _runner(system, direction, repository: ResearchRepository, condition: Evalua
         director_calls += 1
         if director_calls == 1:
             code = (
-                'block = await allocate_block(objective="measure a public signal", why_now="test", seconds=60)\n'
+                'block = await allocate_block(objective="measure a public signal", why_now="test")\n'
                 'await launch_researcher(block_id=block["block_id"])\nblock'
             )
             return ModelResponse(parts=[ToolCallPart("run_code", {"code": code}, tool_call_id="d1")])
@@ -66,9 +68,12 @@ def _runner(system, direction, repository: ResearchRepository, condition: Evalua
                 lines.append('await generate_hypotheses(finding="measured association")')
             if condition is EvaluationCondition.SCIENCE_JEV_REASONER:
                 lines.append('await evaluate_candidate(candidate_id="candidate", candidate_summary="synthetic subgroup")')
-            lines.append('await complete_block(reason="done")')
+            if not fail_researcher:
+                lines.append('await complete_block(reason="done")')
             lines.append('"researcher complete"')
             return ModelResponse(parts=[ToolCallPart("run_code", {"code": "\n".join(lines)}, tool_call_id="r1")])
+        if fail_researcher:
+            raise UsageLimitExceeded("Researcher failed with partial evidence")
         return ModelResponse(parts=[TextPart("researcher complete")])
 
     with system.agents.director.override(model=scripted(director_model)), system.agents.researcher.override(model=scripted(researcher_model)):
@@ -137,3 +142,46 @@ def test_evaluation_corpus_runs_reproducibly_in_deterministic_mode():
     )
     assert len(reports) == len(DIRECTIONS)
     assert all(len(report.conditions) == 3 for report in reports)
+
+
+@pytest.mark.parametrize("failure", ["researcher", "custom_before_cycle", "custom_after_cycle", "setup_failure", "custom_no_receipt"])
+def test_failed_condition_preserves_partial_results_and_continues(failure):
+    visited = []
+    builds = 0
+
+    def agents_factory():
+        nonlocal builds
+        builds += 1
+        if failure == "setup_failure" and builds == 1:
+            raise ValueError("agent construction failed")
+        return create_agents("test", "test")
+
+    def runner(system, direction, repository, condition):
+        visited.append(condition)
+        if condition is EvaluationCondition.SCIENCE_ONLY:
+            if failure == "custom_no_receipt":
+                return
+            if failure == "custom_before_cycle":
+                raise ValueError("custom runner failed")
+            _runner(system, direction, repository, condition, fail_researcher=failure == "researcher")
+            raise ValueError("custom runner failed after completed cycle")
+        _runner(system, direction, repository, condition)
+
+    report = evaluate_direction(DIRECTIONS[0], models=load_models_config(ROOT / "config/models.yaml"),
+                                policy=load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC}),
+                                agents_factory=agents_factory, environment={}, runner=runner)
+    assert visited == (list(EvaluationCondition)[1:] if failure == "setup_failure" else list(EvaluationCondition))
+    first, *remaining = report.conditions
+    assert first.status.value == ("incomplete" if failure == "custom_no_receipt" else "failed")
+    assert first.error_type
+    assert all(m.cycles == 1 for m in report.conditions)
+    assert all(m.status.value == "complete" and m.completed_blocks == 1 for m in remaining)
+    if failure == "researcher":
+        assert first.evidence == 2 and first.dossiers == 1
+        assert first.completed_blocks == 0 and first.failed_cycles == 1
+    elif failure in {"custom_before_cycle", "setup_failure"}:
+        assert first.completed_blocks == 0 and first.failed_cycles == 1
+    elif failure == "custom_no_receipt":
+        assert first.completed_blocks == 0 and first.incomplete_cycles == 1
+    else:
+        assert first.completed_blocks == 1 and first.failed_cycles == 0

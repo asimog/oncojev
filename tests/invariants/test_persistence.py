@@ -15,6 +15,7 @@ from src.api.server import create_server
 from src.autonomous import recover_interrupted_blocks
 from src.application.service import ResearchApplication
 from src.block.manager import BlockManager
+from src.block.models import BlockStatus
 from src.config.models import RuntimeMode
 from src.director.models import ResourceAllocation
 from src.dossier.builder import build_dossier
@@ -55,6 +56,299 @@ def scripted(function):
     return FunctionModel(function=function, stream_function=stream)
 
 
+def cycle_system():
+    runtime = HarnessRuntime(manager=BlockManager(), jev=DeterministicJevClient(),
+                             science=ScienceExecutor(), reasoner=DeterministicReasoner(),
+                             max_jev_calls=4, max_reasoner_calls=2)
+    agents = create_agents("test", "test")
+    runtime.researcher = agents.researcher
+    return ConfiguredSystem(agents=agents, runtime=runtime, mode=RuntimeMode.DETERMINISTIC)
+
+
+@pytest.mark.parametrize("launch", ["nested", "fallback"])
+@pytest.mark.parametrize("budget", ["researcher", "aggregate"])
+def test_role_and_aggregate_request_limits_preserve_director_headroom(launch, budget):
+    system = cycle_system()
+    runtime = system.runtime
+    runtime.researcher_factory = lambda block_id: system.agents.researcher
+    runtime.max_model_requests = 1 if budget == "researcher" else 10
+    runtime.cycle_request_limit = (2 if launch == "nested" else 3) if budget == "aggregate" else 20
+    repository = ResearchRepository(SqliteResearchStore())
+    director_calls = 0
+    researcher_calls = 0
+
+    async def director(messages, info):
+        nonlocal director_calls
+        director_calls += 1
+        if director_calls == 1:
+            code = 'block = await allocate_block(objective="bounded requests", why_now="test", seconds=60)\n'
+            if launch == "nested":
+                code += 'await launch_researcher(block_id=block["block_id"])\n'
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": code + "block"}, tool_call_id="d1")])
+        return ModelResponse(parts=[TextPart("Director still has independent headroom")])
+
+    async def researcher(messages, info):
+        nonlocal researcher_calls
+        researcher_calls += 1
+        return ModelResponse(parts=[ToolCallPart("run_code", {"code": "await block_status()"}, tool_call_id=f"r{researcher_calls}")])
+
+    with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+        with pytest.raises(Exception):
+            run_cycle(system, "direction", repository=repository)
+    assert researcher_calls == 1
+    assert director_calls == (1 if budget == "aggregate" and launch == "nested" else 2)
+    assert runtime.total_usage().requests == director_calls + researcher_calls
+    cycle = repository.store.latest(RecordKind.CYCLE)
+    assert cycle.payload["status"] == "failed"
+    assert cycle.payload["error_type"] == "UsageLimitExceeded"
+    assert not reconstruct_block(repository.store, runtime.manager.blocks()[0].block_id).complete
+
+
+@pytest.mark.parametrize("missing_cost", [False, True])
+def test_aggregate_cost_failure_retains_reported_usage_and_partial_dossier(missing_cost):
+    from decimal import Decimal
+    from pydantic_ai.exceptions import UsageLimitExceeded
+    from pydantic_ai.usage import RequestUsage
+
+    system = cycle_system()
+    runtime = system.runtime
+    runtime.cycle_cost_limit = 0.5 if missing_cost else 0.6
+    runtime.researcher_factory = lambda block_id: system.agents.researcher
+    repository = ResearchRepository(SqliteResearchStore())
+    calls = 0
+
+    async def director(messages, info):
+        nonlocal calls
+        calls += 1
+        parts = [ToolCallPart("run_code", {"code": 'await allocate_block(objective="cost bound", why_now="test", seconds=60)'}, tool_call_id="allocate")] if calls == 1 else [TextPart("allocated")]
+        cost = None if missing_cost and calls == 2 else Decimal("0.1")
+        return ModelResponse(parts=parts, usage=RequestUsage(cost=cost))
+
+    async def researcher(messages, info):
+        return ModelResponse(parts=[TextPart("expensive response")], usage=RequestUsage(cost=Decimal("0.5")))
+
+    with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+        with pytest.raises(UsageLimitExceeded):
+            run_cycle(system, "direction", repository=repository)
+    block = runtime.manager.blocks()[0]
+    expected_cost = "0.6" if missing_cost else "0.7"
+    assert runtime.total_usage().cost == Decimal(expected_cost)
+    usage = next(event.payload for event in runtime.manager.ledger(block.block_id).history() if event.event_type == "ModelUsage")
+    assert usage["cost_complete"] is not missing_cost
+    assert usage["total"]["reported_cost"] == expected_cost
+    assert repository.store.latest(RecordKind.CYCLE).payload["status"] == "failed"
+    reconstruction = reconstruct_block(repository.store, block.block_id)
+    assert reconstruction.dossier and not reconstruction.complete
+
+
+def test_swallowed_nested_failure_cannot_complete_cycle():
+    from pydantic_ai.exceptions import UsageLimitExceeded
+
+    system = cycle_system()
+    repository = ResearchRepository(SqliteResearchStore())
+    calls = 0
+    attempts = 0
+
+    async def director(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            code = ('block = await allocate_block(objective="partial investigation", why_now="test", seconds=60)\n'
+                    'for attempt in range(2):\n'
+                    '    try:\n'
+                    '        await launch_researcher(block_id=block["block_id"])\n'
+                    '    except Exception:\n'
+                    '        pass\n'
+                    'block')
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": code}, tool_call_id="d1")])
+        return ModelResponse(parts=[TextPart("director returned normally")])
+
+    async def researcher(messages, info):
+        nonlocal attempts
+        attempts += 1
+        raise UsageLimitExceeded("Researcher budget exhausted")
+
+    with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+        with pytest.raises(RuntimeError):
+            run_cycle(system, "direction", repository=repository)
+
+    block_id = system.runtime.manager.blocks()[0].block_id
+    view = reconstruct_block(repository.store, block_id)
+    assert attempts == 1
+    assert not view.complete
+    assert view.block["status"] == "failed"
+    assert view.dossier["termination_reason"] == "researcher_failed"
+    cycle = repository.store.latest(RecordKind.CYCLE)
+    assert cycle.payload["status"] == "failed"
+    assert cycle.payload["error_type"] == "UsageLimitExceeded"
+
+
+@pytest.mark.parametrize("scenario", ["completed", "handoff_failure", "fallback_failure", "before_allocation",
+                                      "auth_failure", "transport_failure", "tool_failure", "unexpected_failure", "multiple_blocks",
+                                      "no_allocation", "usage_truncation", "tool_truncation"])
+def test_cycle_terminal_outcomes(scenario):
+    from pydantic_ai.exceptions import IncompleteToolCall, ModelAPIError, ModelHTTPError, UnexpectedModelBehavior, UsageLimitExceeded
+
+    system = cycle_system()
+    # The existing factory boundary also exercises the Python fallback path.
+    system.runtime.researcher_factory = lambda block_id: system.agents.researcher
+    repository = ResearchRepository(SqliteResearchStore())
+    director_calls = 0
+    researcher_calls = 0
+    errors = {"before_allocation": ModelHTTPError(401, "test"), "auth_failure": ModelHTTPError(401, "test"),
+              "transport_failure": ModelAPIError("test", "transport failed"),
+              "tool_failure": ValueError("tool crashed"), "unexpected_failure": UnexpectedModelBehavior("malformed response"),
+              "usage_truncation": UsageLimitExceeded("Director limit"), "tool_truncation": IncompleteToolCall("token limit")}
+
+    async def director(messages, info):
+        nonlocal director_calls
+        director_calls += 1
+        if scenario == "before_allocation":
+            raise errors[scenario]
+        if scenario == "no_allocation":
+            return ModelResponse(parts=[TextPart("no block")])
+        if director_calls == 1:
+            code = 'block = await allocate_block(objective="estimand may be unreachable", why_now="test", seconds=60)\n'
+            if scenario == "multiple_blocks":
+                code += 'await allocate_block(objective="invalid second block", why_now="test", seconds=60)\n'
+            elif scenario != "fallback_failure":
+                code += 'await launch_researcher(block_id=block["block_id"])\n'
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": code + "block"}, tool_call_id="d1")])
+        if scenario in errors:
+            raise errors[scenario]
+        return ModelResponse(parts=[TextPart("Director returned")])
+
+    async def researcher(messages, info):
+        nonlocal researcher_calls
+        researcher_calls += 1
+        if scenario == "fallback_failure":
+            raise UsageLimitExceeded("fallback failed")
+        if scenario == "handoff_failure":
+            if researcher_calls == 1:
+                return ModelResponse(parts=[ToolCallPart("run_code", {"code": 'await complete_block(reason="handoff requested")'}, tool_call_id="r1")])
+            raise UsageLimitExceeded("failed after handoff")
+        return ModelResponse(parts=[TextPart("No scientific estimate is attainable with available inputs")])
+
+    succeeds = scenario in {"completed", "usage_truncation", "tool_truncation"}
+    with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+        if succeeds:
+            result = run_cycle(system, "direction", repository=repository)
+            assert result.status.value == ("complete" if scenario == "completed" else "incomplete")
+            assert result.director_outcome.value == ("returned" if scenario == "completed" else "truncated")
+        else:
+            with pytest.raises(Exception):
+                run_cycle(system, "direction", repository=repository)
+    cycles = repository.store.records(kind=RecordKind.CYCLE)
+    assert len(cycles) == 1
+    assert cycles[0].payload["status"] == ("complete" if scenario == "completed" else "incomplete" if succeeds else "failed")
+    if scenario in errors:
+        assert cycles[0].payload["director_error_type"] == type(errors[scenario]).__name__
+    blocks = system.runtime.manager.blocks()
+    assert len(blocks) == (0 if scenario in {"before_allocation", "no_allocation"} else 2 if scenario == "multiple_blocks" else 1)
+    for block in blocks:
+        view = reconstruct_block(repository.store, block.block_id)
+        assert view.complete is succeeds
+        assert view.dossier["objective_attainment"] == "unknown"
+        assert view.block["status"] == ("complete" if succeeds else "failed")
+        if scenario == "handoff_failure":
+            assert view.run_outcome.value == "failed"
+            assert any(e["event_type"] == "ResearcherHandoffRequested" for e in view.ledger)
+            assert not any(e["event_type"] == "ResearcherRunCompleted" for e in view.ledger)
+    if not blocks:
+        assert not repository.store.records(kind=RecordKind.DOSSIER)
+
+
+def test_terminal_bundle_rollback_and_cycle_recovery(tmp_path):
+    database = tmp_path / "partial.sqlite3"
+    store = SqliteResearchStore(database)
+    repository = ResearchRepository(store)
+    block = BlockManager().create("interrupted writes", "test", ResourceAllocation(seconds=60), mission_id="m1")
+    repository.record_cycle_start("m1", "deterministic", "direction")
+    initial = repository.record_block(block)
+    # Simulate an append failure at the second write using the real SQLite path.
+    store._connection.execute("CREATE TRIGGER fail_dossier BEFORE INSERT ON records WHEN NEW.kind = 'dossier' BEGIN SELECT RAISE(ABORT, 'disk failure'); END")
+    closed = block.model_copy(update={"status": BlockStatus.FAILED, "termination_reason": "failure"})
+    with pytest.raises(sqlite3.IntegrityError):
+        repository.record_terminal(closed, build_dossier(closed, (), None, "failure"))
+    assert store.latest(RecordKind.BLOCK, block_id=block.block_id).seq == initial.seq
+    assert store.latest(RecordKind.DOSSIER, block_id=block.block_id) is None
+    store._connection.execute("DROP TRIGGER fail_dossier")
+    store.close()
+    store = SqliteResearchStore(database)
+    repository = ResearchRepository(store)
+    recover_interrupted_blocks(repository)
+    assert reconstruct_block(store, block.block_id).block["status"] == "interrupted"
+    assert store.latest(RecordKind.CYCLE).payload["status"] == "incomplete"
+    assert store.latest(RecordKind.CYCLE).payload["block_ids"] == [block.block_id]
+    count = store.count()
+    assert recover_interrupted_blocks(repository) == ()
+    assert store.count() == count
+
+
+def test_legacy_failure_correction_preserves_original_records():
+    repository = ResearchRepository(SqliteResearchStore())
+    manager = BlockManager()
+    block = manager.create("legacy block 4", "test", ResourceAllocation(seconds=60))
+    events = tuple(LedgerEvent.model_validate({"event_type": kind, "occurred_at": "2026-09-30T00:00:00Z",
+                                             "payload": {"error_type": "UsageLimitExceeded"}})
+                   for kind in ("ResearcherRunStarted", "ResearcherRunFailed", "ResearcherRunStarted", "ResearcherRunFailed"))
+    for event in events:
+        repository.record_ledger_event(block.block_id, event)
+    acquisition = AcquisitionRecord(source="gdc", request={"fixture": True}, records=({"file_id": "a"},), provenance=("test",))
+    result = ScienceExecutor().measure_acquisition(acquisition, "legacy-descriptive-count")
+    evidence = admit_scientific_evidence(result)
+    repository.record_measurement(result, block.block_id)
+    repository.record_evidence(evidence, block.block_id)
+    closed = manager.complete(block, "researcher_returned")
+    repository.record_terminal(closed, build_dossier(closed, events, None, "researcher_returned"))
+    repository.record_cycle("legacy", "live", "direction", (block.block_id,))
+    originals = repository.store.records()
+    application = ResearchApplication(repository.store)
+    assert application.overview()["latest_cycle"]["status"] == "failed"
+    assert application.blocks()[0]["block"]["status"] == "failed"
+    assert not reconstruct_block(repository.store, block.block_id).complete
+    recover_interrupted_blocks(repository)
+    correction = repository.store.latest(RecordKind.OUTCOME_CORRECTION, block_id=block.block_id)
+    assert correction.payload["original_seqs"] == [record.seq for record in originals if record.kind in {RecordKind.BLOCK, RecordKind.DOSSIER, RecordKind.LEDGER_EVENT, RecordKind.CYCLE}]
+    assert repository.store.records()[:len(originals)] == originals
+    count = repository.store.count()
+    recover_interrupted_blocks(repository)
+    assert repository.store.count() == count
+
+
+def test_service_recovers_pending_work_before_each_cycle(tmp_path, monkeypatch):
+    from src.autonomous import AutonomousService
+
+    service = AutonomousService(ROOT, tmp_path / "service.sqlite3")
+    pending = BlockManager().create("pending after service startup", "test", ResourceAllocation(seconds=60), mission_id="interrupted")
+    service.repository.record_cycle_start("interrupted", "deterministic", "old direction")
+    service.repository.record_block(pending)
+    service.repository.record_dossier(build_dossier(pending, (), None, "partial"))
+    system = cycle_system()
+    system.runtime.researcher_factory = lambda block_id: system.agents.researcher
+    monkeypatch.setattr("src.autonomous.build_system", lambda *args, **kwargs: system)
+    calls = 0
+
+    async def director(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": 'await allocate_block(objective="new work", why_now="test", seconds=60)'}, tool_call_id="d1")])
+        return ModelResponse(parts=[TextPart("returned")])
+
+    async def researcher(messages, info):
+        return ModelResponse(parts=[TextPart("completed investigation with no evidence")])
+
+    try:
+        with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+            result = service.run_once("new direction")
+        assert result.status.value == "complete"
+        assert service.application.reconstruction(pending.block_id).block["status"] == "interrupted"
+        assert [r.payload["status"] for r in service.store.records(kind=RecordKind.CYCLE)] == ["incomplete", "complete"]
+    finally:
+        service.store.close()
+
+
 def test_store_is_append_only_at_the_database_level():
     store = SqliteResearchStore()
     store.append(StoredRecord(kind=RecordKind.RESEARCH_MEMORY, record_id="m0", payload={"summary": "x"}))
@@ -65,16 +359,29 @@ def test_store_is_append_only_at_the_database_level():
     assert store.count() == 1
 
 
-def test_restart_recovery_closes_interrupted_block_with_dossier():
-    store = SqliteResearchStore()
+@pytest.mark.parametrize("partial_dossier", [False, True])
+def test_restart_recovery_closes_interrupted_block_with_dossier(tmp_path, partial_dossier):
+    database = tmp_path / "recovery.sqlite3"
+    store = SqliteResearchStore(database)
     repository = ResearchRepository(store)
     block = BlockManager().create("interrupted", "test", ResourceAllocation(seconds=60))
-    repository.record_block(block)
+    initial = repository.record_block(block)
+    if partial_dossier:
+        repository.record_dossier(build_dossier(block, (), None, "premature_dossier"))
+    store.close()
+    store = SqliteResearchStore(database)
+    repository = ResearchRepository(store)
     assert recover_interrupted_blocks(repository) == (block.block_id,)
     reconstruction = reconstruct_block(store, block.block_id)
-    assert reconstruction.complete
+    assert not reconstruction.complete
+    assert reconstruction.block["status"] == "interrupted"
+    recovered_event = next(e for e in reconstruction.ledger if e["event_type"] == "InterruptedBlockRecovered")
+    assert recovered_event["occurred_at"] > initial.recorded_at.isoformat()
     assert reconstruction.block["termination_reason"] == "recovered_after_interruption"
     assert reconstruction.dossier["termination_reason"] == "recovered_after_interruption"
+    count = store.count()
+    assert recover_interrupted_blocks(repository) == ()
+    assert store.count() == count
 
 
 def test_repository_records_typed_objects_and_reconstruction_preserves_provenance():
@@ -84,6 +391,7 @@ def test_repository_records_typed_objects_and_reconstruction_preserves_provenanc
     block = manager.create("reconstruct me", "test", ResourceAllocation(seconds=60))
     ledger = manager.ledger(block.block_id)
     ledger.append(LedgerEvent.model_validate({"event_type": "DirectorBlockAllocated", "occurred_at": "2026-09-30T00:00:00Z", "payload": {}}))
+    ledger.append(LedgerEvent.model_validate({"event_type": "ResearcherRunCompleted", "occurred_at": "2026-09-30T00:00:01Z", "payload": {}}))
     acquisition = AcquisitionRecord(source="gdc", request={"test": True}, records=({"file_id": "a"},), provenance=("test",))
     result = ScienceExecutor().measure_acquisition(acquisition, "a")
     evidence = admit_scientific_evidence(result)
@@ -194,3 +502,17 @@ def test_deterministic_cycle_persists_blocks_dossiers_and_memory():
     kinds = {record.kind for record in store.records()}
     assert {RecordKind.BLOCK, RecordKind.DOSSIER, RecordKind.MEASUREMENT, RecordKind.EVIDENCE, RecordKind.CYCLE, RecordKind.RESEARCH_MEMORY} <= kinds
     assert reconstruct_block(store, result.block_ids[0]).complete
+    # Two allocations may belong to one mission; receipt idempotence must not
+    # collapse distinct cycles or confuse recovery of their terminal writes.
+    director_calls = researcher_calls = 0
+    repeat = cycle_system()
+    repeat.runtime.acquisitions[acquisition.acquisition_id] = acquisition
+    with repeat.agents.director.override(model=scripted(director_model)), repeat.agents.researcher.override(model=scripted(researcher_model)):
+        second = run_cycle(repeat, "investigate a public signal", repository=repository, mission_id="m1")
+    cycles = store.records(kind=RecordKind.CYCLE)
+    assert len(cycles) == 2 and len({r.record_id for r in cycles}) == 2
+    assert all(r.payload["mission_id"] == "m1" for r in cycles)
+    assert second.block_ids != result.block_ids
+    count = store.count()
+    assert recover_interrupted_blocks(repository) == ()
+    assert store.count() == count

@@ -55,11 +55,28 @@ uv run python scripts/export_snapshot.py # regenerate the offline UI fallback
 
 ## Autonomous runtime
 
-Python owns the autonomous cycle, requires exactly one new block, persists records as work occurs, and always produces a terminal dossier or a recorded failure. Deadlines are soft handoff boundaries: new expensive work stops in the reserve window while in-flight work and dossier construction finish. In Railway's Linux container, the Director has a writable repository-root Coder workspace and unrestricted shell; every JevBlock receives a fresh writable Researcher workspace under `var/workspaces/`. Code Mode exposes the typed OncoLab tools alongside those coding capabilities.
+Python owns the autonomous cycle, requires exactly one new block, and persists records as work occurs. Successful closure requires a recorded Researcher return; `complete_block` requests handoff rather than declaring success. Failed allocated work retains a partial dossier and failed cycle receipt before the error propagates. A Director budget/token truncation produces an incomplete cycle with a separate Director outcome. Run completion never establishes scientific objective attainment, which remains unknown unless independently established. Recovery runs before every service cycle, closes interrupted work without resuming it, and appends corrections for contradictory legacy completion records while preserving their originals.
+
+Deadlines are soft handoff boundaries: new expensive work stops in the reserve window while in-flight work and dossier construction finish. Allocation uses the configured 900-second default, 300–3600-second bounds and 90-second reserve. Zero resource budgets disable work; attempted operations, including failures, consume their own counters. Director and Researcher have separate model/tool budgets, with Reasoner requests charged to the Researcher's allocation and all roles subject to cycle limits. Reported cost is tracked; missing provider cost remains unknown.
+
+Both roles retain Coder and Code Mode in Linux. The Director uses `/work/director` for scratch engineering; each JevBlock has its own `var/workspaces/<block-id>`. Application source and policy are read-only from both coding contexts. Linux Landlock confines native file tools, shell commands and descendants to public application reads and their own writable workspace; peer workspaces, credential files and process environments are inaccessible. Commands receive a scrubbed environment. This path fails closed without Landlock ABI 3 or newer; run `scripts/verify_coder_container.py` in the target Linux image. Scratch results never become scientific evidence without deterministic Science validation and admission.
 
 Only source-bound acquisition measurements or replay-validated sandbox measurements can be admitted as evidence. Agent-provided arrays and generated code may support exploration but cannot cross the Science admission boundary.
 
 ## Development
+
+Configured Director, fresh Researcher, and Reasoner agents send Logfire agent,
+tool, and model spans as `oncojev-agents`. Setup runs once per worker process,
+before live agents are constructed. Prompt, response, tool argument/result, and
+binary content capture are disabled; telemetry is diagnostic data, never evidence.
+The integration follows [Pydantic AI's Logfire integration](https://pydantic.dev/docs/ai/integrations/logfire/).
+
+Local runs use the ignored `.logfire/` project credential. This checkout is
+connected to [asimog/oncojev (US)](https://logfire-us.pydantic.dev/asimog/oncojev).
+Start a cycle or worker with the commands above to generate traces. Deployments
+should inject their own project write token as `LOGFIRE_TOKEN` and set
+`LOGFIRE_ENVIRONMENT` to the deployment environment. Without a token, export is
+optional. Set `LOGFIRE_SEND_TO_LOGFIRE=false` for tests or to disable export.
 
 ```bash
 uv sync --all-groups

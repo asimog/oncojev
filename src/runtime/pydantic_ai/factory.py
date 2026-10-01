@@ -12,11 +12,12 @@ from src.block.manager import BlockManager
 from src.config.authentication import resolve_mode
 from src.config.models import ModelsConfig, RuntimeConfig, RuntimeMode
 from src.jev.client import DeterministicJevClient, JevClient, TypeSafeJevClient
-from src.reasoner.agent import LiveReasoner
 from src.reasoner.service import DeterministicReasoner, ReasonerService
 from src.runtime.pydantic_ai.agents import OncoJevAgents, create_configured_agents
 from src.runtime.pydantic_ai.contracts import HarnessRuntime
 from src.runtime.pydantic_ai.providers import configured_model, model_settings
+from src.runtime.pydantic_ai.telemetry import configure_agent_telemetry
+from src.runtime.pydantic_ai.reasoner import BudgetedLiveReasoner
 from src.science.execution import ScienceExecutor
 from src.science.sandbox import DockerScientificSandbox, SandboxPolicy
 from src.sources.public import GdcPublicSource, PublicLiteratureSource, XenaPublicSource
@@ -39,7 +40,8 @@ def build_reasoner(models: ModelsConfig, mode: RuntimeMode, environment: dict[st
     """The Reasoner is a separate sub-agent in live mode and a fixture otherwise."""
     source = environment if environment is not None else os.environ
     if resolve_mode(mode, source) is RuntimeMode.LIVE:
-        return LiveReasoner(configured_model(models.reasoner), model_settings(models.reasoner))
+        configure_agent_telemetry()
+        return BudgetedLiveReasoner(configured_model(models.reasoner), model_settings(models.reasoner))
     return DeterministicReasoner()
 
 
@@ -59,19 +61,32 @@ def build_harness_runtime(
 ) -> HarnessRuntime:
     source = environment if environment is not None else os.environ
     mode = resolve_mode(policy.mode, source)
+    manager = manager or BlockManager()
+    manager.policy = policy.block
     return HarnessRuntime(
-        manager=manager or BlockManager(),
+        manager=manager,
         jev=build_jev_client(models, mode, source),
         science=ScienceExecutor(),
         reasoner=build_reasoner(models, mode, source),
         max_tool_calls=policy.block.max_tool_calls,
         max_model_requests=policy.block.max_model_requests,
+        max_provider_tool_calls=policy.block.max_provider_tool_calls,
+        max_code_mode_executions=policy.block.max_code_mode_executions,
+        max_jev_questions=policy.block.max_jev_questions,
+        director_request_limit=policy.director.max_model_requests,
+        director_tool_limit=policy.director.max_provider_tool_calls,
+        director_code_limit=policy.director.max_code_mode_executions,
+        director_cost_limit=policy.director.max_cost,
+        cycle_request_limit=policy.cycle.max_model_requests,
+        cycle_tool_limit=policy.cycle.max_provider_tool_calls,
+        cycle_cost_limit=policy.cycle.max_cost,
         handoff_reserve_seconds=policy.block.handoff_reserve_seconds,
         max_cost=policy.block.max_cost,
-        max_jev_calls=int(policy.block["max_jev_calls"] or 4),
-        max_reasoner_calls=int(policy.block["max_reasoner_calls"] or 2),
-        max_source_calls=int(policy.block["max_source_calls"] or 20),
-        max_sandbox_calls=int(policy.block["max_sandbox_calls"] or 2),
+        max_jev_calls=policy.block.max_jev_calls,
+        max_reasoner_calls=policy.block.max_reasoner_calls,
+        max_reasoner_model_requests=policy.block.max_reasoner_model_requests,
+        max_source_calls=policy.block.max_source_calls,
+        max_sandbox_calls=policy.block.max_sandbox_calls,
         oncolab_search_k=policy.oncolab.search_k,
         sandbox=DockerScientificSandbox(SandboxPolicy(image=policy.sandbox.image, cpu=policy.sandbox.cpu, memory_mb=policy.sandbox.memory_mb, timeout_seconds=policy.sandbox.timeout_seconds)),
         gdc=GdcPublicSource(max_download_bytes=policy.block.max_download_bytes),
@@ -84,7 +99,7 @@ def build_system(
     models: ModelsConfig,
     policy: RuntimeConfig,
     *,
-    max_tool_calls: int = 100,
+    max_tool_calls: int | None = None,
     manager: BlockManager | None = None,
     environment: dict[str, str] | None = None,
 ) -> ConfiguredSystem:
@@ -92,7 +107,12 @@ def build_system(
     if policy.mode is not RuntimeMode.LIVE:
         raise RuntimeError("build_system requires live mode; deterministic fixtures must be explicit")
     resolve_mode(policy.mode, environment)
-    agents = create_configured_agents(models, max_tool_calls)
+    director_code = policy.director.max_code_mode_tool_calls
+    researcher_code = policy.block.max_code_mode_tool_calls
+    if max_tool_calls is not None:
+        director_code = min(director_code, max_tool_calls)
+        researcher_code = min(researcher_code, max_tool_calls)
+    agents = create_configured_agents(models, director_code, researcher_code)
     runtime = build_harness_runtime(models, policy, manager=manager, environment=environment)
     runtime.researcher_factory = agents.fresh_researcher
     return ConfiguredSystem(agents=agents, runtime=runtime, mode=RuntimeMode.LIVE)

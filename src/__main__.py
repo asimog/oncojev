@@ -16,7 +16,7 @@ def main() -> None:
     service = service_from_environment(root)
     if args.command == "cycle":
         result = service.run_once(args.direction)
-        print(f"AUTONOMOUS CYCLE COMPLETE: {result.block_ids[0]}; dossiers={len(result.dossiers)}")
+        print(f"AUTONOMOUS CYCLE {result.status.value.upper()}: {result.block_ids[0]}; director={result.director_outcome.value}; dossiers={len(result.dossiers)}")
         service.store.close()
         return
     service.serve(

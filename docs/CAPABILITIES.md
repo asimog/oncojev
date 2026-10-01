@@ -26,3 +26,30 @@ Capability maturity remains explicit:
 Selected procedural guidance lives in `src/oncolab/labskills/` and is loaded only
 for an active Researcher block. It remains separate from the index and from
 Pydantic AI's Coder/Code Mode framework capabilities.
+
+Coder remains available to both roles on Linux. Director scratch engineering uses
+`/work/director`; Researcher coding uses only its block workspace. A shared kernel
+filesystem boundary makes public application code and policy read-only, denies
+peer workspaces and credential files, and applies to native file tools, shell
+commands and descendants. It fails closed without the required Landlock support.
+Scratch output is neither evidence nor a promoted capability; scientific replay,
+validation and admission remain separate typed operations.
+
+`config/runtime.yaml` separates resource budgets:
+
+| Budget | What consumes it |
+| --- | --- |
+| `max_model_requests` | Role provider requests; Researcher allocation also includes live Reasoner requests. |
+| `max_provider_tool_calls` | Framework tool calls, including Code Mode inner tools; failed execution attempts count. |
+| `max_code_mode_executions` | Role-wide `run_code` executions. |
+| `max_code_mode_tool_calls` | Typed calls within one Code Mode snippet. |
+| Block `max_tool_calls` | Local Science/validation/figure operations, separate from framework calls. |
+| Source, sandbox, Reasoner call budgets | Attempted resource operations, including failures. |
+| Jev call and question budgets | Invocation attempts and individual questions, counted separately. |
+| Cycle requests/tools/cost | Aggregate usage across Director, Researcher and live Reasoner. |
+
+Zero-enabled limits are honored without fallback substitution. Optional cost
+limits enforce reported costs; usage records flag incomplete cost reporting.
+Denied work returns a non-retryable handoff directive before side effects;
+inspection and deterministic finalization remain available. Hard SDK limits may
+end the agent run, after which Python still records its outcome and partial dossier.
