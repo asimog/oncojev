@@ -284,6 +284,66 @@ def test_semantic_method_tools_keep_routes_uncertainty_and_replayable_lineage(tm
     store.close()
 
 
+def test_representation_input_gates_precede_semantic_sufficiency_and_preserve_alternatives(tmp_path):
+    """Actual Researcher tool/policy: optimistic semantic answers cannot grant missing inputs."""
+    import json
+    from src.persistence.store import SqliteResearchStore
+    from src.persistence.repository import ResearchRepository
+    from src.persistence.records import RecordKind
+    from src.sources.models import AcquisitionRecord, CoverageContract
+    store = SqliteResearchStore(tmp_path / 'representation.sqlite3')
+    manager = BlockManager(); block = manager.create('representation alternatives', 'test', ResourceAllocation(seconds=300))
+    runtime = HarnessRuntime(manager=manager, jev=DeterministicJevClient(), science=ScienceExecutor(),
+        reasoner=DeterministicReasoner(), repository=ResearchRepository(store), max_jev_calls=20, max_jev_questions=100, max_reasoner_calls=1)
+    runtime.repository.record_block(block)
+    paired = AcquisitionRecord(source='public-table', request={}, provenance=('retained-fixture',), records=(
+        {'person':'a', 'signal':{'z':1}, 'outcome':2, 'units':{'signal':{'z':'counts'}}},
+        {'person':'b', 'signal':{'z':2}, 'outcome':4, 'units':{'signal':{'z':'counts'}}},
+        {'person':'c', 'signal':{'z':3}, 'outcome':5, 'units':{'signal':{'z':'counts'}}}))
+    files = AcquisitionRecord(source='gdc', request={}, provenance=('retained-fixture',),
+        records=({'id':'controlled', 'access':'controlled', 'data_type':'Gene Expression Quantification'},),
+        coverage=CoverageContract(endpoint='files', returned_rows=1))
+    base = {'estimand':'paired association', 'representation':'paired_data', 'entity_key':'person',
+            'fields':{'x':'signal.z','y':'outcome'}, 'numeric_roles':['x','y'], 'minimum_complete_rows':3}
+    cases = [
+        (paired, {**base, 'units':{'x':'TPM'}}, False, 'unmeasured'),
+        (paired, base, True, 'directly_available'),
+        (paired, {**base, 'fields':{'x':'missing','y':'outcome'}}, False, 'absent_from_inspected_source'),
+        (paired, {**base, 'require_complete_coverage':True}, False, 'unmeasured'),
+        (paired, {**base, 'identities':{'genome_build':'GRCh38'}}, False, 'unmeasured'),
+        (paired.model_copy(update={'acquisition_id':'duplicate-row-fixture','records':(paired.records[0],paired.records[0],paired.records[2])}), base, False, 'unmeasured'),
+        (files, {'estimand':'gene expression contrast','representation':'expression_matrix'}, False, 'controlled_inaccessible'),
+        (files, {'estimand':'file metadata','representation':'metadata','fields':{'id':'id'}}, True, 'directly_available'),
+    ]
+    for record, _, _, _ in cases:
+        runtime.retain_acquisition(block.block_id, record)
+    code = []
+    for number, (record, need, eligible, availability) in enumerate(cases):
+        code.append(f'r{number} = await assess_representation(acquisition_id="{record.acquisition_id}", need={need!r})')
+        code.append(f'assert r{number}["eligible"] == {eligible!r}, "schema incompatibility cannot be overridden by semantics"')
+        code.append(f'assert r{number}["checks"]["eligible"] == {eligible!r}')
+        code.append(f'assert r{number}["checks"]["availability"] == "{availability}"')
+        if not eligible:
+            code.append(f'assert r{number}["frontier"]["action"] == "defer"')
+    results = []
+    async def model(messages, info):
+        if not any(isinstance(m, ModelResponse) for m in messages):
+            return ModelResponse(parts=[ToolCallPart('run_code', {'code':'\n'.join(code)}, tool_call_id='representations')])
+        results.extend(str(p.content) for m in messages for p in m.parts if hasattr(p,'content'))
+        return ModelResponse(parts=[TextPart('reviewed')])
+    agent = create_agents('test','test').researcher
+    with agent.override(model=scripted(model)):
+        agent.run_sync('assess actual retained alternatives', deps=ResearcherDeps(runtime, block.block_id))
+    assert not any('AssertionError' in value or 'Runtime error' in value or 'Exception:' in value or 'Type error' in value for value in results), results
+    calls = store.records(kind=RecordKind.JEV_CALL)
+    completed = [r for r in calls if r.payload['outcome']=='completed']
+    assert len(completed) == len(cases)
+    assert all(r.payload['projection']['payload']['checks']['unmet_requirements'] for r in completed
+               if not r.payload['projection']['payload']['checks']['eligible'])
+    assert not store.records(kind=RecordKind.EVIDENCE)
+    store.close()
+
+
 def test_oncolab_continuation_recovers_zero_overlap_candidates_and_rejects_stale_cursor():
     from src.oncolab.registry import OncoLabIndex
     original=initial_oncolab_index()

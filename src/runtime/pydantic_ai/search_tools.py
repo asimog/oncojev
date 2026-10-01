@@ -101,12 +101,11 @@ def register_local_semantic_tools(agent):
     async def assess_representation(ctx: RunContext[Any], acquisition_id: str, need: dict[str, Any]) -> dict[str, Any]:
         """Measure sufficiency over an actually owned acquisition's bounded summary."""
         runtime=ctx.deps.runtime; record=runtime.resolve_acquisition(ctx.deps.block_id,acquisition_id)
-        fields=sorted({k for row in record.records for k in row})
-        representation={"acquisition_id":acquisition_id,"source":record.source,"content_sha256":record.content_sha256,
-            "fields":fields[:40],"omitted_fields":max(0,len(fields)-40),"rows":len(record.records),
-            "limitations":["Stored response slice; population completeness unknown."],
-            "available_counts":{k:sum(row.get(k) is not None for row in record.records) for k in fields[:40]}}
-        return await measure_async(runtime,ctx.deps.block_id,"representation",acquisition_id,{"need":need,"representation":representation},eligible=bool(record.records),escalate=True)
+        from src.sources.representation import RepresentationNeed, assess_retained_representation
+        checks = assess_retained_representation(record, RepresentationNeed.model_validate(need))
+        result = await measure_async(runtime,ctx.deps.block_id,"representation",acquisition_id,
+            {"need":need,"representation":checks["representation"],"checks":checks},eligible=checks["eligible"],escalate=True)
+        return {**result, "checks": checks}
 
     @agent.tool
     async def assess_hypothesis(ctx: RunContext[Any], hypothesis: str, proposed_test: str) -> dict[str, Any]:

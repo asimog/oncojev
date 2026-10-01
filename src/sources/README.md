@@ -26,3 +26,8 @@ and one 51,100-byte anonymous example were checked on 2026-10-01; this does not
 establish accessibility of all examples or scientific utility.
 
 Data-asset discovery and external source expansion belong to the [active plan](../../docs/IMPLEMENTATION_PLAN.md) (H6-H8).
+
+`representation.py` checks a bounded declared need against retained row schemas,
+entity identities, explicit source units/build facts and coverage. Metadata listings
+remain metadata. Missing, incompatible and unmeasured prerequisites defer semantic
+eligibility; no assay matrix, join, transformation or independence is inferred.
