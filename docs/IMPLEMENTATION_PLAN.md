@@ -12,7 +12,7 @@ Semantic search and measurement are the core mechanism to deliver and evaluate. 
 
 GDC, Xena, literature and future sources are interchangeable capability adapters selected for a research need. Their integration tests verify adapters; they do not define the system's mission or require every investigation to use the same source, modality or statistical method. Source-specific repairs must not become prerequisites for the provider-independent semantic core.
 
-The original phases below record delivered scaffolding. Their historical **DONE** labels do not certify the stronger completeness, scientific utility, or live-path claims challenged by the engineering audit. The verified follow-up plan in section 10 is authoritative for outstanding work. F0 and F1 are implemented; F2 and later follow-ups remain planned.
+The original phases below record delivered scaffolding. Their historical **DONE** labels do not certify the stronger completeness, scientific utility, or live-path claims challenged by the engineering audit. The verified follow-up plan in section 10 is authoritative for outstanding work. F0–F2 are implemented; F3–F6 remain planned.
 
 ## 1. Architecture, upstream, and tracking
 
@@ -142,7 +142,7 @@ The original phases below record delivered scaffolding. Their historical **DONE*
 
 ## 10. Verified engineering-audit follow-up — 2026-10-01
 
-**Status:** IN PROGRESS; F0 and F1 implemented, F2 and later follow-ups remain planned.
+**Status:** IN PROGRESS; F0–F2 implemented, F3–F6 remain planned.
 
 **Baseline:** commit `1f2e999a3e23e88da4ece1defce1f09429005120`; checkout was clean before this documentation change. Input: the supplied “OncoJev — Engineering Audit” and four-block findings. Verification used current application paths, configuration, relevant tests, reference documents, installed dependency source, the committed snapshot generator/view, and read-only local SQLite records. No `.upstream/` repositories were searched or executed. No new live/provider calls were made.
 
@@ -282,7 +282,7 @@ The zero-source regression was separately reproduced against the HEAD factory: c
 
 #### F2 — P1: replayable provenance, registry receipts and telemetry
 
-**Status:** PLANNED. **Dependencies:** F0–F1. **Class:** persistence/observability; no new scientific method.
+**Status:** DONE (2026-10-01). **Dependencies:** F0–F1. **Class:** persistence/observability; no new scientific method.
 
 **Minimum milestone for F3/F6:** bounded provenance-bearing projections, resolvable references for available research context, native decisions and question definitions/exclusions, call/question budgets, failure/frontier receipts, and retained candidate identities. Historical artifact packaging and full external-software replay enhancements continue as separate F2 batches; they do not delay semantic search over already valid inputs.
 
@@ -301,6 +301,14 @@ The zero-source regression was separately reproduced against the HEAD factory: c
 **Acceptance/tests:** persistence restart reconstructs exact source input and sandbox replay request; verifier detects orphan/unresolved typed refs; new Index search has a durable receipt; duplicate loads do not duplicate verification; provided values stay provided in a bounded projection; SDK-construction failure has an operational receipt and no frontier judgment; two-question batch consumes two questions and one call. Extend persistence/boundary/live-mode tests at owning boundaries.
 
 **Checks:** focused persistence/boundary/live-mode tests and architecture checker including new verification integrity checks. Update CAPABILITIES/JEV/proven record semantics.
+
+**Delivery:** Exact acquisition and literature records are stored before use; Science resolves block-owned acquisitions, and reconstruction exposes retained inputs plus unresolved legacy references. Stable content identity excludes acquisition/run UUIDs. Sandbox requests, inputs, outputs, commands, validator version and immutable commit/image identity survive restart, with explicit independent replay and no automatic resumption. Factory composition loads validated bundled and durable scoped verification receipts idempotently. The orphan Pearson record now identifies `stat.scipy` and its specific historical invocation; bundled records resolve the tracked redacted ledger artifact by SHA-256 and disclose unavailable historical inputs. Exploratory figures and supplied-array statistics do not establish verified science or capability promotion.
+
+Index search/describe/selection receipts include actor, limits, catalogue identities and mission/cycle/block scope; Researcher searches obey configuration. Invocation reconstruction derives from the canonical ledger. Source attempts, successes, failures and reported bytes remain separate. Version-2 Jev projections retain origins, acquisition summaries, measurement/evidence references and limitations under item/byte bounds. Version-2 questions deliver full definitions and exclusions to the native SDK. Calls retain IDs, specifications, hashes, requested/resolved models, timing, native distributions and reported usage; construction/decoding failures remain operational. Duplicate IDs are rejected before dispatch. Candidate history retains summaries, distributions and `candidate-frontier-v1` rationale without scientific-negative inference.
+
+**Verification:** `.\.venv\Scripts\python.exe -m pytest tests/invariants/test_persistence.py tests/invariants/test_boundaries.py tests/invariants/test_live_mode.py` passed 70 tests. `.\.venv\Scripts\python.exe -m pytest` passed 83 tests. Both reported one existing `pydantic_graph` event-loop deprecation warning. `.\.venv\Scripts\python.exe scripts/check_architecture.py` and `git diff --check` passed. Against the pushed baseline, the restart regression failed because exact acquired inputs were absent; duplicate question IDs collapsed into one provider specification while producing two decisions. Current regressions exercise actual Code Mode, SQLite reopen and native SDK construction/decoding boundaries, including failed attempts and unknown retry metadata. Publication checks compare staged and working artifact SHA-256 values; the exporter emits UTF-8 LF bytes and `.gitattributes` preserves LF on checkout. After this portability correction, the capability-index integrity regression passed (1 test), and architecture/staged diff checks passed again.
+
+**Scope and limits:** F0/F1 plus preserved telemetry were committed and pushed first as `dc0b74a6781ae9c62c3b59baf78c09226f585e06`; remote `main` was verified at that SHA. F2 implementation and verification are recorded in the subsequent provenance/telemetry delivery commit. Director Coder and `/work/director` scratch authority are preserved. No new scientific methods, live provider calls, historical database writes, local dependency changes, UI work or `.upstream` inspection. Sandbox command/replay routing is tested with controlled CLI responses; this is not a new live external-software utility claim. Installation dependencies are not independently locked: their uncertainty is recorded, and independent replay rejects changed output. Missing historical acquisition/measurement/SVG bytes remain missing. Research memory retrieval and downstream semantic utility remain F3/F6 work.
 
 #### F3 — P1: typed cross-cycle memory and start packets
 

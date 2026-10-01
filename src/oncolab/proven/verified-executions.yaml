@@ -1,21 +1,28 @@
 records:
   - capability_id: source.gdc
     verification_id: initial-live-validation-2026-09-30
-    execution_reference: var/phase3-live/stdout-2.json
+    execution_reference: &live_ledger
+      kind: file
+      value: src/oncolab/proven/artifacts/initial-live-validation-2026-09-30.json
+      sha256: 02c2f546f1f7f682b64af4a30f7fe84d5382ff21c77d59cdd680657c237442b3
+    execution_scope: Anonymous GDC wrapper returned two bounded metadata slices; exact acquisitions are unavailable.
     source_reference: .upstream/INDEX.md
-    evidence: [public typed AcquisitionRecord, live OpenRouter block ledger]
+    evidence: [redacted recorded CapabilityResult events; exact inputs unavailable]
   - capability_id: literature.public
     verification_id: initial-live-validation-2026-09-30
-    execution_reference: var/phase3-live/stdout-2.json
+    execution_reference: *live_ledger
+    execution_scope: Public literature wrapper returned four metadata records; exact records are unavailable.
     source_reference: .upstream/INDEX.md
-    evidence: [typed LiteratureSearchResult, live OpenRouter block ledger]
-  - capability_id: science.scipy.pearsonr
+    evidence: [redacted recorded CapabilityResult event; exact context unavailable]
+  - capability_id: stat.scipy
     verification_id: initial-live-validation-2026-09-30
-    execution_reference: tcga-sitecount-vs-cases
+    execution_reference: *live_ledger
+    execution_scope: Recorded pearson_correlation invocation tcga-sitecount-vs-cases only; numeric inputs and measurement absent; scientific validity unverified.
     source_reference: .upstream/INDEX.md
-    evidence: [MeasuredResult, explicit ScientificEvidence admission]
+    evidence: [redacted ScienceMeasurement and EvidenceAdmission events; no independent admission proof]
   - capability_id: visualization.scientific
     verification_id: initial-live-validation-2026-09-30
-    execution_reference: a9e96174-8d7f-49c1-a95c-8fa7edd651db
+    execution_reference: *live_ledger
+    execution_scope: Recorded exploratory FigureArtifact creation only; SVG bytes and measured input linkage unavailable.
     source_reference: .upstream/INDEX.md
-    evidence: [matplotlib FigureArtifact]
+    evidence: [redacted artifact identity and original SVG hash; not verified science]

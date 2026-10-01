@@ -108,7 +108,7 @@ class AutonomousService:
 
     def run_once(self, direction: str = DEFAULT_DIRECTION) -> CycleResult:
         recover_interrupted_blocks(self.repository)
-        system = build_system(self.models, self.policy)
+        system = build_system(self.models, self.policy, repository=self.repository)
         return run_cycle(system, direction, repository=self.repository, mission_id=f"mission-{self.store.count() + 1}")
 
     def serve(self, host: str, port: int, direction: str, interval_seconds: int) -> None:

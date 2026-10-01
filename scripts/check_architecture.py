@@ -56,6 +56,14 @@ def main() -> None:
         raise SystemExit(f"missing architecture records: {missing}")
     if (ROOT / "registries").exists():
         raise SystemExit("capability records must live under src/oncolab, not registries/")
+    from src.oncolab.catalogue import initial_oncolab_index
+    # Loading validates catalogue identities, portable file references and bytes.
+    index = initial_oncolab_index()
+    for kind in index.list_kinds():
+        for descriptor in index.search(kinds=(kind,), limit=20):
+            for record in index.verification_records(descriptor.capability_id):
+                if record.execution_reference.kind != "file":
+                    raise SystemExit("bundled verification must be portable")
     print("architecture checks passed")
 
 

@@ -16,3 +16,11 @@ evidence.
 
 Jev descriptors remain distinct from local `JevQuestionSpec`s. A reusable Jev
 capability requires reproducible evaluation evidence.
+
+Verification records use typed, integrity-bound execution references and a declared
+scope/outcome. Bundled artifacts must live under `proven/artifacts/`; durable record
+references also identify their owning block. Factory composition loads resolvable
+durable receipts alongside bundles and deduplicates verification identities.
+Historical artifacts explicitly disclose missing inputs. Execution observation,
+validated measurement and exploratory artifact creation do not promote a family
+or a local method into reusable capability.

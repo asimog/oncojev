@@ -14,7 +14,7 @@ from src.config.models import RuntimeMode
 from src.dossier.builder import build_dossier
 from src.dossier.models import JevBlockDossier
 from src.persistence.repository import ResearchRepository
-from src.runtime.pydantic_ai.factory import ConfiguredSystem
+from src.runtime.pydantic_ai.factory import ConfiguredSystem, bind_repository
 from src.runtime.pydantic_ai.contracts import DirectorDeps, ResearcherDeps, is_director_truncation
 
 
@@ -57,7 +57,7 @@ def run_cycle(
     manager = system.runtime.manager
     mission_id = mission_id or f"mission-{uuid4()}"
     cycle_id = f"cycle-{uuid4()}"
-    system.runtime.repository = repository
+    bind_repository(system.runtime, repository)
     system.runtime.mission_id = mission_id
     system.runtime.cycle_id = cycle_id
     before = {block.block_id for block in manager.blocks()}

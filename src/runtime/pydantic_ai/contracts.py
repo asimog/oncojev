@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 from decimal import Decimal
+from uuid import uuid4
+from time import perf_counter
 from pydantic_ai.usage import RunUsage, UsageLimits
 
 from pydantic_ai import Agent, RunContext
@@ -16,14 +18,15 @@ from pydantic_ai.exceptions import IncompleteToolCall, UsageLimitExceeded
 from src.block.manager import BlockManager
 from src.block.models import BlockStatus
 from src.oncolab.catalogue import initial_oncolab_index
-from src.oncolab.registry import OncoLabIndex, OncoLabVerificationRecord
+from src.oncolab.registry import OncoLabIndex, OncoLabVerificationRecord, IndexReceipt
+from src.provenance import ExecutionReference, content_hash
 from src.oncolab.models import OncoLabKind
 from src.director.models import ResourceAllocation
 from src.evidence.models import ScientificEvidence
 from src.jev.client import JevClient
 from src.jev.failure import JevOperationalFailure
 from src.jev.frontier import FrontierPolicy
-from src.jev.models import JevDecision, JevQuestionSpec
+from src.jev.models import JevDecision, JevQuestionSpec, JevCallReceipt, JevExecutionFailure, JevFailureCategory
 from src.ledger.events import LedgerEvent
 from src.reasoner.service import ReasonerService
 from src.science.admission import admit_scientific_evidence
@@ -67,6 +70,8 @@ class HarnessRuntime:
     max_provider_tool_calls: int = 500
     max_code_mode_executions: int = 100
     max_jev_questions: int = 200
+    projection_max_items: int = 20
+    projection_max_payload_bytes: int = 65536
     director_request_limit: int = 50
     director_tool_limit: int = 100
     director_code_limit: int = 30
@@ -92,6 +97,8 @@ class HarnessRuntime:
     artifacts: dict[str, dict[str, FigureArtifact]] = field(default_factory=dict)
     jev_history: dict[str, list[JevDecision]] = field(default_factory=dict)
     acquisitions: dict[str, AcquisitionRecord] = field(default_factory=dict)
+    acquisition_owners: dict[str, str] = field(default_factory=dict)
+    sandbox_owners: dict[str, str] = field(default_factory=dict)
     research_state: ResearchStateStore = field(default_factory=ResearchStateStore)
     skills: BlockSkillStore = field(default_factory=BlockSkillStore)
     sandbox: DockerScientificSandbox = field(default_factory=DockerScientificSandbox)
@@ -182,6 +189,48 @@ class HarnessRuntime:
             self.repository.record_state_revision(saved)
         return saved
 
+    def retain_acquisition(self, block_id, record):
+        owner = self.acquisition_owners.get(record.acquisition_id)
+        if owner is not None and owner != block_id:
+            raise ValueError("acquisition is owned by another block")
+        if self.repository is not None:
+            self.repository.record_acquisition(block_id, record)
+        self.acquisitions[record.acquisition_id] = record.model_copy(deep=True)
+        self.acquisition_owners[record.acquisition_id] = block_id
+
+    def resolve_acquisition(self, block_id, acquisition_id):
+        if self.repository is not None:
+            # Explicit fixture inputs are registered before use; production
+            # acquisitions have already been persisted at the acquisition tool.
+            if acquisition_id in self.acquisitions and acquisition_id not in self.acquisition_owners:
+                self.retain_acquisition(block_id, self.acquisitions[acquisition_id])
+            return self.repository.resolve_acquisition(block_id, acquisition_id)
+        record = self.acquisitions[acquisition_id]
+        self.retain_acquisition(block_id, record)
+        return self.acquisitions[acquisition_id].model_copy(deep=True)
+
+    def verification(self, block_id, capability_id, record_id, kind, value, scope, outcome="execution_observed"):
+        record = OncoLabVerificationRecord(capability_id=capability_id, verification_id=f"{block_id}:{record_id}",
+            execution_reference=ExecutionReference(kind=kind, value=record_id, block_id=block_id,
+                                                   sha256=content_hash(value.model_dump(mode="json"))),
+            execution_scope=scope, outcome=outcome, source_reference="runtime typed execution",
+            evidence=(kind, record_id))
+        if self.repository is not None:
+            self.repository.record_verification(record)
+        self.oncolab.record_verification(record)
+
+    def index_receipt(self, actor, operation, *, block_id=None, **detail):
+        selected = detail.get("selected_id")
+        if selected is not None and self.oncolab.describe(selected) is None:
+            raise ValueError("selected capability is not in the catalogue")
+        receipt = IndexReceipt(actor=actor, operation=operation, block_id=block_id,
+                               mission_id=self.mission_id, cycle_id=self.cycle_id, **detail)
+        if self.repository is not None:
+            self.repository.record_index_receipt(receipt)
+        if block_id is not None:
+            self.append_event(block_id, "IndexReceipt", receipt.model_dump(mode="json"))
+        return receipt
+
     def start_researcher(self, block_id: str, launched_by: str) -> None:
         if any(event.event_type == "ResearcherRunStarted" for event in self.manager.ledger(block_id).history()):
             self.append_event(block_id, "ResearcherLaunchRejected", {"reason": "no_retry_contract"})
@@ -221,12 +270,18 @@ def register_director_tools(
     ) -> list[dict[str, Any]]:
         """Search bounded capability planning metadata; this never executes science."""
         matches = ctx.deps.runtime.oncolab.search(query, kinds=kinds, tags=tags, limit=min(limit, ctx.deps.runtime.oncolab_search_k))
+        ctx.deps.runtime.index_receipt("director", "search", query=query, kinds=tuple(kinds), tags=tuple(tags),
+                                      requested_limit=limit, effective_limit=min(limit, ctx.deps.runtime.oncolab_search_k),
+                                      returned_ids=tuple(m.capability_id for m in matches))
         return [match.model_dump(mode="json") for match in matches]
 
     @agent.tool
     async def describe_oncolab(ctx: RunContext[DirectorDeps], capability_id: str) -> dict[str, Any] | None:
         """Describe one capability and bounded verification history; neither grants execution authority."""
-        return ctx.deps.runtime.oncolab.describe_with_verification(capability_id)
+        result = ctx.deps.runtime.oncolab.describe_with_verification(capability_id)
+        ctx.deps.runtime.index_receipt("director", "describe", requested_id=capability_id,
+                                      returned_ids=(capability_id,) if result else ())
+        return result
 
     @agent.tool
     async def allocate_block(
@@ -310,6 +365,20 @@ def register_researcher_tools(
         except KeyError: return ctx.deps.runtime.research_state.start(ctx.deps.block_id, block_for(ctx).objective)
     def save(ctx: RunContext[ResearcherDeps], value): return ctx.deps.runtime.persist_state(value)
 
+    def invocation(ctx, capability_id, **detail):
+        call_id = str(uuid4())
+        ctx.deps.runtime.index_receipt("researcher", "execute", block_id=ctx.deps.block_id, selected_id=capability_id)
+        append(ctx, "CapabilityInvocation", {"invocation_id": call_id, "capability_id": capability_id, **detail})
+        return call_id
+
+    def failure(ctx, call_id, capability_id, error):
+        response = getattr(error, "response", None)
+        detail = {"invocation_id": call_id, "capability_id": capability_id, "error_type": type(error).__name__,
+                  "response_bytes": len(response.content) if response is not None else None}
+        append(ctx, "CapabilityFailure", detail)
+        save(ctx, state(ctx).append("uncertainties", StateFragment(fragment_id=call_id, kind="operational_failure",
+            summary=f"{capability_id} failed; this is not biological absence.", provenance=(call_id, capability_id), details=detail)))
+
     @agent.tool
     async def load_research_skills(ctx: RunContext[ResearcherDeps], need: str, limit: int = 3) -> list[dict[str, Any]]:
         """Select short procedural skills for this block only; prior Researcher runs are never reused."""
@@ -333,13 +402,21 @@ def register_researcher_tools(
         ctx: RunContext[ResearcherDeps], query: str = "", kinds: list[OncoLabKind] = [], tags: list[str] = [], limit: int = 8
     ) -> list[dict[str, Any]]:
         """Search the same bounded global index for local block planning; this never executes a result."""
-        matches = ctx.deps.runtime.oncolab.search(query, kinds=kinds, tags=tags, limit=limit)
+        runtime = ctx.deps.runtime
+        effective = min(limit, runtime.oncolab_search_k)
+        matches = runtime.oncolab.search(query, kinds=kinds, tags=tags, limit=effective)
+        runtime.index_receipt("researcher", "search", block_id=ctx.deps.block_id, query=query, kinds=tuple(kinds),
+                              tags=tuple(tags), requested_limit=limit, effective_limit=effective,
+                              returned_ids=tuple(m.capability_id for m in matches))
         return [match.model_dump(mode="json") for match in matches]
 
     @agent.tool
     async def describe_oncolab(ctx: RunContext[ResearcherDeps], capability_id: str) -> dict[str, Any] | None:
         """Describe one global capability and its verification history before choosing a typed wrapper."""
-        return ctx.deps.runtime.oncolab.describe_with_verification(capability_id)
+        result = ctx.deps.runtime.oncolab.describe_with_verification(capability_id)
+        ctx.deps.runtime.index_receipt("researcher", "describe", block_id=ctx.deps.block_id, requested_id=capability_id,
+                                      returned_ids=(capability_id,) if result else ())
+        return result
 
     @agent.tool
     async def acquire_gdc(
@@ -348,15 +425,18 @@ def register_researcher_tools(
         """Acquire bounded anonymous GDC metadata. Tokens and controlled access are impossible here."""
         runtime = ctx.deps.runtime
         runtime.claim(ctx.deps.block_id, "source", runtime.max_source_calls)
-        append(ctx, "CapabilityInvocation", {"capability_id": "source.gdc", "endpoint": endpoint})
+        call_id = invocation(ctx, "source.gdc", endpoint=endpoint)
         try:
             record = await runtime.gdc.search(endpoint, filters, tuple(fields), size)
         except Exception as error:
-            append(ctx, "CapabilityFailure", {"capability_id": "source.gdc", "error_type": type(error).__name__})
+            failure(ctx, call_id, "source.gdc", error)
             raise
-        append(ctx, "CapabilityResult", {"capability_id": "source.gdc", "acquisition_id": record.acquisition_id, "records": len(record.records)})
-        runtime.acquisitions[record.acquisition_id] = record
-        save(ctx, state(ctx).append("acquisitions", StateFragment(fragment_id=record.acquisition_id, kind="gdc", summary=f"{endpoint}: {len(record.records)} public records", provenance=record.provenance)))
+        runtime.retain_acquisition(ctx.deps.block_id, record)
+        append(ctx, "CapabilityResult", {"invocation_id": call_id, "capability_id": "source.gdc", "acquisition_id": record.acquisition_id, "records": len(record.records), "response_bytes": record.response_bytes})
+        runtime.verification(ctx.deps.block_id, "source.gdc", record.acquisition_id, "acquisition", record, f"Anonymous {endpoint} retrieval; bounded response slice only.")
+        save(ctx, state(ctx).append("acquisitions", StateFragment(fragment_id=record.acquisition_id, kind="gdc", summary=f"{endpoint}: {len(record.records)} public records", provenance=record.provenance,
+            details={"source": record.source, "content_sha256": record.content_sha256, "request_sha256": content_hash(record.request),
+                     "record_count": len(record.records), "coverage": "unknown", "source_refs": [record.acquisition_id]})))
         return record.model_dump(mode="json")
 
     @agent.tool
@@ -364,15 +444,18 @@ def register_researcher_tools(
         """Search the anonymous UCSC Xena dataset catalogue when a block needs that source."""
         runtime = ctx.deps.runtime
         runtime.claim(ctx.deps.block_id, "source", runtime.max_source_calls)
-        append(ctx, "CapabilityInvocation", {"capability_id": "source.ucsc-xena", "query": query})
+        call_id = invocation(ctx, "source.ucsc-xena", query=query)
         try:
             record = await runtime.xena.search_datasets(query, limit)
         except Exception as error:
-            append(ctx, "CapabilityFailure", {"capability_id": "source.ucsc-xena", "error_type": type(error).__name__})
+            failure(ctx, call_id, "source.ucsc-xena", error)
             raise
-        append(ctx, "CapabilityResult", {"capability_id": "source.ucsc-xena", "acquisition_id": record.acquisition_id, "records": len(record.records)})
-        runtime.acquisitions[record.acquisition_id] = record
-        save(ctx, state(ctx).append("acquisitions", StateFragment(fragment_id=record.acquisition_id, kind="xena", summary=f"dataset search: {len(record.records)} records", provenance=record.provenance)))
+        runtime.retain_acquisition(ctx.deps.block_id, record)
+        append(ctx, "CapabilityResult", {"invocation_id": call_id, "capability_id": "source.ucsc-xena", "acquisition_id": record.acquisition_id, "records": len(record.records), "response_bytes": record.response_bytes})
+        runtime.verification(ctx.deps.block_id, "source.ucsc-xena", record.acquisition_id, "acquisition", record, "Public dataset catalogue lookup; not genomic data measurement.")
+        save(ctx, state(ctx).append("acquisitions", StateFragment(fragment_id=record.acquisition_id, kind="xena", summary=f"dataset search: {len(record.records)} records", provenance=record.provenance,
+            details={"source": record.source, "content_sha256": record.content_sha256, "record_count": len(record.records),
+                     "coverage": "unknown", "source_refs": [record.acquisition_id]})))
         return record.model_dump(mode="json")
 
     @agent.tool
@@ -380,14 +463,19 @@ def register_researcher_tools(
         """Retrieve public literature metadata; it is source context, not evidence."""
         runtime = ctx.deps.runtime
         runtime.claim(ctx.deps.block_id, "source", runtime.max_source_calls)
-        append(ctx, "CapabilityInvocation", {"capability_id": "literature.public", "query": query})
+        call_id = invocation(ctx, "literature.public", query=query)
         try:
             result = await runtime.literature.search(query, limit)
         except Exception as error:
-            append(ctx, "CapabilityFailure", {"capability_id": "literature.public", "error_type": type(error).__name__})
+            failure(ctx, call_id, "literature.public", error)
             raise
-        append(ctx, "CapabilityResult", {"capability_id": "literature.public", "records": len(result.records)})
-        save(ctx, state(ctx).append("observations", StateFragment(fragment_id=f"literature-{len(state(ctx).observations)}", kind="literature", summary=f"{len(result.records)} public literature records", provenance=result.provenance)))
+        if runtime.repository is not None:
+            runtime.repository.record_literature(ctx.deps.block_id, result)
+        append(ctx, "CapabilityResult", {"invocation_id": call_id, "capability_id": "literature.public", "context_id": result.context_id, "records": len(result.records), "response_bytes": result.response_bytes})
+        runtime.verification(ctx.deps.block_id, "literature.public", result.context_id, "literature", result, "Public metadata context retrieval; not scientific evidence.")
+        save(ctx, state(ctx).append("observations", StateFragment(fragment_id=result.context_id, kind="literature", summary=f"{len(result.records)} public literature records", provenance=result.provenance,
+            details={"context_id": result.context_id, "content_sha256": result.content_sha256,
+                     "records": [r.model_dump(mode="json") for r in result.records[:5]], "omitted_records": max(0, len(result.records)-5)})))
         return result.model_dump(mode="json")
 
     @agent.tool
@@ -399,15 +487,31 @@ def register_researcher_tools(
         """Acquire public GitHub code only through the credential-free Docker sandbox; no stdout or files are returned."""
         if not why_existing_capabilities_are_inadequate.strip():
             raise ValueError("an explicit inadequacy rationale is required before external acquisition")
-        installed = [item.capability_id for item in ctx.deps.runtime.oncolab.search(capability_need, limit=20) if item.availability.value == "installed"]
+        runtime = ctx.deps.runtime
+        matches = runtime.oncolab.search(capability_need, limit=runtime.oncolab_search_k)
+        runtime.index_receipt("researcher", "search", block_id=ctx.deps.block_id, query=capability_need,
+                              requested_limit=20, effective_limit=runtime.oncolab_search_k,
+                              returned_ids=tuple(m.capability_id for m in matches))
+        installed = [item.capability_id for item in matches if item.availability.value == "installed"]
         if installed:
             raise ValueError(f"existing installed capabilities must be considered first: {installed}")
-        runtime = ctx.deps.runtime
         runtime.claim(ctx.deps.block_id, "sandbox", runtime.max_sandbox_calls)
         request = GithubMethodRequest(repository_url=repository_url, requested_ref=requested_ref, install_command=tuple(install_command), test_command=tuple(test_command), execute_command=tuple(execute_command), input_json=input_json)
-        append(ctx, "GithubAcquisitionStarted", {"repository_url": request.repository_url, "requested_ref": request.requested_ref, "capability_need": capability_need})
-        candidate = runtime.sandbox.acquire_and_execute(request)
-        runtime.sandbox_candidates[candidate.candidate_id] = candidate
+        request_id = str(uuid4())
+        if runtime.repository is not None:
+            runtime.repository.record_immutable(RecordKind.SANDBOX_REQUEST, request_id, request, ctx.deps.block_id)
+        call_id = invocation(ctx, "software.github-scientific", request_id=request_id)
+        append(ctx, "GithubAcquisitionStarted", {"invocation_id": call_id, "request_id": request_id, "request_sha256": content_hash(request.model_dump(mode="json")), "repository_url": request.repository_url, "requested_ref": request.requested_ref, "capability_need": capability_need})
+        try:
+            candidate = runtime.sandbox.acquire_and_execute(request)
+            if runtime.repository is not None:
+                runtime.repository.record_immutable(RecordKind.SANDBOX_CANDIDATE, candidate.candidate_id, candidate, ctx.deps.block_id)
+        except Exception as error:
+            failure(ctx, call_id, "software.github-scientific", error)
+            raise
+        runtime.sandbox_candidates[candidate.candidate_id] = candidate.model_copy(deep=True)
+        runtime.sandbox_owners[candidate.candidate_id] = ctx.deps.block_id
+        append(ctx, "CapabilityResult", {"invocation_id": call_id, "capability_id": "software.github-scientific", "candidate_id": candidate.candidate_id})
         append(ctx, "GithubAcquisitionCompleted", {"candidate_id": candidate.candidate_id, "repository_url": candidate.receipt.repository_url, "commit_sha": candidate.receipt.commit_sha, "input_sha256": candidate.receipt.input_sha256, "output_sha256": candidate.receipt.first_run.stdout_sha256, "exit_status": candidate.receipt.first_run.exit_status})
         return {"candidate_id": candidate.candidate_id, "receipt": candidate.receipt.model_dump(mode="json"), "values": candidate.values}
 
@@ -415,7 +519,16 @@ def register_researcher_tools(
     async def validate_sandbox_measurement(ctx: RunContext[ResearcherDeps], candidate_id: str, analysis_id: str) -> dict[str, Any]:
         """Turn a replay-stable sandbox candidate into a deterministic MeasuredResult; this is not evidence admission."""
         ctx.deps.runtime.claim(ctx.deps.block_id, "tool", ctx.deps.runtime.max_tool_calls)
-        candidate = ctx.deps.runtime.sandbox_candidates[candidate_id]
+        runtime = ctx.deps.runtime
+        if runtime.repository is not None:
+            matches = [r for r in runtime.repository.store.records(kind=RecordKind.SANDBOX_CANDIDATE, block_id=ctx.deps.block_id) if r.record_id == candidate_id]
+            if not matches:
+                raise ValueError("sandbox candidate is not owned by this block")
+            candidate = SandboxMeasurementCandidate.model_validate(matches[-1].payload)
+        else:
+            if runtime.sandbox_owners.get(candidate_id) != ctx.deps.block_id:
+                raise ValueError("sandbox candidate is not owned by this block")
+            candidate = runtime.sandbox_candidates[candidate_id].model_copy(deep=True)
         measurement = validate_sandbox_candidate(candidate, analysis_id)
         ctx.deps.runtime.measurements[(ctx.deps.block_id, analysis_id)] = measurement
         save(ctx, state(ctx).add_measurement(measurement))
@@ -430,12 +543,25 @@ def register_researcher_tools(
     ) -> dict[str, Any]:
         """Run one supported deterministic method and retain its measured result for explicit admission."""
         ctx.deps.runtime.claim(ctx.deps.block_id, "tool", ctx.deps.runtime.max_tool_calls)
-        result = ctx.deps.runtime.science.execute(AnalysisSpec(analysis_id=analysis_id, question=question, population="agent-provided exploratory values", estimand=estimand, method=method, variables=tuple(inputs), inputs=inputs))
+        capability_id = {"independent_t_test": "stat.scipy", "pearson_correlation": "stat.scipy",
+                         "ordinary_least_squares": "stat.statsmodels", "descriptive_summary": "stat.pandas"}.get(method)
+        if capability_id is None:
+            raise ValueError(f"unsupported method: {method}")
+        spec = AnalysisSpec(analysis_id=analysis_id, question=question, population="agent-provided exploratory values", estimand=estimand, method=method, variables=tuple(inputs), inputs=inputs)
+        call_id = invocation(ctx, capability_id, method=method, analysis_id=analysis_id)
+        try:
+            result = ctx.deps.runtime.science.execute(spec)
+        except Exception as error:
+            failure(ctx, call_id, capability_id, error)
+            raise
         ctx.deps.runtime.measurements[(ctx.deps.block_id, analysis_id)] = result
         save(ctx, state(ctx).add_measurement(result))
         if ctx.deps.runtime.repository is not None:
             ctx.deps.runtime.repository.record_measurement(result, ctx.deps.block_id)
         append(ctx, "ScienceMeasurement", {"analysis_id": analysis_id, "method": method})
+        append(ctx, "CapabilityResult", {"invocation_id": call_id, "capability_id": capability_id, "analysis_id": analysis_id, "origin": result.origin})
+        ctx.deps.runtime.verification(ctx.deps.block_id, capability_id, analysis_id, "measurement", result,
+                                     f"Exploratory {method} execution on provided arrays; not source-bound science; input arrays are not retained.")
         return result.model_dump(mode="json")
 
     @agent.tool
@@ -445,13 +571,19 @@ def register_researcher_tools(
         """Measure a stored public acquisition deterministically; this is the source-bound evidence path."""
         runtime = ctx.deps.runtime
         runtime.claim(ctx.deps.block_id, "tool", runtime.max_tool_calls)
-        record = runtime.acquisitions[acquisition_id]
-        result = runtime.science.measure_acquisition(record, analysis_id, numeric_field)
+        record = runtime.resolve_acquisition(ctx.deps.block_id, acquisition_id)
+        call_id = invocation(ctx, "science.acquisition-summary", analysis_id=analysis_id, acquisition_id=acquisition_id, numeric_field=numeric_field)
+        try:
+            result = runtime.science.measure_acquisition(record, analysis_id, numeric_field)
+        except Exception as error:
+            failure(ctx, call_id, "science.acquisition-summary", error)
+            raise
         runtime.measurements[(ctx.deps.block_id, analysis_id)] = result
         save(ctx, state(ctx).add_measurement(result))
         if runtime.repository is not None:
             runtime.repository.record_measurement(result, ctx.deps.block_id)
         append(ctx, "ScienceMeasurement", {"analysis_id": analysis_id, "method": "acquisition_measurement", "acquisition_id": acquisition_id})
+        append(ctx, "CapabilityResult", {"invocation_id": call_id, "capability_id": "science.acquisition-summary", "analysis_id": analysis_id, "origin": result.origin})
         return result.model_dump(mode="json")
 
     @agent.tool
@@ -463,13 +595,9 @@ def register_researcher_tools(
         save(ctx, state(ctx).add_evidence(evidence.evidence_id))
         if ctx.deps.runtime.repository is not None:
             ctx.deps.runtime.repository.record_evidence(evidence, ctx.deps.block_id)
-        if result.origin == "sandbox":
-            capability_id = "software.github-scientific"
-        else:
-            source = result.provenance[1] if len(result.provenance) > 1 else ""
-            capability_id = {"gdc": "source.gdc", "ucsc-xena": "source.ucsc-xena"}.get(source)
-        if capability_id is not None:
-            ctx.deps.runtime.oncolab.record_verification(OncoLabVerificationRecord(capability_id=capability_id, verification_id=evidence.evidence_id, execution_reference=analysis_id, evidence=("MeasuredResult", evidence.evidence_id)))
+        capability_id = "software.github-scientific" if result.origin == "sandbox" else "science.acquisition-summary"
+        ctx.deps.runtime.verification(ctx.deps.block_id, capability_id, analysis_id, "measurement", result,
+                                     f"Validated {result.origin} measurement: {result.provenance}; declared execution only.", "measurement_validated")
         append(ctx, "EvidenceAdmission", {"evidence_id": evidence.evidence_id, "analysis_id": analysis_id})
         return evidence.model_dump(mode="json")
 
@@ -477,12 +605,18 @@ def register_researcher_tools(
     async def create_line_figure(ctx: RunContext[ResearcherDeps], title: str, x: list[float], y: list[float]) -> dict[str, Any]:
         """Create a deterministic SVG FigureArtifact; visual artifacts are never scientific evidence."""
         ctx.deps.runtime.claim(ctx.deps.block_id, "tool", ctx.deps.runtime.max_tool_calls)
-        artifact = line_figure(title, x, y)
+        call_id = invocation(ctx, "visualization.scientific")
+        try:
+            artifact = line_figure(title, x, y)
+        except Exception as error:
+            failure(ctx, call_id, "visualization.scientific", error)
+            raise
         ctx.deps.runtime.artifacts.setdefault(ctx.deps.block_id, {})[artifact.artifact_id] = artifact
         if ctx.deps.runtime.repository is not None:
             ctx.deps.runtime.repository.record_artifact(ctx.deps.block_id, artifact)
-        ctx.deps.runtime.oncolab.record_verification(OncoLabVerificationRecord(capability_id="visualization.scientific", verification_id=artifact.sha256, execution_reference=artifact.artifact_id, evidence=("FigureArtifact", artifact.sha256)))
-        append(ctx, "CapabilityResult", {"capability_id": "visualization.scientific", "artifact_id": artifact.artifact_id, "sha256": artifact.sha256})
+        ctx.deps.runtime.verification(ctx.deps.block_id, "visualization.scientific", artifact.artifact_id, "artifact", artifact,
+                                     "Exploratory SVG rendering from provided arrays; no scientific input validation.", "artifact_created")
+        append(ctx, "CapabilityResult", {"invocation_id": call_id, "capability_id": "visualization.scientific", "artifact_id": artifact.artifact_id, "sha256": artifact.sha256, "epistemic_status": artifact.epistemic_status})
         return artifact.model_dump(mode="json")
 
     @agent.tool
@@ -510,48 +644,85 @@ def register_researcher_tools(
         key = f"{ctx.deps.block_id}:jev_questions"
         runtime._counts[key] = runtime._counts.get(key, 0) + 2
         append(ctx, "ResourceAttempt", {"resource": "jev_questions", "attempt": runtime._counts[key], "limit": runtime.max_jev_questions})
-        questions = (
+        call_id = str(uuid4())
+        started_at = datetime.now(UTC)
+        started = perf_counter()
+        receipt = JevCallReceipt(call_id=call_id, block_id=ctx.deps.block_id, candidate_id=candidate_id,
+            candidate_summary=candidate_summary[:2000], started_at=started_at, duration_ms=0, outcome="started",
+            model_requested=getattr(runtime.jev, "model_requested", "unreported"))
+        if runtime.repository is not None:
+            runtime.repository.record_jev_call(receipt)
+        append(ctx, "JevCallStarted", {"call_id": call_id, "candidate_id": candidate_id, "question_count": 2})
+        questions = ()
+        try:
+            current = state(ctx)
+            if not any(fragment.fragment_id == candidate_id for fragment in current.candidates):
+                current = current.append("candidates", StateFragment(fragment_id=candidate_id, kind="candidate", summary=candidate_summary, provenance=("researcher",)))
+                save(ctx, current)
+            projection = project_state(current, ProjectionSpec(projection_name="candidate", candidate_id=candidate_id,
+                                       max_items=runtime.projection_max_items, max_payload_bytes=runtime.projection_max_payload_bytes))
+            questions = (
             JevQuestionSpec(
                 question_id=f"{candidate_id}-relevance",
                 semantic_purpose="candidate relevance",
                 primitive="noul",
-                projection_id="candidate-v1",
-                instructions="Assess relevance to the active block.",
+                projection_id=projection.projection_id,
+                instructions="Assess whether `candidate` can inform `objective` within the active block using only the bounded state provided.",
                 criteria={
                     "true": "The candidate is relevant to the active block objective and merits local consideration.",
                     "false": "The candidate is unrelated or cannot inform the active block objective.",
                 },
-                question_version="1",
+                question_version="2",
+                known_exclusions=("Relevance is not scientific validity or evidence admission.", "Missing context is unknown, not absence."),
             ),
             JevQuestionSpec(
                 question_id=f"{candidate_id}-action",
                 semantic_purpose="local action",
                 primitive="choice",
-                projection_id="candidate-v1",
-                instructions="Choose a conservative local action.",
-                criteria={"ADVANCE": "continue", "DEFER": "wait", "NONE": "no fit"},
-                question_version="1",
+                projection_id=projection.projection_id,
+                instructions="Select the appropriate local investigation recommendation from the bounded candidate and block context.",
+                criteria={"ADVANCE": "Candidate can inform the objective and an in-scope investigation is actionable with available context.",
+                          "DEFER": "Potentially relevant but missing context, a dependency or uncertainty prevents choosing an actionable investigation now.",
+                          "NONE": "Available context explicitly indicates no fit to this block objective; retain the candidate identity for audit."},
+                question_version="2",
+                known_exclusions=("This is a local recommendation, not action authority or a scientific negative result.",
+                                  "Do not select NONE merely because measured input is missing or a provider failed."),
             ),
-        )
-        current = state(ctx)
-        if not any(fragment.fragment_id == candidate_id for fragment in current.candidates):
-            current = current.append("candidates", StateFragment(fragment_id=candidate_id, kind="candidate", summary=candidate_summary, provenance=("researcher",)))
-            save(ctx, current)
-        projection = project_state(current, ProjectionSpec(projection_name="candidate", candidate_id=candidate_id))
-        questions = tuple(question.model_copy(update={"projection_id": projection.projection_id}) for question in questions)
-        try:
-            decisions = runtime.jev.evaluate(projection.payload, questions)
-        except JevOperationalFailure as error:
-            append(ctx, "JevExecutionFailure", {"question_ids": [failure.question_id for failure in error.failures], "categories": [failure.category.value for failure in error.failures]})
+            )
+            receipt = receipt.model_copy(update={"projection": projection.model_dump(mode="json"),
+                                                 "projection_sha256": projection.payload_sha256, "questions": questions,
+                                                 "question_hashes": tuple(content_hash(q.model_dump(mode="json")) for q in questions)})
             if runtime.repository is not None:
-                runtime.repository.record_jev_failure(ctx.deps.block_id, error.failures)
+                runtime.repository.record_jev_call(receipt)
+            decisions = runtime.jev.evaluate(projection.payload, questions)
+        except Exception as error:
+            failures = error.failures if isinstance(error, JevOperationalFailure) else (
+                JevExecutionFailure(question_id=f"{candidate_id}-batch", category=JevFailureCategory.VALIDATION,
+                                    detail=f"construction:{type(error).__name__}"),)
+            receipt = receipt.model_copy(update={"outcome": "failed", "duration_ms": (perf_counter()-started)*1000,
+                                                 "failures": failures, "decisions": getattr(error, "decisions", ()),
+                                                 "reported_metadata": getattr(error, "metadata", None),
+                                                 "models_resolved": (error.metadata["model_resolved"],) if getattr(error, "metadata", None) else ()})
+            append(ctx, "JevExecutionFailure", {"call_id": call_id, "candidate_id": candidate_id,
+                "question_ids": [f.question_id for f in failures], "categories": [f.category.value for f in failures]})
+            if runtime.repository is not None:
+                runtime.repository.record_jev_call(receipt)
+                runtime.repository.record_jev_failure(ctx.deps.block_id, failures)
             raise
+        receipt = receipt.model_copy(update={"outcome": "completed", "duration_ms": (perf_counter()-started)*1000,
+                                             "decisions": tuple(decisions), "models_resolved": tuple(sorted({d.model_resolved for d in decisions})),
+                                             "reported_metadata": getattr(decisions, "metadata", None)})
         runtime.jev_history.setdefault(ctx.deps.block_id, []).extend(decisions)
         if runtime.repository is not None:
+            runtime.repository.record_jev_call(receipt)
             runtime.repository.record_jev_decisions(ctx.deps.block_id, decisions)
-        frontier = FrontierPolicy().decide(candidate_id, decisions, (candidate_id,))
-        append(ctx, "JevExecution", {"question_ids": [question.question_id for question in questions], "projection_id": projection.projection_id})
-        append(ctx, "FrontierDecision", frontier.model_dump(mode="json"))
+        frontier = FrontierPolicy().decide(candidate_id, decisions, (call_id, projection.projection_id))
+        append(ctx, "JevExecution", {"call_id": call_id, "question_ids": [q.question_id for q in questions], "projection_id": projection.projection_id})
+        append(ctx, "FrontierDecision", {**frontier.model_dump(mode="json"), "call_id": call_id,
+            "candidate_summary": next((f.summary for f in current.candidates if f.fragment_id == candidate_id), candidate_summary),
+            "projection_id": projection.projection_id, "projection_sha256": projection.payload_sha256,
+            "policy_version": receipt.policy_version, "decisions": [d.model_dump(mode="json") for d in decisions],
+            "epistemic_status": "semantic_search_history"})
         return {
             "decisions": [decision.model_dump(mode="json") for decision in decisions],
             "frontier": frontier.model_dump(mode="json"),

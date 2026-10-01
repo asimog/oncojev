@@ -10,4 +10,5 @@ class MeasuredResult(BaseModel, frozen=True):
     origin:Literal["source","sandbox","provided","synthetic"]="provided"
     source_refs:tuple[str,...]=()
     input_sha256:str=Field(min_length=64,max_length=64)
+    limitations:tuple[str,...]=()
     deterministic:Literal[True]=True

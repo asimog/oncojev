@@ -63,6 +63,14 @@ Both roles retain Coder and Code Mode in Linux. The Director uses `/work/directo
 
 Only source-bound acquisition measurements or replay-validated sandbox measurements can be admitted as evidence. Agent-provided arrays and generated code may support exploration but cannot cross the Science admission boundary.
 
+Public acquisitions, literature context and sandbox replay requests/outputs are
+durable before use. Reconstruction resolves block-owned inputs and reports missing
+legacy references. Index and Jev receipts retain provenance, bounded projections,
+native semantic distributions and operational failures. Verification records have
+typed, hashed execution references and declared scope; exploratory plots and
+provided-array statistics remain exploratory. See [capability records](docs/CAPABILITIES.md)
+and [Jev receipts](docs/JEV.md) for the replay and uncertainty contracts.
+
 ## Development
 
 Configured Director, fresh Researcher, and Reasoner agents send Logfire agent,

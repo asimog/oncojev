@@ -516,3 +516,101 @@ def test_deterministic_cycle_persists_blocks_dossiers_and_memory():
     count = store.count()
     assert recover_interrupted_blocks(repository) == ()
     assert store.count() == count
+
+
+def test_restart_resolves_exact_acquisition_input_and_preallocation_index_receipt(tmp_path):
+    import httpx
+    from src.sources.public import GdcPublicSource, PublicLiteratureSource
+
+    database = tmp_path / "inputs.sqlite3"
+    store = SqliteResearchStore(database)
+    repository = ResearchRepository(store)
+    system = cycle_system()
+    runtime = system.runtime
+    runtime.researcher_factory = lambda block_id: system.agents.researcher
+    runtime.oncolab_search_k = 1
+    source_calls = []
+
+    def source(request):
+        source_calls.append(request)
+        return httpx.Response(200, json={"data": {"hits": [{"file_id": "a", "count": 7}]}}) if len(source_calls) == 1 else httpx.Response(503, json={"detail": "unavailable"})
+
+    runtime.gdc = GdcPublicSource(httpx.MockTransport(source))
+    runtime.literature = PublicLiteratureSource(httpx.MockTransport(lambda request: httpx.Response(200, json={"message": {"items": [{"title": ["Public study"], "DOI": "10.1/study"}]}})))
+    director_calls = researcher_calls = 0
+
+    async def director(messages, info):
+        nonlocal director_calls
+        director_calls += 1
+        if director_calls == 1:
+            code = 'await search_oncolab(query="GDC", limit=20)\nblock = await allocate_block(objective="stored input", why_now="test", seconds=60)\nawait launch_researcher(block_id=block["block_id"])'
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": code}, tool_call_id="director")])
+        return ModelResponse(parts=[TextPart("done")])
+
+    async def researcher(messages, info):
+        nonlocal researcher_calls
+        researcher_calls += 1
+        if researcher_calls == 1:
+            code = ('await search_oncolab(query="GDC", limit=20)\n'
+                    'record = await acquire_gdc(endpoint="files", filters={}, fields=["file_id", "count"])\n'
+                    'await measure_acquisition(acquisition_id=record["acquisition_id"], analysis_id="count")\n'
+                    'await admit_measurement(analysis_id="count")\n'
+                    'await search_public_literature(query="public study", limit=1)\n'
+                    'try:\n    await acquire_gdc(endpoint="files", filters={}, fields=["file_id"])\nexcept Exception:\n    pass\n'
+                    'await evaluate_candidate(candidate_id="c", candidate_summary="public metadata signal")\n'
+                    'await complete_block(reason="done")')
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": code}, tool_call_id="researcher")])
+        return ModelResponse(parts=[TextPart("done")])
+
+    with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+        result = run_cycle(system, "direction", repository=repository)
+    block_id = result.block_ids[0]
+    store.close()
+    store = SqliteResearchStore(database)
+    view = reconstruct_block(store, block_id)
+    assert len(view.measurements) == 1
+    source_id = view.measurements[0]["source_refs"][0]
+    stored = getattr(view, "resolved_inputs", {}).get(source_id)
+    assert stored is not None, "restart lost exact acquired scientific input"
+    assert stored["records"] == [{"file_id": "a", "count": 7}]
+    assert stored["request"]["filters"]["content"][-1]["content"]["value"] == ["open"]
+    assert view.measurements[0]["input_sha256"] == stored["content_sha256"]
+    from src.sources.models import AcquisitionRecord
+    copy = AcquisitionRecord.model_validate(stored).model_copy(update={"acquisition_id": "different-run"})
+    assert copy.content_sha256 == stored["content_sha256"]
+    assert not view.unresolved_source_refs
+    assert view.literature[0]["records"][0]["doi"] == "10.1/study"
+    assert view.literature[0]["request"] == {"query": "public study", "rows": 1}
+    usage = view.dossier["resource_usage"]
+    assert usage["source_attempts"] == 3 and usage["source_successes"] == 2 and usage["source_failures"] == 1
+    assert usage["source_byte_reports"] == 3 and usage["source_bytes_reported"] > 0
+    searches = [p for p in view.index_receipts if p["operation"] == "search"]
+    assert {p["actor"] for p in searches} == {"director", "researcher"}
+    assert all(p["effective_limit"] == 1 and len(p["returned_ids"]) == 1 for p in searches)
+    assert next(p for p in searches if p["actor"] == "director")["block_id"] is None
+    assert any(p["selected_id"] == "source.gdc" for p in view.index_receipts)
+    assert view.capability_invocations[0]["status"] == "completed"
+    assert any(p["status"] == "failed" for p in view.capability_invocations)
+    assert view.candidate_history[0]["action"] == "keep_alive"
+    assert view.candidate_history[0]["epistemic_status"] == "semantic_search_history"
+    assert view.jev_calls[0]["question_hashes"] and len(view.jev_calls[0]["questions"]) == 2
+    assert view.jev_calls[0]["projection"]["payload"]["measurements"][0]["origin"] == "source"
+    assert view.jev_calls[0]["projection"]["payload"]["uncertainties"][0]["kind"] == "operational_failure"
+    from src.config.loader import load_models_config, load_runtime_config
+    from src.runtime.pydantic_ai.factory import build_harness_runtime, bind_repository
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    fresh = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, environment={}, repository=ResearchRepository(store))
+    assert fresh.oncolab.verification_records("science.acquisition-summary")
+    count = len(fresh.oncolab.verification_records("source.gdc"))
+    bind_repository(fresh, ResearchRepository(store))
+    assert len(fresh.oncolab.verification_records("source.gdc")) == count
+    assert fresh.manager.blocks() == ()  # Loading receipts never resumes research.
+    with pytest.raises(ValueError, match="owned"):
+        fresh.resolve_acquisition("foreign-block", source_id)
+    from src.provenance import ExecutionReference
+    from src.oncolab.registry import OncoLabVerificationRecord
+    missing = OncoLabVerificationRecord(capability_id="source.gdc", verification_id="missing", execution_scope="test",
+        execution_reference=ExecutionReference(kind="measurement", value="missing", block_id=block_id, sha256="0"*64), evidence=("test",))
+    with pytest.raises(ValueError, match="unresolved measurement"):
+        ResearchRepository(store).record_verification(missing)
+    store.close()

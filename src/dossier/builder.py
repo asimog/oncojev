@@ -57,7 +57,7 @@ def build_dossier(
     resource_usage = {
         "jev_calls": len(_payloads(events, "JevExecution")),
         "reasoner_calls": len(_payloads(events, "ReasonerOutput")),
-        "source_calls": len(_payloads(events, "CapabilityInvocation")),
+        "source_calls": sum(p.get("capability_id") in {"source.gdc", "source.ucsc-xena", "literature.public"} for p in _payloads(events, "CapabilityInvocation")),
         "sandbox_calls": len(_payloads(events, "GithubAcquisitionCompleted")),
         "evidence": len(evidence_ids),
     }
@@ -65,6 +65,14 @@ def build_dossier(
         name = payload.get("resource")
         if isinstance(name, str):
             resource_usage[f"{name}_attempts"] = max(resource_usage.get(f"{name}_attempts", 0), int(payload["attempt"]))
+    sources = {"source.gdc", "source.ucsc-xena", "literature.public"}
+    source_results = [p for p in _payloads(events, "CapabilityResult") if p.get("capability_id") in sources]
+    resource_usage["source_successes"] = len(source_results)
+    source_failures = [p for p in _payloads(events, "CapabilityFailure") if p.get("capability_id") in sources]
+    resource_usage["source_failures"] = len(source_failures)
+    byte_reports = [p["response_bytes"] for p in (*source_results, *source_failures) if p.get("response_bytes") is not None]
+    resource_usage["source_bytes_reported"] = sum(byte_reports)
+    resource_usage["source_byte_reports"] = len(byte_reports)
 
     preferred = next((item for item in within if item), "review unresolved block state")
     preferred_reason = (

@@ -20,10 +20,13 @@ from src.runtime.pydantic_ai.telemetry import configure_agent_telemetry
 from src.runtime.pydantic_ai.reasoner import BudgetedLiveReasoner
 from src.science.execution import ScienceExecutor
 from src.science.sandbox import DockerScientificSandbox, SandboxPolicy
+from src.oncolab.registry import OncoLabVerificationRecord
+from src.persistence.records import RecordKind
+from src.persistence.references import resolve_reference
 from src.sources.public import GdcPublicSource, PublicLiteratureSource, XenaPublicSource
 
 
-def build_jev_client(models: ModelsConfig, mode: RuntimeMode, environment: dict[str, str] | None = None) -> JevClient:
+def build_jev_client(models: ModelsConfig, mode: RuntimeMode, environment: dict[str, str] | None = None, policy=None) -> JevClient:
     """Live TypeSafe only when the mode is live and a credential is actually present."""
     source = environment if environment is not None else os.environ
     if resolve_mode(mode, source) is RuntimeMode.LIVE:
@@ -32,6 +35,8 @@ def build_jev_client(models: ModelsConfig, mode: RuntimeMode, environment: dict[
             model=models.jev.model,
             http2=models.jev.http2,
             base_url=models.jev.api_base,
+            max_questions=policy.jev.max_questions_per_call if policy is not None else 100,
+            max_payload_bytes=policy.jev.max_payload_bytes if policy is not None else 131072,
         )
     return DeterministicJevClient()
 
@@ -52,20 +57,31 @@ class ConfiguredSystem:
     mode: RuntimeMode
 
 
+def bind_repository(runtime: HarnessRuntime, repository) -> None:
+    """Seed the shared Index from resolvable durable receipts, without resuming work."""
+    runtime.repository = repository
+    if repository is not None:
+        for saved in repository.store.records(kind=RecordKind.VERIFICATION):
+            record = OncoLabVerificationRecord.model_validate(saved.payload)
+            resolve_reference(repository.store, record.execution_reference)
+            runtime.oncolab.record_verification(record)
+
+
 def build_harness_runtime(
     models: ModelsConfig,
     policy: RuntimeConfig,
     *,
     manager: BlockManager | None = None,
     environment: dict[str, str] | None = None,
+    repository=None,
 ) -> HarnessRuntime:
     source = environment if environment is not None else os.environ
     mode = resolve_mode(policy.mode, source)
     manager = manager or BlockManager()
     manager.policy = policy.block
-    return HarnessRuntime(
+    runtime = HarnessRuntime(
         manager=manager,
-        jev=build_jev_client(models, mode, source),
+        jev=build_jev_client(models, mode, source, policy),
         science=ScienceExecutor(),
         reasoner=build_reasoner(models, mode, source),
         max_tool_calls=policy.block.max_tool_calls,
@@ -73,6 +89,8 @@ def build_harness_runtime(
         max_provider_tool_calls=policy.block.max_provider_tool_calls,
         max_code_mode_executions=policy.block.max_code_mode_executions,
         max_jev_questions=policy.block.max_jev_questions,
+        projection_max_items=policy.jev.projection_max_items,
+        projection_max_payload_bytes=policy.jev.projection_max_payload_bytes,
         director_request_limit=policy.director.max_model_requests,
         director_tool_limit=policy.director.max_provider_tool_calls,
         director_code_limit=policy.director.max_code_mode_executions,
@@ -93,6 +111,8 @@ def build_harness_runtime(
         xena=XenaPublicSource(max_download_bytes=policy.block.max_download_bytes),
         literature=PublicLiteratureSource(max_download_bytes=policy.block.max_download_bytes),
     )
+    bind_repository(runtime, repository)
+    return runtime
 
 
 def build_system(
@@ -102,6 +122,7 @@ def build_system(
     max_tool_calls: int | None = None,
     manager: BlockManager | None = None,
     environment: dict[str, str] | None = None,
+    repository=None,
 ) -> ConfiguredSystem:
     """Wire the autonomous live system; offline fixtures are constructed explicitly in tests."""
     if policy.mode is not RuntimeMode.LIVE:
@@ -113,6 +134,6 @@ def build_system(
         director_code = min(director_code, max_tool_calls)
         researcher_code = min(researcher_code, max_tool_calls)
     agents = create_configured_agents(models, director_code, researcher_code)
-    runtime = build_harness_runtime(models, policy, manager=manager, environment=environment)
+    runtime = build_harness_runtime(models, policy, manager=manager, environment=environment, repository=repository)
     runtime.researcher_factory = agents.fresh_researcher
     return ConfiguredSystem(agents=agents, runtime=runtime, mode=RuntimeMode.LIVE)

@@ -77,14 +77,24 @@ def test_synthetic_measurement_cannot_be_admitted_as_evidence():
 def test_research_state_projection_is_deterministic_and_excludes_acquisition_records():
  state=ResearchState(block_id='b',objective='o').append('candidates',StateFragment(fragment_id='c',kind='candidate',summary='candidate',provenance=('test',))).append('acquisitions',StateFragment(fragment_id='a',kind='gdc',summary='one record',provenance=('test',)))
  first=project_state(state,ProjectionSpec(projection_name='candidate',candidate_id='c'));second=project_state(state,ProjectionSpec(projection_name='candidate',candidate_id='c'))
- assert first==second and 'acquisitions' not in first.payload and first.projection_id.startswith('candidate-v1-')
+ assert first==second and 'acquisitions' not in first.payload and first.projection_id.startswith('candidate-v2-')
+ from src.science.models import MeasuredResult
+ from src.provenance import canonical_bytes
+ provided=MeasuredResult(analysis_id='provided',values={'zero':0,'missing':None,'mean':1.25},origin='provided',provenance=('test',),input_sha256='0'*64)
+ state=state.add_measurement(provided)
+ for i in range(100):
+  state=state.append('observations',StateFragment(fragment_id=str(i),kind='observation',summary='x'*1000,provenance=('test',)))
+ bounded=project_state(state,ProjectionSpec(projection_name='candidate',candidate_id='c',max_items=4,max_payload_bytes=4096))
+ assert len(canonical_bytes(bounded.payload))<=4096 and bounded.payload['omitted']['observations']>=96
+ assert bounded.payload['measurements'][0]['values']=={'zero':0,'missing':None,'mean':1.25}
+ assert bounded.payload['measurements'][0]['origin']=='provided'
 def test_deterministic_science_methods_produce_measurements_before_admission():
  executor=ScienceExecutor()
  summary=executor.execute(AnalysisSpec(analysis_id='summary',question='q',population='p',estimand='mean',method='descriptive_summary',variables=('values',),inputs={'values':[1.0,2.0,3.0]}))
  regression=executor.execute(AnalysisSpec(analysis_id='ols',question='q',population='p',estimand='slope',method='ordinary_least_squares',variables=('x','y'),inputs={'x':[1.0,2.0,3.0],'y':[2.0,4.0,6.0]}))
  assert summary.values['mean']==2.0 and regression.values['slope']==pytest.approx(2.0)
  assert summary.provenance[0]=='pandas.Series' and regression.provenance[0]=='statsmodels.OLS'
-def test_capability_index_is_bounded_and_distinguishes_metadata_from_execution():
+def test_capability_index_is_bounded_and_distinguishes_metadata_from_execution(tmp_path):
  index=initial_oncolab_index();matches=index.search('GDC cancer',kinds=(OncoLabKind.SOURCE,),limit=3)
  assert matches[0].capability_id=='source.gdc' and matches[0].availability.value=='available'
  assert index.count()>=100
@@ -93,13 +103,29 @@ def test_capability_index_is_bounded_and_distinguishes_metadata_from_execution()
  assert index.describe('jev.choice').validation_state.value=='unvalidated'
  assert OncoLabKind.JEV in index.list_kinds()
  with pytest.raises(ValueError):index.search(limit=21)
+ sample=index.verification_records('source.gdc')[0]
+ before=len(index.verification_records('source.gdc'))
+ index.load_verification_records();index.load_verification_records()
+ assert len(index.verification_records('source.gdc'))==before
+ with pytest.raises(ValueError,match='unknown verification capability'):
+  index.record_verification(sample.model_copy(update={'capability_id':'science.scipy.pearsonr'}))
+ import yaml
+ invalid=sample.model_copy(update={'execution_reference':sample.execution_reference.model_copy(update={'value':'src/oncolab/proven/artifacts/missing.json'})})
+ (tmp_path/'invalid.yaml').write_text(yaml.safe_dump({'records':[invalid.model_dump(mode='json')]}),encoding='utf-8')
+ with pytest.raises(ValueError,match='unresolved verification artifact'):
+  index.load_verification_records(tmp_path)
+ invalid=sample.model_copy(update={'execution_reference':sample.execution_reference.model_copy(update={'sha256':'0'*64})})
+ (tmp_path/'invalid.yaml').write_text(yaml.safe_dump({'records':[invalid.model_dump(mode='json')]}),encoding='utf-8')
+ with pytest.raises(ValueError,match='integrity mismatch'):
+  index.load_verification_records(tmp_path)
 def test_github_sandbox_is_commit_pinned_credential_free_and_replay_validated():
  seen=[]
  def runner(arguments,**kwargs):
   seen.append((arguments,kwargs))
   if arguments[:2]==('git','ls-remote'):return subprocess.CompletedProcess(arguments,0,'a'*40+'\tHEAD\n','')
-  if arguments[0]=='docker':
-   command=arguments[arguments.index('python:3.12-slim')+1:]
+  if arguments[:3]==('docker','image','inspect'):return subprocess.CompletedProcess(arguments,0,'sha256:'+'b'*64+'\n','')
+  if arguments[:2]==('docker','run'):
+   command=arguments[arguments.index('sha256:'+'b'*64)+1:]
    output='{"values":{"effect":1.25}}\n' if command==('python','method.py','/input/request.json') else 'ok\n'
    return subprocess.CompletedProcess(arguments,0,output,'')
   return subprocess.CompletedProcess(arguments,0,'','')
@@ -109,9 +135,17 @@ def test_github_sandbox_is_commit_pinned_credential_free_and_replay_validated():
  assert candidate.receipt.commit_sha=='a'*40 and measurement.values=={'effect':1.25}
  assert candidate.receipt.first_run.stdout_sha256==candidate.receipt.replay_run.stdout_sha256
  assert all('OPENROUTER_API_KEY' not in kwargs['env'] and 'TYPESAFE_API_KEY' not in kwargs['env'] for _,kwargs in seen)
- docker_calls=[arguments for arguments,_ in seen if arguments[0]=='docker'];assert '--network' in docker_calls[0] and docker_calls[0][docker_calls[0].index('--network')+1]=='bridge'
- assert '/input/request.json:ro' not in docker_calls[0]
- assert all(call[call.index('--network')+1]=='none' for call in docker_calls[1:])
+ docker_calls=[arguments for arguments,_ in seen if arguments[:2]==('docker','run')]
+ assert docker_calls[0][docker_calls[0].index('--network')+1]=='none'
+ assert docker_calls[1][docker_calls[1].index('--network')+1]=='bridge'
+ assert all('/input/request.json:ro' not in call for call in docker_calls[:2])
+ assert all(call[call.index('--network')+1]=='none' for call in docker_calls[2:])
+ replayed=sandbox.replay(candidate)
+ assert replayed.receipt.commit_sha==candidate.receipt.commit_sha and replayed.values==candidate.values
+ assert replayed.receipt.environment['image']=='sha256:'+'b'*64
+ from src.provenance import content_hash
+ corrupt=candidate.model_copy(update={'values':{'effect':99.0}})
+ with pytest.raises(SandboxError,match='values'):validate_sandbox_candidate(corrupt,'bad')
  with pytest.raises(ValidationError):GithubMethodRequest(repository_url='git@github.com:example/public-method.git',test_command=('python','-m','pytest'),execute_command=('python','method.py'),input_json={})
 def test_researcher_instances_and_skill_selections_are_fresh_per_block():
  agents=create_agents('test','test');assert agents.fresh_researcher() is not agents.researcher
@@ -125,13 +159,26 @@ def test_resource_budgets_are_isolated_per_block():
  runtime.claim(first.block_id,'source',1)
  with pytest.raises(RuntimeError,match='budget exhausted'):runtime.claim(first.block_id,'source',1)
  runtime.claim(second.block_id,'source',1)
-def test_researcher_can_use_sandbox_tool_without_promoting_method():
+def test_researcher_can_use_sandbox_tool_without_promoting_method(tmp_path):
+ from src.persistence.store import SqliteResearchStore
+ from src.persistence.repository import ResearchRepository
+ from src.persistence.reconstruct import reconstruct_block
+ from src.persistence.records import RecordKind
+ database=tmp_path/'sandbox.sqlite3'
+ store=SqliteResearchStore(database);repository=ResearchRepository(store)
  class FakeSandbox:
   def acquire_and_execute(self,request):
-   invocation=SandboxInvocation(command=('python','method.py'),exit_status=0,stdout_sha256='o',stderr_sha256='e')
-   receipt=SandboxReceipt(repository_url=request.repository_url,commit_sha='a'*40,environment={'image':'test'},environment_sha256='e'*64,input_sha256='i'*64,install=invocation,test=invocation,first_run=invocation,replay_run=invocation)
-   return SandboxMeasurementCandidate(candidate_id='candidate',receipt=receipt,values={'effect':1.0})
+   assert repository.store.records(kind=RecordKind.SANDBOX_REQUEST)[0].payload['input_json']==request.input_json
+   from src.provenance import content_hash
+   from src.science.sandbox import SandboxPolicy
+   import hashlib
+   output='{"values":{"effect":1.0}}'
+   invocation=SandboxInvocation(command=request.execute_command,exit_status=0,stdout_sha256=hashlib.sha256(output.encode()).hexdigest(),stderr_sha256=hashlib.sha256(b'').hexdigest())
+   environment={'image':'sha256:'+'b'*64}
+   receipt=SandboxReceipt(repository_url=request.repository_url,commit_sha='a'*40,environment=environment,environment_sha256=content_hash(environment),input_sha256=content_hash(request.input_json),install=invocation.model_copy(update={'command':request.install_command}),test=invocation.model_copy(update={'command':request.test_command}),first_run=invocation,replay_run=invocation)
+   return SandboxMeasurementCandidate(candidate_id='candidate',receipt=receipt,values={'effect':1.0},request=request,policy=SandboxPolicy(),output_json=output)
  manager=BlockManager();block=manager.create('sandbox objective','test',ResourceAllocation(seconds=60));runtime=HarnessRuntime(manager=manager,jev=DeterministicJevClient(),science=ScienceExecutor(),reasoner=DeterministicReasoner(),max_jev_calls=2,max_reasoner_calls=1,sandbox=FakeSandbox())
+ runtime.repository=repository;repository.record_block(block)
  runtime.research_state.start(block.block_id,block.objective);runtime.skills.start(block.block_id)
  agents=create_agents('test','test');calls=0
  async def model(messages,info):
@@ -147,6 +194,16 @@ def test_researcher_can_use_sandbox_tool_without_promoting_method():
  events={event.event_type for event in manager.ledger(block.block_id).history()}
  assert {'ResearchSkillsLoaded','GithubAcquisitionCompleted','SandboxMeasurementValidated','EvidenceAdmission'}<=events
  assert runtime.oncolab.describe('software.github-scientific').validation_state.value=='unvalidated'
+ store.close();store=SqliteResearchStore(database)
+ view=reconstruct_block(store,block.block_id)
+ assert view.sandbox_requests[0]['input_json']=={'x':[1]}
+ candidate=view.sandbox_candidates[0]
+ assert candidate['request']['execute_command']==['python','method.py','/input/request.json']
+ assert candidate['receipt']['commit_sha']=='a'*40 and candidate['receipt']['environment']['image']=='sha256:'+'b'*64
+ assert candidate['output_json']=='{"values":{"effect":1.0}}' and candidate['validator_version']=='sandbox-validator-v2'
+ assert view.resolved_inputs[view.measurements[0]['source_refs'][0]]['candidate_id']==candidate['candidate_id']
+ assert view.verifications[0]['capability_id']=='software.github-scientific'
+ store.close()
 def test_harness_code_mode_runs_contract_tools_and_director_delegates():
  seen=[]
  def response(request):

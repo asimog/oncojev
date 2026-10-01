@@ -83,11 +83,18 @@ class SearchConfig(StrictModel):
     search_k: int = Field(default=20, ge=1, le=20)
 
 
+class JevConfig(SearchConfig):
+    max_questions_per_call: int = Field(default=100, ge=1, le=1000)
+    max_payload_bytes: int = Field(default=131072, ge=4096, le=1000000)
+    projection_max_items: int = Field(default=20, ge=1, le=100)
+    projection_max_payload_bytes: int = Field(default=65536, ge=4096, le=1000000)
+
+
 class RuntimeConfig(StrictModel):
     mode: RuntimeMode = RuntimeMode.DETERMINISTIC
     block: BlockConfig = Field(default_factory=BlockConfig)
     director: RetrievalConfig = Field(default_factory=RetrievalConfig)
     cycle: CycleBudgetConfig = Field(default_factory=CycleBudgetConfig)
     oncolab: SearchConfig = Field(default_factory=SearchConfig)
-    jev: SearchConfig = Field(default_factory=SearchConfig)
+    jev: JevConfig = Field(default_factory=JevConfig)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)

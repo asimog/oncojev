@@ -11,12 +11,14 @@ from src.jev.models import JevExecutionFailure, JevFailureCategory
 class JevOperationalFailure(RuntimeError):
     """Raised when one or more Jev questions did not complete."""
 
-    def __init__(self, failures: tuple[JevExecutionFailure, ...]) -> None:
+    def __init__(self, failures: tuple[JevExecutionFailure, ...], *, decisions=(), metadata=None) -> None:
         if not failures:
             raise ValueError("a Jev operational failure requires at least one failed question")
         self.failures = tuple(failures)
+        self.decisions = tuple(decisions)
+        self.metadata = metadata
         categories = ", ".join(sorted({failure.category.value for failure in self.failures}))
-        super().__init__(f"Jev measured nothing for {len(self.failures)} question(s): {categories}")
+        super().__init__(f"Jev failed for {len(self.failures)} question(s); no frontier judgment: {categories}")
 
 
 def classify_jev_exception(error: BaseException) -> JevFailureCategory:

@@ -47,8 +47,8 @@ class ScienceExecutor:
             values={"n":int(series.count()),"mean":float(series.mean()),"median":float(series.median()),"standard_deviation":float(series.std(ddof=1)) if len(series)>1 else 0.0}
             method=f"numeric_summary:{field}"
         self._require_finite(values)
-        payload=record.model_dump(mode="json")
-        return MeasuredResult(analysis_id=analysis_id,values=values,provenance=("acquisition-v1",record.source,method),origin="source",source_refs=(record.acquisition_id,),input_sha256=self._hash(payload))
+        return MeasuredResult(analysis_id=analysis_id,values=values,provenance=("acquisition-v2",record.source,method),origin="source",source_refs=(record.acquisition_id,),input_sha256=record.content_sha256,
+                              limitations=("Descriptive measurement of the stored response slice; population coverage is unknown.",))
 
     @staticmethod
     def _hash(value:object)->str:

@@ -12,10 +12,12 @@ import tempfile
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, computed_field
 
 from src.science.models import MeasuredResult
+from src.provenance import content_hash
 
 
 GITHUB_URL = re.compile(r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?")
@@ -27,7 +29,7 @@ def _sha256(value: bytes) -> str:
 
 
 def _canonical_hash(value: object) -> str:
-    return _sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode())
+    return content_hash(value)
 
 
 class SandboxPolicy(BaseModel, frozen=True):
@@ -88,12 +90,25 @@ class SandboxReceipt(BaseModel, frozen=True):
     test: SandboxInvocation
     first_run: SandboxInvocation
     replay_run: SandboxInvocation
+    bootstrap: SandboxInvocation | None = None
 
 
 class SandboxMeasurementCandidate(BaseModel, frozen=True):
     candidate_id: str
     receipt: SandboxReceipt
     values: dict[str, float]
+    request: GithubMethodRequest | None = None
+    policy: SandboxPolicy | None = None
+    output_json: str | None = None
+    validator_version: str = "sandbox-validator-v2"
+
+    @computed_field
+    @property
+    def content_sha256(self) -> str:
+        return _canonical_hash({"repository": self.receipt.repository_url, "commit": self.receipt.commit_sha,
+            "input": self.receipt.input_sha256, "values": self.values, "image": self.receipt.environment.get("image"),
+            "cpu": self.receipt.environment.get("cpu"), "memory_mb": self.receipt.environment.get("memory_mb"),
+            "commands": [self.receipt.install.command, self.receipt.test.command, self.receipt.first_run.command]})
 
 
 class SandboxError(RuntimeError):
@@ -111,7 +126,8 @@ class DockerScientificSandbox:
         with tempfile.TemporaryDirectory(prefix="oncojev-sandbox-") as temporary:
             root = Path(temporary)
             environment = self._environment(root)
-            commit = self._resolve_commit(request.repository_url, request.requested_ref, root, environment)
+            image = self._resolve_image(root, environment)
+            commit = request.requested_ref if SHA.fullmatch(request.requested_ref) else self._resolve_commit(request.repository_url, request.requested_ref, root, environment)
             repository = root / "repository"
             self._require_success("clone", self._run(("git", "clone", "--no-checkout", "--depth", "1", request.repository_url, str(repository)), root, environment))
             self._require_success("fetch", self._run(("git", "-C", str(repository), "fetch", "--depth", "1", "origin", commit), root, environment))
@@ -120,24 +136,52 @@ class DockerScientificSandbox:
             input_file.write_text(json.dumps(request.input_json, sort_keys=True), encoding="utf-8")
             venv = root / "venv"
             venv.mkdir()
-            install = self._docker("bridge", repository, venv, input_file, request.install_command, root, environment, include_input=False)
-            test = self._docker("none", repository, venv, input_file, request.test_command, root, environment, include_input=True)
-            first = self._docker("none", repository, venv, input_file, request.execute_command, root, environment, include_input=True)
-            replay = self._docker("none", repository, venv, input_file, request.execute_command, root, environment, include_input=True)
+            bootstrap = self._docker("none", repository, venv, input_file, ("python", "-m", "venv", "/venv"), root, environment, image=image, include_input=False)
+            if bootstrap[0].exit_status != 0:
+                raise SandboxError("sandbox environment initialization failed")
+            install = self._docker("bridge", repository, venv, input_file, request.install_command, root, environment, image=image, include_input=False)
+            test = self._docker("none", repository, venv, input_file, request.test_command, root, environment, image=image, include_input=True)
+            first = self._docker("none", repository, venv, input_file, request.execute_command, root, environment, image=image, include_input=True)
+            replay = self._docker("none", repository, venv, input_file, request.execute_command, root, environment, image=image, include_input=True)
             for name, invocation in (("install", install), ("test", test), ("first run", first), ("replay", replay)):
                 if invocation[0].exit_status != 0:
                     raise SandboxError(f"sandbox {name} failed with exit status {invocation[0].exit_status}")
             values = self._parse_replayed_output(first[1], replay[1])
+            resolved_environment = {"image": image, "requested_image": self.policy.image, "cpu": self.policy.cpu,
+                "memory_mb": self.policy.memory_mb, "network": {"install": "bridge", "test_and_run": "none"},
+                "executor_version": "docker-scientific-v2", "dependency_lock": "install dependencies are not independently locked"}
             receipt = SandboxReceipt(
                 repository_url=request.repository_url,
                 commit_sha=commit,
-                environment={"image": self.policy.image, "cpu": self.policy.cpu, "memory_mb": self.policy.memory_mb, "network": {"install": "bridge", "test_and_run": "none"}},
-                environment_sha256=_canonical_hash({"image": self.policy.image, "cpu": self.policy.cpu, "memory_mb": self.policy.memory_mb}),
+                environment=resolved_environment,
+                environment_sha256=_canonical_hash(resolved_environment),
                 input_sha256=_canonical_hash(request.input_json),
-                install=install[0], test=test[0], first_run=first[0], replay_run=replay[0],
+                install=install[0], test=test[0], first_run=first[0], replay_run=replay[0], bootstrap=bootstrap[0],
             )
-            candidate_id = _canonical_hash({"repository": request.repository_url, "commit": commit, "input": receipt.input_sha256, "output": first[0].stdout_sha256})[:24]
-            return SandboxMeasurementCandidate(candidate_id=candidate_id, receipt=receipt, values=values)
+            candidate_id = str(uuid4())
+            return SandboxMeasurementCandidate(candidate_id=candidate_id, receipt=receipt, values=values,
+                request=request, policy=self.policy, output_json=first[1])
+
+    def replay(self, candidate: SandboxMeasurementCandidate) -> SandboxMeasurementCandidate:
+        """Explicit review operation; never called by recovery or Index loading."""
+        validate_sandbox_candidate(candidate, "replay-preflight")
+        policy = candidate.policy.model_copy(update={"image": candidate.receipt.environment["image"]})
+        request = candidate.request.model_copy(update={"requested_ref": candidate.receipt.commit_sha})
+        replayed = DockerScientificSandbox(policy, self._runner).acquire_and_execute(request)
+        if replayed.receipt.first_run.stdout_sha256 != candidate.receipt.first_run.stdout_sha256:
+            raise SandboxError("independent historical replay produced different output")
+        return replayed
+
+    def _resolve_image(self, root: Path, environment: dict[str, str]) -> str:
+        arguments = ("docker", "image", "inspect", "--format", "{{.Id}}", self.policy.image)
+        result = self._run(arguments, root, environment)
+        if result.returncode != 0:
+            self._require_success("image pull", self._run(("docker", "pull", self.policy.image), root, environment))
+            result = self._run(arguments, root, environment)
+        image = result.stdout.strip()
+        if result.returncode or not re.fullmatch(r"sha256:[0-9a-f]{64}", image):
+            raise SandboxError("could not resolve an immutable Docker image identity")
+        return image
 
     def _environment(self, root: Path) -> dict[str, str]:
         return {"PATH": os.environ.get("PATH", ""), "HOME": str(root / "home"), "GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0", "GIT_ALLOW_PROTOCOL": "https", "GIT_LFS_SKIP_SMUDGE": "1", "PIP_NO_INPUT": "1", "PIP_DISABLE_PIP_VERSION_CHECK": "1"}
@@ -149,11 +193,11 @@ class DockerScientificSandbox:
             raise SandboxError("could not resolve an immutable public Git commit")
         return match
 
-    def _docker(self, network: str, repository: Path, venv: Path, input_file: Path, command: tuple[str, ...], root: Path, environment: dict[str, str], *, include_input: bool) -> tuple[SandboxInvocation, str]:
+    def _docker(self, network: str, repository: Path, venv: Path, input_file: Path, command: tuple[str, ...], root: Path, environment: dict[str, str], *, image: str, include_input: bool) -> tuple[SandboxInvocation, str]:
         mounts = ("-v", f"{repository}:/repo:ro", "-v", f"{venv}:/venv")
         if include_input:
             mounts = (*mounts, "-v", f"{input_file}:/input/request.json:ro")
-        args = ("docker", "run", "--rm", "--network", network, "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "128", "--cpus", str(self.policy.cpu), "--memory", f"{self.policy.memory_mb}m", "--tmpfs", "/tmp:rw,nosuid,nodev,noexec,size=256m", *mounts, "-w", "/repo", "-e", "HOME=/tmp/sandbox", "-e", "PYTHONNOUSERSITE=1", "-e", "PIP_NO_INPUT=1", "-e", "PATH=/venv/bin:/usr/local/bin:/usr/bin:/bin", self.policy.image, *command)
+        args = ("docker", "run", "--rm", "--network", network, "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "128", "--cpus", str(self.policy.cpu), "--memory", f"{self.policy.memory_mb}m", "--tmpfs", "/tmp:rw,nosuid,nodev,noexec,size=256m", *mounts, "-w", "/repo", "-e", "HOME=/tmp/sandbox", "-e", "PYTHONNOUSERSITE=1", "-e", "PIP_NO_INPUT=1", "-e", "PATH=/venv/bin:/usr/local/bin:/usr/bin:/bin", image, *command)
         result = self._run(args, root, environment)
         invocation = SandboxInvocation(command=command, exit_status=result.returncode, stdout_sha256=_sha256(result.stdout.encode()), stderr_sha256=_sha256(result.stderr.encode()))
         return invocation, result.stdout
@@ -191,11 +235,32 @@ class DockerScientificSandbox:
 
 def validate_sandbox_candidate(candidate: SandboxMeasurementCandidate, analysis_id: str) -> MeasuredResult:
     """The sole deterministic path from a replayed sandbox candidate to a measurement."""
+    receipt = candidate.receipt
+    if candidate.request is None or candidate.policy is None or candidate.output_json is None:
+        raise SandboxError("candidate lacks replayable request, policy or output")
+    if not SHA.fullmatch(receipt.commit_sha) or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(receipt.environment.get("image"))):
+        raise SandboxError("candidate environment and commit must be immutable")
+    if receipt.repository_url != candidate.request.repository_url or receipt.input_sha256 != _canonical_hash(candidate.request.input_json):
+        raise SandboxError("sandbox input identity mismatch")
+    if receipt.environment_sha256 != _canonical_hash(receipt.environment):
+        raise SandboxError("sandbox environment identity mismatch")
+    if any(i.exit_status != 0 for i in (receipt.install, receipt.test, receipt.first_run, receipt.replay_run)):
+        raise SandboxError("sandbox execution did not pass")
+    if receipt.bootstrap is not None and receipt.bootstrap.exit_status != 0:
+        raise SandboxError("sandbox environment initialization did not pass")
+    if (receipt.install.command != candidate.request.install_command or receipt.test.command != candidate.request.test_command
+            or receipt.first_run.command != candidate.request.execute_command or receipt.replay_run.command != candidate.request.execute_command):
+        raise SandboxError("sandbox commands do not match retained request")
+    if _sha256(candidate.output_json.encode()) != receipt.first_run.stdout_sha256 or receipt.first_run.stdout_sha256 != receipt.replay_run.stdout_sha256:
+        raise SandboxError("sandbox output identity mismatch")
+    if DockerScientificSandbox._parse_replayed_output(candidate.output_json, candidate.output_json) != candidate.values:
+        raise SandboxError("sandbox measured values do not match retained output")
     return MeasuredResult(
         analysis_id=analysis_id,
         values=candidate.values,
-        provenance=("sandbox-replay-v1", candidate.receipt.repository_url, candidate.receipt.commit_sha, candidate.receipt.input_sha256, candidate.receipt.first_run.stdout_sha256),
+        provenance=("sandbox-validator-v2", candidate.receipt.repository_url, candidate.receipt.commit_sha, candidate.receipt.input_sha256, candidate.receipt.first_run.stdout_sha256, receipt.environment_sha256),
         origin="sandbox",
         source_refs=(candidate.candidate_id,),
         input_sha256=candidate.receipt.input_sha256,
+        limitations=("In-workspace replay passed; independent reinstall may differ because install dependencies are not locked.",),
     )

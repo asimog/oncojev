@@ -21,7 +21,7 @@ class GdcPublicSource:
         if endpoint == "files": content.append({"op":"in","content":{"field":"files.access","value":["open"]}})
         payload={"filters":{"op":"and","content":content},"fields":",".join(fields),"format":"JSON","size":size}
         response=await self._client.post(f"/{endpoint}",json=payload);response.raise_for_status();self._validate_size(response);body=response.json();hits=body.get("data",{}).get("hits",[])
-        return AcquisitionRecord(source="gdc",request=payload,records=tuple(hits[:size]),provenance=("https://api.gdc.cancer.gov",endpoint))
+        return AcquisitionRecord(source="gdc",request=payload,records=tuple(hits[:size]),provenance=("https://api.gdc.cancer.gov",endpoint),response_bytes=len(response.content))
 
     def _validate_size(self, response: httpx.Response) -> None:
         if len(response.content) > self._max_download_bytes:
@@ -42,7 +42,7 @@ class XenaPublicSource:
         if len(response.content)>self._max_download_bytes:raise ValueError("public source response exceeded the configured byte budget")
         body=response.json()
         if not isinstance(body,list): raise ValueError("unexpected Xena dataset response")
-        return AcquisitionRecord(source="ucsc-xena",request={"query":query,"limit":limit,"xena_query":xena_query},records=tuple(body),provenance=("https://ucscpublic.xenahubs.net/data/",))
+        return AcquisitionRecord(source="ucsc-xena",request={"query":query,"limit":limit,"xena_query":xena_query},records=tuple(body),provenance=("https://ucscpublic.xenahubs.net/data/",),response_bytes=len(response.content))
 
 
 class PublicLiteratureSource:
@@ -55,4 +55,4 @@ class PublicLiteratureSource:
         if len(response.content)>self._max_download_bytes:raise ValueError("public source response exceeded the configured byte budget")
         items=response.json().get("message",{}).get("items",[])
         records=tuple(LiteratureRecord(title=(item.get("title") or ["Untitled"])[0],doi=item.get("DOI"),url=item.get("URL"),source="crossref") for item in items[:limit])
-        return LiteratureSearchResult(query=query,records=records,provenance=("https://api.crossref.org/works",))
+        return LiteratureSearchResult(query=query,request={"query":query,"rows":limit},records=records,provenance=("https://api.crossref.org/works",),response_bytes=len(response.content))

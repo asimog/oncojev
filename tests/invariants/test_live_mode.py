@@ -372,3 +372,90 @@ def test_handoff_preserves_in_flight_source_result_and_blocks_next_request():
     assert len(runtime.acquisitions) == 1
     assert runtime.resources(block.block_id)["source"]["attempted"] == 1
     assert any(e.event_type == "ResearcherHandoffRequested" for e in manager.ledger(block.block_id).history())
+
+
+def test_duplicate_jev_question_ids_are_rejected_before_provider_dispatch(monkeypatch):
+    from typesafe_sdk import SystemOneResponse
+    client = TypeSafeJevClient(api_key="fake", model="jev-test")
+    calls = []
+
+    def provider(state, questions):
+        calls.append(questions)
+        return SystemOneResponse.model_validate({"model": "jev-test", "usage": {}, "answers": {"q": {"type": "noul", "noul": 0.7}}})
+
+    monkeypatch.setattr(client._client, "system_one", provider)
+    with pytest.raises(JevOperationalFailure):
+        client.evaluate({}, (QUESTION, QUESTION))
+    assert calls == []
+
+
+@pytest.mark.parametrize("outcome", ["construction", "decoding", "success"])
+def test_jev_call_receipt_preserves_sdk_failures_and_native_semantic_history(outcome, monkeypatch):
+    from typesafe_sdk import SystemOneResponse
+    from src.persistence.store import SqliteResearchStore
+    from src.persistence.repository import ResearchRepository
+    from src.persistence.records import RecordKind
+    from src.persistence.reconstruct import reconstruct_block
+    import src.jev.client as client_module
+
+    manager = BlockManager()
+    block = manager.create("inspect signal", "test", ResourceAllocation(seconds=60))
+    client = TypeSafeJevClient(api_key="fake", model="jev-requested")
+    repository = ResearchRepository(SqliteResearchStore())
+    runtime = HarnessRuntime(manager=manager, jev=client, science=ScienceExecutor(), reasoner=DeterministicReasoner(),
+                             max_jev_calls=2, max_reasoner_calls=1, repository=repository)
+    repository.record_block(block)
+    requests = []
+
+    def provider(state, questions):
+        requests.append(questions)
+        assert questions["c-relevance"].instructions["known_exclusions"]
+        assert "missing" in str(questions["c-action"].instructions).lower()
+        answers = {"c-relevance": {"type": "noul", "noul": 0.8},
+                   "c-action": {"type": "choice", "choice": "NONE", "probabilities": {"ADVANCE": 0.02, "DEFER": 0.08, "NONE": 0.9}, "confidence": 0.9}}
+        if outcome == "decoding":
+            answers.pop("c-action")
+        return SystemOneResponse.model_validate({"model": "jev-resolved", "usage": {"input_tokens": 11, "output_tokens": 7}, "answers": answers})
+
+    monkeypatch.setattr(client._client, "system_one", provider)
+    if outcome == "construction":
+        spec_for = client_module._spec_for
+
+        def invalid_spec(question):
+            return spec_for(question.model_copy(update={"criteria": {"true": object()}}))
+
+        monkeypatch.setattr(client_module, "_spec_for", invalid_spec)
+    calls = 0
+
+    async def model(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            code = 'await evaluate_candidate(candidate_id="c", candidate_summary="unknown signal")'
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": code}, tool_call_id="jev")])
+        return ModelResponse(parts=[TextPart("done")])
+
+    agent = create_agents("test", "test").researcher
+    with agent.override(model=scripted(model)):
+        agent.run_sync("inspect signal", deps=ResearcherDeps(runtime, block.block_id))
+    view = reconstruct_block(repository.store, block.block_id)
+    receipt = view.jev_calls[0]
+    assert len(receipt["questions"]) == 2 and len(receipt["question_hashes"]) == 2
+    assert receipt["projection_sha256"] == receipt["projection"]["payload_sha256"]
+    assert receipt["duration_ms"] >= 0 and receipt["model_requested"] == "jev-requested"
+    assert runtime.resources(block.block_id)["jev"]["attempted"] == 1
+    assert runtime.resources(block.block_id)["jev_questions"]["attempted"] == 2
+    assert not repository.store.records(kind=RecordKind.EVIDENCE)
+    if outcome == "success":
+        assert receipt["outcome"] == "completed" and receipt["models_resolved"] == ["jev-resolved"]
+        assert receipt["reported_metadata"]["usage"] == {"input_tokens": 11, "output_tokens": 7}
+        assert receipt["reported_metadata"]["reported_retries"] is None
+        history = view.candidate_history[0]
+        assert history["candidate_id"] == "c" and history["candidate_summary"] == "unknown signal"
+        assert history["action"] == "reject_retain" and history["decisions"][1]["probabilities"]["NONE"] == 0.9
+        assert history["call_id"] == receipt["call_id"]
+    else:
+        assert receipt["outcome"] == "failed" and view.jev_failures and not view.candidate_history
+        assert all(f["category"] == "validation" for f in receipt["failures"])
+        assert len(requests) == (0 if outcome == "construction" else 1)
+    repository.store.close()

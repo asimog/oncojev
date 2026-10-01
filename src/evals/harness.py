@@ -91,8 +91,7 @@ def evaluate_condition(
     started = perf_counter()
     try:
         try:
-            runtime = build_harness_runtime(models, policy, manager=manager, environment=environment)
-            runtime.repository = repository
+            runtime = build_harness_runtime(models, policy, manager=manager, environment=environment, repository=repository)
             runtime.mission_id = condition.value
             apply_condition(runtime, condition)
             agents = (agents_factory or (lambda: create_configured_agents(models, policy.director.max_code_mode_tool_calls,

@@ -21,6 +21,11 @@ def _oncolab_descriptor(capability_id: str, name: str, kind: OncoLabKind, purpos
 
 def initial_oncolab_index() -> OncoLabIndex:
     descriptors = (
+        _oncolab_descriptor("science.acquisition-summary", "Stored acquisition summary", OncoLabKind.SCIENTIFIC_METHOD,
+            "Descriptive record count or numeric-field summary of an exact stored public response slice.",
+            ("acquisition", "descriptive", "summary"), "src/science/execution.py",
+            availability=OncoLabAvailability.INSTALLED, execution_mode=OncoLabExecutionMode.LOCAL_PYTHON,
+            limitations=("Population coverage remains unknown; a slice count is not a population total.",)),
         _oncolab_descriptor("stat.numpy", "NumPy", OncoLabKind.SCIENTIFIC_METHOD, "Deterministic numerical array kernels.", ("array", "numerical", "statistics"), "https://numpy.org/", availability=OncoLabAvailability.INSTALLED, execution_mode=OncoLabExecutionMode.LOCAL_PYTHON),
         _oncolab_descriptor("stat.pandas", "pandas", OncoLabKind.TRANSFORMATION, "Deterministic tabular ingestion, joins, and reshaping.", ("table", "transformation", "statistics"), "https://github.com/pandas-dev/pandas", availability=OncoLabAvailability.INSTALLED, execution_mode=OncoLabExecutionMode.LOCAL_PYTHON),
         _oncolab_descriptor("stat.scipy", "SciPy", OncoLabKind.STATISTICAL_METHOD, "Numerical algorithms, distributions, and statistical tests.", ("statistics", "distribution", "hypothesis-test"), "https://github.com/scipy/scipy", availability=OncoLabAvailability.INSTALLED, execution_mode=OncoLabExecutionMode.LOCAL_PYTHON),

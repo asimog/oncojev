@@ -1,6 +1,6 @@
 # OncoLab Index semantics
 
-`OncoLabIndex` is the one shared application registry for Director and Researcher within a runtime. It provides the broad global catalogue through bounded deterministic retrieval and loads bundled verification records from `src/oncolab/proven/verified-executions.yaml` separately from descriptor status. A new runtime receives a new registry instance seeded from those records, never another run's in-memory execution history. `describe_oncolab` returns a bounded descriptor plus its verification summary; agents never need to read raw registry files. The Pydantic AI harness is only a client of this registry through runtime dependencies; it owns no registry. “OncoLab” names this domain index; Pydantic AI capabilities and tools remain framework plumbing under `src/runtime/pydantic_ai/`.
+`OncoLabIndex` is the one shared application registry for Director and Researcher within a runtime. It provides bounded deterministic retrieval and loads bundled records from `src/oncolab/proven/verified-executions.yaml` plus resolvable durable verification receipts through factory composition, separately from descriptor status. Loading is idempotent by capability/verification identity and never resumes research. Verification names a declared execution, not the maturity or scientific validity of a statistics family. `describe_oncolab` returns at most 20 verification records and an omitted count. The Pydantic AI harness is only a client through runtime dependencies; it owns no registry. “OncoLab” names this domain index; Pydantic AI capabilities and tools remain framework plumbing under `src/runtime/pydantic_ai/`.
 
 The Index describes data/source capabilities, scientific and statistical methods, transformations, software, visualization, literature/knowledge, and Jev measurements. It uses typed descriptors with purpose, contracts, applicability, limitations, assumptions, missingness semantics, availability, execution/access policy, resource class, validation state, and provenance. It is metadata only: typed wrappers remain the only route to execution.
 
@@ -22,6 +22,41 @@ Capability maturity remains explicit:
 | Reusable capability | Validated, provenance-bearing, and eligible for registry reuse. |
 
 `ScientificCapability` is deterministic executable scientific work. `JevCapability` is an evaluated reusable semantic measurement. A `JevQuestionSpec` is normally a local semantic probe. A Skill is progressive procedural/domain guidance. Pydantic AI capabilities/tools are framework plumbing and live behind `src/runtime/pydantic_ai/`.
+
+Acquisitions and literature context are persisted before use, including exact
+request identities, content, response-byte reports and stable content hashes
+that exclude acquisition UUIDs. Science resolves block-owned acquisitions from
+storage; another block's acquisition ID does not grant access. Reconstruction
+exposes exact available inputs and explicitly lists unresolved legacy references.
+`science.acquisition-summary` identifies the existing descriptive slice-count and
+numeric-field wrapper; its output does not establish population coverage.
+
+Index search, describe and execution-selection receipts record actor, filters,
+requested/effective bounds, returned or selected catalogue IDs and mission/cycle/
+block association. Director receipts may precede allocation. Researcher searches
+use the configured cap. Invocation views derive from ledger events; skill-load
+receipts remain separate. Dossiers report source attempts, successes, failures,
+reported bytes and the number of byte reports, preserving incomplete reporting.
+
+Verification references distinguish portable files from block-owned measurement,
+evidence, acquisition, literature, sandbox-candidate and artifact records. Hashes
+bind references to their exact bytes or canonical record payload. The architecture
+checker validates bundled catalogue identities and portable artifact integrity.
+The redacted historical live ledger is tracked under `proven/artifacts/`; it proves
+observed execution events only. Its absent numeric inputs and SVG bytes are not
+fabricated. The former orphan Pearson record now refers to `stat.scipy` and names
+only the recorded Pearson invocation. Provided-array statistics remain exploratory;
+SVG rendering records carry `artifact_created` and an exploratory label, never
+scientific validation.
+
+Sandbox requests are retained before execution. Candidates retain the full request,
+policy, immutable commit and resolved Docker image ID, exact JSON output, invocation
+receipts, content identity and validator version. Validation checks input/environment/
+output hashes, commands, successful exits and replay agreement. An explicit
+`DockerScientificSandbox.replay(candidate)` can independently run the stored request
+at its resolved commit/image; recovery and Index loading never invoke it. Installation
+dependencies remain unlocked, so independent reinstall is an attempt whose output
+must be compared; identical historical environments are not claimed.
 
 Selected procedural guidance lives in `src/oncolab/labskills/` and is loaded only
 for an active Researcher block. It remains separate from the index and from

@@ -1,0 +1,132 @@
+{
+  "block_id": "b2a03ad6-491b-41aa-9719-c1716983059b",
+  "events": [
+    {
+      "event_id": "a10e7b99-de25-4a76-9de1-1a762625c919",
+      "event_type": "ResearcherRunStarted",
+      "occurred_at": "2026-09-30T11:12:01.662677Z",
+      "payload": {
+        "block_id": "b2a03ad6-491b-41aa-9719-c1716983059b"
+      }
+    },
+    {
+      "event_id": "244719a4-5351-4698-83af-bee64c80346e",
+      "event_type": "CapabilityInvocation",
+      "occurred_at": "2026-09-30T11:12:09.095143Z",
+      "payload": {
+        "capability_id": "source.gdc",
+        "endpoint": "projects"
+      }
+    },
+    {
+      "event_id": "e80624ed-22fe-4fc9-8399-333d5be9c7bb",
+      "event_type": "CapabilityResult",
+      "occurred_at": "2026-09-30T11:12:10.188060Z",
+      "payload": {
+        "acquisition_id": "82755147-38cb-4249-8018-b3eae5506994",
+        "capability_id": "source.gdc",
+        "records": 10
+      }
+    },
+    {
+      "event_id": "4e4b1042-427d-4483-8b8e-fee7d694c743",
+      "event_type": "CapabilityInvocation",
+      "occurred_at": "2026-09-30T11:12:10.190880Z",
+      "payload": {
+        "capability_id": "literature.public"
+      }
+    },
+    {
+      "event_id": "6de3c55f-16ac-4b05-91d6-1db618775b5e",
+      "event_type": "CapabilityResult",
+      "occurred_at": "2026-09-30T11:12:12.137745Z",
+      "payload": {
+        "capability_id": "literature.public",
+        "records": 4
+      }
+    },
+    {
+      "event_id": "7907bcbf-6322-4ccf-a38c-787e0cdc78be",
+      "event_type": "CapabilityInvocation",
+      "occurred_at": "2026-09-30T11:12:16.034471Z",
+      "payload": {
+        "capability_id": "source.gdc",
+        "endpoint": "projects"
+      }
+    },
+    {
+      "event_id": "3abc38b2-54cf-47c4-9125-2920b1b601c4",
+      "event_type": "CapabilityResult",
+      "occurred_at": "2026-09-30T11:12:17.104718Z",
+      "payload": {
+        "acquisition_id": "50e2de0e-4aa7-484d-892b-c3c8525c9ad7",
+        "capability_id": "source.gdc",
+        "records": 33
+      }
+    },
+    {
+      "event_id": "f64bdbae-e4dd-46f9-b6fd-c0874d77ef67",
+      "event_type": "ScienceMeasurement",
+      "occurred_at": "2026-09-30T11:12:22.515366Z",
+      "payload": {
+        "analysis_id": "probe-pearson_correlation",
+        "method": "pearson_correlation"
+      }
+    },
+    {
+      "event_id": "3b96a550-8829-49af-ba5e-2b50e24ef8b4",
+      "event_type": "ScienceMeasurement",
+      "occurred_at": "2026-09-30T11:12:26.577911Z",
+      "payload": {
+        "analysis_id": "tcga-sitecount-vs-cases",
+        "method": "pearson_correlation"
+      }
+    },
+    {
+      "event_id": "7644cd96-6594-4daf-b78b-49df6d7d43b7",
+      "event_type": "EvidenceAdmission",
+      "occurred_at": "2026-09-30T11:12:29.035377Z",
+      "payload": {
+        "analysis_id": "tcga-sitecount-vs-cases",
+        "evidence_id": "1b705133-131a-41ab-9d9a-1f5edc695a86"
+      }
+    },
+    {
+      "event_id": "e551fe1a-d6af-40e7-854c-35c237e5d3fa",
+      "event_type": "CapabilityResult",
+      "occurred_at": "2026-09-30T11:12:29.120270Z",
+      "payload": {
+        "artifact_id": "a9e96174-8d7f-49c1-a95c-8fa7edd651db",
+        "capability_id": "visualization.scientific",
+        "sha256": "33d15edf48cb7c68f2530455839ecc441420c41f16b58ae50f714f8162d71102"
+      }
+    },
+    {
+      "event_id": "78d166d6-a42c-4962-8ffe-5af59f9e703d",
+      "event_type": "ResearcherCompletion",
+      "occurred_at": "2026-09-30T11:12:31.390374Z",
+      "payload": {
+        "status": "complete"
+      }
+    },
+    {
+      "event_id": "f0c7c3b7-0f70-42a4-9240-7f30a42c60d4",
+      "event_type": "ResearcherRunCompleted",
+      "occurred_at": "2026-09-30T11:12:34.572435Z",
+      "payload": {
+        "block_id": "b2a03ad6-491b-41aa-9719-c1716983059b",
+        "resolved_models": [
+          "deepseek/deepseek-v4.1-flash"
+        ]
+      }
+    }
+  ],
+  "format": "redacted-ledger-v1",
+  "limitations": [
+    "Only the recorded ledger is available; exact acquisitions, numeric inputs, measurements and SVG bytes are absent.",
+    "Historical admission events do not independently certify source-bound evidence or scientific validity."
+  ],
+  "redaction": "Fixed payload allowlist; output prose, queries, provider messages and completion narrative omitted.",
+  "source_path": "var/phase3-live/stdout-2.json",
+  "source_sha256_before_redaction": "d4c3d64375efc97e3171ff9c9416428faef92ddc982bee5b5eae2454ae050934"
+}

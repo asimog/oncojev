@@ -33,6 +33,10 @@ oncolab:
   search_k: 20
 jev:
   search_k: 20
+  max_questions_per_call: 100
+  max_payload_bytes: 131072
+  projection_max_items: 20
+  projection_max_payload_bytes: 65536
 sandbox:
   provider: docker
   image: python:3.12-slim

@@ -1,0 +1,2 @@
+# Verification hashes must survive checkout on every platform.
+src/oncolab/proven/artifacts/*.json text eol=lf

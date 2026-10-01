@@ -12,6 +12,8 @@ class FigureArtifact(BaseModel, frozen=True):
     payload_base64: str
     sha256: str
     provenance: tuple[str, ...] = ("matplotlib",)
+    epistemic_status: str = "exploratory"
+    limitations: tuple[str, ...] = ("Provided plotting arrays are not bound to an admitted measurement.",)
 
     @classmethod
     def from_svg(cls, title: str, svg: bytes) -> "FigureArtifact":

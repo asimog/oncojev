@@ -6,7 +6,7 @@ re-runs research, never admits evidence, and never mutates history.
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from src.block.models import BlockStatus, RunOutcome, run_outcome
 from src.ledger.events import LedgerEvent
 
@@ -24,6 +24,16 @@ class BlockReconstruction(BaseModel, frozen=True):
     jev_outputs: tuple[dict[str, Any], ...]
     jev_failures: tuple[dict[str, Any], ...]
     artifacts: tuple[dict[str, Any], ...]
+    acquisitions: tuple[dict[str, Any], ...] = ()
+    literature: tuple[dict[str, Any], ...] = ()
+    sandbox_requests: tuple[dict[str, Any], ...] = ()
+    sandbox_candidates: tuple[dict[str, Any], ...] = ()
+    verifications: tuple[dict[str, Any], ...] = ()
+    index_receipts: tuple[dict[str, Any], ...] = ()
+    jev_calls: tuple[dict[str, Any], ...] = ()
+    candidate_history: tuple[dict[str, Any], ...] = ()
+    resolved_inputs: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    unresolved_source_refs: tuple[str, ...] = ()
     ledger: tuple[dict[str, Any], ...]
     dossier: dict[str, Any] | None
     complete: bool
@@ -57,16 +67,38 @@ def reconstruct_block(store: SqliteResearchStore, block_id: str) -> BlockReconst
             dossier_payload["operational_failures"] = [
                 {"event_type": event.event_type, **event.payload} for event in events
                 if event.event_type in {"ResearcherRunFailed", "DirectorRunFailed", "DirectorRunTruncated", "InterruptedBlockRecovered"}]
+    acquisitions = payloads(RecordKind.ACQUISITION)
+    candidates = payloads(RecordKind.SANDBOX_CANDIDATE)
+    inputs = {p["acquisition_id"]: p for p in acquisitions}
+    inputs.update({p["candidate_id"]: p for p in candidates})
+    unresolved = tuple(sorted({ref for m in payloads(RecordKind.MEASUREMENT) for ref in m.get("source_refs", ()) if ref not in inputs}))
+    invocations = []
+    for event in events:
+        if event.event_type == "CapabilityInvocation":
+            call = dict(event.payload)
+            linked = [e.payload for e in events if e.event_type in {"CapabilityResult", "CapabilityFailure"}
+                      and e.payload.get("invocation_id") and e.payload.get("invocation_id") == call.get("invocation_id")]
+            call["results"] = linked
+            call["status"] = "failed" if any("error_type" in p for p in linked) else "completed" if linked else "unknown"
+            invocations.append(call)
+    receipts = tuple(r.payload for r in store.records(kind=RecordKind.INDEX_RECEIPT)
+                     if r.block_id == block_id or (block_payload and block_payload.get("cycle_id") and r.payload.get("cycle_id") == block_payload["cycle_id"]))
+    calls = {r.record_id: r.payload for r in store.records(kind=RecordKind.JEV_CALL, block_id=block_id)}
     return BlockReconstruction(
         block_id=block_id,
         block=block_payload,
         state_revisions=payloads(RecordKind.STATE_REVISION),
-        capability_invocations=payloads(RecordKind.CAPABILITY_INVOCATION),
+        capability_invocations=tuple(invocations) or payloads(RecordKind.CAPABILITY_INVOCATION),
         measurements=payloads(RecordKind.MEASUREMENT),
         evidence=payloads(RecordKind.EVIDENCE),
         jev_outputs=payloads(RecordKind.JEV_OUTPUT),
         jev_failures=payloads(RecordKind.JEV_FAILURE),
         artifacts=payloads(RecordKind.ARTIFACT),
+        acquisitions=acquisitions, literature=payloads(RecordKind.LITERATURE),
+        sandbox_requests=payloads(RecordKind.SANDBOX_REQUEST), sandbox_candidates=candidates,
+        verifications=payloads(RecordKind.VERIFICATION), index_receipts=receipts, jev_calls=tuple(calls.values()),
+        candidate_history=tuple(e.payload for e in events if e.event_type == "FrontierDecision"),
+        resolved_inputs=inputs, unresolved_source_refs=unresolved,
         ledger=payloads(RecordKind.LEDGER_EVENT),
         dossier=dossier_payload,
         run_outcome=outcome,

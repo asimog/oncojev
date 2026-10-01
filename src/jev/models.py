@@ -1,5 +1,7 @@
 from enum import StrEnum
 from typing import Literal
+from typing import Any
+from datetime import datetime
 from pydantic import BaseModel,Field,model_validator
 class JevQuestionSpec(BaseModel,frozen=True):
  question_id:str; semantic_purpose:str; primitive:Literal["noul","choice","score"]; projection_id:str; instructions:str; criteria:object; question_version:str; known_exclusions:tuple[str,...]=(); failure_semantics:str="failure is not judgment"; provenance:tuple[str,...]=(); status:Literal["local"]="local"
@@ -18,3 +20,23 @@ class ScoreDecision(BaseModel,frozen=True): question_id:str; expected_score:floa
 JevDecision=NoulDecision|ChoiceDecision|ScoreDecision
 class JevFailureCategory(StrEnum): TIMEOUT="timeout"; RATE_LIMIT="rate_limit"; TRANSPORT="transport"; VALIDATION="validation"; SERVICE="service"
 class JevExecutionFailure(BaseModel,frozen=True): question_id:str; category:JevFailureCategory; detail:str
+
+
+class JevCallReceipt(BaseModel, frozen=True):
+ call_id:str
+ block_id:str
+ candidate_id:str
+ candidate_summary:str
+ started_at:datetime
+ duration_ms:float=Field(ge=0)
+ outcome:Literal["started","completed","failed"]
+ model_requested:str
+ models_resolved:tuple[str,...]=()
+ projection:dict[str,Any]|None=None
+ projection_sha256:str|None=None
+ questions:tuple[JevQuestionSpec,...]=()
+ question_hashes:tuple[str,...]=()
+ decisions:tuple[JevDecision,...]=()
+ failures:tuple[JevExecutionFailure,...]=()
+ reported_metadata:dict[str,Any]|None=None
+ policy_version:str="candidate-frontier-v1"
