@@ -10,7 +10,7 @@ and selective reasoning improve useful discovery while preserving candidate reca
 
 | Document | Read for |
 | --- | --- |
-| [Architecture](docs/ARCHITECTURE.md) | Durable structure and component authority | |
+| [Architecture](docs/ARCHITECTURE.md) | Durable structure and component authority |
 | [Active plan](docs/IMPLEMENTATION_PLAN.md) | Next changes, status and acceptance |
 | [Jev](docs/JEV.md) / [Capabilities](docs/CAPABILITIES.md) | Current subsystem contracts |
 | [Frontend](docs/FRONTEND.md) | Current observability/read models |

@@ -2,7 +2,7 @@
 
 **Stage status: IN PROGRESS - H0/H1 DONE; H2-H4 PARTIAL; H5-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
 
-The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
+The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](references/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
 D1–D8 are integrated implementation batches inside H4, H6, H7, H9, H10 and H14, with H13 supplying their comparative evaluations. Their original triggers are preserved as execution and acceptance gates within those phases. There is no separate deferred-work section or backlog: each owning phase implements its baseline, runs its gate, delivers the justified extension and records the actual outcome. A gate that is not met produces a reference-linked limitation or not-eligible decision in that phase; it cannot be silently postponed or reported as implemented.
 

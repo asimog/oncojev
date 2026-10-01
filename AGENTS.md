@@ -15,7 +15,8 @@ Use this file as a navigation map; read only the context needed for the task.
 | Document | Owns |
 | --- | --- |
 | [README](README.md) | Orientation, running and development |
-| [Architecture](docs/ARCHITECTURE.md) | System structure and component ownership || [Active implementation plan](docs/IMPLEMENTATION_PLAN.md) | Sole roadmap, phase status, implementation detail and acceptance |
+| [Architecture](docs/ARCHITECTURE.md) | System structure and component ownership |
+| [Active implementation plan](docs/IMPLEMENTATION_PLAN.md) | Sole roadmap, phase status, implementation detail and acceptance |
 | [Jev](docs/JEV.md) | Current semantic-measurement contract |
 | [Capabilities](docs/CAPABILITIES.md) | Current capability and verification semantics |
 | [Frontend](docs/FRONTEND.md) | Current UI/read-model contract |
