@@ -1,4 +1,5 @@
 from typing import Any, Literal
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, computed_field, model_validator
@@ -22,6 +23,7 @@ class CoverageContract(BaseModel, frozen=True):
 class AcquisitionRecord(BaseModel, frozen=True):
     acquisition_id: str = Field(default_factory=lambda: str(uuid4()))
     source: str
+    retrieved_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     request: dict[str, Any]
     records: tuple[dict[str, Any], ...]
     public_only: bool = True
@@ -98,3 +100,28 @@ class ScientificArtifact(BaseModel, frozen=True):
     @property
     def content_sha256(self) -> str:
         return self.byte_sha256
+
+
+class DataAssetCard(BaseModel, frozen=True):
+    """Retained source metadata, never an executable capability or usable matrix."""
+    acquisition_id: str
+    file_id: str | None
+    file_name: str | None = None
+    access: Literal["open", "controlled", "unknown"] = "unknown"
+    state: str | None = None
+    data_category: str | None = None
+    data_type: str | None = None
+    data_format: str | None = None
+    experimental_strategy: str | None = None
+    platform: str | None = None
+    workflow: str | None = None
+    file_size: int | None = Field(default=None, ge=0)
+    md5sum: str | None = None
+    cases: tuple[str, ...] = ()
+    projects: tuple[str, ...] = ()
+    entity_unit: Literal["file"] = "file"
+    request_sha256: str
+    content_sha256: str
+    retrieved_at: str
+    omissions: tuple[str, ...] = ()
+    limitations: tuple[str, ...] = ("Metadata does not establish usable assay units, pairing or population coverage.",)

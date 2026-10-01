@@ -1,6 +1,8 @@
 from typing import Any
 import re
 import asyncio
+from contextlib import nullcontext
+from datetime import UTC, datetime
 
 import httpx
 
@@ -36,6 +38,8 @@ class GdcPublicSource:
         if max_download_bytes <= 0: raise ValueError("download ceiling must be positive")
         self._max_download_bytes = min(max_download_bytes, 10_000_000)
         self.meter = None
+        self.reserve = None
+        self.transfer_receipt = None
 
     async def aclose(self):
         await self._client.aclose()
@@ -46,9 +50,16 @@ class GdcPublicSource:
         if offset < 0 or offset > 1_000_000: raise ValueError("offset is outside bounded pagination")
         if not re.fullmatch(r"[A-Za-z0-9_.]+:(asc|desc)",sort): raise ValueError("declare one stable ordering field")
         content = list(filters.get("content", [])) if filters.get("op") == "and" else [filters]
-        if endpoint == "files": content.append({"op":"in","content":{"field":"files.access","value":["open"]}})
+        identity_field = {'files':'file_id','cases':'case_id','projects':'project_id','annotations':'annotation_id'}[endpoint]
+        if sort.startswith('id:'):
+            sort = identity_field + sort[2:]
+        fields = tuple(identity_field if field == 'id' else field for field in fields)
         payload={"filters":{"op":"and","content":content},"fields":",".join(fields),"format":"JSON","size":size,"from":offset,"sort":sort}
         response=await bounded_response(self._client,"POST",f"/{endpoint}",self._max_download_bytes,self.meter,json=payload);body=await asyncio.to_thread(response.json);hits=body.get("data",{}).get("hits",[])
+        if body.get('error'):
+            raise RuntimeError('GDC query failed despite HTTP success')
+        if not isinstance(hits,list) or any(not isinstance(row,dict) for row in hits):
+            raise RuntimeError('invalid GDC hits response')
         pagination=body.get("data",{}).get("pagination",{})
         total=pagination.get("total")
         total=total if isinstance(total,int) and not isinstance(total,bool) and total>=0 else None
@@ -63,33 +74,84 @@ class GdcPublicSource:
         return AcquisitionRecord(source="gdc",request=payload,records=tuple(rows),coverage=coverage,
             provenance=("https://api.gdc.cancer.gov",endpoint),response_bytes=len(response.content))
 
+    def asset_cards(self, record):
+        from src.sources.models import DataAssetCard
+        from src.provenance import content_hash
+        if record.source != 'gdc' or record.coverage is None or record.coverage.endpoint != 'files':
+            raise ValueError('GDC file acquisition required for asset cards')
+        cards = []
+        for row in record.records:
+            cases = row.get('cases') or []
+            if not isinstance(cases, list):
+                cases = []
+            case_ids = tuple(str(c['case_id']) for c in cases if isinstance(c, dict) and c.get('case_id'))
+            projects = tuple(sorted({str(c['project']['project_id']) for c in cases
+                if isinstance(c, dict) and isinstance(c.get('project'), dict) and c['project'].get('project_id')}))
+            fields = ('file_name', 'state', 'data_category', 'data_type', 'data_format', 'experimental_strategy', 'platform', 'md5sum')
+            values = {k: str(row[k])[:500] if row.get(k) is not None else None for k in fields}
+            size = row.get('file_size')
+            size = size if isinstance(size, int) and not isinstance(size, bool) and size >= 0 else None
+            workflow = row.get('analysis') or {}
+            cards.append(DataAssetCard(acquisition_id=record.acquisition_id, file_id=row.get('file_id') or row.get('id'),
+                access=row.get('access') if row.get('access') in {'open', 'controlled'} else 'unknown',
+                file_size=size, workflow=workflow.get('workflow_type') if isinstance(workflow, dict) else None,
+                cases=case_ids[:20], projects=projects[:20], **values,
+                request_sha256=content_hash(record.request), content_sha256=record.content_sha256,
+                retrieved_at=record.retrieved_at.isoformat(),
+                omissions=tuple(k for k in (*fields, 'file_size', 'access') if row.get(k) is None)
+                    + (('case/project references truncated',) if len(case_ids) > 20 or len(projects) > 20 else ())))
+        return tuple(cards)
+
     async def acquire_file(self,file_id:str,block_id:str,format:str)->ScientificArtifact:
-        """A single open GDC file; no credentials, arbitrary URL or redirects."""
+        """A single explicitly open file with reserved capacity and exact byte identity."""
         import base64
         import hashlib
         from uuid import UUID
         UUID(file_id)
         if format not in {"tsv","json","text","binary","gzip"}:raise ValueError("declare supported byte format")
-        metadata=await bounded_response(self._client,"GET",f"/files/{file_id}",self._max_download_bytes,self.meter,params={"fields":"access,file_name,data_format,md5sum,file_size"})
-        metadata.raise_for_status();self._validate_size(metadata)
-        info=metadata.json().get("data",{})
-        if info.get("access")!="open":raise ValueError("only explicitly open GDC files may be acquired")
-        if isinstance(info.get("file_size"),int) and info["file_size"]>self._max_download_bytes:
-            raise ResourceRejected("artifact exceeds byte budget", 0)
-        chunks=[];size=0
-        async with self._client.stream("GET",f"/data/{file_id}") as response:
-            response.raise_for_status()
-            async for chunk in response.aiter_raw(chunk_size=min(65536,self._max_download_bytes+1)):
-                size+=len(chunk)
-                if self.meter is not None:self.meter(len(chunk))
-                if size>self._max_download_bytes:raise ResourceRejected("artifact exceeds byte budget", size)
-                chunks.append(chunk)
-        data=b"".join(chunks)
-        if info.get("file_size") is not None and info["file_size"]!=size:raise ValueError("file size differs from source metadata")
-        if info.get("md5sum") and hashlib.md5(data).hexdigest()!=info["md5sum"]:raise ValueError("source MD5 differs from retained bytes")
-        return ScientificArtifact(block_id=block_id,source="gdc",request={"file_id":file_id,"metadata":info},source_identity=file_id,
-            content_base64=base64.b64encode(data).decode("ascii"),byte_sha256=hashlib.sha256(data).hexdigest(),size_bytes=size,format=format,
-            provenance=("https://api.gdc.cancer.gov",f"/data/{file_id}"))
+        declared=None;size=0;metadata_bytes=None;status='failed';error_type=None
+        try:
+            metadata=await bounded_response(self._client,"GET",f"/files/{file_id}",self._max_download_bytes,self.meter,
+                params={"fields":"file_id,access,file_name,data_format,md5sum,file_size"})
+            metadata_bytes=len(metadata.content)
+            info=metadata.json().get("data",{})
+            declared=info.get('file_size')
+            if info.get('file_id',file_id) != file_id:raise ValueError('source file identity mismatch')
+            if info.get("access")!="open":raise ValueError("only explicitly open GDC files may be acquired")
+            if declared is not None and (isinstance(declared,bool) or not isinstance(declared,int) or declared<0):
+                raise ValueError('invalid advertised GDC file size')
+            if declared is not None and declared>self._max_download_bytes:
+                raise ResourceRejected("artifact exceeds byte budget",0)
+            chunks=[]
+            reservation=self.reserve(block_id,declared) if self.reserve else nullcontext(None)
+            with reservation as capacity:
+                async with self._client.stream("GET",f"/data/{file_id}") as response:
+                    response.raise_for_status()
+                    async for chunk in response.aiter_raw(chunk_size=min(65536,self._max_download_bytes+1,capacity.capacity+1 if capacity else self._max_download_bytes+1)):
+                        size+=len(chunk)
+                        try:
+                            if capacity is not None:capacity.consume(len(chunk))
+                        finally:
+                            if self.meter is not None:self.meter(len(chunk))
+                        if size>self._max_download_bytes:raise ResourceRejected("artifact exceeds byte budget",size)
+                        chunks.append(chunk)
+                data=b"".join(chunks)
+                if declared is not None and declared!=size:raise ValueError("file size differs from source metadata")
+                if info.get("md5sum") and hashlib.md5(data).hexdigest()!=info["md5sum"]:
+                    raise ValueError("source MD5 differs from retained bytes")
+                artifact=ScientificArtifact(block_id=block_id,source="gdc",request={"file_id":file_id,"metadata":info},
+                    source_identity=file_id,content_base64=base64.b64encode(data).decode("ascii"),
+                    byte_sha256=hashlib.sha256(data).hexdigest(),size_bytes=size,format=format,
+                    provenance=("https://api.gdc.cancer.gov",f"/data/{file_id}"))
+                status='retained_bytes_validated'
+                return artifact
+        except BaseException as error:
+            error_type=type(error).__name__
+            raise
+        finally:
+            if self.transfer_receipt:
+                self.transfer_receipt(block_id, {'file_id':file_id,'declared_size':declared,'metadata_bytes':metadata_bytes,
+                    'transferred_bytes':size,'status':status,'error_type':error_type})
 
     def _validate_size(self, response: httpx.Response) -> None:
         if len(response.content) > self._max_download_bytes:

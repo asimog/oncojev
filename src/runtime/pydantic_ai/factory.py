@@ -129,7 +129,10 @@ def build_harness_runtime(
         from src.runtime.resources import ServiceResources
         runtime.service_resources = ServiceResources(max_file_bytes=policy.block.max_download_bytes,
             max_block_download_bytes=policy.resources.max_block_download_bytes,
-            max_service_download_bytes=policy.resources.max_service_download_bytes)
+            max_service_download_bytes=policy.resources.max_service_download_bytes,
+            max_workspace_bytes=policy.resources.max_workspace_bytes,
+            max_durable_artifact_bytes=policy.resources.max_durable_artifact_bytes,
+            minimum_free_disk_bytes=policy.resources.minimum_free_disk_bytes)
     def meter_download(byte_count):
         active = runtime.active_research
         owner = active.block_id if active else "unassigned"
@@ -146,6 +149,30 @@ def build_harness_runtime(
     for client in (runtime.gdc, runtime.xena, runtime.literature):
         client.meter = meter_download
     bind_repository(runtime, repository)
+    def reserve_file(owner, declared):
+        from pathlib import Path
+        from src.runtime.resources import ResourceRejected
+        root = Path(__file__).resolve().parents[3]
+        workspace = root / "var" / "workspaces" / owner
+        if workspace.exists() and (workspace.is_symlink() or workspace.is_junction()):
+            raise ResourceRejected("workspace capacity cannot follow linked paths", 0)
+        used = 0
+        if workspace.exists():
+            for entry in workspace.rglob("*"):
+                if entry.is_symlink() or entry.is_junction():
+                    raise ResourceRejected("workspace capacity cannot follow linked paths", 0)
+                if entry.is_file():
+                    used += entry.stat().st_size
+        durable = 0
+        paths = [workspace]
+        if runtime.repository is not None:
+            durable = sum(r.payload.get('size_bytes', 0) for r in runtime.repository.store.records(kind=RecordKind.SCIENTIFIC_ARTIFACT))
+            if runtime.repository.store.path is not None:
+                paths.append(runtime.repository.store.path.parent)
+        return runtime.service_resources.reserve_download(owner, declared, workspace_used=used,
+            durable_used=durable, paths=tuple(paths), archive_limit=policy.retention.max_archive_bytes)
+    runtime.gdc.reserve = reserve_file
+    runtime.gdc.transfer_receipt = lambda owner, detail: runtime.append_event(owner, "DataTransferReceipt", detail)
     return runtime
 
 

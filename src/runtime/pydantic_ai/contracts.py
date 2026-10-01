@@ -772,7 +772,10 @@ def register_researcher_tools(
         save(ctx, state(ctx).append("acquisitions", StateFragment(fragment_id=record.acquisition_id, kind="gdc", summary=f"{endpoint}: {len(record.records)} public records", provenance=record.provenance,
             details={"source": record.source, "content_sha256": record.content_sha256, "request_sha256": content_hash(record.request),
                      "record_count": len(record.records), "coverage": record.coverage.model_dump(mode="json") if record.coverage else None, "source_refs": [record.acquisition_id]})))
-        return record.model_dump(mode="json")
+        view = record.model_dump(mode="json")
+        if endpoint == "files":
+            view["asset_cards"] = [c.model_dump(mode="json") for c in runtime.gdc.asset_cards(record)]
+        return view
 
     @agent.tool
     async def search_xena(ctx: RunContext[ResearcherDeps], query: str, limit: int = 10) -> dict[str, Any]:

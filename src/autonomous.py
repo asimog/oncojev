@@ -112,7 +112,10 @@ class AutonomousService:
         ResearchMemory(self.store).backfill()
         self.resources = ServiceResources(max_file_bytes=self.policy.block.max_download_bytes,
             max_block_download_bytes=self.policy.resources.max_block_download_bytes,
-            max_service_download_bytes=self.policy.resources.max_service_download_bytes)
+            max_service_download_bytes=self.policy.resources.max_service_download_bytes,
+            max_workspace_bytes=self.policy.resources.max_workspace_bytes,
+            max_durable_artifact_bytes=self.policy.resources.max_durable_artifact_bytes,
+            minimum_free_disk_bytes=self.policy.resources.minimum_free_disk_bytes)
         self._last_system = None
         self.director = None
         self._loop_runner = asyncio.Runner()

@@ -248,7 +248,7 @@ def test_harness_code_mode_runs_contract_tools_and_director_delegates():
  block=manager.blocks()[0];assert manager.status(block) is BlockStatus.COMPLETE
  event_types={event.event_type for event in manager.ledger(block.block_id).history()}
  assert {'DirectorBlockAllocated','CapabilityInvocation','CapabilityResult','ScienceMeasurement','EvidenceAdmission','JevExecution','FrontierDecision','ReasonerOutput','ScopeEscalationRequested','ResearcherCompletion'}<=event_types
- gdc_request=next(request for request in seen if request.url.host=='api.gdc.cancer.gov');assert 'x-auth-token' not in gdc_request.headers and b'"files.access"' in gdc_request.content and b'"open"' in gdc_request.content
+ gdc_request=next(request for request in seen if request.url.host=='api.gdc.cancer.gov');assert 'x-auth-token' not in gdc_request.headers and b'"files.access"' not in gdc_request.content
  xena_request=next(request for request in seen if request.url.host=='ucscpublic.xenahubs.net');assert xena_request.method=='POST' and xena_request.url.path=='/data/' and xena_request.headers['content-type']=='text/plain'
 
 
@@ -402,3 +402,111 @@ def test_download_service_consumption_survives_fresh_runtime_allocations():
    finally:
     await asyncio.gather(original.aclose(),runtime.literature.aclose(),runtime.gdc.aclose(),runtime.xena.aclose())
  asyncio.run(run())
+
+
+@pytest.mark.parametrize("access", ["open", "controlled", None])
+def test_gdc_file_discovery_retains_access_without_silent_open_filter(access):
+    import asyncio
+    import json
+    requests = []
+    def transport(request):
+        body = json.loads(request.content)
+        requests.append(body)
+        return httpx.Response(200, json={"data": {"hits": [{"id": "asset", "access": access,
+            "data_type": "Gene Expression Quantification", "data_format": "TSV"}], "pagination": {"total": 1}}})
+    async def run():
+        source = GdcPublicSource(httpx.MockTransport(transport))
+        try:
+            record = await source.search("files", {}, ("id", "access", "data_type", "data_format"), size=1)
+            assert record.records[0]["access"] == access
+            assert not any(term.get("content", {}).get("field") == "files.access" for term in requests[0]["filters"]["content"])
+            cards = source.asset_cards(record)
+            assert cards[0].access == (access or "unknown")
+            assert cards[0].file_size is None and cards[0].entity_unit == "file"
+            assert cards[0].acquisition_id == record.acquisition_id
+            assert cards[0].request_sha256 and cards[0].limitations
+        finally:
+            await source.aclose()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("limits", [
+    {"max_block_download_bytes": 10}, {"max_workspace_bytes": 7},
+    {"max_durable_artifact_bytes": 7}, {"minimum_free_disk_bytes": 2**60},
+])
+def test_gdc_file_preflight_rejects_cumulative_capacity_before_data_request(tmp_path, limits):
+    import asyncio
+    from src.runtime.resources import ServiceResources, ResourceRejected
+    requests = []
+    file_id = "00000000-0000-4000-8000-000000000001"
+    def transport(request):
+        requests.append(request.url.path)
+        if request.url.path.startswith("/files/"):
+            return httpx.Response(200, json={"data": {"access": "open", "file_size": 8}})
+        class FileBytes(httpx.AsyncByteStream):
+            async def __aiter__(self):
+                yield b"12345678"
+        return httpx.Response(200, stream=FileBytes())
+    async def run():
+        source = GdcPublicSource(httpx.MockTransport(transport))
+        resources = ServiceResources(**limits)
+        resources.charge_download("block", 4)
+        source.reserve = lambda owner, size: resources.reserve_download(owner, size, paths=(tmp_path,))
+        try:
+            with pytest.raises(ResourceRejected, match="capacity") as rejected:
+                await source.acquire_file(file_id, "block", "text")
+            assert rejected.value.directive["scientific_negative"] is False
+            assert requests == [f"/files/{file_id}"]
+            assert resources.downloaded_bytes == 4
+        finally:
+            await source.aclose()
+    asyncio.run(run())
+
+
+
+def test_gdc_http_200_embedded_error_is_failure_not_empty_source_result():
+    import asyncio
+    source = GdcPublicSource(httpx.MockTransport(lambda request: httpx.Response(200,
+        json={"data": {"hits": []}, "error": {"status": 400, "error": {"reason": "invalid sort mapping"}}})))
+    async def run():
+        try:
+            with pytest.raises(RuntimeError, match="GDC query failed"):
+                await source.search("files", {}, ("file_id",), size=1)
+        finally:
+            await source.aclose()
+    asyncio.run(run())
+
+
+
+def test_unknown_gdc_file_stream_records_failed_bytes_and_releases_reservation():
+    import asyncio
+    from src.runtime.resources import ServiceResources, ResourceRejected
+    reached_tail = []
+    receipts = []
+    file_id = "00000000-0000-4000-8000-000000000001"
+    class Bytes(httpx.AsyncByteStream):
+        async def __aiter__(self):
+            yield b"123"
+            yield b"456"
+            reached_tail.append(True)
+            yield b"unbounded tail"
+    def transport(request):
+        if request.url.path.startswith('/files/'):
+            return httpx.Response(200, json={"data": {"access": "open"}})
+        return httpx.Response(200, stream=Bytes())
+    async def run():
+        source = GdcPublicSource(httpx.MockTransport(transport), max_download_bytes=256)
+        resources = ServiceResources(max_file_bytes=4)
+        source.reserve = lambda owner, size: resources.reserve_download(owner, size)
+        source.meter = lambda count: resources.charge_download('block', count)
+        source.transfer_receipt = lambda owner, receipt: receipts.append(receipt)
+        try:
+            with pytest.raises(ResourceRejected, match='reserved capacity'):
+                await source.acquire_file(file_id, 'block', 'text')
+            assert receipts[0]['declared_size'] is None
+            assert receipts[0]['transferred_bytes'] == 5 and receipts[0]['status'] == 'failed'
+            assert resources.downloaded_bytes == receipts[0]['metadata_bytes'] + 5
+            assert not resources.reservations and not reached_tail
+        finally:
+            await source.aclose()
+    asyncio.run(run())

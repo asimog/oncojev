@@ -37,6 +37,7 @@ BEGIN SELECT RAISE(ABORT, 'records are append-only'); END;
 
 class SqliteResearchStore:
     def __init__(self, path: str | Path = ":memory:") -> None:
+        self.path = Path(path).resolve() if str(path) != ":memory:" else None
         self._connection = sqlite3.connect(str(path), check_same_thread=False)
         self._lock = threading.RLock()
         self._transaction_depth = 0

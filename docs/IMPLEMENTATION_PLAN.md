@@ -1,6 +1,6 @@
 # Next-stage autonomous laboratory implementation plan
 
-**Stage status: IN PROGRESS - H0/H1 DONE; H2-H5 PARTIAL; H6-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
+**Stage status: IN PROGRESS - H0/H1 DONE; H2-H6 PARTIAL; H7-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
 
 The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](references/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
@@ -79,7 +79,7 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 | H3 — event-driven turns, BlockDelta and stale-basis revalidation | P0, lifecycle/provenance | H2, existing F3/F6 | PLANNED |
 | H4 — global semantics, generators and hypothesis refinement (D3/D4) | P1, semantic method | Build: H3. Return-pass proof: H6/H7 generators and H13/H14 contract comparison. | PLANNED |
 | H5 — revisioned institutional OncoLab | P1, durable contracts | H3, existing catalogue/F2 | PARTIAL: immutable basis/history integrated; R1/evaluation return work below |
-| H6 — GDC files/assets, deeper representation/schema search (D2) | P1, source correctness + scoped method | Build: H5, existing F4c/F5. Return-pass proof: incremental H13 misses. Supplies D7 input gates. | PLANNED |
+| H6 — GDC files/assets, deeper representation/schema search (D2) | P1, source correctness + scoped method | Build: H5, existing F4c/F5. Return-pass proof: incremental H13 misses. Supplies D7 input gates. | PARTIAL: discovery/reservation baseline; R2/D2 return work below |
 | H7 — bio.tools, EDAM and measured search expansion (D6) | P1, capability retrieval | Build: H5 and H4 baseline policy primitives. Return-pass proof: H13 scale/coverage evidence. | PLANNED |
 | H8 — ecosystem enrichment | P2, scoped adapters | H7 | PLANNED |
 | H9 — governed capability promotion/review (D1) | P1, governance | Build: H5/H7/H8 as applicable. Acceptance: H10a/D8 promotion-grade qualification, measured H13 utility and applicable H11 deployment proof. | PLANNED |
@@ -228,6 +228,12 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 **Exit proof:** static catalogue still works and reopen reconstructs immutable past/current revisions and history boundaries. Ordinary usage, verification/reverification and suitability events leave registry revision unchanged; accepted capability-state changes create a revision. Blocks and history-consuming searches pin registry/high-water identities, old block contracts/searches remain reproducible after later observations/revisions, stale continuations fail honestly and the next block observes accepted state/new history without restart. Primary owner `test_persistence.py`; search transport/continuation contracts in `test_boundaries.py`. Promotion proof remains H9/H10a/H11. Run focused files and architecture/diff checks.
 
 ### H6 — Truthful GDC files and deeper representation/schema search
+
+**H6.1 — delivered local acquisition baseline and bounded live smoke (2026-10-02):** file metadata discovery no longer silently hides controlled/unknown assets; anonymous byte acquisition still requires explicit open metadata. Retained asset cards carry query/content/acquisition identity, retrieval time, type/format/access/size/checksum and bounded case/project references with omissions. Endpoint-specific ID fields/order replace invalid `id:asc`; HTTP-200 embedded GDC query errors now fail operationally instead of becoming empty successful acquisitions. Before selected bytes, service-owned reservations check remaining block/service downloads, workspace/archive and durable-artifact allowances plus actual free disk with SQLite/base64 headroom. Unknown-size streams are bounded; reservations release on failure and failed bytes/metadata bytes remain metered and receipted.
+
+**Proof:** `.venv/Scripts/python.exe -m pytest tests/invariants/test_boundaries.py` — 29 passed, 1 dependency warning in 10.02s before final added disk/unknown-size cases. Final `.venv/Scripts/python.exe -m pytest tests/invariants/test_boundaries.py tests/invariants/test_persistence.py -k 'gdc or artifact or ordered_source or download_service or file_discovery or file_preflight'` — 13 passed, 78 deselected in 7.90s. Discovery/preflight/embedded-error regressions failed on their intended pre-repair behaviors. Architecture and diff checks pass. Verified current [GDC search contract](https://docs.gdc.cancer.gov/API/Users_Guide/Search_and_Retrieval/) and actual endpoint response: `/files`, Clinical Supplement, size 1, offset 0, `file_id:asc`, 560 response bytes, one row/16,463 reported total; `/data/0001e8c8-d4aa-41d0-bf4d-fda8db5de4f9` returned 72,779 bytes matching advertised size/MD5, SHA-256 `f8f301b70e45f436b05e6861e9fa06c6a3692a9dd6f8aae5f85f96a445b89b3b`. This smoke establishes selected-file connectivity/byte identity, not scientific utility or deployment confinement; no scientific evidence was admitted.
+
+**Remaining acceptance:** need-to-representation/schema/unit/pairing assessments, D2 labelled alternative recall and H10 operation gates remain. H6 stays PARTIAL; disk preflight does not certify external clone/install or deployed process enforcement.
 
 **Owner:** `src/sources/{models,public,coverage}.py`, existing scientific artifact models/execution, OncoLab source descriptors, `scientific_tools.py`/`search_tools.py`, F4c semantic integration.
 

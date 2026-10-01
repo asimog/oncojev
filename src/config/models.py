@@ -104,6 +104,9 @@ class RetentionConfig(StrictModel):
 
 
 class ServiceResourceConfig(StrictModel):
+    max_workspace_bytes: int = Field(default=100_000_000, gt=0)
+    max_durable_artifact_bytes: int = Field(default=1_000_000_000, gt=0)
+    minimum_free_disk_bytes: int = Field(default=10_000_000, ge=0)
     max_block_download_bytes: int = Field(default=50_000_000, gt=0)
     max_service_download_bytes: int = Field(default=500_000_000, gt=0)
 

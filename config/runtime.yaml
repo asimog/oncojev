@@ -50,5 +50,8 @@ retention:
   max_archive_bytes: 100000000
   max_workspaces: 20
 resources:
+  max_workspace_bytes: 100000000
+  max_durable_artifact_bytes: 1000000000
+  minimum_free_disk_bytes: 10000000
   max_block_download_bytes: 50000000
   max_service_download_bytes: 500000000
