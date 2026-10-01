@@ -1,6 +1,6 @@
 # Next-stage autonomous laboratory implementation plan
 
-**Stage status: IN PROGRESS - H0/H1 DONE; H2-H11 PARTIAL; H12-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
+**Stage status: IN PROGRESS - H0/H1 DONE; H2-H12 PARTIAL; H13-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
 
 The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](references/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
@@ -85,7 +85,7 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 | H9 — governed capability promotion/review (D1) | P1, governance | Build: H5/H7/H8 as applicable. Acceptance: H10a/D8 promotion-grade qualification, measured H13 utility and applicable H11 deployment proof. | PARTIAL: proposal/rejection path; accepted qualified reuse awaits return proof |
 | H10 — execution backend, scientific operations and dependency locking (D7/D8) | P0 for Railway execution, scientific correctness | Build: H2 and existing F5 admission; H6 inputs for selected science. Return-pass proof: scoped H13 evaluation; deployment in H11. | PARTIAL: confined Linux exploratory backend; qualification/scientific expansion return proof remains |
 | H11 — durable Railway deployment/confinement | P0 for deployment, operations | H2/H3/H5/H10 | PARTIAL: deployed persistent nonroot worker; target boundary checks passed; aggregate resources/continuation proof remains |
-| H12 — oncojevlab export/publication | P2, observability | H3/H4/H5/H9/H11 records | PLANNED |
+| H12 — oncojevlab export/publication | P2, observability | H3/H4/H5/H9/H11 records | PARTIAL: deterministic local exporter and isolated publisher; R9/context utility and external publication remain |
 | H13 — semantic/scientific evaluation corpus | P1, evaluation | Build alongside H4/H6–H10 baselines; return scoped proof to owners. Full-system conditions after H11/H12. | PLANNED |
 | H14 — frontier audit, generator contract and bounded calibration/Autoresearch (D3/D5) | P1, policy correctness and measured semantic research | Build: H0 caller inventory and H4/H6/H7 baselines. Acceptance: H13 comparisons/instability evidence. | PLANNED |
 | H15 — final documentation/full verification | Integration | H1–H14 acceptance or explicitly recorded external blockers | PARTIAL: target documentation aligned; final implemented-state reconciliation pending |
@@ -436,6 +436,12 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 **Exit proof:** several sequential real service blocks and a dynamic revision transition without restart, durable reopen after process/service reconstruction, honest interruption and credential-free logs/exports. Primary owner `test_persistence.py`; Linux/deployed verifier is a separate mandatory operational gate. Run owning tests and architecture/diff checks; record exact Railway smoke/volume/kernel findings or unresolved external setup. No deployment is performed by this documentation task.
 
 ### H12 — Deterministic oncojevlab exporter and isolated publisher
+
+**Delivered local projection baseline (2026-10-02):** the exporter reads a pinned immutable prefix of allowed typed records, generates only populated JSON/Markdown paths, retains original IDs/source hashes and explicit epistemic/unknown-attainment labels, and excludes private acquired bytes/environments/credentials. SQLite and PostgreSQL share a true sequence high-water; PostgreSQL serializes sequence assignment through commit so concurrent downstream receipts cannot invalidate a prefix. Material frontier, terminal block/cycle, capability/engineering proposal and registry-review boundaries retain deduplicated downstream export identities. The separate publisher targets only `asimog/oncojevlab`, preserves dirty external edits, records failures without touching evidence/closure, verifies pushed SHA and caps attempts at three per exported identity. It runs outside all agent/scientific environments; service hooks retain identities without Git credentials or publication.
+
+**Local proof:** `.venv/Scripts/python.exe -m pytest -o addopts='' -q` — 144 passed, one PostgreSQL integration skip, one existing event-loop deprecation warning in 127.66s. The skipped integration was separately run against isolated PostgreSQL 17 — one passed in 6.80s. Focused discovery/reopen/export checks — five passed in 7.79s. Real local Git commits with mocked push/remote transport prove failed-publication preservation, retry/deduplication, secret omission, deterministic pinned bytes and external-edit isolation; this is not live GitHub publication proof. `python -m scripts.export_notebook --database var/local-notebook-proof.sqlite3 --out var/local-notebook-proof` produced a labelled fixture dry-run with manifest hash `c54d116488f75a213c66a79c2d0070479c145150dd33f996589cefff12e868b7`. Architecture and diff checks passed.
+
+**Remaining acceptance:** R9 qualified source/coverage-bound literature context assessment and scientific utility remain unimplemented; export preserves existing literature and limitations but does not establish novelty. Separate publisher setup/live publication and H11 production cutover remain external proof. H12 stays PARTIAL, and H13/H14 return-pass mechanisms remain required before H15 completion.
 
 **Owner:** deterministic application/export module and `scripts/` entrypoint, persistence export/publication records, service event hooks; external repo `asimog/oncojevlab`.
 

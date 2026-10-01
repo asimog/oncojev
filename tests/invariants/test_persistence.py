@@ -40,6 +40,73 @@ from src.sources.models import AcquisitionRecord
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def test_notebook_export_and_publication_are_deterministic_downstream_only(tmp_path, monkeypatch):
+    """Public rendering/publish failure cannot mutate evidence or consume notebook edits."""
+    import subprocess
+    from src.application.export import render_snapshot, write_snapshot
+    from src.application.publication import publish_snapshot
+    source = SqliteResearchStore(tmp_path / 'research.sqlite3')
+    block = source.append(StoredRecord(kind=RecordKind.BLOCK, record_id='closed', block_id='owned',
+        payload={'status': 'complete', 'start': {'objective': 'Evaluate a public cohort association'}}))
+    evidence = source.append(StoredRecord(kind=RecordKind.EVIDENCE, record_id='original-evidence', block_id='owned',
+        payload={'claim': 'A retained association', 'interpretation': 'associative', 'source_refs': ['measurement-1']}))
+    source.append(StoredRecord(kind=RecordKind.DOSSIER, record_id='dossier', block_id='owned',
+        payload={'uncertainties': ['Independent replication unavailable'], 'hypotheses': ['ghp_' + 'a' * 30],
+                 'environment': {'OPENROUTER_API_KEY': 'private-sentinel'}, 'content_base64': 'private-bytes'}))
+    prefix = source.count()
+    baseline = source.records()
+    files = render_snapshot(source, high_water=prefix)
+    assert render_snapshot(source, high_water=prefix) == files
+    manifest = json.loads(files['manifest.json'])
+    assert manifest['source_high_water'] == prefix
+    serialized = b''.join(files.values())
+    assert b'private-sentinel' not in serialized and b'private-bytes' not in serialized and b'ghp_' not in serialized
+    assert b'original-evidence' in serialized and b'Objective attainment: unknown' in serialized
+    assert source.records() == baseline
+    source.append(StoredRecord(kind=RecordKind.MEASUREMENT, record_id='later', payload={'values': {'x': 7}}))
+    assert render_snapshot(source, high_water=prefix) == files
+    checkout = tmp_path / 'notebook'
+    checkout.mkdir()
+    def git(*args):
+        return subprocess.run(['git', '-C', str(checkout), *args], check=True, capture_output=True, text=True)
+    git('init', '-b', 'main'); git('config', 'user.name', 'Fixture'); git('config', 'user.email', 'fixture@example.invalid')
+    git('remote', 'add', 'origin', 'https://github.com/asimog/oncojevlab.git')
+    real_run = subprocess.run
+    pushes = []
+    def transport(command, **kwargs):
+        if command[:2] == ['git', '-C'] and command[3] == 'push':
+            pushes.append(command)
+            raise subprocess.TimeoutExpired(command, 60)
+        return real_run(command, **kwargs)
+    monkeypatch.setattr('src.application.publication.subprocess.run', transport)
+    failure = publish_snapshot(source, files, checkout)
+    assert failure['status'] == 'failed' and len(pushes) == 1
+    assert source.record_at(block.seq) == block and source.record_at(evidence.seq) == evidence
+    assert render_snapshot(source, high_water=prefix) == files
+    def success_transport(command, **kwargs):
+        if command[:2] == ['git', '-C'] and command[3] in ('push', 'ls-remote'):
+            pushes.append(command)
+            sha = real_run(['git', '-C', str(checkout), 'rev-parse', 'HEAD'], check=True, capture_output=True, text=True).stdout.strip()
+            return subprocess.CompletedProcess(command, 0, stdout=sha + '\trefs/heads/main\n', stderr='')
+        return real_run(command, **kwargs)
+    monkeypatch.setattr('src.application.publication.subprocess.run', success_transport)
+    published = publish_snapshot(source, files, checkout)
+    assert published['status'] == 'published'
+    count = len(pushes)
+    assert publish_snapshot(source, files, checkout) == published and len(pushes) == count
+    (checkout / 'README.md').write_text('External notebook edit; never scientific input')
+    assert source.record_at(evidence.seq) == evidence
+    newer = render_snapshot(source)
+    assert publish_snapshot(source, newer, checkout)['status'] == 'failed'
+    assert (checkout / 'README.md').read_text() == 'External notebook edit; never scientific input'
+    for _ in range(2):
+        assert publish_snapshot(source, newer, checkout)['status'] == 'failed'
+    receipts = source.records(kind=RecordKind.PUBLICATION)
+    assert publish_snapshot(source, newer, checkout)['retry_exhausted'] is True
+    assert source.records(kind=RecordKind.PUBLICATION) == receipts
+    source.close()
+
+
 def test_postgres_migration_preserves_reference_sequences_and_atomic_append(tmp_path):
     """Actual PostgreSQL boundary: migration identity, rollback and mutation denial."""
     import os

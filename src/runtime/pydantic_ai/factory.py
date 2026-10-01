@@ -69,7 +69,8 @@ def bind_repository(runtime: HarnessRuntime, repository) -> None:
             resolve_reference(repository.store, record.execution_reference)
         runtime.initialize_institution()
         from src.oncolab.governance import review_pending
-        review_pending(runtime.institution)
+        if review_pending(runtime.institution):
+            runtime.retain_export("registry_review_boundary")
         runtime.index_for()
 
 

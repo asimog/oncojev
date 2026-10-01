@@ -140,7 +140,9 @@ class AutonomousService:
         self._last_system = system
         self.director = system.agents.director
         try:
-            return await run_cycle_async(system, direction, repository=self.repository, mission_id=f"mission-{self.store.count() + 1}")
+            result = await run_cycle_async(system, direction, repository=self.repository, mission_id=f"mission-{self.store.count() + 1}")
+            system.runtime.retain_export("cycle_terminal:" + system.runtime.cycle_id)
+            return result
         finally:
             await asyncio.gather(*(client.aclose() for client in
                 (system.runtime.gdc, system.runtime.xena, system.runtime.literature)))

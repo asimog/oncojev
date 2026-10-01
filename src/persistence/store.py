@@ -36,6 +36,10 @@ BEGIN SELECT RAISE(ABORT, 'records are append-only'); END;
 
 
 class RecordReads:
+    def high_water(self) -> int:
+        with self._lock:
+            return int(self._query("SELECT COALESCE(MAX(seq), 0) FROM records").fetchone()[0])
+
     def records(
         self, *, kind: RecordKind | None = None, block_id: str | None = None
     ) -> tuple[StoredRecord, ...]:

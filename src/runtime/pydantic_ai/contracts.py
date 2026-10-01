@@ -394,6 +394,16 @@ class HarnessRuntime:
             finally:
                 self.append_event(block_id, "HeavyExecutionReleased", {"owner": block_id})
 
+    def retain_export(self, cause):
+        if self.repository is None:
+            return
+        from src.application.export import retain_export
+        try:
+            return retain_export(self.repository.store, cause=cause)
+        except Exception as error:
+            # Export is downstream; completed scientific persistence stands.
+            print("NOTEBOOK EXPORT FAILED: " + type(error).__name__, flush=True)
+
     async def evaluate_jev(self, payload, questions):
         from copy import deepcopy
         async with self._jev_lock:
@@ -471,6 +481,7 @@ class HarnessRuntime:
                 director_seconds=self.director_turn_seconds + (perf_counter()-self.director_turn_started if self.director_turn_started is not None else 0),
                 idle_seconds=self.director_idle_seconds + (perf_counter()-self.director_idle_started if self.director_idle_started is not None else 0))
             self.repository.record_immutable(RecordKind.BLOCK_DELTA, active.run_id, active.delta, block.block_id)
+            self.retain_export("block_terminal:" + active.run_id)
         self.set_service_state(ServiceResearchState.POST_BLOCK_REVIEW, cause=active.run_id)
         active.finished.set()
         if self.director_supervising_turn and self.director_context is not None and self.director_request_error is None:

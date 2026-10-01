@@ -74,6 +74,7 @@ async def prepare_frontier(runtime, objective, *, limit=10):
                                 candidates=tuple(measured), beam=beam(measured), omitted=omitted, relations=tuple(relations))
     runtime.repository.store.append(StoredRecord(kind=RecordKind.GLOBAL_FRONTIER,
         record_id=frontier.frontier_id, payload=frontier.model_dump(mode="json")))
+    runtime.retain_export("global_frontier:" + frontier.frontier_id)
     return frontier
 
 
@@ -126,4 +127,5 @@ def register_global_tools(agent):
                     "status": "proposed", "authority": "none"}
         runtime.repository.store.append(StoredRecord(kind=RecordKind.ENGINEERING_PROPOSAL,
                                                      record_id=proposal["proposal_id"], payload=proposal))
+        runtime.retain_export("engineering_proposal:" + proposal["proposal_id"])
         return proposal

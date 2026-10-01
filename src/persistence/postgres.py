@@ -68,6 +68,9 @@ class PostgresResearchStore(RecordReads):
 
     def append_many(self, records):
         with self.transaction():
+            # Serialize sequence assignment through commit across producer and
+            # downstream receipt processes, preserving immutable prefix pins.
+            self._connection.execute("SELECT pg_advisory_xact_lock(794338921)")
             saved = []
             for record in records:
                 seq = self._connection.execute(

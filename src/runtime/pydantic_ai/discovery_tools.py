@@ -71,4 +71,5 @@ def register_discovery_tools(agent):
             references=tuple(reference(r) for r in records),rationale=rationale,requires_code_change=requires_code_change,
             parent=runtime.institution.pin().oncolab_registry_revision)
         saved=propose(runtime.institution,proposal)
+        runtime.retain_export("capability_proposal:" + saved.record_id)
         return {'proposal_id':saved.record_id,'status':'proposed','authority':'none'}

@@ -13,6 +13,8 @@ from pydantic import BaseModel, Field
 
 
 class RecordKind(StrEnum):
+    EXPORT = "export"
+    PUBLICATION = "publication"
     CAPABILITY_PROPOSAL = "capability_proposal"
     ENVIRONMENT_QUALIFICATION = "environment_qualification"
     REFERENCE_VALIDATION = "reference_validation"
