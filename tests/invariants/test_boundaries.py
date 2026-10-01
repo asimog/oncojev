@@ -510,3 +510,39 @@ def test_unknown_gdc_file_stream_records_failed_bytes_and_releases_reservation()
         finally:
             await source.aclose()
     asyncio.run(run())
+
+
+@pytest.mark.parametrize('source', ['github', 'bioconda', 'bioconductor'])
+def test_targeted_enrichment_preserves_distinct_source_and_blocked_runtime_contracts(source):
+    import asyncio
+    from src.oncolab.discovery import ExternalDiscovery
+    requests=[]
+    sha='a'*40
+    def transport(request):
+        requests.append(request)
+        if request.url.host=='api.github.com':
+            if '/commits/' in request.url.path:return httpx.Response(200,json={'sha':sha})
+            if '/git/trees/' in request.url.path:return httpx.Response(200,json={'tree':[{'path':'README.md','type':'blob'},{'path':'pyproject.toml','type':'blob'}]})
+            return httpx.Response(200,json={'name':'method','full_name':'owner/method','private':False,'default_branch':'main','html_url':'https://github.com/owner/method','license':{'spdx_id':'MIT'}})
+        if request.url.host=='api.anaconda.org':
+            return httpx.Response(200,json={'name':'package','summary':'scientific package','latest_version':'1.0','license':'BSD-3-Clause',
+                'files':[{'version':'1.0','md5':'b'*32,'attrs':{'subdir':'linux-64','depends':['r-base >=4'],'build':'r_0'}}]})
+        return httpx.Response(200,text='<h1>Package</h1><p>Bioconductor version: 3.23 Package version: 1.0</p>'
+            '<table><tr><td>License</td><td>LGPL</td></tr><tr><td>biocViews</td><td>RNASeq</td></tr></table>'
+            '<a href="../vignettes/Package/inst/doc/guide.html">Reference</a>')
+    client=ExternalDiscovery(httpx.MockTransport(transport))
+    result=asyncio.run(client.describe(source,{'github':'owner/method','bioconda':'package','bioconductor':'Package'}[source]))
+    card=result.cards[0]
+    assert card.source==source and result.raw_json and result.response_sha256 and result.response_bytes>0
+    assert 'metadata_only' in card.authority
+    if source=='github':
+        assert card.metadata['commit_sha']==sha and card.licence=='MIT'
+        assert all(sha in link['url'] for link in card.links)
+        assert len(requests)==3
+    elif source=='bioconda':
+        assert card.metadata['builds'][0]['dependencies']==['r-base >=4']
+        assert card.metadata['runtime']=='Conda backend unsupported' and card.versions==('1.0',)
+    else:
+        assert card.metadata['runtime']=='R backend unsupported'
+        assert card.licence=='LGPL' and card.metadata['release']=='3.23'
+        assert card.links[0]['url'].startswith('https://bioconductor.org/')

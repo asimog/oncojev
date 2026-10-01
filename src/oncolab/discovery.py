@@ -30,6 +30,8 @@ class ExternalCapabilityCandidate(BaseModel, frozen=True):
     outputs: tuple[dict, ...] = ()
     links: tuple[dict, ...] = ()
     publications: tuple[dict, ...] = ()
+    metadata: dict = Field(default_factory=dict)
+    limitations: tuple[str, ...] = ("Listing does not establish operation fidelity or scientific validity.",)
     omissions: tuple[str, ...] = ()
     authority: Literal["metadata_only; no installed route or scientific validation"] = "metadata_only; no installed route or scientific validation"
 
@@ -128,6 +130,9 @@ class ExternalDiscovery:
             raw_json=response.text,cards=cards,reported_total=count,continuation=next_cursor,omitted=max(0,len(rows)-limit))
 
     async def describe(self, source, external_id):
+        if source in {'github','bioconda','bioconductor'}:
+            from src.oncolab.enrichment import describe_package
+            return await describe_package(self,source,external_id)
         if source!='bio.tools' or not re.fullmatch(r'[A-Za-z0-9._+-]{1,150}',external_id):
             raise ValueError('unsupported source or invalid external identity')
         response=await self._get('https://bio.tools/api/tool/'+external_id+'/',{'format':'json'})

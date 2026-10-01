@@ -89,3 +89,9 @@ cards; exact responses remain resolvable in persistence. Mutable-source pages
 carry query-bound continuations and explicit snapshot limitations. Discovery,
 installation, execution, scientific validation and reusable qualification remain
 distinct.
+
+
+Targeted external describe also supports public GitHub repositories and Bioconda
+and Bioconductor packages. Repository commits and package build/reference
+metadata remain source-bound candidates. Conda and R execution are unsupported;
+source listings do not claim otherwise.

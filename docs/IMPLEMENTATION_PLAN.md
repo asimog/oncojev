@@ -1,6 +1,6 @@
 # Next-stage autonomous laboratory implementation plan
 
-**Stage status: IN PROGRESS - H0/H1 DONE; H2-H7 PARTIAL; H8-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
+**Stage status: IN PROGRESS - H0/H1 DONE; H2-H8 PARTIAL; H9-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
 
 The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](references/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
@@ -81,7 +81,7 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 | H5 — revisioned institutional OncoLab | P1, durable contracts | H3, existing catalogue/F2 | PARTIAL: immutable basis/history integrated; R1/evaluation return work below |
 | H6 — GDC files/assets, deeper representation/schema search (D2) | P1, source correctness + scoped method | Build: H5, existing F4c/F5. Return-pass proof: incremental H13 misses. Supplies D7 input gates. | PARTIAL: discovery/reservation baseline; R2/D2 return work below |
 | H7 — bio.tools, EDAM and measured search expansion (D6) | P1, capability retrieval | Build: H5 and H4 baseline policy primitives. Return-pass proof: H13 scale/coverage evidence. | PARTIAL: bounded discovery/live smoke; R3/D6 evaluation return work below |
-| H8 — ecosystem enrichment | P2, scoped adapters | H7 | PLANNED |
+| H8 — ecosystem enrichment | P2, scoped adapters | H7 | PARTIAL: targeted metadata/live smokes; R4 operation-reference return work below |
 | H9 — governed capability promotion/review (D1) | P1, governance | Build: H5/H7/H8 as applicable. Acceptance: H10a/D8 promotion-grade qualification, measured H13 utility and applicable H11 deployment proof. | PLANNED |
 | H10 — execution backend, scientific operations and dependency locking (D7/D8) | P0 for Railway execution, scientific correctness | Build: H2 and existing F5 admission; H6 inputs for selected science. Return-pass proof: scoped H13 evaluation; deployment in H11. | PLANNED |
 | H11 — durable Railway deployment/confinement | P0 for deployment, operations | H2/H3/H5/H10 | PLANNED |
@@ -293,6 +293,12 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 **Acceptance:** H13 records the staged scan→FTS→vocabulary/ontology→embedding decisions and gains/limits; only justified stages are implemented. Continuation/query/revision determinism and rebuild/reopen belong to existing boundary/persistence test owners. Bounded curated ingestion yields candidates, not installation, validation or automatic promotion. Every D6 component has a phase-owned decision and execution/proof path; no separate deferred scale/ontology backlog remains.
 
 ### H8 — GitHub, Bioconda and Bioconductor enrichment
+
+**H8.1 — delivered targeted source-specific enrichment (2026-10-02):** the H7 describe interface now accepts explicit GitHub owner/repository, Bioconda package and Bioconductor package identities. GitHub verifies public identity and resolves an exact commit before retaining bounded root/docs/dependency/test references; unknown licence stays unknown. Bioconda retains latest declared package version and selected build/checksum/platform/dependency metadata without installing Conda. One official Bioconductor package page supplies release/version/licence/BiocViews/dependencies and docs/source links; R execution remains explicitly unsupported. Exact response bundles and hashes persist through the existing role/history path; no bulk registry ingestion or extra execution authority.
+
+**Proof:** `.venv/Scripts/python.exe -m pytest tests/invariants/test_boundaries.py -k targeted_enrichment` — 3 passed, 33 deselected in 4.92s before final GitHub directory-reference expansion; architecture and diff checks pass. Distinct source fixtures protect public commit identity, dependency/build metadata and official package parsing/runtime limitations. Bounded live lookups succeeded for GitHub `thelovelab/DESeq2` (12,981 bytes, commit `c62c60c6ff83fd84ce115cacd1c49827533f85a7`, R, licence unknown), Bioconda `bioconductor-deseq2` (310,015 bytes, returned latest 1.50.2, scoped build/platform/dependency checksums), and Bioconductor `DESeq2` (30,163 bytes, release 3.23/package 1.52.0, licence metadata). Versions differ across sources and are not reconciled into invented executable identity.
+
+**Remaining acceptance:** R4 actual canonical-operation/tutorial/example and relevant Galaxy/nf-core/recipe inspection feeds H10/H13 reference validation; metadata and constructed uninspected recipe links are insufficient. H8 stays PARTIAL until that source-to-operation path is exercised.
 
 **Owner:** H7 external-discovery adapters/models and current public GitHub method request validation in `src/science/sandbox.py`; typed role tools.
 
