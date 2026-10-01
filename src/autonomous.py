@@ -9,6 +9,7 @@ import os
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
+from uuid import uuid4
 
 from src.runtime.resources import ServiceResources
 from src.api.server import create_server
@@ -140,7 +141,18 @@ class AutonomousService:
         self._last_system = system
         self.director = system.agents.director
         try:
-            result = await run_cycle_async(system, direction, repository=self.repository, mission_id=f"mission-{self.store.count() + 1}")
+            mission = self.store.latest(RecordKind.MISSION)
+            if mission is None or mission.payload["direction"] != direction:
+                # Preserve the latest legacy identity only when its exact human
+                # direction matches. Never relabel historical cycles.
+                prior = self.store.latest(RecordKind.CYCLE_START) if mission is None else None
+                identity = (prior.payload.get("mission_id") if prior and prior.payload.get("direction") == direction else None)
+                mission = self.store.append(StoredRecord(kind=RecordKind.MISSION,
+                    record_id=identity or f"mission-{uuid4()}", payload={"direction": direction,
+                        "parent_mission_id": mission.record_id if mission else None,
+                        "basis": "human_supplied_direction", "legacy_identity_retained": bool(identity)}))
+                system.runtime.retain_export("mission_boundary:" + mission.record_id)
+            result = await run_cycle_async(system, direction, repository=self.repository, mission_id=mission.record_id)
             system.runtime.retain_export("cycle_terminal:" + system.runtime.cycle_id)
             return result
         finally:

@@ -30,7 +30,9 @@ and semantic history retain their original epistemic status.
 
 The service owns one Director Agent per process through the factory. It passes no
 previous message history (retention bound: zero); continuity is reconstructed from
-persisted records after restart. Each cycle has a new runtime, and each block
+persisted records after restart. A durable human-direction mission spans successive
+cycles and restarts; changing the exact direction appends a linked new mission.
+Each cycle has a new runtime, and each block
 has a fresh Researcher, state, skill selections and usage budgets.
 
 Semantic annotations follow deterministic retrieval of selected digests. Separate global retrieval budgets bound calls, questions, bytes and elapsed time. Failures return F3 ordering with operational receipts. Native answers remain in Jev receipts; no whole-memory context or evidence authority is introduced.

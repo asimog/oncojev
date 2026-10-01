@@ -628,6 +628,16 @@ def test_service_recovers_pending_work_before_each_cycle(tmp_path, monkeypatch):
         assert result.status.value == "complete"
         assert service.application.reconstruction(pending.block_id).block["status"] == "interrupted"
         assert [r.payload["status"] for r in service.store.records(kind=RecordKind.CYCLE)] == ["incomplete", "complete"]
+        original_mission = service.store.latest(RecordKind.CYCLE).payload["mission_id"]
+        system = cycle_system()
+        system.runtime.researcher_factory = lambda block_id: system.agents.researcher
+        calls = 0
+        system.agents.director.model = scripted(director)
+        system.agents.researcher.model = scripted(researcher)
+        service.run_once("changed human direction")
+        changed_mission = service.store.latest(RecordKind.CYCLE).payload["mission_id"]
+        assert changed_mission != original_mission
+        assert service.store.latest(RecordKind.MISSION).payload["parent_mission_id"] == original_mission
     finally:
         service.store.close()
 
@@ -662,7 +672,9 @@ def test_service_delivers_relevant_failed_history_to_fresh_researcher(tmp_path, 
                 assert "unrelated-newest" not in prompt
             code = 'memory = await read_research_memory(query="melanoma")\n'
             if phase == 2:
-                code += ('filtered = await search_research_memory(query="melanoma", filters={"entity": "TCGA-SKCM", "topic": "expression"})\n'
+                code += ('frontier = await prepare_global_frontier(objective="melanoma public expression", limit=5)\n'
+                         'assert frontier["candidates"], "unchanged mission lost prior investigations"\n'
+                         'filtered = await search_research_memory(query="melanoma", filters={"entity": "TCGA-SKCM", "topic": "expression"})\n'
                          'assert filtered["digests"]\n'
                          'reference = memory["digests"][0]["references"][0]\n'
                          'resolved = await resolve_memory_reference(kind=reference["kind"], record_id=reference["record_id"], seq=reference["seq"], sha256=reference["sha256"], block_id=reference["block_id"])\nassert resolved\n'

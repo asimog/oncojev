@@ -10,7 +10,7 @@ from src.provenance import content_hash
 
 RENDERER = "oncojevlab-v1"
 GROUPS = {
-    "program": (RecordKind.CYCLE, RecordKind.CYCLE_START, RecordKind.OUTCOME_CORRECTION),
+    "program": (RecordKind.MISSION, RecordKind.CYCLE, RecordKind.CYCLE_START, RecordKind.OUTCOME_CORRECTION),
     "program/reviews": (RecordKind.RESEARCH_MEMORY,),
     "program/frontier": (RecordKind.GLOBAL_FRONTIER,),
     "program/relations": (RecordKind.GLOBAL_RELATION,),
