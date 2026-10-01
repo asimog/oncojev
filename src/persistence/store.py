@@ -35,7 +35,71 @@ BEGIN SELECT RAISE(ABORT, 'records are append-only'); END;
 """
 
 
-class SqliteResearchStore:
+class RecordReads:
+    def records(
+        self, *, kind: RecordKind | None = None, block_id: str | None = None
+    ) -> tuple[StoredRecord, ...]:
+        clauses: list[str] = []
+        parameters: list[str] = []
+        if kind is not None:
+            clauses.append("kind = ?")
+            parameters.append(kind.value)
+        if block_id is not None:
+            clauses.append("block_id = ?")
+            parameters.append(block_id)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._lock:
+            rows = self._query(
+                f"SELECT seq, kind, block_id, record_id, recorded_at, schema_version, payload FROM records{where} ORDER BY seq",
+                parameters,
+            ).fetchall()
+        return tuple(self._row_to_record(row) for row in rows)
+
+    def latest(self, kind: RecordKind, *, block_id: str | None = None) -> StoredRecord | None:
+        where = "kind = ?" + (" AND block_id = ?" if block_id is not None else "")
+        parameters = [kind.value] + ([block_id] if block_id is not None else [])
+        with self._lock:
+            row = self._query(
+                f"SELECT seq, kind, block_id, record_id, recorded_at, schema_version, payload FROM records WHERE {where} ORDER BY seq DESC LIMIT 1",
+                parameters,
+            ).fetchone()
+        return self._row_to_record(row) if row else None
+
+    def record_at(self, seq: int) -> StoredRecord | None:
+        """Resolve an immutable sequence reference without scanning whole history."""
+        with self._lock:
+            row = self._query(
+                "SELECT seq, kind, block_id, record_id, recorded_at, schema_version, payload FROM records WHERE seq = ?", (seq,)
+            ).fetchone()
+        return self._row_to_record(row) if row else None
+
+    def block_ids(self) -> tuple[str, ...]:
+        with self._lock:
+            rows = self._query(
+                "SELECT DISTINCT block_id FROM records WHERE block_id IS NOT NULL ORDER BY block_id"
+            ).fetchall()
+        return tuple(row[0] for row in rows)
+
+    def count(self) -> int:
+        with self._lock:
+            return int(self._query("SELECT COUNT(*) FROM records").fetchone()[0])
+
+
+    @staticmethod
+    def _row_to_record(row: sqlite3.Row | tuple) -> StoredRecord:
+        seq, kind, block_id, record_id, recorded_at, schema_version, payload = row
+        return StoredRecord(
+            seq=seq,
+            kind=RecordKind(kind),
+            block_id=block_id,
+            record_id=record_id,
+            recorded_at=recorded_at,
+            schema_version=schema_version,
+            payload=json.loads(payload),
+        )
+
+
+class SqliteResearchStore(RecordReads):
     def __init__(self, path: str | Path = ":memory:") -> None:
         self.path = Path(path).resolve() if str(path) != ":memory:" else None
         self._connection = sqlite3.connect(str(path), check_same_thread=False)
@@ -79,66 +143,8 @@ class SqliteResearchStore:
                 saved.append(record.model_copy(update={"seq": int(cursor.lastrowid)}))
         return tuple(saved)
 
-    def records(
-        self, *, kind: RecordKind | None = None, block_id: str | None = None
-    ) -> tuple[StoredRecord, ...]:
-        clauses: list[str] = []
-        parameters: list[str] = []
-        if kind is not None:
-            clauses.append("kind = ?")
-            parameters.append(kind.value)
-        if block_id is not None:
-            clauses.append("block_id = ?")
-            parameters.append(block_id)
-        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
-        with self._lock:
-            rows = self._connection.execute(
-                f"SELECT seq, kind, block_id, record_id, recorded_at, schema_version, payload FROM records{where} ORDER BY seq",
-                parameters,
-            ).fetchall()
-        return tuple(self._row_to_record(row) for row in rows)
-
-    def latest(self, kind: RecordKind, *, block_id: str | None = None) -> StoredRecord | None:
-        where = "kind = ?" + (" AND block_id = ?" if block_id is not None else "")
-        parameters = [kind.value] + ([block_id] if block_id is not None else [])
-        with self._lock:
-            row = self._connection.execute(
-                f"SELECT seq, kind, block_id, record_id, recorded_at, schema_version, payload FROM records WHERE {where} ORDER BY seq DESC LIMIT 1",
-                parameters,
-            ).fetchone()
-        return self._row_to_record(row) if row else None
-
-    def record_at(self, seq: int) -> StoredRecord | None:
-        """Resolve an immutable sequence reference without scanning whole history."""
-        with self._lock:
-            row = self._connection.execute(
-                "SELECT seq, kind, block_id, record_id, recorded_at, schema_version, payload FROM records WHERE seq = ?", (seq,)
-            ).fetchone()
-        return self._row_to_record(row) if row else None
-
-    def block_ids(self) -> tuple[str, ...]:
-        with self._lock:
-            rows = self._connection.execute(
-                "SELECT DISTINCT block_id FROM records WHERE block_id IS NOT NULL ORDER BY block_id"
-            ).fetchall()
-        return tuple(row[0] for row in rows)
-
-    def count(self) -> int:
-        with self._lock:
-            return int(self._connection.execute("SELECT COUNT(*) FROM records").fetchone()[0])
+    def _query(self, query, parameters=()):
+        return self._connection.execute(query, parameters)
 
     def close(self) -> None:
         self._connection.close()
-
-    @staticmethod
-    def _row_to_record(row: sqlite3.Row | tuple) -> StoredRecord:
-        seq, kind, block_id, record_id, recorded_at, schema_version, payload = row
-        return StoredRecord(
-            seq=seq,
-            kind=RecordKind(kind),
-            block_id=block_id,
-            record_id=record_id,
-            recorded_at=recorded_at,
-            schema_version=schema_version,
-            payload=json.loads(payload),
-        )

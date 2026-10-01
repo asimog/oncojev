@@ -9,5 +9,6 @@ RUN uv sync --frozen --no-dev
 RUN chmod a-w /app \
     && mkdir -p /app/var/workspaces \
     && chown -R oncojev:oncojev /app/var
-USER oncojev
-CMD ["python", "-m", "src", "serve"]
+USER root
+ENTRYPOINT ["python", "scripts/worker_entrypoint.py"]
+CMD ["-m", "src", "serve"]

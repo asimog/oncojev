@@ -14,6 +14,7 @@ dependencies = [
   "matplotlib>=3.11.2",
   "numpy>=2.5.3",
   "pandas>=3.0.6",
+  "psycopg[binary]>=3.2",
   "pydantic>=2.10",
   "pydantic-ai>=1.0",
   "pydantic-ai-harness[codemode,coder]>=0.52.0",

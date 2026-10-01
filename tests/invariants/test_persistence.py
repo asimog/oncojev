@@ -40,6 +40,44 @@ from src.sources.models import AcquisitionRecord
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def test_postgres_migration_preserves_reference_sequences_and_atomic_append(tmp_path, monkeypatch):
+    """Actual PostgreSQL boundary: migration identity, rollback and mutation denial."""
+    import os
+    import psycopg
+    from src.persistence.postgres import PostgresResearchStore
+    from scripts.migrate_records import migrate
+    from src.provenance import content_hash
+    url = os.environ.get('ONCOJEV_TEST_POSTGRES_URL')
+    if not url:
+        pytest.skip('requires isolated PostgreSQL integration database')
+    source = SqliteResearchStore(tmp_path / 'source.sqlite3')
+    first = source.append(StoredRecord(kind=RecordKind.MEASUREMENT, record_id='original',
+        block_id='owned', payload={'values': {'effect': 2.5}, 'provenance': ['exact input']}))
+    source.append(StoredRecord(kind=RecordKind.EVIDENCE, record_id='admitted-reference',
+        block_id='owned', payload={'measurement_ref': {'seq': first.seq, 'record_id': first.record_id,
+            'sha256': content_hash(first.payload)}, 'claim': 'retained source-bound observation'}))
+    target = PostgresResearchStore(url, initialize=True)
+    try:
+        before = source.records()
+        assert migrate(source, target)['status'] == 'migrated'
+        assert target.records() == before
+        assert migrate(source, target)['status'] == 'already_migrated'
+        for sql in ('UPDATE records SET payload=payload', 'DELETE FROM records', 'TRUNCATE records'):
+            with pytest.raises(psycopg.Error, match='append-only'):
+                target._connection.execute(sql)
+        circular = {}; circular['self'] = circular
+        invalid = StoredRecord(kind=RecordKind.STATE_REVISION, record_id='invalid', payload=circular)
+        with pytest.raises(ValueError, match='Circular'):
+            target.append_many((StoredRecord(kind=RecordKind.STATE_REVISION, record_id='rolled-back', payload={}), invalid))
+        assert target.records() == before
+        saved = target.append(StoredRecord(kind=RecordKind.STATE_REVISION, record_id='next', payload={}))
+        assert saved.seq > max(r.seq for r in before)
+        assert target.record_at(first.seq) == first
+        assert source.records() == before
+    finally:
+        source.close(); target.close()
+
+
 @pytest.mark.parametrize("failure", [False, True])
 def test_director_global_frontier_retains_replication_relations_and_rejects_stale_basis(tmp_path, failure):
     """H4: real Director tool route, native receipts, immutable originals and reopen."""

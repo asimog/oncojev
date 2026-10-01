@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from src.oncolab.institution import application_identity
 from src.persistence.records import RecordKind, StoredRecord
-from src.persistence.store import SqliteResearchStore
+from src.persistence.postgres import open_store
 from src.runtime.paths import data_root
 
 
@@ -29,7 +29,7 @@ def main():
         "limitations": ["Aggregate Coder process/disk controls and API responsiveness under heavy science remain unqualified.",
                         "Fixture scientific transport proves execution confinement, not public method utility.",
                         "Restart recovery and sequential scientific cycles require separate source-linked observations."]}
-    with_store = SqliteResearchStore(data_root(root) / "oncojev.sqlite3")
+    with_store = open_store(data_root(root) / "oncojev.sqlite3")
     try:
         stored = with_store.append(StoredRecord(kind=RecordKind.DEPLOYMENT_VERIFICATION,
             record_id=str(uuid4()), payload=payload))
