@@ -6,6 +6,8 @@ Its central question is whether high-throughput typed semantic measurement from 
 
 OncoJev is not a fixed GDC or cancer-modality pipeline. A human provides a broad direction; the system determines where to search, what representation and capability are sufficient, what analysis to run, and what deserves further investigation.
 
+The bounded F0–F6 stage is **DONE**; its full historical plan and verification limits are preserved in [the completed plan](docs/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md). The [active next-stage plan](docs/IMPLEMENTATION_PLAN.md) expands the [complete supplied requirements](docs/references/NEXT_STAGE_AUTONOMOUS_LAB_REQUIREMENTS.md) into H0–H15. Next-stage behavior below is a target, not a claim of delivery.
+
 ## Core architecture
 
 ```text
@@ -53,7 +55,7 @@ uv run python scripts/run_live_cycle.py  # one live cycle persisted under var/
 uv run python scripts/export_snapshot.py # regenerate the offline UI fallback
 ```
 
-## Autonomous runtime
+## Delivered autonomous runtime
 
 Python owns the autonomous cycle, requires exactly one new block, and persists records as work occurs. Successful closure requires a recorded Researcher return; `complete_block` requests handoff rather than declaring success. Failed allocated work retains a partial dossier and failed cycle receipt before the error propagates. A Director budget/token truncation produces an incomplete cycle with a separate Director outcome. Run completion never establishes scientific objective attainment, which remains unknown unless independently established. Recovery runs before every service cycle, closes interrupted work without resuming it, and appends corrections for contradictory legacy completion records while preserving their originals.
 
@@ -115,5 +117,15 @@ were removed; configuration remains strict.
 
 The web fallback is explicitly an offline synthetic fixture with zero admitted
 evidence. API availability does not certify scientific validity or completion.
-See the phase delivery records in `docs/IMPLEMENTATION_PLAN.md` for scoped checks
+See the phase delivery records in [the completed F0–F6 plan](docs/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md) for scoped checks
 and unresolved scientific/semantic utility and dependency-lock limitations.
+
+## Next-stage target
+
+The target remains one Python/Railway service with a persistent Director and at most one active fresh Researcher. Python will own a non-blocking Researcher task while the Director receives bounded event-driven turns for global memory, hypotheses, contradictions, capability gaps and program review. Both roles retain Coder and CodeMode; Director scratch remains bounded to `/work/director`. The Director will choose a future block from a retained global semantic frontier or truthfully pause, without changing active local state or deadlines.
+
+OncoLab will preserve its curated seed and add immutable institutional revisions, block pins and governed between-block updates. Capability discovery will expand on demand through bio.tools and bounded GitHub/Bioconda/Bioconductor metadata; GDC file results remain data assets. Actual retrievable representations extend the existing frontier. Suitability never grants execution authority, and a successful method run alone never earns reusable promotion.
+
+Scientific execution will share one validation/replay contract across an optional Docker backend and a Railway-compatible confined local Python backend with per-experiment dependencies. Reusable external methods require exact environment/dependency identity and fresh replay. Durable database storage and actual deployed confinement remain acceptance gates; a venv is not a security boundary.
+
+The separate generated `asimog/oncojevlab` repository will present deterministic, reference-linked laboratory history. Database records remain authoritative, typed Research Memory informs the Director, and publication failure cannot damage scientific state. D1–D8 are integrated directly into the active H phases as implementation/evaluation batches, with their original triggers, concrete proof and phase-owned gate outcomes. The canonical [architecture](docs/ARCHITECTURE.md) distinguishes these planned changes from the delivered runtime.

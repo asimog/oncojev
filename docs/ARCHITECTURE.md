@@ -4,6 +4,8 @@
 
 OncoJev searches large biological information spaces under bounded research allocations. It is a research system, not a predefined GDC workflow or a specialist-agent swarm.
 
+**Architecture status — 2026-10-01:** the bounded F0–F6 delivery is complete, with its original evidence and limits retained in [the completed plan](IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md). The sections before "Next-stage target architecture" describe the delivered baseline. That target section specifies the planned H0–H15 evolution, not implemented behavior. [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) is the sole active status tracker; [the full supplied target](references/NEXT_STAGE_AUTONOMOUS_LAB_REQUIREMENTS.md) preserves every requirement. This file remains the single canonical architecture document.
+
 ## Two architectural scopes
 
 ```mermaid
@@ -47,10 +49,10 @@ Researcher procedural skills are selected locally and afresh per JevBlock. They 
 | Concept | Responsibility | Never does |
 | --- | --- | --- |
 | Science | Deterministic block-local source, cohort, transformation, statistics, validation | Semantic judgment or global allocation |
-| Jev | Block-local typed semantic measurements after retrieval and before frontier policy | Evidence admission or agent control |
+| Jev | Typed semantic measurements after bounded retrieval and before deterministic frontier policy | Evidence admission or agent control |
 | Reasoner | Block-local hypotheses, interpretations, possible tests | Evidence admission |
 | Researcher | Local investigation and facilities inside one JevBlock | Extend its block or allocate new global scope |
-| Director | Global Control, OncoLab Index search, and Research Memory use | Direct science, source, Jev, visualization, or sandbox operation |
+| Director | Global Control, OncoLab Index search, and Research Memory use, including existing typed memory semantics | Direct scientific acquisition/analysis/admission or unrestricted Jev operation |
 | Python policy | Lifecycle, provenance, admission, composition, frontier | Treat uncertainty as a negative result |
 
 ## Search policy
@@ -121,3 +123,109 @@ retained source bytes, replay inputs and history remain durable. Persistence
 failures prevent export-driven cleanup; deletion/receipt failures are explicit.
 Read models distinguish synthetic provenance and source attempt/success/failure
 counts; API connectivity never establishes scientific success.
+
+## Next-stage target architecture — PLANNED
+
+The next stage extends delivered F0–F6 rather than rebuilding their semantic, scientific or operational contracts. It remains a cumulative scientific decision system: semantic judgment guides search and comparison without becoming evidence or execution authority. No new global Science/Jev agent or specialist swarm is introduced.
+
+```mermaid
+flowchart TD
+  H[Human research direction] --> D[Persistent Director]
+  DB[(Authoritative durable database)] --> RM[Typed Research Memory]
+  DB --> OL[Revisioned OncoLab institutional state]
+  RM --> GF[Bounded global semantic frontier]
+  OL --> GF
+  D --> GF
+  GF --> JM[Typed Jev measurements]
+  JM --> GP[Deterministic global policy and retained beam]
+  GP --> D
+  D --> CTRL[Python allocation or truthful program pause]
+  CTRL --> AC[At most one ActiveResearchContext]
+  AC --> R[Fresh Researcher for one JevBlock]
+  R --> LF[Distinct local ResearchState and frontier]
+  R --> SCI[Source acquisition and deterministic Science]
+  R --> EX[Confined scientific execution backend]
+  R --> JR[Local Jev and Reasoner facilities]
+  EX --> SCI
+  SCI --> E[Validated measurements and Science-only admission]
+  E --> DB
+  R --> DOS[Reference-linked dossier]
+  DOS --> DB
+  DB --> BD[Deterministic BlockDelta]
+  BD --> RM
+  BD --> OL
+  BD --> EVT[Python-owned terminal event and basis revalidation]
+  EVT --> D
+  DB --> OUT[Deterministic exporter]
+  OUT --> LAB[Separate generated oncojevlab repository]
+```
+
+BlockDelta feeding OncoLab records demand, usage, failure and proposal history; it never directly accepts a promotion. Python governance alone creates accepted registry revisions. The diagram's evidence/storage arrows do not grant persistence or exporters admission authority. `oncojevlab` has no reverse scientific input path.
+
+### Service lifetime, ownership and events
+
+One Railway service owns the read-only API, authoritative repository, typed Research Memory, revisioned OncoLab and one persistent Director Agent. Director transcripts need not grow across blocks: durable typed program context is the continuity mechanism. At most one active fresh Researcher has a block-local workspace, skills, state, budgets and usage. Pydantic AI remains integrated only under `src/runtime/pydantic_ai/`; `factory.py` remains the sole deterministic/live composition point.
+
+Python schedules and owns the Researcher task. Start returns an active-run identity immediately instead of awaiting the whole run inside a Director tool. The minimum active context records mission/cycle/block/run identity, exact OncoLab revision, application/runtime version, independent budgets/usage, lifecycle/task state and starting database high-water sequence. Director global work reads bounded persisted context and cannot change the active block's objective, state, deadline, pinned contracts or workspace. Atomic single-active and one-launch-per-block guards preserve the no-swarm/no-retry boundary.
+
+Asynchronous scheduling must also handle blocking source/Jev/scientific subprocess operations and safe SQLite/budget ownership; putting synchronous work inside an asyncio task is insufficient. One authoritative state/transaction owner preserves ordering while isolated bounded operations run without starving the Director. No distributed queue or workflow engine is needed.
+
+Python supplies useful bounded turns on Researcher start, explicitly material persisted events, completion/failure and bounded scheduled review. When independent global work is exhausted, Director yields and Python awaits events. Researcher wall-clock time does not authorize continuous Director model activity. Completion/failure receipts, atomic terminal dossier, delta/memory refresh and post-block events are idempotent; reserve windows stop new expensive work while in-flight work and finalization finish. Recovery closes interruption honestly and never silently resumes research.
+
+### Director program decisions and semantic scope
+
+Director asks what the laboratory should do next overall: memory synthesis, global hypothesis portfolio, uncertainty/contradiction/cross-block frontiers, duplicate research detection, dependencies/diversification, resource/failure/concentration review, capability gaps and engineering proposals. Researcher asks how to investigate inside its current block and retains source/method/representation/analysis selection, local Jev/Reasoner use, candidate generation, compatible software acquisition, scope-escalation proposals and local completion. Director allocates a question rather than a fixed pipeline.
+
+Global search follows deterministic high-recall retrieval, exact normalized duplicate checks, bounded typed candidates/projections, atomic Jev dimensions, native distributions, deterministic global policy and a small retained beam. Future investigations originate from continuations, hypotheses, uncertainties, contradictions, relation candidates, replication needs, capability gaps and underexplored mission areas. Jev measures mission relevance, uncertainty linkage, duplication, continuation/contradiction coherence, dependency/block fit, method fit and potential hypothesis distinction/material state change; Python composes and Director decides. A single "which is best" score is insufficient.
+
+Global and local frontiers may reuse measurement primitives, projection infrastructure and receipts. They have distinct candidate contracts, authority, scope, stop conditions, policy identities and threshold interpretations. Deterministic fallback preserves alternatives when Jev fails. Retrieval blocks comparison by entity/topic/capability/hypothesis/shared references/time/terms/lineage; never compare the full database all-pairs.
+
+Global hypotheses distinguish exact duplicates, paraphrases, related distinct claims, independent replication, contradiction, blocked/newly testable/deferred/resolved status. Cross-block relation candidates retain source references, type/status, Jev receipts/distributions, basis sequence/memory revision and limitations. Contradiction context distinguishes population, design, method and phrasing differences and preserves both originals. These are testing opportunities, not admitted evidence or scientific negatives. Program review is typed descriptive context, not a universal quality score or self-reward loop.
+
+Prepared frontiers record memory digest IDs, database high-water sequence, active block/revision, OncoLab revision and application version. After terminal/material revision events, Python revalidates that basis before allocation; stale plans cannot execute blindly. Explicit program ALLOCATE or PAUSE outcomes permit NO_MATERIAL_NEXT_BLOCK/NEEDS_HUMAN_DIRECTION and other truthful reasons. A pause creates no dummy block and proves no scientific success. Allocate turns remain bounded to one block; zero allocation without an explicit pause remains a distinct operational/incomplete outcome. CLI/API consumers must handle both outcomes honestly.
+
+### Harness authority and proposals
+
+Both roles retain Coder and CodeMode/Monty. Director uses writable `/work/director` for temporary bounded exported-state analysis, calculations, metadata comparisons and engineering proposal prototypes. Application source/config/policy/questions/prompts/deployment remain read-only; peer workspaces and credentials are denied. Coder cannot mutate evidence, authoritative registry state or lifecycle. Scratch output is neither Science nor evidence, and no Engineer agent or live self-modification is introduced.
+
+Director receives typed MEMORY, SEMANTIC, ONCOLAB and CONTROL tools plus existing confined Coder capabilities. Memory resolves historical references; semantic tools analyze memory/hypotheses/relations/contradictions/block candidates/program review; OncoLab tools inspect history/gaps/external candidates and propose governed changes; Control allocates/starts/inspects/reads completed work/pauses. Tool names adapt existing owners. There is no direct evidence-admission tool or generic unrestricted Jev escape hatch.
+
+Separate model requests, provider/tool attempts, CodeMode, Jev calls/questions, Reasoner/source/scientific executions, download bytes and aggregate usage remain bounded. Independent Director work has its own configured allowance. Reported monetary cost may remain unknown; expose configured bound and known/unknown status without invented provider pricing.
+
+### BlockDelta and authoritative memory
+
+The deterministic BlockDelta answers what changed because of a block. It links new evidence/measurement/hypothesis/scientific-negative references, uncertainties and explicitly recorded resolutions, continuation proposals, operational blockers, capability demand/gaps, candidate contradictions/relations and resource delta to their originating records and start/end sequence. Prefer references to duplicated payloads and mark omissions. Do not infer a negative, resolution or scientific interpretation from missing evidence or operational/semantic failure.
+
+The authoritative database stores immutable history. Research Memory derives typed, resolvable bounded context for Director and Researcher. OncoLab derives institutional capability knowledge and governs reusable state. The generated notebook serves human reading. Dossiers and memory/program summaries do not become evidence. New infrastructure cannot retroactively recover old absent artifacts or certify their replayability.
+
+### Revisioned OncoLab and discovery layers
+
+Preserve static descriptors, schemas, execution routes, governance, cards, snapshots, pagination and verification as seed knowledge. Add durable dynamic history of use, successful scopes, failures, limitations, demand, suitability, gaps and promotion/review/reverification. Immutable revisions retain parent/content identity and accepted governance transitions; historical revisions are reconstructable. Blocks pin registry and application/runtime version, and refresh occurs between blocks without restarting the service or reinterpreting old decisions against new routes.
+
+Three layers remain distinct: curated/promoted capabilities; bounded external capability discovery; scientific data assets. Current OncoLab retrieval→cards→contract expansion→deterministic route/input/access checks→Jev suitability→retained alternatives precedes external discovery when a need remains unmet. External bio.tools/GitHub/Bioconda/Bioconductor metadata is non-authoritative candidate information; listing does not prove installation, compatibility, validity, permitted use or reusability. Returned EDAM IDs/terms support bounded normalization without whole-ontology ingestion. Bioconda enriches compatibility/dependency metadata without mandating Conda; Bioconductor remains metadata-only without verified R support.
+
+GDC discovery produces data-asset records with query/page/order/total/access/category/type/format/strategy/size/hash/release and case/project identity where available. Individual file UUIDs never become capabilities. Search visibility may distinguish controlled/unknown assets, while anonymous acquisition remains explicitly open-only. Selected files use the existing exact-byte artifact bridge, supplied MD5/size validation, internal SHA-256 and block ownership. Useful representations group actual retrievable formats/entity units/coverage/transformations before semantic sufficiency; no universal artificial ladder. Controlled access requires separately supported scientific-data credentials and cannot be attempted silently.
+
+Capability gaps and proposals link actual needs/attempts/external candidates/failures. Versioned deterministic governance accepts or rejects scoped declarative promotion based on contracts, repeated validated use, generalization/replay/dependencies/access/licence knowledge/measured utility and overlap; a count or execution receipt alone is insufficient. Rejection changes no registry. Supported declarative reuse can produce a new revision without source edits. A parser/wrapper/algorithm/route/source/admission change produces EngineeringProposal for ordinary development. No unrestricted agent CRUD or automatic Jev/local-question/self-promotion.
+
+Search scaling is earned by recall/latency/coverage/size/context/continuation measurements: keep current deterministic retrieval where adequate, then smallest justified FTS/vocabulary support, then embeddings only for measured additional recall. Do not bulk harvest or create vector infrastructure as a prerequisite. D1–D8 are integrated into the active H-phase implementation batches: H4 generators/hypotheses, H6 representations/schema, H7 measured search expansion, H9 governed promotion, H10 selected scientific operations/dependency locking and H14 shared-generator/calibration experiments. H13 evaluations return to those owners before final acceptance. Original triggers govern execution; an unmet gate is recorded in the owning phase without claiming delivery or creating a separate backlog.
+
+### Scientific execution and deployment
+
+One backend-neutral scientific execution/validation contract extends the existing exact artifact/replay/admission bridge. The target Railway backend uses a confined per-experiment local Python venv; Docker may remain for local verification under the same contract. Research dependencies never enter the application `.venv` or another block's environment. Initially support compatible Python repositories only; R/Conda/CUDA/Docker-required methods/system daemons remain unsupported unless separately implemented and verified.
+
+A venv isolates dependencies, not authority. Scientific subprocesses and descendants require actual filesystem/process/credential confinement, owned output paths, read-only exact inputs/application, bounded resources and explicit network behavior. Preserve independent model-provider/scientific-data authentication and keep publisher credentials separate from both scratch/execution environments. Unsupported confinement fails closed rather than relaxing the scientific contract.
+
+Experiment identity retains repository/commit/package, application/backend/Python/OS-base runtime, dependency resolution/lock identity, install/test/execute commands, input references/hashes, parameters, output hashes, first/replay runs, validator and limitations. Local identity does not fabricate an immutable Docker image digest. Prefer lockfile/pinned requirements/reproducibly resolved dependencies; freeze/hash is a recorded fallback with limits, not automatic reinstall proof. Reusable promotion requires actual fresh-environment replay and supported identity. Coder stdout/code/prose/plots remain ineligible until a declared experiment passes deterministic execution/replay, Science validation and explicit admission.
+
+One worker and durable SQLite are the initial design. Railway must point `ONCOJEV_DB_PATH` at verified persistent storage and expose configured/verified/unknown durability status without secrets. Normal block/memory/registry/review/export changes require no restart; only application changes require redeploy. Actual deployed Landlock ABI, role workspace writes, app read-only, peer/credential denial, environment scrubbing and descendant confinement must be verified, alongside the scientific backend. Windows tests/local container proof cannot certify Railway. Missing or failed deployed verification is an explicit blocker.
+
+F6 archive-before-cleanup remains canonical. Experiment repositories/venvs/temporary outputs may be removed only after required artifacts, receipts, measurements/evidence, dependency/environment identity, registry revisions, memory and ledger are durable. Active/unresolved/unsafe workspaces and failed exports remain excluded. `/work/director` is outside block-retention semantics.
+
+### Generated oncojevlab and evaluation
+
+`asimog/oncojevlab` is a separate deterministic human-readable laboratory history, rendered only from persisted typed records at a pinned sequence/revision. Useful populated paths cover program direction/frontier/uncertainties/contradictions, block summary/dossier JSON, hypotheses, capability state/gaps/revisions/proposals, program reviews and engineering proposals. Label evidence, measurements, hypotheses, semantic judgments, Director decisions and failures distinctly, with authoritative reference IDs. Director does not edit notebook Markdown; notebook contents never write back scientific truth.
+
+Export/publication commits occur at defined material boundaries, with deterministic messages and no-op deduplication, not every model turn. GitHub failure or absent setup records a downstream publication failure/requirement, preserves exports and authoritative state and cannot roll back evidence or block terminal finalization. Publisher credentials stay outside Coder/scientific environments.
+
+Correctness tests protect executable authority/lifecycle/identity/failure contracts. Labelled evaluations separately measure retrieval/representation/capability recall and suitability, duplicates vs independent replication, hypothesis alignment, cross-block relations/contradictions, memory/actionable uncertainty, retained alternatives/diversity, unique source-bound outcomes and operational/resource use. Compare deterministic, Reasoner where appropriate, Jev and full-system conditions with versions/native distributions and resource differences. Labels remain evaluation data, never evidence. Calibrations/self-consistency/Autoresearch require measured instability and budget justification; no universal reward score or improvement claim from a tiny smoke.

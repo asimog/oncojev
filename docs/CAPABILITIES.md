@@ -1,5 +1,13 @@
 # OncoLab Index semantics
 
+The sections below describe the delivered F0–F6 capability contracts. Their
+completion evidence and original deferrals are preserved in the
+[completed F0–F6 plan](IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md). The
+[active H0–H15 implementation plan](IMPLEMENTATION_PLAN.md) owns next-stage
+status. The [complete supplied requirements](references/NEXT_STAGE_AUTONOMOUS_LAB_REQUIREMENTS.md)
+remain the reference for that stage. The next-stage section at the end of this
+document describes planned work, not delivered capability.
+
 Cross-cycle research context lives in `src/memory/`, separately from capability
 verification. Versioned digests reference recorded outcomes, measurements,
 evidence, hypotheses, semantic candidates, blockers, uncertainties and proposals.
@@ -140,3 +148,115 @@ and execution mode, with no fabricated evaluated conditions. Presentation retain
 failed/incomplete outcomes, unknown objective attainment, source attempts/successes
 and scientific limitations. Historical portable records keep their original scope
 and missing inputs; new deliveries do not retroactively validate them.
+
+## Next-stage target: revisioned institutional capabilities
+
+**Planned, pending the active H5–H10 phases and applicable H11 deployment proof.** The existing descriptor catalogue,
+bounded cards, snapshot-bound continuations, contract hashes, execution routes,
+verification records and F4 suitability measurements remain the static seed.
+They do not yet constitute a durable dynamically revisioned registry. H5 adds
+immutable institutional state in the authoritative database: revisions,
+verification and failure history, usage and demand, observed limitations,
+suitability history, capability gaps, proposals and review/reverification state.
+Each block pins the exact OncoLab revision and application/runtime version.
+Historical selections retain their original contracts; new accepted revisions
+become available between blocks without restarting the worker.
+
+Discovery keeps three distinct surfaces rather than expanding one catalogue
+without bounds:
+
+| Surface | Records and authority | Planned phase |
+| --- | --- | --- |
+| Curated OncoLab | Existing descriptors/routes and governed reusable capabilities. Presence alone grants no execution or admission authority. | H5, H9 |
+| External capability discovery | Bounded candidates from bio.tools, GitHub and optional Bioconda/Bioconductor metadata. Candidates are discovery information, not executable or validated capabilities. | H7, H8 |
+| Scientific data assets | GDC file/metadata candidates and selected block-owned retained artifacts. Individual file UUIDs never become capability descriptors. | H6 |
+
+H6 extends current `/files` acquisition infrastructure into first-class bounded
+data-asset and representation discovery. Candidate records retain file identity,
+name, access, type/category/format, strategy, size, MD5, state, available workflow,
+release and case/project metadata, query identity and retrieval time. Existing
+pagination, ordering, overlap and coverage rules remain authoritative. Selection
+uses actual retrievable representations, deterministic availability checks and
+bounded Jev sufficiency/assumption-fit measurements. Open selected files use the
+existing exact artifact bridge; controlled access requires a separate explicitly
+supported authentication route. Search infrastructure does not deliver MAF/VCF,
+expression, TMB, survival or other new Science operations.
+
+H7 introduces one bounded external discovery interface with search/describe
+operations, rather than an agent tool for every registry. bio.tools search
+supports useful text/identity/domain, EDAM topic/operation, input/output
+type/format and pagination filters where the verified source contract supports
+them. Candidate cards retain supplied provenance, links, publication, version
+and licence metadata. EDAM IDs/terms returned by candidates support controlled
+normalization; full ontology ingestion is outside the initial scope. Search
+receipts retain query, filters, page/cursor, returned identities, retrieval time,
+hashes where feasible, omissions and failures. Mutable registry metadata is never
+represented as an immutable source snapshot unless its bytes were retained.
+
+H8 adds bounded GitHub repository/commit/release/package/lockfile inspection and
+optional Bioconda recipe metadata for compatibility and reproducibility.
+Bioconda metadata does not install Conda. Bioconductor candidates remain
+metadata-only until a supported R execution environment is implemented and
+verified. Additional sources require a measured retrieval need; cBioPortal and
+Hugging Face expansion require explicit later approval.
+
+Capability selection starts with deterministic current-OncoLab retrieval,
+compact cards, selected contract expansion and execution/input checks. Jev then
+measures bounded semantic suitability and Python retains useful alternatives.
+An unmet need may trigger bounded external discovery and equivalent checks.
+An installed lexical match cannot veto a demonstrated unmet need, and external
+software does not automatically outrank a verified appropriate local method.
+Jev suitability never supplies a missing route, supported runtime, input, access
+permission or scientific validation.
+
+H9 adds versioned Python governance for promotion, review, update,
+reverification and retirement proposals using the minimum necessary models.
+Recorded repeated need, validated controlled executions, utility, overlap,
+generalization, replayability, failures, scope, typed contracts, exact software
+and dependency identities and access/licence limitations inform decisions. One
+execution or an arbitrary execution-count threshold cannot establish scientific
+validity. Rejection preserves the registry; acceptance appends a new immutable
+revision. Unsupported automatic Jev/self-promotion cannot pass governance.
+
+The promotion boundary is executable: a declarative capability can reuse an
+already verified generic executor using pinned software/environment, commands,
+typed inputs/outputs and validation contracts. Reuse requiring a parser, wrapper,
+Science algorithm, source adapter, route or admission change instead produces an
+`EngineeringProposal`. Director scratch work cannot modify live source or policy.
+Declarative promotion must fail closed until H10 supplies and verifies its actual
+execution contract and reproducible dependency identity, and H11 verifies the
+applicable deployment confinement. Local proof cannot certify Railway reuse.
+
+H10 replaces Docker-specific canonical ownership with one scientific-execution
+abstraction. The Railway target is a per-experiment Python venv executor without
+a Docker daemon; the current Docker backend may remain for local verification
+under the same canonical result contract. A venv isolates dependencies, not
+security. External execution requires verified confinement of application code,
+policy, peer workspaces, credentials and input bytes, scrubbed command
+environments, bounded resources and verified network restrictions for tests and
+execution. Unsupported isolation fails closed. Research packages never enter the
+application `.venv`, and no R, Conda, CUDA or daemon support is implied.
+
+Reusable methods require retained repository/commit/package identities,
+backend/Python/base runtime, exact dependency resolution/lock identity, commands,
+owned input references and hashes, parameters, first/replay receipts, output
+hashes and validator version. Dependency locking prefers a repository lockfile,
+then pinned requirements, then a reproducibly resolved dependency set, with
+post-install freeze/hash retained as an audit record. A freeze alone does not
+prove reproducible installation. Unreproducible dependencies prevent unsupported
+reusable status. Science validation and explicit evidence admission remain
+separate from execution, promotion and discovery.
+
+The active plan integrates all D1–D8 work into the owning H phases rather than a
+separate deferred table. H9 executes governed D1 promotion; H6 diagnoses and
+repairs available-but-missed D2 representations; H4/H14 qualify shared D3
+generators and refine D4 hypotheses; H14 runs budget-qualified D5 experiments;
+H7 delivers justified D6 index/vocabulary/ontology/embedding stages; H10 executes
+need/input-qualified D7 operations and D8 locked reinstall/replay. H13 supplies
+comparative evidence and returns it to each implementation owner. Original
+triggers and authority limits remain binding; measured no-change or unmet-input
+decisions stay in that phase and never claim scientific delivery. New
+infrastructure never reconstructs absent historical bytes by assertion. F6
+archive-before-cleanup remains canonical for new experiment scratch, repositories
+and venvs; required artifacts, execution/dependency identities, evidence,
+revisions, Research Memory and ledger history remain durable.
