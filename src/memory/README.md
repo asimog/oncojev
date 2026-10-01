@@ -112,3 +112,5 @@ state and terminal records and must not roll back evidence or block closure.
 Publisher credentials remain outside Coder environments; absent setup is an
 explicit external requirement. This documentation update creates no exporter,
 publisher or global-memory runtime implementation.
+
+Director global retrieval can filter capability, hypothesis, shared reference and lineage. Global frontier records retain original source references and a material-history/Index basis; allocation revalidates that basis. Relation candidates and engineering proposals are derived context without scientific admission or mutation authority.

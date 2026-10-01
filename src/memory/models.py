@@ -76,6 +76,10 @@ class MemoryFilters(BaseModel, frozen=True):
     mission_id: str | None = None
     entity: str | None = None
     topic: str | None = None
+    capability: str | None = None
+    hypothesis: str | None = None
+    shared_reference: str | None = None
+    lineage: str | None = None
     since: AwareDatetime | None = None
     until: AwareDatetime | None = None
 

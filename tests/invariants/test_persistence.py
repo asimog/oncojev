@@ -40,6 +40,78 @@ from src.sources.models import AcquisitionRecord
 ROOT = Path(__file__).resolve().parents[2]
 
 
+@pytest.mark.parametrize("failure", [False, True])
+def test_director_global_frontier_retains_replication_relations_and_rejects_stale_basis(tmp_path, failure):
+    """H4: real Director tool route, native receipts, immutable originals and reopen."""
+    import asyncio
+    from src.memory.models import CycleDigest, MemoryItem
+    from src.memory.service import reference
+    from src.runtime.pydantic_ai.contracts import DirectorDeps
+    from src.runtime.pydantic_ai.global_tools import validate_selection
+    system = cycle_system()
+    runtime = system.runtime
+    path = tmp_path / 'global.sqlite3'
+    store = SqliteResearchStore(path)
+    runtime.repository = ResearchRepository(store)
+    runtime.memory_jev_calls = 20
+    runtime.memory_jev_questions = 200
+    runtime.memory_jev_bytes = 1000000
+    for number, population in enumerate(('original', 'replication', 'other population', 'original')):
+        record = store.append(StoredRecord(kind=RecordKind.STATE_REVISION, record_id=f's{number}',
+            block_id=f'b{number}', payload={'statement': 'Melanoma expression predicts response', 'population': population}))
+        item = MemoryItem(item_id=f'h{number}', summary=' MELANOMA  expression predicts response ' if number == 3 else 'Melanoma expression predicts response',
+            epistemic_status='hypothesis', references=(reference(record),),
+            details={'proposed_test': ' INDEPENDENT  cohort association ' if number == 3 else 'independent cohort association', 'population': population,
+                     'replication': population == 'replication', 'capability_id': 'stat.scipy'})
+        digest = CycleDigest(digest_id=f'd{number}', cycle_id=f'c{number}', direction='melanoma expression',
+            recorded_at=datetime.now(UTC), cycle_status='complete', director_outcome='returned',
+            hypotheses=(item,), references=(reference(record),))
+        store.append(StoredRecord(kind=RecordKind.MEMORY_DIGEST, record_id=digest.digest_id, payload=digest.model_dump(mode='json')))
+    from src.memory.service import ResearchMemory
+    memory = ResearchMemory(store)
+    assert len(memory.search('melanoma', capability='stat.scipy', hypothesis='h0', shared_reference='s0', lineage='c0')) == 1
+    assert not memory.search('melanoma', capability='unavailable')
+    if failure:
+        class FailedJev:
+            def evaluate(self, state, questions):
+                raise TimeoutError('bounded fixture failure')
+        runtime.jev = FailedJev()
+    responses = []
+    async def model(messages, info):
+        if not any(isinstance(m, ModelResponse) for m in messages):
+            return ModelResponse(parts=[ToolCallPart('run_code', {'code':
+                'frontier = await prepare_global_frontier(objective="melanoma expression", limit=5)\n'
+                'assert len(frontier["candidates"]) == 3\n'
+                'assert len(frontier["beam"]) == 3\n'
+                'candidate = frontier["candidates"][0]\n'
+                'block = await allocate_block(objective=candidate["objective"], why_now="compare referenced hypotheses", '
+                'frontier_id=frontier["frontier_id"], candidate_id=candidate["candidate_id"])\n'
+                'assert block["objective"] == candidate["objective"]\nfrontier["frontier_id"]'}, tool_call_id='frontier')])
+        responses.extend(str(p.content) for m in messages for p in m.parts if hasattr(p, 'content'))
+        return ModelResponse(parts=[TextPart('planned')])
+    with system.agents.director.override(model=scripted(model)):
+        asyncio.run(system.agents.director.run('prepare a referenced next question', deps=DirectorDeps(runtime)))
+    assert not any('AssertionError' in s or 'Exception:' in s or 'Type error' in s for s in responses), responses
+    records = store.records(kind=RecordKind.GLOBAL_FRONTIER)
+    assert len(records) == 1 and len(runtime.manager.blocks()) == 1
+    frontier = records[0].payload
+    candidate = frontier['candidates'][0]
+    with pytest.raises(ValueError, match='stale'):
+        validate_selection(runtime, frontier['frontier_id'], candidate['candidate_id'], candidate['objective'])
+    assert frontier['relations'] and all(r['left']['source_refs'] and r['right']['source_refs'] for r in frontier['relations'])
+    assert all(c['status'] == 'keep_alive' for c in frontier['candidates'])
+    calls = store.records(kind=RecordKind.JEV_CALL)
+    assert any(r.payload['context_type'] == 'global_investigation' for r in calls)
+    assert all(r.payload['policy_version'] == 'global-frontier-policy-v1' for r in calls if r.payload['context_type'].startswith('global_'))
+    assert all(r.block_id is None for r in calls)
+    assert not store.records(kind=RecordKind.EVIDENCE)
+    store.close()
+    reopened = SqliteResearchStore(path)
+    assert reopened.records(kind=RecordKind.GLOBAL_FRONTIER)[0].payload == frontier
+    assert len(reopened.records(kind=RecordKind.GLOBAL_RELATION)) == len(frontier['relations'])
+    reopened.close()
+
+
 def scripted(function):
     async def stream(messages, info):
         response = await function(messages, info)

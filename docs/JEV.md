@@ -132,3 +132,5 @@ H13 evaluates useful-candidate recall, diversity, duplication and contradiction
 handling, uncertainty preservation and resource use separately from deterministic
 correctness. Calibration, self-consistency and Autoresearch remain D5 work gated
 by measured instability; this documentation change implements none of them.
+
+Global investigation and relation contracts use `global-contracts-v1` and a separate `global-frontier-policy-v1`. They reuse native projection/receipt decoding under Director semantic allowances, preserve alternatives on failure, and cannot admit evidence or resolve scientific contradictions. Original relation sides and native distributions remain reference-resolvable.

@@ -1,6 +1,6 @@
 # Next-stage autonomous laboratory implementation plan
 
-**Stage status: IN PROGRESS - H0/H1 DONE; H2/H3 PARTIAL; H4-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
+**Stage status: IN PROGRESS - H0/H1 DONE; H2-H4 PARTIAL; H5-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
 
 The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
@@ -241,6 +241,15 @@ No new tests were added for this documentation audit: existing behavior-level ba
 **Exit proof:** terminal events drive one post-block turn, idle runs do not busy-poll, deltas resolve their actual source records, failures remain operational, explicit pause creates no block, and new evidence/revision invalidates stale planning. Primary owner `test_persistence.py`; truthful read-model outcomes in its existing coverage. Retention still excludes active/unresolved contexts. Run focused file plus existing boundary tests and architecture/diff checks.
 
 ### H4 — Global Director semantic frontier, candidate generation and hypothesis refinement
+
+**H4 status: PARTIAL.**
+
+**H4.1 delivered locally:** Director-native `prepare_global_frontier` retrieves bounded typed history, generates reference-linked investigation candidates and preserves originals. NFKC/case/whitespace identity normalization merges only exact known test/scope duplicates; underspecified tests, independent replication and distinct populations retain separate candidates. Capability/hypothesis/shared-reference/lineage filters extend deterministic memory retrieval. At most two lexical neighbours per candidate feed independently versioned global relation questions; both original reference sets, native answers/call IDs, limits and material-basis hash remain durable. Independent global investigation dimensions reuse the existing projection/receipt adapter under Director semantic allowances and a separate `global-frontier-policy-v1`, retaining alternatives on operational failure. A categorical beam avoids a universal scalar reward. Optional frontier-bound allocation revalidates material records and Index snapshot after awaited memory retrieval and rejects stale or substituted questions. Reference-linked engineering proposals carry no mutation authority. Tool output is bounded to 32 KiB with explicit omissions.
+
+**Local proof:** the real Director CodeMode/tool route retains independent replication and population differences, merges an exact normalized duplicate, allocates an original beam question, rejects stale selection, keeps both relation sides and native global receipts, and survives SQLite reopen without creating evidence. Success and Jev timeout cases are deterministic contract checks, not live provider or scientific utility evidence. The initial normalization regression failed (four candidates instead of three); corrected identity policy passes. Baseline Director registration failed because `prepare_global_frontier` was unavailable. Focused verification: 21 passed, 60 deselected; architecture and diff checks passed; all 6 local links in the touched owning documents resolve.
+
+**Return tasks:** H5 must add immutable application/registry/verification-history pins and return to H2/H3/H4 exact-basis acceptance. H6/H7 add representation/method/capability/newly-testable/deferred generators before D3 domain recall comparison; H13 supplies held-out multi-domain utility, resource/latency and semantic-relation calibration evidence; H14 extracts a shared generator contract only if those comparisons justify it. D4 exact duplicate/replication/population labelled contract cases started here; paraphrase, conflicting-design/resolvability, blocked-to-actionable refinement and held-out before/after utility remain. Full portfolio lifecycle/status queries, resource/concentration review from H3 deltas and retained-relation/deferred candidate regeneration remain H4 return work. No roadmap phase is marked done from fixture connectivity.
+
 
 **Owner:** `src/director/`, `src/memory/{models,service}.py`, `src/jev/{models,questions,frontier}.py`, `src/runtime/pydantic_ai/{semantic,contracts,search_tools}.py`, dossier/persistence relations, incremental eval cases. **Requirements:** G7/G8/G10–G16/G34/G61/G64.
 

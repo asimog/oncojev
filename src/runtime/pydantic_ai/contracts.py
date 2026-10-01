@@ -507,6 +507,8 @@ def register_director_tools(
 ) -> None:
     register_memory_tools(agent)
     register_search_page(agent)
+    from src.runtime.pydantic_ai.global_tools import register_global_tools
+    register_global_tools(agent)
     @agent.tool
     async def inspect_director_resources(ctx: RunContext[DirectorDeps]) -> dict[str, Any]:
         """Read independent Director and aggregate allowances without allocating or changing a block.
@@ -554,7 +556,8 @@ def register_director_tools(
     @agent.tool
     async def allocate_block(
         ctx: RunContext[DirectorDeps], objective: str, why_now: str, seconds: int | None = None,
-        entities: list[str] = [], topics: list[str] = []
+        entities: list[str] = [], topics: list[str] = [],
+        frontier_id: str | None = None, candidate_id: str | None = None
     ) -> dict[str, Any]:
         """Create a bounded block. Only BlockManager computes its deadline."""
         runtime = ctx.deps.runtime
@@ -563,9 +566,16 @@ def register_director_tools(
         if pending:
             runtime.append_event(pending[0].block_id, "DirectorAllocationRejected", {"reason": "single_researcher_allocation"})
             raise RuntimeError("another Researcher block is already allocated")
+        memory = runtime.memory_service()
+        start_memory = memory.start_context(objective, context=await semantic_memory_context_async(runtime,objective)) if memory else None
+        if frontier_id is not None or candidate_id is not None:
+            if frontier_id is None or candidate_id is None or runtime.repository is None:
+                raise ValueError("frontier and candidate identities require durable memory")
+            from src.runtime.pydantic_ai.global_tools import validate_selection
+            validate_selection(runtime, frontier_id, candidate_id, objective)
         block = runtime.manager.allocate(
             objective, why_now, seconds, mission_id=runtime.mission_id, cycle_id=runtime.cycle_id,
-            memory=runtime.memory_service().start_context(objective, context=await semantic_memory_context_async(runtime,objective)) if runtime.memory_service() else None,
+            memory=start_memory,
             entities=tuple(entities), topics=tuple(topics),
         )
         state = runtime.research_state.start(block.block_id, block.objective)
@@ -573,7 +583,7 @@ def register_director_tools(
         if runtime.repository is not None:
             runtime.repository.record_block(block)
             runtime.repository.record_state_revision(state)
-        runtime.append_event(block.block_id, "DirectorBlockAllocated", {"objective": objective, "deadline": block.deadline.isoformat(), "handoff_at": block.handoff_at.isoformat(), "mission_id": runtime.mission_id, "cycle_id": runtime.cycle_id})
+        runtime.append_event(block.block_id, "DirectorBlockAllocated", {"objective": objective, "deadline": block.deadline.isoformat(), "handoff_at": block.handoff_at.isoformat(), "mission_id": runtime.mission_id, "cycle_id": runtime.cycle_id, "frontier_id": frontier_id, "candidate_id": candidate_id})
         return block.model_dump(mode="json")
 
     @agent.tool

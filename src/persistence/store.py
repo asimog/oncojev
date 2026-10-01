@@ -98,8 +98,14 @@ class SqliteResearchStore:
         return tuple(self._row_to_record(row) for row in rows)
 
     def latest(self, kind: RecordKind, *, block_id: str | None = None) -> StoredRecord | None:
-        matches = self.records(kind=kind, block_id=block_id)
-        return matches[-1] if matches else None
+        where = "kind = ?" + (" AND block_id = ?" if block_id is not None else "")
+        parameters = [kind.value] + ([block_id] if block_id is not None else [])
+        with self._lock:
+            row = self._connection.execute(
+                f"SELECT seq, kind, block_id, record_id, recorded_at, schema_version, payload FROM records WHERE {where} ORDER BY seq DESC LIMIT 1",
+                parameters,
+            ).fetchone()
+        return self._row_to_record(row) if row else None
 
     def record_at(self, seq: int) -> StoredRecord | None:
         """Resolve an immutable sequence reference without scanning whole history."""

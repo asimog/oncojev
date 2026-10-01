@@ -13,6 +13,9 @@ from pydantic import BaseModel, Field
 
 
 class RecordKind(StrEnum):
+    GLOBAL_FRONTIER = "global_frontier"
+    GLOBAL_RELATION = "global_relation"
+    ENGINEERING_PROPOSAL = "engineering_proposal"
     SERVICE_EVENT = "service_event"
     BLOCK_DELTA = "block_delta"
     CYCLE = "cycle"

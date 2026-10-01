@@ -177,7 +177,8 @@ class ResearchMemory:
         return tuple(latest.values())
 
     def search(self, query="", *, mission_id=None, entity=None, topic=None, since: datetime | None = None,
-               until: datetime | None = None, limit=10):
+               until: datetime | None = None, limit=10, capability=None, hypothesis=None,
+               shared_reference=None, lineage=None):
         if not 1 <= limit <= self.max_results:
             raise ValueError("memory search limit must be between 1 and 20")
         ranked = []
@@ -185,6 +186,16 @@ class ResearchMemory:
             if mission_id is not None and d.mission_id != mission_id or entity is not None and entity not in d.entities or topic is not None and topic not in d.topics:
                 continue
             if since is not None and d.recorded_at < since or until is not None and d.recorded_at > until:
+                continue
+            items = (*d.hypotheses, *d.candidates, *d.operational_blockers, *d.uncertainties, *d.continuation_proposals)
+            refs = (*d.references, *(r for item in items for r in item.references))
+            if shared_reference is not None and not any(r.record_id == shared_reference for r in refs):
+                continue
+            if lineage is not None and lineage not in (*d.block_ids, d.cycle_id, *(r.block_id for r in refs)):
+                continue
+            if capability is not None and not any(capability in (i.details.get('capability_id'), *i.details.get('capability_ids', ())) for i in items):
+                continue
+            if hypothesis is not None and not any(hypothesis == i.item_id or terms(hypothesis) <= terms(i.summary) for i in d.hypotheses):
                 continue
             # Legacy Director prose never supplies relevance or facts.
             text = " ".join((d.direction, *d.objectives, *d.entities, *d.topics,

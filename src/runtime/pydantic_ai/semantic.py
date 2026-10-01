@@ -15,13 +15,14 @@ from src.provenance import canonical_bytes, content_hash
 from src.researcher.state import JevProjection, ProjectionSpec
 
 
-async def measure_async(runtime, block_id, context_type, identity, payload, *, eligible=True, escalate=False):
+async def measure_async(runtime, block_id, context_type, identity, payload, *, eligible=True, escalate=False, policy=None):
     """One versioned context, independent questions, native receipt and policy.
 
     Director Control uses a separate global retrieval allocation; it has no
     scientific tools. Failed batches preserve valid partial answers for inspection
     but never feed the frontier. The caller explicitly chooses its fallback.
     """
+    policy = policy or FrontierPolicy()
     if not runtime.enable_jev:
         raise RuntimeError("Jev disabled in this evaluation condition")
     spec=ProjectionSpec(projection_name=context_type,candidate_id=identity,
@@ -42,7 +43,7 @@ async def measure_async(runtime, block_id, context_type, identity, payload, *, e
         context_type=context_type,context_identity=identity,candidate_id=identity,candidate_summary=str(payload.get("objective",payload.get("need","")))[:2000],
         started_at=datetime.now(UTC),duration_ms=0,outcome="started",model_requested=getattr(runtime.jev,"model_requested","unreported"),
         projection=projection.model_dump(mode="json"),projection_sha256=projection.payload_sha256,questions=questions,
-        question_hashes=tuple(content_hash(q.model_dump(mode="json")) for q in questions),policy_version=FrontierPolicy.version)
+        question_hashes=tuple(content_hash(q.model_dump(mode="json")) for q in questions),policy_version=policy.version)
     def record(value):
         if runtime.repository is not None:runtime.repository.record_jev_call(value)
     record(receipt)
@@ -67,7 +68,7 @@ async def measure_async(runtime, block_id, context_type, identity, payload, *, e
     receipt=receipt.model_copy(update={"outcome":"completed","duration_ms":(perf_counter()-started)*1000,"decisions":tuple(decisions),
         "models_resolved":tuple(sorted({d.model_resolved for d in decisions})),"reported_metadata":getattr(decisions,"metadata",None)})
     record(receipt)
-    frontier=FrontierPolicy().interpret(identity,decisions,questions,(receipt.call_id,projection.projection_id),eligible=eligible,escalate=escalate)
+    frontier=policy.interpret(identity,decisions,questions,(receipt.call_id,projection.projection_id),eligible=eligible,escalate=escalate)
     result={"call_id":receipt.call_id,"context_type":context_type,"projection_id":projection.projection_id,"projection_sha256":projection.payload_sha256,
             "policy_version":receipt.policy_version,"decisions":[d.model_dump(mode="json") for d in decisions],
             "frontier":frontier.model_dump(mode="json"),"eligible":eligible,"epistemic_status":"semantic_search_history"}
