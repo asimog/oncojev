@@ -15,7 +15,7 @@ from src.config.loader import load_models_config
 from src.director.models import ResourceAllocation
 from src.dossier.models import JevBlockDossier
 from src.jev.client import DeterministicJevClient
-from src.jev.frontier import FrontierAction,FrontierPolicy
+from src.jev.frontier import CandidateFrontierPolicy,FrontierAction
 from src.jev.models import ChoiceDecision,JevExecutionFailure,JevFailureCategory,JevQuestionSpec,NoulDecision
 from src.ledger.events import LedgerEvent
 from src.ledger.store import Ledger
@@ -64,9 +64,9 @@ def test_non_science_outputs_cannot_be_evidence():
  for x in (ReasonerOutput(interpretation='x',hypotheses=(Hypothesis(hypothesis_id='h',statement='x',within_scope=True,proposed_test='x'),),uncertainty='x'),NoulDecision(question_id='q',p_true=.5,model_requested='x',model_resolved='x',question_version='1',projection_id='x'),JevBlockDossier(block_id='b',objective='o',termination_reason='x',evidence_refs=(),preferred_continuation='x',preferred_continuation_reason='x')):
   with pytest.raises(AttributeError):admit_scientific_evidence(x) # type: ignore[arg-type]
 def test_parallel_jev_and_conservative_frontier():
- qs=(JevQuestionSpec(question_id='a',semantic_purpose='a',primitive='noul',projection_id='p',instructions='a',criteria={},question_version='1'),JevQuestionSpec(question_id='b',semantic_purpose='b',primitive='choice',projection_id='p',instructions='b',criteria={'ADVANCE':'a','DEFER':'d','NONE':'n'},question_version='1'));d=DeterministicJevClient().evaluate({},qs);assert len(d)==2;assert FrontierPolicy().decide('c',d,('p',)).action is FrontierAction.KEEP_ALIVE
+ qs=(JevQuestionSpec(question_id='a',semantic_purpose='a',primitive='noul',projection_id='p',instructions='a',criteria={},question_version='1'),JevQuestionSpec(question_id='b',semantic_purpose='b',primitive='choice',projection_id='p',instructions='b',criteria={'ADVANCE':'a','DEFER':'d','NONE':'n'},question_version='1'));d=DeterministicJevClient().evaluate({},qs);assert len(d)==2;assert CandidateFrontierPolicy().decide('c',d,('p',)).action is FrontierAction.KEEP_ALIVE
  negative=ChoiceDecision(question_id='negative',selected_option='NONE',probabilities={'ADVANCE':.01,'DEFER':.29,'NONE':.70},confidence=.70,model_requested='x',model_resolved='x',question_version='1',projection_id='p')
- assert FrontierPolicy().decide('c',(negative,),('p',)).action is FrontierAction.REJECT_RETAIN
+ assert CandidateFrontierPolicy().decide('c',(negative,),('p',)).action is FrontierAction.REJECT_RETAIN
 def test_failure_and_local_question_status():
  assert JevExecutionFailure(question_id='q',category=JevFailureCategory.TIMEOUT,detail='x').category is JevFailureCategory.TIMEOUT
  with pytest.raises(ValidationError):JevQuestionSpec(question_id='q',semantic_purpose='q',primitive='noul',projection_id='p',instructions='x',criteria={},question_version='1',status='reusable')

@@ -29,7 +29,7 @@ from src.director.models import ResourceAllocation
 from src.evidence.models import ScientificEvidence
 from src.jev.client import JevClient
 from src.jev.failure import JevOperationalFailure
-from src.jev.frontier import FrontierPolicy
+from src.jev.frontier import CandidateFrontierPolicy
 from src.jev.models import JevDecision, JevQuestionSpec, JevCallReceipt, JevExecutionFailure, JevFailureCategory
 from src.ledger.events import LedgerEvent
 from src.reasoner.service import ReasonerService
@@ -1032,7 +1032,7 @@ def register_researcher_tools(
     async def evaluate_candidate(
         ctx: RunContext[ResearcherDeps], candidate_id: str, candidate_summary: str
     ) -> dict[str, Any]:
-        """Run bounded Jev measurements, then deterministic FrontierPolicy."""
+        """Run bounded relevance/action measurements under candidate-frontier-v1."""
         runtime = ctx.deps.runtime
         if not runtime.enable_jev:
             raise RuntimeError("Jev measurement is disabled in this evaluation condition")
@@ -1044,9 +1044,10 @@ def register_researcher_tools(
         call_id = str(uuid4())
         started_at = datetime.now(UTC)
         started = perf_counter()
+        policy = CandidateFrontierPolicy()
         receipt = JevCallReceipt(call_id=call_id, block_id=ctx.deps.block_id, candidate_id=candidate_id,
             candidate_summary=candidate_summary[:2000], started_at=started_at, duration_ms=0, outcome="started",
-            model_requested=getattr(runtime.jev, "model_requested", "unreported"))
+            model_requested=getattr(runtime.jev, "model_requested", "unreported"), policy_version=policy.version)
         if runtime.repository is not None:
             runtime.repository.record_jev_call(receipt)
         append(ctx, "JevCallStarted", {"call_id": call_id, "candidate_id": candidate_id, "question_count": 2})
@@ -1113,7 +1114,7 @@ def register_researcher_tools(
         if runtime.repository is not None:
             runtime.repository.record_jev_call(receipt)
             runtime.repository.record_jev_decisions(ctx.deps.block_id, decisions)
-        frontier = FrontierPolicy().decide(candidate_id, decisions, (call_id, projection.projection_id))
+        frontier = policy.decide(candidate_id, decisions, (call_id, projection.projection_id))
         append(ctx, "JevExecution", {"call_id": call_id, "question_ids": [q.question_id for q in questions], "projection_id": projection.projection_id})
         append(ctx, "FrontierDecision", {**frontier.model_dump(mode="json"), "call_id": call_id,
             "candidate_summary": next((f.summary for f in current.candidates if f.fragment_id == candidate_id), candidate_summary),

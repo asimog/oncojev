@@ -28,7 +28,8 @@ Count/byte bounds omit whole entries with explicit omitted counts rather than al
 measurements. `config/runtime.yaml` controls projection and SDK request bounds.
 
 Candidate question templates are version 2; frontier policy remains
-`candidate-frontier-v1`. Every frontier receipt retains candidate identity/summary,
+`candidate-frontier-v1`, owned by `CandidateFrontierPolicy.decide` for the
+Researcher `evaluate_candidate` relevance/action tool. Every frontier receipt retains candidate identity/summary,
 call/projection linkage, full distributions, policy version and rationale.
 KEEP_ALIVE and REJECT_RETAIN are semantic search history, never a scientific
 negative finding, evidence admission or authority to extend scope/deadlines.
@@ -37,7 +38,9 @@ F4 adds local, versioned contracts in `src/jev/questions.py`: method fit, availa
 representation sufficiency, hypothesis/test alignment, individual statement
 support/overstatement, and selected memory relevance/duplication/contradiction/
 gaps/uncertainty. Independent questions share bounded state in one native batch.
-`semantic-frontier-v2` extends the existing policy; it retains ambiguous alternatives
+`FrontierPolicy.interpret` owns the separate `semantic-frontier-v2` contract used
+by `runtime/pydantic_ai/semantic.measure_async` for method, representation,
+hypothesis, memory and statement measurements; it retains ambiguous alternatives
 and expresses ESCALATE only as a bounded recommendation. Actual route, access and
 input checks remain Python decisions. Failed batches never supply a negative
 judgment. Exact normalized hypothesis/test duplicates precede semantic comparison.
@@ -47,6 +50,13 @@ terminal dossier creation. Global memory semantics runs after F3 retrieval under
 separate call/question/byte/time limits and falls back to deterministic ordering.
 Native distributions and operational receipts remain durable even when context
 contains only bounded receipt references. No new Director acquisition tools exist.
+
+The candidate policy uses its Choice distribution, relevance probability and
+reported Score confidence. The multidimensional policy keeps fit dimensions
+separate and excludes duplication, contradiction, capability-gap, actionability
+and overstatement from fit aggregation. Their thresholds are versioned software
+policy, not scientific constants or calibrated confidence. Historical receipts
+retain their original versions; neither policy is an evidence-admission gate.
 
 `literature-context-v1` measures a native categorical context judgment alongside
 independent claim-support and comparison-scope dimensions. Its annotation policy

@@ -19,6 +19,10 @@ class FrontierPolicy:
    elif fit and min(fit)<.25:action,rationale=FrontierAction.REJECT_RETAIN,"explicit low fit retained; not a scientific negative"
    else:action,rationale=FrontierAction.ADVANCE,"compatible semantic context; Researcher chooses action"
   return CandidateFrontierDecision(candidate_id=candidate_id,action=action,provenance=provenance,rationale=rationale)
+
+class CandidateFrontierPolicy:
+ """Historical relevance/action contract; distinct from multidimensional fit."""
+ version = "candidate-frontier-v1"
  def decide(self,candidate_id:str,decisions:tuple[JevDecision,...],provenance:tuple[str,...])->CandidateFrontierDecision:
   n=next((x for x in decisions if isinstance(x,NoulDecision)),None);c=next((x for x in decisions if isinstance(x,ChoiceDecision)),None);s=next((x for x in decisions if isinstance(x,ScoreDecision)),None)
   if c:

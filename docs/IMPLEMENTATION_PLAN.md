@@ -1,6 +1,6 @@
 # Next-stage autonomous laboratory implementation plan
 
-**Stage status: IN PROGRESS - H0/H1 DONE; H2-H13 PARTIAL; H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
+**Stage status: IN PROGRESS - H0/H1 DONE; H2-H14 PARTIAL.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
 
 The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](references/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
@@ -87,7 +87,7 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 | H11 — durable Railway deployment/confinement | P0 for deployment, operations | H2/H3/H5/H10 | PARTIAL: deployed persistent nonroot worker; target boundary checks passed; aggregate resources/continuation proof remains |
 | H12 — oncojevlab export/publication | P2, observability | H3/H4/H5/H9/H11 records | PARTIAL: local exporter, isolated publisher and qualified tentative context; context utility and external publication remain |
 | H13 — semantic/scientific evaluation corpus | P1, evaluation | Build alongside H4/H6–H10 baselines; return scoped proof to owners. Full-system conditions after H11/H12. | PARTIAL: retained-representation contract comparisons; semantic/scientific utility corpus and return gates remain |
-| H14 — frontier audit, generator contract and bounded calibration/Autoresearch (D3/D5) | P1, policy correctness and measured semantic research | Build: H0 caller inventory and H4/H6/H7 baselines. Acceptance: H13 comparisons/instability evidence. | PLANNED |
+| H14 — frontier audit, generator contract and bounded calibration/Autoresearch (D3/D5) | P1, policy correctness and measured semantic research | Build: H0 caller inventory and H4/H6/H7 baselines. Acceptance: H13 comparisons/instability evidence. | PARTIAL: explicit caller/policy ownership; generator and measured calibration gates remain |
 | H15 — final documentation/full verification | Integration | H1–H14 acceptance or explicitly recorded external blockers | PARTIAL: target documentation aligned; final implemented-state reconciliation pending |
 
 ### H0 — DONE: baseline audit and reconciliation
@@ -521,6 +521,10 @@ The completed comparison is returned alongside the measurement without changing 
 ### H14 — Frontier policy audit, shared generator contract and bounded calibration
 
 **Owner:** `src/jev/frontier.py` and every production caller in runtime semantic/contracts; versioned policy config/receipts and H13 cases.
+
+**Caller reconciliation (2026-10-02):** the sole production `decide()` caller is Researcher `evaluate_candidate` in `runtime/pydantic_ai/contracts.py`. It retains the necessary relevance/action Choice-aware contract under explicit `CandidateFrontierPolicy`, version `candidate-frontier-v1`, now supplied explicitly to every started/prepared/terminal receipt. The sole production `interpret()` dispatcher is `semantic.measure_async`: its default remains multidimensional `FrontierPolicy`, version `semantic-frontier-v2`; Director global tools inject `GlobalFrontierPolicy`, version `global-frontier-policy-v1`, and literature context injects its annotation policy. The two local contracts no longer share an ambiguously versioned class. Existing cutoffs, distributions, alternatives and historical receipts are unchanged; this cleanup is not calibration or a scientific-method experiment. Director instructions now distinguish allocation from supervision/post-block review, yield to Python event waiting and omit obsolete future-pause advice.
+
+**Local proof:** existing conservative Choice, real Researcher/Director CodeMode delegation and multidimensional method/representation/hypothesis lineage cases — three passed, 36 deselected in 6.01s. Architecture and diff checks passed. H14 remains PARTIAL: H4/H6/H7 multi-domain generator acceptance and H13 repeated fixed-input scientific/semantic labels, instability/resource measurements and conditional calibration/Autoresearch disposition remain required. No utility or measured no-change conclusion is inferred from preserved behavior.
 
 1. Reconcile H0 inventory for both `interpret()` and `decide()`. Current `evaluate_candidate` calls `decide`, so verify its public behavior before deciding migration/removal. Migrate legacy callers to the correct multidimensional owner, or retain a necessary context under its own explicit policy version and evaluation. Do not leave two unintentionally canonical local policies or collapse local/global policies.
 2. Treat historical .2/.25/.4–.6/.5 cutoffs as context-specific software policy, not scientific constants. Retain distribution/uncertainty/alternatives/failure fallback and historical receipt versions. Remove dead competing paths only after real callers are migrated and independent regression/eval proof passes.
