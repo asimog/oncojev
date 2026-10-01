@@ -40,12 +40,12 @@ from src.sources.models import AcquisitionRecord
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_postgres_migration_preserves_reference_sequences_and_atomic_append(tmp_path, monkeypatch):
+def test_postgres_migration_preserves_reference_sequences_and_atomic_append(tmp_path):
     """Actual PostgreSQL boundary: migration identity, rollback and mutation denial."""
     import os
     import psycopg
     from src.persistence.postgres import PostgresResearchStore
-    from scripts.migrate_records import migrate
+    from scripts.migrate_records import migrate, configure_writer
     from src.provenance import content_hash
     url = os.environ.get('ONCOJEV_TEST_POSTGRES_URL')
     if not url:
@@ -74,6 +74,20 @@ def test_postgres_migration_preserves_reference_sequences_and_atomic_append(tmp_
         assert saved.seq > max(r.seq for r in before)
         assert target.record_at(first.seq) == first
         assert source.records() == before
+        configure_writer(target, 'fixture-only-password-for-isolated-postgres-test')
+        from urllib.parse import urlsplit, urlunsplit
+        parsed = urlsplit(url)
+        writer_url = urlunsplit(parsed._replace(netloc='oncojev_writer:fixture-only-password-for-isolated-postgres-test@' + parsed.netloc.rsplit('@', 1)[-1]))
+        writer = PostgresResearchStore(writer_url)
+        try:
+            writer.append(StoredRecord(kind=RecordKind.STATE_REVISION, record_id='writer', payload={}))
+            assert writer.count() == target.count()
+            for sql in ('UPDATE records SET payload=payload', 'DELETE FROM records', 'TRUNCATE records',
+                        'ALTER TABLE records ADD COLUMN forbidden TEXT'):
+                with pytest.raises(psycopg.errors.InsufficientPrivilege):
+                    writer._connection.execute(sql)
+        finally:
+            writer.close()
     finally:
         source.close(); target.close()
 

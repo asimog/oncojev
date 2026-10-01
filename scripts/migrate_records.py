@@ -8,6 +8,21 @@ from src.persistence.store import SqliteResearchStore
 from src.provenance import content_hash
 
 
+def configure_writer(target, password):
+    from psycopg import sql
+    if len(password) < 32:
+        raise ValueError("a generated writer password is required")
+    with target.transaction():
+        exists = target._connection.execute("SELECT 1 FROM pg_roles WHERE rolname='oncojev_writer'").fetchone()
+        command = "ALTER ROLE oncojev_writer PASSWORD {}" if exists else "CREATE ROLE oncojev_writer LOGIN PASSWORD {}"
+        target._connection.execute(sql.SQL(command).format(sql.Literal(password)))
+        target._connection.execute("REVOKE CREATE ON SCHEMA public FROM PUBLIC")
+        target._connection.execute("GRANT USAGE ON SCHEMA public TO oncojev_writer")
+        target._connection.execute("REVOKE ALL ON TABLE records FROM oncojev_writer")
+        target._connection.execute("GRANT SELECT, INSERT ON TABLE records TO oncojev_writer")
+        target._connection.execute("GRANT USAGE, SELECT ON SEQUENCE records_seq_seq TO oncojev_writer")
+
+
 def migrate(source, target):
     records = source.records()
     expected = content_hash([r.model_dump(mode="json") for r in records])
@@ -41,7 +56,9 @@ def main():
     source = SqliteResearchStore(args.source)
     target = PostgresResearchStore(os.environ["ONCOJEV_MIGRATION_DATABASE_URL"], initialize=True)
     try:
-        print(json.dumps(migrate(source, target)))
+        report = migrate(source, target)
+        configure_writer(target, os.environ['ONCOJEV_WRITER_PASSWORD'])
+        print(json.dumps({**report, "writer_role": "select_insert_only"}))
     finally:
         source.close()
         target.close()
