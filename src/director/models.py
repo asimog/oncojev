@@ -25,3 +25,6 @@ class JevBlockStart(BaseModel, frozen=True):
     memory: StartMemory = Field(default_factory=StartMemory)
     entities: tuple[MemoryTag, ...] = Field(default=(), max_length=20)
     topics: tuple[MemoryTag, ...] = Field(default=(), max_length=20)
+    oncolab_registry_revision: str | None = None
+    oncolab_history_high_water: int | None = Field(default=None, ge=0)
+    application_identity: str | None = None

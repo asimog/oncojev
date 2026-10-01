@@ -1,34 +1,6 @@
 # OncoLab Index semantics
 
-The sections below describe the delivered F0–F6 capability contracts. Their
-completion evidence and original deferrals are preserved in the
-[completed F0–F6 plan](IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md). The
-[active H0–H15 implementation plan](IMPLEMENTATION_PLAN.md) owns next-stage
-status. The [complete supplied requirements](references/NEXT_STAGE_AUTONOMOUS_LAB_REQUIREMENTS.md)
-remain the reference for that stage. The next-stage section at the end of this
-document describes planned work, not delivered capability.
-
-Cross-cycle research context lives in `src/memory/`, separately from capability
-verification. Versioned digests reference recorded outcomes, measurements,
-evidence, hypotheses, semantic candidates, blockers, uncertainties and proposals.
-Director prose is optional context. Factory/service backfill appends derived
-records and respects effective legacy outcome corrections; it never reruns work.
-
-Both roles can use `search_research_memory`, `get_dossier`, `get_evidence`,
-`get_hypotheses`, `get_negative_results`, `get_open_uncertainties` and
-`resolve_memory_reference`. Director `read_research_memory` now returns a bounded
-typed context envelope rather than a recent-prose list. Retrieval accepts mission,
-declared entity/topic and timezone-aware time filters. Search uses stable lexical
-relevance, not automatic newest-result copying; bounded semantic memory context is delivered in F4; broader utility validation remains an earned deferral.
-The Director receives retrieved context automatically and allocation retrieves
-again for its selected objective. Both Researcher launch paths receive the validated
-start packet, while state/evidence/measurements/skills/budgets remain fresh.
-
-Digest context is bounded to 20 results and 32 KiB; start memory to 16 KiB. Exact
-records remain hash-resolvable. Oversized requested records return an explicit
-omission response instead of silently changing measurements. Current Science
-outputs do not declare scientific negatives: the separate negative-results field
-remains empty for them. Provider failures and semantic rejection cannot populate it.
+Current capability and verification contracts. [Architecture](ARCHITECTURE.md) owns component boundaries.
 
 `OncoLabIndex` is the one shared application registry for Director and Researcher within a runtime. It provides bounded deterministic retrieval and loads bundled records from `src/oncolab/proven/verified-executions.yaml` plus resolvable durable verification receipts through factory composition, separately from descriptor status. Loading is idempotent by capability/verification identity and never resumes research. Verification names a declared execution, not the maturity or scientific validity of a statistics family. `describe_oncolab` returns at most 20 verification records and an omitted count. The Pydantic AI harness is only a client through runtime dependencies; it owns no registry. “OncoLab” names this domain index; Pydantic AI capabilities and tools remain framework plumbing under `src/runtime/pydantic_ai/`.
 
@@ -92,171 +64,14 @@ Selected procedural guidance lives in `src/oncolab/labskills/` and is loaded onl
 for an active Researcher block. It remains separate from the index and from
 Pydantic AI's Coder/Code Mode framework capabilities.
 
-Coder remains available to both roles on Linux. Director scratch engineering uses
-`/work/director`; Researcher coding uses only its block workspace. A shared kernel
-filesystem boundary makes public application code and policy read-only, denies
-peer workspaces and credential files, and applies to native file tools, shell
-commands and descendants. It fails closed without the required Landlock support.
-Scratch output is neither evidence nor a promoted capability; scientific replay,
-validation and admission remain separate typed operations.
-
-`config/runtime.yaml` separates resource budgets:
-
-| Budget | What consumes it |
-| --- | --- |
-| `max_model_requests` | Role provider requests; Researcher allocation also includes live Reasoner requests. |
-| `max_provider_tool_calls` | Framework tool calls, including Code Mode inner tools; failed execution attempts count. |
-| `max_code_mode_executions` | Role-wide `run_code` executions. |
-| `max_code_mode_tool_calls` | Typed calls within one Code Mode snippet. |
-| Block `max_tool_calls` | Local Science/validation/figure operations, separate from framework calls. |
-| Source, sandbox, Reasoner call budgets | Attempted resource operations, including failures. |
-| Jev call and question budgets | Invocation attempts and individual questions, counted separately. |
-| Cycle requests/tools/cost | Aggregate usage across Director, Researcher and live Reasoner. |
-
-Zero-enabled limits are honored without fallback substitution. Optional cost
-limits enforce reported costs; usage records flag incomplete cost reporting.
-Denied work returns a non-retryable handoff directive before side effects;
-inspection and deterministic finalization remain available. Hard SDK limits may
-end the agent run, after which Python still records its outcome and partial dossier.
+Runtime budget and Coder confinement contracts are owned by [architecture](ARCHITECTURE.md#agent-harness) and the strict [runtime configuration](../config/runtime.yaml). Scratch does not promote capabilities or admit evidence.
 
 F4 exposes progressive OncoLab cards and explicit contract expansion, plus local method, representation, hypothesis/test and statement-support measurements. Local semantic contracts are not promoted capabilities. External GitHub acquisition retains inadequacy rationale and alternatives; installed lexical overlap no longer vetoes an unmet need. Existing sandbox, credential and allocation limits apply.
 
-F5 adds source-resolved Pearson/simple OLS over one retained acquisition, with unique
-entity keys, complete paired rows, explicit fields/transforms/design and missingness
-counts. Joins, covariates, survival and TMB remain unsupported. Association is not
-causal inference; method assumptions and population representativeness remain
-limitations. The bundled Pearson record proves only its three-row fixture.
+Current source/analysis, replay and retention behavior is described in
+[Science](../src/science/README.md), [acquisition](../src/sources/README.md) and
+[architecture](ARCHITECTURE.md#persistence-and-application-api).
+The bundled Pearson verification proves only its declared three-row fixture;
+provided-array statistics and SVG figures remain exploratory.
 
-Open GDC file acquisition requires per-file open metadata and bounded anonymous
-streaming, retaining exact bytes/hash/size/source identity in immutable typed
-SQLite records. Sandbox requests retain those owned inputs and mount them read-only
-at `/input/artifacts/<byte_sha256>` with execution network disabled. Unknown licence
-and release remain null. Controlled-access and arbitrary URL acquisition remain
-unavailable. JSON acquisition hashes continue to identify structured retained
-content, not unstored HTTP bodies.
-
-F6 retains terminal scratch files as immutable byte artifacts and a manifest before
-removing a closed workspace. Default minimum age is seven days, at most 20
-workspaces and 100 MB per archive. Active, unknown, unresolved-input, linked and
-failed-export workspaces remain intact. Durable evidence/replay inputs and ledger
-records are never deleted. Oversized archives require an explicit larger budget
-or operational review; cleanup does not silently discard them.
-
-Synthetic acquisitions now propagate synthetic measurement origin and cannot be
-admitted. Offline snapshots show fixture provenance separately from API transport
-and execution mode, with no fabricated evaluated conditions. Presentation retains
-failed/incomplete outcomes, unknown objective attainment, source attempts/successes
-and scientific limitations. Historical portable records keep their original scope
-and missing inputs; new deliveries do not retroactively validate them.
-
-## Next-stage target: revisioned institutional capabilities
-
-**Planned, pending the active H5–H10 phases and applicable H11 deployment proof.** The existing descriptor catalogue,
-bounded cards, snapshot-bound continuations, contract hashes, execution routes,
-verification records and F4 suitability measurements remain the static seed.
-They do not yet constitute a durable dynamically revisioned registry. H5 adds
-immutable institutional state in the authoritative database: revisions,
-verification and failure history, usage and demand, observed limitations,
-suitability history, capability gaps, proposals and review/reverification state.
-Each block pins the exact OncoLab revision and application/runtime version.
-Historical selections retain their original contracts; new accepted revisions
-become available between blocks without restarting the worker.
-
-Discovery keeps three distinct surfaces rather than expanding one catalogue
-without bounds:
-
-| Surface | Records and authority | Planned phase |
-| --- | --- | --- |
-| Curated OncoLab | Existing descriptors/routes and governed reusable capabilities. Presence alone grants no execution or admission authority. | H5, H9 |
-| External capability discovery | Bounded candidates from bio.tools, GitHub and optional Bioconda/Bioconductor metadata. Candidates are discovery information, not executable or validated capabilities. | H7, H8 |
-| Scientific data assets | GDC file/metadata candidates and selected block-owned retained artifacts. Individual file UUIDs never become capability descriptors. | H6 |
-
-H6 extends current `/files` acquisition infrastructure into first-class bounded
-data-asset and representation discovery. Candidate records retain file identity,
-name, access, type/category/format, strategy, size, MD5, state, available workflow,
-release and case/project metadata, query identity and retrieval time. Existing
-pagination, ordering, overlap and coverage rules remain authoritative. Selection
-uses actual retrievable representations, deterministic availability checks and
-bounded Jev sufficiency/assumption-fit measurements. Open selected files use the
-existing exact artifact bridge; controlled access requires a separate explicitly
-supported authentication route. Search infrastructure does not deliver MAF/VCF,
-expression, TMB, survival or other new Science operations.
-
-H7 introduces one bounded external discovery interface with search/describe
-operations, rather than an agent tool for every registry. bio.tools search
-supports useful text/identity/domain, EDAM topic/operation, input/output
-type/format and pagination filters where the verified source contract supports
-them. Candidate cards retain supplied provenance, links, publication, version
-and licence metadata. EDAM IDs/terms returned by candidates support controlled
-normalization; full ontology ingestion is outside the initial scope. Search
-receipts retain query, filters, page/cursor, returned identities, retrieval time,
-hashes where feasible, omissions and failures. Mutable registry metadata is never
-represented as an immutable source snapshot unless its bytes were retained.
-
-H8 adds bounded GitHub repository/commit/release/package/lockfile inspection and
-optional Bioconda recipe metadata for compatibility and reproducibility.
-Bioconda metadata does not install Conda. Bioconductor candidates remain
-metadata-only until a supported R execution environment is implemented and
-verified. Additional sources require a measured retrieval need; cBioPortal and
-Hugging Face expansion require explicit later approval.
-
-Capability selection starts with deterministic current-OncoLab retrieval,
-compact cards, selected contract expansion and execution/input checks. Jev then
-measures bounded semantic suitability and Python retains useful alternatives.
-An unmet need may trigger bounded external discovery and equivalent checks.
-An installed lexical match cannot veto a demonstrated unmet need, and external
-software does not automatically outrank a verified appropriate local method.
-Jev suitability never supplies a missing route, supported runtime, input, access
-permission or scientific validation.
-
-H9 adds versioned Python governance for promotion, review, update,
-reverification and retirement proposals using the minimum necessary models.
-Recorded repeated need, validated controlled executions, utility, overlap,
-generalization, replayability, failures, scope, typed contracts, exact software
-and dependency identities and access/licence limitations inform decisions. One
-execution or an arbitrary execution-count threshold cannot establish scientific
-validity. Rejection preserves the registry; acceptance appends a new immutable
-revision. Unsupported automatic Jev/self-promotion cannot pass governance.
-
-The promotion boundary is executable: a declarative capability can reuse an
-already verified generic executor using pinned software/environment, commands,
-typed inputs/outputs and validation contracts. Reuse requiring a parser, wrapper,
-Science algorithm, source adapter, route or admission change instead produces an
-`EngineeringProposal`. Director scratch work cannot modify live source or policy.
-Declarative promotion must fail closed until H10 supplies and verifies its actual
-execution contract and reproducible dependency identity, and H11 verifies the
-applicable deployment confinement. Local proof cannot certify Railway reuse.
-
-H10 replaces Docker-specific canonical ownership with one scientific-execution
-abstraction. The Railway target is a per-experiment Python venv executor without
-a Docker daemon; the current Docker backend may remain for local verification
-under the same canonical result contract. A venv isolates dependencies, not
-security. External execution requires verified confinement of application code,
-policy, peer workspaces, credentials and input bytes, scrubbed command
-environments, bounded resources and verified network restrictions for tests and
-execution. Unsupported isolation fails closed. Research packages never enter the
-application `.venv`, and no R, Conda, CUDA or daemon support is implied.
-
-Reusable methods require retained repository/commit/package identities,
-backend/Python/base runtime, exact dependency resolution/lock identity, commands,
-owned input references and hashes, parameters, first/replay receipts, output
-hashes and validator version. Dependency locking prefers a repository lockfile,
-then pinned requirements, then a reproducibly resolved dependency set, with
-post-install freeze/hash retained as an audit record. A freeze alone does not
-prove reproducible installation. Unreproducible dependencies prevent unsupported
-reusable status. Science validation and explicit evidence admission remain
-separate from execution, promotion and discovery.
-
-The active plan integrates all D1–D8 work into the owning H phases rather than a
-separate deferred table. H9 executes governed D1 promotion; H6 diagnoses and
-repairs available-but-missed D2 representations; H4/H14 qualify shared D3
-generators and refine D4 hypotheses; H14 runs budget-qualified D5 experiments;
-H7 delivers justified D6 index/vocabulary/ontology/embedding stages; H10 executes
-need/input-qualified D7 operations and D8 locked reinstall/replay. H13 supplies
-comparative evidence and returns it to each implementation owner. Original
-triggers and authority limits remain binding; measured no-change or unmet-input
-decisions stay in that phase and never claim scientific delivery. New
-infrastructure never reconstructs absent historical bytes by assertion. F6
-archive-before-cleanup remains canonical for new experiment scratch, repositories
-and venvs; required artifacts, execution/dependency identities, evidence,
-revisions, Research Memory and ledger history remain durable.
+Registry/history revisions, external discovery and reusable qualification belong to the [active plan](IMPLEMENTATION_PLAN.md) (H5-H10).

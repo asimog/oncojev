@@ -66,7 +66,8 @@ def bind_repository(runtime: HarnessRuntime, repository) -> None:
         for saved in repository.store.records(kind=RecordKind.VERIFICATION):
             record = OncoLabVerificationRecord.model_validate(saved.payload)
             resolve_reference(repository.store, record.execution_reference)
-            runtime.oncolab.record_verification(record)
+        runtime.initialize_institution()
+        runtime.index_for()
 
 
 def build_harness_runtime(

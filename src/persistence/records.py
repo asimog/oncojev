@@ -13,6 +13,9 @@ from pydantic import BaseModel, Field
 
 
 class RecordKind(StrEnum):
+    REGISTRY_REVISION = "registry_revision"
+    REGISTRY_REVIEW = "registry_review"
+    INSTITUTIONAL_OBSERVATION = "institutional_observation"
     GLOBAL_FRONTIER = "global_frontier"
     GLOBAL_RELATION = "global_relation"
     ENGINEERING_PROPOSAL = "engineering_proposal"

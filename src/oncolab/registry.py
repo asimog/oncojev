@@ -41,6 +41,9 @@ class IndexReceipt(BaseModel, frozen=True):
     mission_id: str | None = None
     cycle_id: str | None = None
     snapshot_id: str | None = None
+    oncolab_registry_revision: str | None = None
+    oncolab_history_high_water: int | None = None
+    application_identity: str | None = None
     retrieval_version: str | None = None
     continuation: str | None = None
     contract_hashes: dict[str, str] = Field(default_factory=dict)
@@ -55,7 +58,7 @@ class OncoLabIndex:
 
     max_results = 20
 
-    def __init__(self, descriptors: Iterable[OncoLabDescriptor]) -> None:
+    def __init__(self, descriptors: Iterable[OncoLabDescriptor], *, routes=None, revision_id=None, history_high_water=None) -> None:
         items = tuple(descriptors)
         ids = [descriptor.capability_id for descriptor in items]
         if len(ids) != len(set(ids)):
@@ -63,6 +66,12 @@ class OncoLabIndex:
         self._items = tuple(sorted(items, key=lambda descriptor: descriptor.capability_id))
         self._by_id = {descriptor.capability_id: descriptor for descriptor in self._items}
         self._verification_records: dict[str, list[OncoLabVerificationRecord]] = {}
+        self.routes = dict(ROUTES if routes is None else routes)
+        self.revision_id = revision_id
+        self.history_high_water = history_high_water
+
+    def descriptors(self):
+        return tuple(d.model_copy(deep=True) for d in self._items)
 
     def search(self, query: str = "", *, kinds: Iterable[OncoLabKind] = (), tags: Iterable[str] = (), limit: int = 8) -> tuple[OncoLabDescriptor, ...]:
         if not 1 <= limit <= self.max_results:
@@ -111,7 +120,8 @@ class OncoLabIndex:
         """
         if not 1 <= limit <= self.max_results or len(query)>4000:
             raise ValueError("invalid search bound")
-        identity = content_hash({"query":query, "kinds":sorted(map(str,kinds)), "tags":sorted(tags), "snapshot":self.snapshot_id})
+        identity = content_hash({"query":query, "kinds":sorted(map(str,kinds)), "tags":sorted(tags), "snapshot":self.snapshot_id,
+                                 "registry_revision": self.revision_id, "history_high_water": self.history_high_water})
         offset = 0
         if continuation:
             try:
@@ -134,6 +144,7 @@ class OncoLabIndex:
         end=min(offset+limit,len(ranked))
         cursor=base64.urlsafe_b64encode(json.dumps({"identity":identity,"offset":end},separators=(",",":")).encode()).decode() if end<len(ranked) else None
         return OncoLabPage(cards=tuple(self.card(d) for _,d in ranked[offset:end]),snapshot_id=self.snapshot_id,
+                          oncolab_registry_revision=self.revision_id, oncolab_history_high_water=self.history_high_water,
                           continuation=cursor,exhausted=cursor is None,total_candidates=len(ranked))
 
     def describe_with_verification(self, capability_id: str) -> dict[str, object] | None:
@@ -145,7 +156,7 @@ class OncoLabIndex:
         return {
             "descriptor": descriptor.model_dump(mode="json"),
             "contract_sha256": content_hash(descriptor.model_dump(mode="json")),
-            "execution_routes": [r.model_dump(mode="json") for r in ROUTES.get(capability_id, ())],
+            "execution_routes": [r.model_dump(mode="json") for r in self.routes.get(capability_id, ())],
             "verification": [record.model_dump(mode="json") for record in records[-20:]],
             "omitted_verifications": max(0, len(records)-20),
         }

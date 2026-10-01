@@ -106,6 +106,8 @@ class OncoLabCard(BaseModel, frozen=True):
 class OncoLabPage(BaseModel, frozen=True):
     cards: tuple[OncoLabCard, ...]
     snapshot_id: str
+    oncolab_registry_revision: str | None = None
+    oncolab_history_high_water: int | None = None
     retrieval_version: str = "oncolab-retrieval-v2"
     continuation: str | None = None
     exhausted: bool

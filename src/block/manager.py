@@ -15,6 +15,7 @@ class HandoffRequired(RuntimeError):
 class BlockManager:
     def __init__(self,now:Callable[[],datetime]|None=None, *, policy:BlockConfig|None=None)->None:
         self.policy=policy
+        self.registry_pin_provider = None
         self._now=now or (lambda:datetime.now(UTC)); self._ledgers:dict[str,Ledger]={}; self._blocks:dict[str,JevBlock]={}
     def create(self,objective:str,why_now:str,allocation:ResourceAllocation, *, mission_id:str|None=None, cycle_id:str|None=None, memory:StartMemory|None=None, entities:tuple[str,...]=(), topics:tuple[str,...]=())->JevBlock:
         if self.policy is not None:
@@ -23,7 +24,8 @@ class BlockManager:
             if allocation.handoff_reserve_seconds != self.policy.handoff_reserve_seconds:
                 raise ValueError("block reserve must match deterministic policy")
         started=self._now(); context=memory or StartMemory()
-        start=JevBlockStart(block_id=str(uuid4()),objective=objective,why_now=why_now,allocation=allocation,deadline=started+timedelta(seconds=allocation.seconds), entities=entities, topics=topics,
+        pin = self.registry_pin_provider() if self.registry_pin_provider else {}
+        start=JevBlockStart(block_id=str(uuid4()),objective=objective,why_now=why_now,allocation=allocation,deadline=started+timedelta(seconds=allocation.seconds), entities=entities, topics=topics, **pin,
             memory=context, relevant_evidence_refs=tuple(r.record_id for r in context.references if r.kind=="evidence"),
             known_uncertainties=context.uncertainties, candidate_directions=context.candidate_directions,
             constraints=("Prior context is not inherited evidence admission authority.", *context.limitations))

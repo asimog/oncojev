@@ -36,7 +36,7 @@ ROUTES = {
 }
 
 
-def check_routes(descriptor, available_inputs: dict[str, int | bool], operation: str | None = None):
+def check_routes(descriptor, available_inputs: dict[str, int | bool], operation: str | None = None, *, routes=None):
     """Missing prerequisites remain explicit; availability flags cannot grant a route."""
     reasons = []
     if descriptor.execution_mode == OncoLabExecutionMode.METADATA_ONLY:
@@ -45,7 +45,7 @@ def check_routes(descriptor, available_inputs: dict[str, int | bool], operation:
         reasons.append("access_not_approved")
     if descriptor.availability.value in {"unavailable", "forbidden", "known"}:
         reasons.append("declared_unavailable")
-    routes = tuple(r for r in ROUTES.get(descriptor.capability_id, ()) if operation is None or r.operation == operation)
+    routes = tuple(r for r in (ROUTES if routes is None else routes).get(descriptor.capability_id, ()) if operation is None or r.operation == operation)
     if not routes:
         reasons.append("no_declared_application_route")
     results = []

@@ -170,6 +170,32 @@ class HarnessRuntime:
     _owner_loop: asyncio.AbstractEventLoop | None = None
     _owner_thread: int | None = None
     _counts: dict[str, int] = field(default_factory=dict)
+    institution: Any = None
+    _block_indexes: dict[str, Any] = field(default_factory=dict)
+
+    def initialize_institution(self):
+        if self.repository is not None and self.institution is None:
+            from src.oncolab.institution import OncoLabInstitution, application_identity
+            self.institution = OncoLabInstitution(self.repository.store, self.oncolab, application_identity())
+            self.manager.registry_pin_provider = lambda: self.institution.pin().model_dump()
+
+    def index_for(self, block_id=None):
+        self.initialize_institution()
+        if self.institution is None:
+            return self.oncolab
+        if block_id is None:
+            self.oncolab = self.institution.index()
+            return self.oncolab
+        if block_id not in self._block_indexes:
+            from src.oncolab.institution import RegistryPin
+            start = self.manager.block(block_id).start
+            if start.oncolab_registry_revision is None:
+                return self.oncolab  # explicit unpinned legacy/fixture block
+            pin = RegistryPin(oncolab_registry_revision=start.oncolab_registry_revision,
+                              oncolab_history_high_water=start.oncolab_history_high_water,
+                              application_identity=start.application_identity)
+            self._block_indexes[block_id] = self.institution.index(pin)
+        return self._block_indexes[block_id]
 
     def memory_service(self):
         return ResearchMemory(self.repository.store) if self.repository is not None else None
