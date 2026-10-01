@@ -12,7 +12,7 @@ Semantic search and measurement are the core mechanism to deliver and evaluate. 
 
 GDC, Xena, literature and future sources are interchangeable capability adapters selected for a research need. Their integration tests verify adapters; they do not define the system's mission or require every investigation to use the same source, modality or statistical method. Source-specific repairs must not become prerequisites for the provider-independent semantic core.
 
-The original phases below record delivered scaffolding. Their historical **DONE** labels do not certify the stronger completeness, scientific utility, or live-path claims challenged by the engineering audit. Section 10 is authoritative for outstanding work: F0–F3 are DONE, F4 is NEXT, F5–F6 are PLANNED.
+The original phases below record delivered scaffolding. Their historical **DONE** labels do not certify the stronger completeness, scientific utility, or live-path claims challenged by the engineering audit. Section 10 is authoritative: F0–F6 are DONE for their bounded implementation scope; section 10.4 retains deferred extensions and verification limits.
 
 ## 1. Architecture, upstream, and tracking
 
@@ -142,7 +142,7 @@ The original phases below record delivered scaffolding. Their historical **DONE*
 
 ## 10. Verified engineering-audit follow-up — 2026-10-01
 
-**Status:** IN PROGRESS; F0–F3 DONE, F4 NEXT, F5–F6 PLANNED.
+**Status:** DONE for the bounded F0–F6 implementation scope. Deferred extensions and verification limits remain in section 10.4.
 
 **Historical audit baseline:** commit `1f2e999a3e23e88da4ece1defce1f09429005120`; checkout was clean before this documentation change. Input: the supplied “OncoJev — Engineering Audit” and four-block findings. Verification used current application paths, configuration, relevant tests, reference documents, installed dependency source, the committed snapshot generator/view, and read-only local SQLite records. No `.upstream/` repositories were searched or executed. No new live/provider calls were made.
 
@@ -555,6 +555,6 @@ No F4a blocker was verified. Semantic utility/provider behavior, selected curren
 
 ### 10.7 Current implementation completion
 
-The user subsequently authorized implementation of F4–F6 and phase commits; this supersedes the historical rewrite-only stopping instruction in 10.6. Implementation began at `c15164a65a272715fe158a2521a53f9a59023fc7` with only the rewritten plan modified. F4 committed as `0b8d4fa0b4338dc29953d5f16a19826e1bfc674b`; F5 as `7f6c744` (full identity in Git). F6 delivery is the following phase commit. No push was requested or performed.
+The user subsequently authorized implementation of F4–F6 and phase commits; this supersedes the historical rewrite-only stopping instruction in 10.6. Implementation began at `c15164a65a272715fe158a2521a53f9a59023fc7` with only the rewritten plan modified. F4 committed as `0b8d4fa0b4338dc29953d5f16a19826e1bfc674b`; F5 as `7f6c744` (full identity in Git); F6 as `c6b8dbe8fbc331aeb79fea8976fe5fee129e4944`. On the user's subsequent request, all three phase commits were pushed to GitHub `origin/main`; remote HEAD was verified at the F6 commit. The delivery paragraphs preserve their verification-time scope, including that no push occurred during those checks.
 
 All active bounded batches F4a-e, F5a-e and F6a-b are delivered. The baseline finding table retains its verified-at-rewrite facts and primary phase ownership; delivery paragraphs above supersede “absent/remaining” observations. Optional static extraction and unselected MAF/VCF/count/expression/TMB/survival branches remain D7, with F5b/e dependencies. No unfinished commitment was silently removed. The earned triggers in 10.4 remain unmet for bulk harvesting, embeddings/storage migration, general ontology prerequisites and automatic promotion. No blocker remains for the delivered scope; broader empirical utility and dependency locking remain explicit verification limits.
