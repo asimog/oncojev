@@ -139,6 +139,11 @@ def test_postgres_migration_preserves_reference_sequences_and_atomic_append(tmp_
         assert target.records() == before
         saved = target.append(StoredRecord(kind=RecordKind.STATE_REVISION, record_id='next', payload={}))
         assert saved.seq > max(r.seq for r in before)
+        assert target.high_water() == saved.seq and target.high_water() > target.count()
+        from src.dossier.delta import build_delta
+        block = BlockManager().create("migration fixture", "test", ResourceAllocation(seconds=60)).model_copy(update={"block_id":"owned"})
+        delta = build_delta(target, block, "postgres-gap", 0, datetime.now(UTC))
+        assert delta.end_sequence == saved.seq, "BlockDelta must pin a sequence, not a record count"
         assert target.record_at(first.seq) == first
         assert source.records() == before
         configure_writer(target, 'fixture-only-password-for-isolated-postgres-test')
@@ -1112,6 +1117,7 @@ def test_source_resolved_paired_analysis_and_repeat_admission_survive_reopen(tmp
  assert len(measurements)==3, [str(p) for m in response.all_messages() for p in m.parts if p.part_kind not in {"user-prompt","text","tool-call"}]
  values=measurements[0].payload["values"]
  assert values["correlation"]==pytest.approx(0.9819805060619657)
+ assert measurements[0].payload["analysis_key"]=="fc132fe80615e13ae64f6be89894ac33f869ba79acef62bb84af32f67c943a77", "historical unplanned v1 identity must remain stable"
  assert measurements[0].payload["diagnostics"]["paired_entities"]==["a","b","c"]
  assert measurements[0].payload["diagnostics"]["counts"]=={"total_rows":4,"complete_pairs":3,"excluded_rows":1}
  assert len(repository.store.records(kind=RecordKind.EVIDENCE))==2
@@ -1132,6 +1138,124 @@ def test_source_resolved_paired_analysis_and_repeat_admission_survive_reopen(tmp
  assert len(reopened.records(kind=RecordKind.EVIDENCE))==2
  assert reconstruct_block(reopened,block.block_id).unresolved_source_refs==()
  reopened.close()
+
+
+def test_directional_scientific_attempt_history_retains_effect_bounds_and_unknowns(tmp_path):
+    """Real cycle/source/tools/admission -> resolved history, with model-conditional outcomes."""
+    import httpx
+    from src.sources.public import GdcPublicSource
+    from src.memory.service import ResearchMemory
+    system = cycle_system(); runtime = system.runtime
+    runtime.researcher_factory = lambda block_id: system.agents.researcher
+    runtime.max_tool_calls = 100
+    database = tmp_path / 'scientific-history.sqlite3'
+    repository = ResearchRepository(SqliteResearchStore(database))
+    positive = [{'id':str(i), 'case_id':str(i), 'x':i-3, 'y':2*(i-3) + (0.25 if i%2 else -0.25)} for i in range(8)]
+    fixtures = {
+        'positive':positive,
+        'reversed':[{**r,'y':-r['y']} for r in positive],
+        'null':[{'id':str(i),'case_id':str(i),'x':i-3,'y':(i-3)**2} for i in range(7)],
+        'duplicate':[positive[0],positive[0],*positive[2:]],
+    }
+    calls = 0
+    def transport(request):
+        nonlocal calls
+        name = tuple(fixtures)[calls]; calls += 1
+        return httpx.Response(200, json={'data':{'hits':fixtures[name], 'pagination':{'total':len(fixtures[name])}}})
+    runtime.gdc = GdcPublicSource(httpx.MockTransport(transport))
+    async def director(messages, info):
+        if not any(isinstance(m, ModelResponse) for m in messages):
+            return ModelResponse(parts=[ToolCallPart('run_code', {'code':
+                'b = await allocate_block(objective="directional association", why_now="inspect effect uncertainty", seconds=120)\n'
+                'await launch_researcher(block_id=b["block_id"])'}, tool_call_id='launch')])
+        return ModelResponse(parts=[TextPart('review retained outcomes')])
+    outputs = []
+    external_lease = None
+    busy_requested = False
+    async def researcher(messages, info):
+        nonlocal external_lease, busy_requested
+        if not any(isinstance(m, ModelResponse) for m in messages):
+            code = ['h = await assess_hypothesis(hypothesis="X has a positive association with Y", proposed_test="directional Pearson association")',
+                    'plan = {"hypothesis_id":h["identity"], "direction":"positive", "minimum_effect":0.3, "multiplicity_family":[h["identity"]]}']
+            for name in fixtures:
+                code.append(f'a = await acquire_gdc(endpoint="cases", filters={{}}, fields=["case_id","x","y"], size=10)')
+                call = (f'r = await run_source_analysis(acquisition_id=a["acquisition_id"], analysis_id="{name}", '
+                    'question="directional association", population="inspected fixture cases", estimand="Pearson r", '
+                    'method="pearson_correlation", fields={"x":"x","y":"y"}, entity_field="id", entity_unit="case", '
+                    'design="unadjusted association with declared independent cases", test_plan=plan)')
+                if name == 'positive':
+                    code.append('positive_acquisition = a["acquisition_id"]')
+                if name == 'duplicate':
+                    code.append('try:\n    '+call+'\nexcept Exception:\n    pass')
+                else:
+                    code.extend([call, f'await admit_measurement(analysis_id="{name}")'])
+            code.extend([
+                'family = {**plan, "multiplicity_family":[h["identity"], "comparison-2", "comparison-3", "comparison-4"]}',
+                'adjusted = await run_source_analysis(acquisition_id=positive_acquisition, analysis_id="family", question="directional association", population="inspected fixture cases", estimand="Pearson r", method="pearson_correlation", fields={"x":"x","y":"y"}, entity_field="id", entity_unit="case", design="exploratory family", test_plan=family)',
+                'ols_plan = {**plan, "minimum_effect":1.0}',
+                'ols = await run_source_analysis(acquisition_id=positive_acquisition, analysis_id="ols", question="directional slope association", population="inspected fixture cases", estimand="OLS slope", method="ordinary_least_squares", fields={"x":"x","y":"y"}, entity_field="id", entity_unit="case", design="unadjusted linear model", test_plan=ols_plan)',
+            ])
+            return ModelResponse(parts=[ToolCallPart('run_code', {'code':'\n'.join(code)}, tool_call_id='analyses')])
+        outputs.extend(str(p.content) for m in messages for p in m.parts if hasattr(p,'content'))
+        if not busy_requested:
+            busy_requested = True
+            external_lease = runtime.service_resources.heavy("other-host-operation")
+            await external_lease.__aenter__()
+            return ModelResponse(parts=[ToolCallPart('run_code', {'code':
+                'try:\n    await run_source_analysis(acquisition_id=positive_acquisition, analysis_id="busy", question="directional association", population="inspected fixture cases", estimand="Pearson r", method="pearson_correlation", fields={"x":"x","y":"y"}, entity_field="id", entity_unit="case", design="declared independent cases", test_plan=plan)\nexcept Exception:\n    pass\n'
+                'await complete_block(reason="retained explicit scientific and operational outcomes")'}, tool_call_id='busy')])
+        if external_lease:
+            await external_lease.__aexit__(None, None, None)
+            external_lease = None
+        return ModelResponse(parts=[TextPart('No causal or scientific-absence claim')])
+    try:
+        with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+            result = run_cycle(system, 'directional association', repository=repository)
+        assert result.status.value == 'complete'
+        assert not any('Runtime error' in value or 'Type error' in value for value in outputs), outputs
+        terminal = {r.payload['analysis']['analysis_id']:r.payload for r in repository.store.records(kind=RecordKind.SCIENTIFIC_ATTEMPT)
+                    if r.payload['stage'] != 'started'}
+        assert {key:value['outcome'] for key,value in terminal.items()} == {
+            'positive':'supported', 'reversed':'contradicted', 'null':'inconclusive', 'duplicate':'invalid',
+            'family':'supported', 'ols':'supported', 'busy':'attempted'}
+        measurements = {r.record_id:r.payload for r in repository.store.records(kind=RecordKind.MEASUREMENT)}
+        assert measurements['null']['values']['correlation'] == pytest.approx(0)
+        assert measurements['null']['values']['p_value_adjusted'] == pytest.approx(1)
+        assert measurements['positive']['values']['effect_ci_low'] > 0.3
+        assert measurements['reversed']['values']['effect_ci_high'] < -0.3
+        assert terminal['busy']['stage'] == 'operational_failed' and terminal['busy']['failure_type'] == 'ResourceBusy'
+        assert measurements['family']['values']['alpha_per_test'] == pytest.approx(0.0125)
+        assert measurements['family']['values']['effect_ci_low'] <= measurements['positive']['values']['effect_ci_low']
+        assert measurements['family']['values']['effect_ci_high'] >= measurements['positive']['values']['effect_ci_high']
+        assert measurements['ols']['values']['slope'] == pytest.approx(2.0238095238095237)
+        assert measurements['ols']['values']['effect_ci_low'] > 1
+        assert 'busy' not in measurements
+        assert 'duplicate' not in measurements and len(repository.store.records(kind=RecordKind.EVIDENCE)) == 3
+        memory = ResearchMemory(repository.store)
+        digest = memory.search('directional')[0]
+        assert len(runtime.active_research.delta.references['scientific_attempts']) == 14
+        assert len(digest.scientific_attempts) == 7 and not digest.scientific_negative_findings
+        assert {item.details['outcome'] for item in digest.scientific_attempts} == {'supported','contradicted','inconclusive','invalid','attempted'}
+        for item in digest.scientific_attempts:
+            assert item.references
+            for ref in item.references: memory.resolve(ref)
+        start = memory.start_context('directional')
+        assert any('inconclusive' in value for value in start.prior_attempts)
+        assert any('invalid' in value for value in start.prior_attempts)
+        assert not memory.items('scientific_negative_findings', 'directional')
+        assert memory.context('directional').digests[0]['scientific_attempts'][0]['details']['meaning']
+    finally:
+        if external_lease:
+            import asyncio
+            asyncio.run(external_lease.__aexit__(None, None, None))
+        repository.store.close()
+    reopened = SqliteResearchStore(database)
+    try:
+        memory = ResearchMemory(reopened)
+        assert len(memory.search('directional')[0].scientific_attempts) == 7
+        assert reconstruct_block(reopened, result.block_ids[0]).complete
+    finally:
+        reopened.close()
 
 
 def test_exact_public_artifact_retention_ownership_and_sandbox_replay(tmp_path):

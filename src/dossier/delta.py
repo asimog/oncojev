@@ -23,7 +23,8 @@ def build_delta(store, block, run_id, start_sequence, finished_at: datetime, *, 
     groups = {}
     for record in records:
         category = {RecordKind.EVIDENCE: "evidence", RecordKind.MEASUREMENT: "measurements",
-                    RecordKind.JEV_OUTPUT: "semantic_measurements", RecordKind.STATE_REVISION: "state_changes"}.get(record.kind)
+                    RecordKind.JEV_OUTPUT: "semantic_measurements", RecordKind.STATE_REVISION: "state_changes",
+                    RecordKind.SCIENTIFIC_ATTEMPT: "scientific_attempts"}.get(record.kind)
         if record.kind is RecordKind.LEDGER_EVENT:
             category = {"ReasonerOutput": "hypotheses", "ScientificNegativeFinding": "scientific_negatives",
                         "UncertaintyRecorded": "uncertainties", "ExplicitResolution": "resolutions",
@@ -40,7 +41,7 @@ def build_delta(store, block, run_id, start_sequence, finished_at: datetime, *, 
     elapsed = max(0, (finished_at - block.started_at).total_seconds())
     allowance = block.start.allocation.seconds
     return BlockDelta(block_id=block.block_id, run_id=run_id, start_sequence=start_sequence,
-        end_sequence=store.count(), references={k: tuple(v[:20]) for k,v in groups.items()},
+        end_sequence=store.high_water(), references={k: tuple(v[:20]) for k,v in groups.items()},
         omitted={k: max(0, len(v)-20) for k,v in groups.items()}, resources={
             "allocated_seconds": allowance, "actual_elapsed_seconds": elapsed,
             "unused_allowance_seconds": max(0, allowance-elapsed), "reason_for_terminal_state": block.termination_reason,

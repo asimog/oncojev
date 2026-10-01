@@ -7,6 +7,15 @@ reference pins record kind, sequence, identity, owner and SHA-256. Missing sourc
 or dossier references remain explicit uncertainty. Digests include corrected
 lifecycle/run outcomes, admitted-evidence and measurement references, limitations,
 hypotheses, candidate history, blockers, uncertainties, proposals and recorded use.
+Source-paired attempts retain unknown/invalid/inconclusive and model-conditional
+supported/contradicted outcomes with analysis/input/hypothesis, measurement and
+admitted-evidence references. Memory-v2 preserves method/population/design,
+effect uncertainty and multiplicity context. Operational failures remain attempts;
+other operations without originating outcome contracts remain unknown. Bounded
+summaries prioritize unfinished/invalid work so repeated supported results cannot
+hide it. Start packets carry prior-attempt summaries and references without
+inheriting measurements or evidence authority.
+
 Director prose is optional context and never supplies canonical outcomes or search
 relevance. Legacy prose remains labelled, including records without a linked cycle.
 

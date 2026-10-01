@@ -41,7 +41,7 @@ class PreparedFrontier(BaseModel, frozen=True):
 
 MATERIAL_KINDS = (RecordKind.CYCLE, RecordKind.OUTCOME_CORRECTION, RecordKind.BLOCK,
                   RecordKind.STATE_REVISION, RecordKind.EVIDENCE, RecordKind.VERIFICATION,
-                  RecordKind.BLOCK_DELTA, RecordKind.MEMORY_DIGEST)
+                  RecordKind.BLOCK_DELTA, RecordKind.MEMORY_DIGEST, RecordKind.SCIENTIFIC_ATTEMPT)
 
 
 def current_basis(runtime) -> str:
@@ -60,7 +60,7 @@ def generate(digests, *, limit=20):
     candidates = {}
     omitted = 0
     for digest in digests:
-        for field in ("continuation_proposals", "uncertainties", "hypotheses", "operational_blockers", "candidates"):
+        for field in ("continuation_proposals", "uncertainties", "hypotheses", "scientific_attempts", "operational_blockers", "candidates"):
             for item in getattr(digest, field):
                 if not item.references or not item.summary.strip():
                     continue

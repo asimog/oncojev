@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 import statsmodels.api as sm
-from src.science.models import AnalysisSpec,MeasuredResult
+from src.science.models import AnalysisSpec, MeasuredResult, InvalidAnalysis
 from src.sources.models import AcquisitionRecord
 class ScienceExecutor:
     def execute(self,spec:AnalysisSpec)->MeasuredResult:
@@ -53,25 +53,25 @@ class ScienceExecutor:
     def execute_source(self,record:AcquisitionRecord,spec:AnalysisSpec)->MeasuredResult:
         """Resolve paired values from one owned row set; never join caller arrays."""
         if spec.inputs or spec.source_refs != (record.acquisition_id,):
-            raise ValueError("source analysis requires exact resolved acquisition, not supplied arrays")
+            raise InvalidAnalysis("source analysis requires exact resolved acquisition, not supplied arrays")
         if spec.method not in {"pearson_correlation","ordinary_least_squares"}:
-            raise ValueError("unsupported source-resolved method")
+            raise InvalidAnalysis("unsupported source-resolved method")
         if set(spec.fields)!={"x","y"} or not spec.entity_field or not spec.population.strip() or not spec.estimand.strip():
-            raise ValueError("declare entity key, population, estimand and x/y fields")
+            raise InvalidAnalysis("declare entity key, population, estimand and x/y fields")
         if record.source=="gdc":
             endpoint=record.coverage.endpoint if record.coverage else record.provenance[-1]
             units={"cases":{"case","patient"},"files":{"file"},"projects":{"project"},"annotations":{"annotation"}}
             if endpoint not in units or spec.entity_unit not in units[endpoint] or spec.entity_field!="id":
-                raise ValueError("GDC entity unit/key must match endpoint; joined rows require a separate contract")
+                raise InvalidAnalysis("GDC entity unit/key must match endpoint; joined rows require a separate contract")
         if spec.covariates or set(spec.transformations)-{"x","y"}:
-            raise ValueError("this operation does not implement covariates or undeclared transformations")
+            raise InvalidAnalysis("this operation does not implement covariates or undeclared transformations")
         pairs={"x":[],"y":[]};entities=[];seen=set();excluded={};counts={"total_rows":len(record.records),"complete_pairs":0,"excluded_rows":0}
         for row in record.records:
             entity=self._field(row,spec.entity_field)
             if entity is None or isinstance(entity,(dict,list,bool)):
-                raise ValueError("missing or non-scalar entity identity")
+                raise InvalidAnalysis("missing or non-scalar entity identity")
             identity=self._hash({"entity":entity})
-            if identity in seen:raise ValueError("duplicate entity rows require an explicit aggregation/join contract")
+            if identity in seen:raise InvalidAnalysis("duplicate entity rows require an explicit aggregation/join contract")
             seen.add(identity)
             pair={};valid=True
             for axis,field in spec.fields.items():
@@ -79,7 +79,7 @@ class ScienceExecutor:
                 if category!="valid_numeric":
                     excluded[f"{axis}:{category}"]=excluded.get(f"{axis}:{category}",0)+1;valid=False
                 elif spec.transformations.get(axis,"identity")=="log1p":
-                    if value<=-1:raise ValueError("log1p requires values greater than -1")
+                    if value<=-1:raise InvalidAnalysis("log1p requires values greater than -1")
                     pair[axis]=math.log1p(value)
                 else:pair[axis]=value
             if not valid:counts["excluded_rows"]+=1;continue
@@ -88,19 +88,56 @@ class ScienceExecutor:
         counts["complete_pairs"]=len(entities)
         minimum=3 if spec.method=="ordinary_least_squares" else 2
         if len(entities)<minimum or len(set(pairs["x"]))<2 or len(set(pairs["y"]))<2:
-            raise ValueError("paired analysis requires enough complete nonconstant observations")
+            raise InvalidAnalysis("paired analysis requires enough complete nonconstant observations")
         exploratory=self.execute(spec.model_copy(update={"inputs":pairs}))
-        contract=spec.model_dump(mode="json",exclude={"analysis_id","source_refs","inputs","replication_id"})
-        key=self._hash({"content":record.content_sha256,"contract":contract,"version":"source-paired-v1"})
+        exclusions = {"analysis_id", "source_refs", "inputs", "replication_id"}
+        if spec.test_plan is None:
+            exclusions.add("test_plan")  # preserve historical v1 analysis identity
+        contract=spec.model_dump(mode="json",exclude=exclusions)
+        version = "source-paired-test-v1" if spec.test_plan else "source-paired-v1"
+        key=self._hash({"content":record.content_sha256,"contract":contract,"version":version})
+        test = self._test_association(pairs, spec) if spec.test_plan else None
+        if test:
+            exploratory = exploratory.model_copy(update={"values": {**exploratory.values, **test["values"]}})
+            self._require_finite(exploratory.values)
         return exploratory.model_copy(update={"origin":"synthetic" if record.origin=="synthetic" else "source","source_refs":(record.acquisition_id,),"input_sha256":record.content_sha256,
             "analysis_key":key,"replication_id":spec.replication_id,"interpretation":"associative",
-            "provenance":(*exploratory.provenance,"source-paired-v1",key),
+            "provenance":(*exploratory.provenance,"source-paired-v1",version,key) if spec.test_plan else (*exploratory.provenance,"source-paired-v1",key),
             "diagnostics":{"counts":counts,"excluded_fields":excluded,"paired_entities":entities,"fields":spec.fields,
                            "design":spec.design,"entity_unit":spec.entity_unit,"population":spec.population,"estimand":spec.estimand,
-                           "transformations":spec.transformations,"coverage":record.coverage.model_dump(mode="json") if record.coverage else None},
+                           "transformations":spec.transformations,"coverage":record.coverage.model_dump(mode="json") if record.coverage else None,
+                           **({"hypothesis_test": test["diagnostics"]} if test else {})},
             "limitations":("Association over complete stored rows; no causal interpretation.",
                             "Inference requires independent observations and method-specific assumptions; these are declared, not empirically guaranteed.",
-                            "Response coverage does not establish population representativeness.")})
+                            "Response coverage does not establish population representativeness.",
+                            *(("Exploratory directional test; adaptive data/hypothesis selection and model-assumption failures are not ruled out.",) if test else ()))})
+
+    @staticmethod
+    def _test_association(pairs, spec):
+        plan = spec.test_plan
+        alpha = plan.alpha / len(plan.multiplicity_family)
+        if spec.method == "pearson_correlation":
+            if plan.minimum_effect >= 1:
+                raise InvalidAnalysis("correlation effect bound must be less than one")
+            result = stats.pearsonr(pairs["x"], pairs["y"])
+            interval = result.confidence_interval(confidence_level=1-alpha)
+            low, high, p_value = float(interval.low), float(interval.high), float(result.pvalue)
+            uncertainty_method = "scipy.pearsonr Fisher confidence interval"
+        else:
+            fit = sm.OLS(pairs["y"], sm.add_constant(pairs["x"])).fit()
+            low, high = (float(v) for v in fit.conf_int(alpha=alpha)[1])
+            p_value = float(fit.pvalues[1])
+            uncertainty_method = "statsmodels.OLS slope t confidence interval"
+        if not all(math.isfinite(value) for value in (low, high, p_value)):
+            raise InvalidAnalysis("undefined effect uncertainty cannot establish a hypothesis outcome")
+        signed_low, signed_high = (low, high) if plan.direction == "positive" else (-high, -low)
+        outcome = ("supported" if signed_low > plan.minimum_effect else
+                   "contradicted" if signed_high < -plan.minimum_effect else "inconclusive")
+        return {"values": {"effect_ci_low": low, "effect_ci_high": high, "alpha_per_test": alpha,
+                           "p_value_adjusted": min(1., p_value * len(plan.multiplicity_family))},
+                "diagnostics": {"plan": plan.model_dump(mode="json"), "outcome": outcome,
+                    "uncertainty_method": uncertainty_method, "multiplicity": "Bonferroni simultaneous intervals",
+                    "meaning": "Directional effect-bound comparison conditional on the declared association model; no causal, absence or clinical claim."}}
 
     @staticmethod
     def _field(row,field):

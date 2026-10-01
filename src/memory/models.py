@@ -16,13 +16,13 @@ class MemoryReference(BaseModel, frozen=True):
 class MemoryItem(BaseModel, frozen=True):
     item_id: str
     summary: str
-    epistemic_status: Literal["hypothesis", "uncertainty", "operational_failure", "semantic_history", "proposal", "legacy_prose", "director_note", "scientific_negative"]
+    epistemic_status: Literal["hypothesis", "uncertainty", "operational_failure", "semantic_history", "proposal", "legacy_prose", "director_note", "scientific_negative", "scientific_attempt"]
     references: tuple[MemoryReference, ...] = ()
     details: dict[str, Any] = Field(default_factory=dict)
 
 
 class CycleDigest(BaseModel, frozen=True):
-    version: Literal["research-memory-v1"] = "research-memory-v1"
+    version: Literal["research-memory-v1", "research-memory-v2"] = "research-memory-v2"
     digest_id: str
     cycle_id: str
     mission_id: str | None = None
@@ -39,6 +39,7 @@ class CycleDigest(BaseModel, frozen=True):
     unresolved_references: tuple[str, ...] = ()
     hypotheses: tuple[MemoryItem, ...] = ()
     scientific_negative_findings: tuple[MemoryItem, ...] = ()
+    scientific_attempts: tuple[MemoryItem, ...] = ()
     candidates: tuple[MemoryItem, ...] = ()
     operational_blockers: tuple[MemoryItem, ...] = ()
     uncertainties: tuple[MemoryItem, ...] = ()
@@ -64,6 +65,7 @@ class StartMemory(BaseModel, frozen=True):
     digest_ids: tuple[str, ...] = ()
     references: tuple[MemoryReference, ...] = ()
     prior_failures: tuple[str, ...] = ()
+    prior_attempts: tuple[str, ...] = ()
     uncertainties: tuple[str, ...] = ()
     candidate_directions: tuple[str, ...] = ()
     limitations: tuple[str, ...] = ()

@@ -162,7 +162,7 @@ async def semantic_memory_context_async(runtime,query,*,limit=5,block_id=None,**
     comparison=[{"digest_id":d["digest_id"],"objectives":d["objectives"],"hypotheses":d["hypotheses"],"uncertainties":d["uncertainties"]} for d in context["digests"][:5]]
     try:
         for digest in context["digests"][:min(5,runtime.memory_limit)]:
-            payload={"objective":query,"memory":{k:digest[k] for k in ("digest_id","objectives","cycle_status","failure_reason","hypotheses","operational_blockers","uncertainties","limitations","candidates")},
+            payload={"objective":query,"memory":{k:digest[k] for k in ("digest_id","objectives","cycle_status","failure_reason","hypotheses","scientific_attempts","operational_blockers","uncertainties","limitations","candidates")},
                      "comparison":[d for d in comparison if d["digest_id"]!=digest["digest_id"]]}
             result=await measure_async(runtime,block_id,"memory",digest["digest_id"],payload)
             measurements.append(result)

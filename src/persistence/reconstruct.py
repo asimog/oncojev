@@ -26,6 +26,7 @@ class BlockReconstruction(BaseModel, frozen=True):
     artifacts: tuple[dict[str, Any], ...]
     acquisitions: tuple[dict[str, Any], ...] = ()
     scientific_artifacts: tuple[dict[str, Any], ...] = ()
+    scientific_attempts: tuple[dict[str, Any], ...] = ()
     literature: tuple[dict[str, Any], ...] = ()
     sandbox_requests: tuple[dict[str, Any], ...] = ()
     sandbox_candidates: tuple[dict[str, Any], ...] = ()
@@ -104,7 +105,8 @@ def _reconstruct_block(store: SqliteResearchStore, block_id: str) -> BlockRecons
         jev_outputs=payloads(RecordKind.JEV_OUTPUT),
         jev_failures=payloads(RecordKind.JEV_FAILURE),
         artifacts=payloads(RecordKind.ARTIFACT),
-        acquisitions=acquisitions, scientific_artifacts=payloads(RecordKind.SCIENTIFIC_ARTIFACT), literature=payloads(RecordKind.LITERATURE),
+        acquisitions=acquisitions, scientific_artifacts=payloads(RecordKind.SCIENTIFIC_ARTIFACT),
+        scientific_attempts=payloads(RecordKind.SCIENTIFIC_ATTEMPT), literature=payloads(RecordKind.LITERATURE),
         sandbox_requests=payloads(RecordKind.SANDBOX_REQUEST), sandbox_candidates=candidates,
         verifications=payloads(RecordKind.VERIFICATION), index_receipts=receipts, jev_calls=tuple(calls.values()),
         candidate_history=tuple(e.payload for e in events if e.event_type == "FrontierDecision"),

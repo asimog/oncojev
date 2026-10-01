@@ -433,7 +433,7 @@ class HarnessRuntime:
             raise RuntimeError("one active Researcher is already running")
         self.start_researcher(block_id, launched_by)
         active = ActiveResearchContext(str(uuid4()), block_id, self.mission_id, self.cycle_id,
-                                       self.repository.store.count() if self.repository else 0)
+                                       self.repository.store.high_water() if self.repository else 0)
         self.active_research = active
         self.set_service_state(ServiceResearchState.RESEARCHER_ACTIVE, cause=active.run_id)
         self.append_event(block_id, "ResearcherRunHandle", active.handle())
