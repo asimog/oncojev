@@ -23,6 +23,7 @@ def build_delta(store, block, run_id, start_sequence, finished_at: datetime, *, 
     groups = {}
     for record in records:
         category = {RecordKind.EVIDENCE: "evidence", RecordKind.MEASUREMENT: "measurements",
+                    RecordKind.METHOD_CANDIDATES: "method_alternatives",
                     RecordKind.JEV_OUTPUT: "semantic_measurements", RecordKind.STATE_REVISION: "state_changes",
                     RecordKind.SCIENTIFIC_ATTEMPT: "scientific_attempts", RecordKind.LITERATURE_CONTEXT: "literature_contexts",
                     RecordKind.FOLLOWUP_PLAN:"followup_plans",RecordKind.FOLLOWUP_RESULT:"scientific_followups"}.get(record.kind)

@@ -261,23 +261,51 @@ def test_semantic_method_tools_keep_routes_uncertainty_and_replayable_lineage(tm
     manager=BlockManager();block=manager.create('paired association','test',ResourceAllocation(seconds=300))
     runtime=HarnessRuntime(manager=manager,jev=DeterministicJevClient(),science=ScienceExecutor(),reasoner=DeterministicReasoner(),max_jev_calls=10,max_reasoner_calls=1,repository=repo)
     repo.record_block(block);runtime.research_state.start(block.block_id,block.objective)
-    record=AcquisitionRecord(source='fixture',request={},records=({'x':1,'y':2},{'x':2,'y':4}),provenance=('fixture',))
+    record=AcquisitionRecord(source='fixture',request={},records=({'id':'a','x':1,'y':2},{'id':'b','x':2,'y':4}),provenance=('fixture',))
     runtime.retain_acquisition(block.block_id,record)
+    split_x=AcquisitionRecord(source='fixture',request={'side':'x'},records=({'id':'a','x':1},{'id':'b','x':2}),provenance=('fixture',))
+    split_y=AcquisitionRecord(source='fixture',request={'side':'y'},records=({'id':'a','y':2},{'id':'b','y':4}),provenance=('fixture',))
+    runtime.retain_acquisition(block.block_id,split_x);runtime.retain_acquisition(block.block_id,split_y)
+    text_input=AcquisitionRecord(source='fixture',request={'values':'text'},records=({'id':'a','x':'1','y':2},{'id':'b','x':'2','y':4}),provenance=('fixture',))
+    runtime.retain_acquisition(block.block_id,text_input)
     responses=[]
     async def model(messages,info):
         if not any(isinstance(m,ModelResponse) for m in messages):
             code=f'page = await search_oncolab_page(query="paired association", limit=2)\ncontract = await describe_oncolab(capability_id="stat.scipy")\nfit = await assess_method(capability_id="stat.scipy", need={{"estimand":"correlation","design":"paired"}}, acquisition_ids=["{record.acquisition_id}"], operation="pearson_correlation")\nmissing = await assess_method(capability_id="stat.scipy", need={{"estimand":"correlation"}}, acquisition_ids=[])\nmeta = await assess_method(capability_id="stat.method.correlation", need={{"estimand":"correlation"}})\nawait assess_representation(acquisition_id="{record.acquisition_id}", need={{"estimand":"paired correlation"}})\nfirst = await assess_hypothesis(hypothesis="X relates to Y", proposed_test="paired correlation")\nduplicate = await assess_hypothesis(hypothesis=" X  relates to Y ", proposed_test="paired correlation")\nassert duplicate["exact_duplicate"]\nassert not missing["checks"]["eligible"]\nassert not meta["checks"]["eligible"]\nassert fit["checks"]["eligible"]\nfit'
+            code=(f'need = {{"question":"Do X and Y correlate?", "estimand":"correlation", "population":"retained rows", "design":"paired", '
+                  '"representation_need":{"estimand":"correlation","representation":"paired_data","entity_key":"id","fields":{"x":"x","y":"y"},"numeric_roles":["x","y"],"minimum_complete_rows":2}}\n'
+                  f'generated = await generate_method_candidates(need=need, acquisition_ids=["{record.acquisition_id}"], limit=8)\n'
+                  'source = [c for c in generated["candidates"] if c["capability_id"] == "science.source-paired"][0]\n'
+                  'assert source["input_ready"]\nassert source["scientific_suitability"] == "unmeasured"\n'
+                  f'planned_fit = await assess_method(capability_id="science.source-paired", need=need, acquisition_ids=["{record.acquisition_id}"], operation="pearson_correlation")\n'
+                  'assert planned_fit["checks"]["eligible"]\n'
+                  'assert any(c["status"] == "prerequisites_unmet" for c in generated["candidates"])\n'
+                  f'split = await generate_method_candidates(need=need, acquisition_ids=["{split_x.acquisition_id}","{split_y.acquisition_id}"], limit=8)\n'
+                  'assert not any(c["input_ready"] for c in split["candidates"])\n'
+                  f'no_join = await assess_method(capability_id="science.source-paired", need=need, acquisition_ids=["{split_x.acquisition_id}","{split_y.acquisition_id}"], operation="pearson_correlation")\n'
+                  'assert not no_join["checks"]["eligible"]\nassert no_join["frontier"]["action"] == "defer"\n'
+                  'need["representation_need"]["numeric_roles"] = []\n'
+                  f'text = await generate_method_candidates(need=need, acquisition_ids=["{text_input.acquisition_id}"], limit=8)\n'
+                  'assert not [c for c in text["candidates"] if c["capability_id"] == "science.source-paired"][0]["input_ready"]\n'
+                  'need["representation_need"]["fields"]["covariate"] = "absent_covariate"\n'
+                  f'blocked = await generate_method_candidates(need=need, acquisition_ids=["{record.acquisition_id}"], limit=8)\n'
+                  'assert not any(c["input_ready"] for c in blocked["candidates"])\n'+code)
             return ModelResponse(parts=[ToolCallPart('run_code',{'code':code},tool_call_id='selection')])
         responses.extend(str(p.content) for m in messages for p in m.parts if hasattr(p,'content'))
         return ModelResponse(parts=[TextPart('done')])
     agent=create_agents('test','test').researcher
     with agent.override(model=scripted(model)):agent.run_sync('select method',deps=ResearcherDeps(runtime,block.block_id))
-    assert not any('AssertionError' in s or 'Exception:' in s or 'Type error' in s for s in responses),responses[-1]
-    assert runtime.resources(block.block_id)['jev']['attempted']==5
-    assert runtime.resources(block.block_id)['jev_questions']['attempted']==16
+    assert not any('AssertionError' in s or 'Exception:' in s or 'Type error' in s or 'Runtime error' in s for s in responses),responses[-1]
+    assert runtime.resources(block.block_id)['jev']['attempted']==7
+    assert runtime.resources(block.block_id)['jev_questions']['attempted']==24
     store.close();store=SqliteResearchStore(tmp_path/'semantic.sqlite3');view=reconstruct_block(store,block.block_id)
-    assert len(view.jev_calls)==5 and not view.evidence
+    assert len(view.jev_calls)==7 and not view.evidence
     assert all(c['projection_sha256'] and c['question_hashes'] for c in view.jev_calls)
+    assert len([r for r in view.index_receipts if r['operation']=='method_generation'])==4
+    assert len(view.method_candidates)==4
+    from src.application.export import render_snapshot
+    exported=b''.join(data for name,data in render_snapshot(store).items() if name.endswith('/records.json'))
+    assert b'method_candidates' in exported and b'absent_covariate' in exported
     assert any(h['action']=='defer' for h in view.candidate_history)
     assert any(h['action']=='keep_alive' for h in view.candidate_history)
     assert all(len(p['returned_ids'])<=2 for p in view.index_receipts if p['operation']=='search_page')

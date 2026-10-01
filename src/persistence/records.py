@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 
 class RecordKind(StrEnum):
+    METHOD_CANDIDATES = "method_candidates"
     SCIENTIFIC_ATTEMPT = "scientific_attempt"
     MISSION = "mission"
     EXPORT = "export"

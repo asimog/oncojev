@@ -48,6 +48,55 @@ def available_inputs(runtime,block_id,acquisition_ids):
 
 
 def register_local_semantic_tools(agent):
+    from src.oncolab.methods import ScientificNeed, method_alternative, method_inputs, method_route_checks
+
+    @agent.tool
+    async def generate_method_candidates(ctx: RunContext[Any], need: dict[str, Any],
+                                         acquisition_ids: list[str], limit: int = 4,
+                                         continuation: str | None = None) -> dict[str, Any]:
+        """Generate need-bound alternatives from the pinned Index, with actual input gaps."""
+        if not 1 <= limit <= 8 or len(acquisition_ids) > 10 or len(set(acquisition_ids)) != len(acquisition_ids):
+            raise ValueError("bounded unique acquisitions and method page required")
+        need = ScientificNeed.model_validate(need)
+        runtime = ctx.deps.runtime; block_id = ctx.deps.block_id
+        runtime.check_work(block_id, {})
+        records = [runtime.resolve_acquisition(block_id, identity) for identity in acquisition_ids]
+        representations = method_inputs(records, need)
+        key = f"{block_id}:index_candidates"
+        effective = min(limit, runtime.oncolab_search_k, runtime.oncolab_candidate_k-runtime._counts.get(key, 0))
+        if effective < 1:
+            return {"candidates": [], "exhausted": False, "status": "retrieval_budget_exhausted", "retryable": False}
+        index = runtime.index_for(block_id)
+        query = " ".join((need.estimand, need.design))[:4000]
+        kinds = (OncoLabKind.STATISTICAL_METHOD, OncoLabKind.SCIENTIFIC_METHOD, OncoLabKind.SOFTWARE, OncoLabKind.TRANSFORMATION)
+        page = index.search_page(query, kinds=kinds, limit=effective, continuation=continuation)
+        runtime._counts[key] = runtime._counts.get(key, 0)+len(page.cards)
+        receipt = runtime.index_receipt("researcher", "method_generation", block_id=block_id,
+            query=query, kinds=kinds, requested_limit=limit, effective_limit=effective,
+            returned_ids=tuple(c.capability_id for c in page.cards), snapshot_id=page.snapshot_id,
+            retrieval_version=page.retrieval_version, continuation=continuation,
+            contract_hashes={c.capability_id: c.contract_sha256 for c in page.cards})
+        alternatives = [method_alternative(index, card.capability_id, need, representations) for card in page.cards]
+        result = {"version": "method-generation-v1", "need": need.model_dump(mode="json"),
+            "need_sha256": content_hash(need.model_dump(mode="json")), "receipt_id": receipt.receipt_id,
+            "snapshot_id": page.snapshot_id, "oncolab_registry_revision": page.oncolab_registry_revision,
+            "representations": representations, "candidates": alternatives, "omitted_candidates": 0,
+            "continuation": page.continuation, "exhausted": page.exhausted,
+            "total_candidates": page.total_candidates, "authority": "planning_only"}
+        while len(canonical_bytes(result)) > 32768 and alternatives:
+            alternatives.pop(); result["omitted_candidates"] += 1
+        if len(canonical_bytes(result)) > 32768:
+            raise ValueError("representation context exceeds method generation byte bound; select fewer inputs")
+        state = runtime.research_state.get(block_id)
+        identity = content_hash({"need": result["need_sha256"], "receipt": receipt.receipt_id})
+        runtime.persist_state(state.append("candidates", StateFragment(fragment_id=identity, kind="method_alternatives",
+            summary=need.question, provenance=(receipt.receipt_id, *acquisition_ids), details=result)))
+        if runtime.repository is not None:
+            from src.persistence.records import RecordKind, StoredRecord
+            runtime.repository.store.append(StoredRecord(kind=RecordKind.METHOD_CANDIDATES,
+                record_id=identity, block_id=block_id, payload=result))
+        return result
+
     @agent.tool
     async def record_dossier_statement(ctx: RunContext[Any], statement: str, epistemic_type: str,
                                        evidence_ids: list[str] = []) -> dict[str, Any]:
@@ -89,7 +138,17 @@ def register_local_semantic_tools(agent):
         if contract is None:raise ValueError("unknown capability ID")
         receipt=runtime.index_receipt("researcher","describe",block_id=block_id,requested_id=capability_id,
             returned_ids=(capability_id,),contract_hashes={capability_id:contract["contract_sha256"]},snapshot_id=runtime.index_for(block_id).snapshot_id)
-        checks=check_routes(runtime.index_for(block_id).describe(capability_id),available_inputs(runtime,block_id,acquisition_ids),operation,routes=runtime.index_for(block_id).routes)
+        if "representation_need" in need:
+            structured = ScientificNeed.model_validate(need)
+            if len(acquisition_ids) > 10 or len(set(acquisition_ids)) != len(acquisition_ids):
+                raise ValueError("bounded unique method inputs required")
+            representations = method_inputs([runtime.resolve_acquisition(block_id, identity) for identity in acquisition_ids], structured)
+            inputs = method_route_checks(runtime.index_for(block_id), capability_id, representations, operation)
+            checks = {"capability_id": capability_id, "eligible": any(value["eligible"] for value in inputs),
+                "input_checks": inputs, "routes": [route for value in inputs for route in value["routes"]],
+                "reasons": sorted({reason for value in inputs for reason in value["reasons"]})}
+        else:
+            checks=check_routes(runtime.index_for(block_id).describe(capability_id),available_inputs(runtime,block_id,acquisition_ids),operation,routes=runtime.index_for(block_id).routes)
         payload={"need":need,"contract":contract["descriptor"],"execution_routes":contract["execution_routes"],"checks":checks,
                  "contract_sha256":contract["contract_sha256"],"description_receipt":receipt.receipt_id,"snapshot_id":runtime.index_for(block_id).snapshot_id}
         result=await measure_async(runtime,block_id,"method",capability_id,payload,eligible=checks["eligible"])
