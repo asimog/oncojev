@@ -1,6 +1,6 @@
 # Next-stage autonomous laboratory implementation plan
 
-**Stage status: IN PROGRESS - H0/H1 DONE; H2-H10 PARTIAL; H11-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
+**Stage status: IN PROGRESS - H0/H1 DONE; H2-H11 PARTIAL; H12-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
 
 The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](references/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
@@ -84,7 +84,7 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 | H8 — ecosystem enrichment | P2, scoped adapters | H7 | PARTIAL: targeted metadata/live smokes; R4 operation-reference return work below |
 | H9 — governed capability promotion/review (D1) | P1, governance | Build: H5/H7/H8 as applicable. Acceptance: H10a/D8 promotion-grade qualification, measured H13 utility and applicable H11 deployment proof. | PARTIAL: proposal/rejection path; accepted qualified reuse awaits return proof |
 | H10 — execution backend, scientific operations and dependency locking (D7/D8) | P0 for Railway execution, scientific correctness | Build: H2 and existing F5 admission; H6 inputs for selected science. Return-pass proof: scoped H13 evaluation; deployment in H11. | PARTIAL: confined Linux exploratory backend; qualification/scientific expansion return proof remains |
-| H11 — durable Railway deployment/confinement | P0 for deployment, operations | H2/H3/H5/H10 | PLANNED |
+| H11 — durable Railway deployment/confinement | P0 for deployment, operations | H2/H3/H5/H10 | PARTIAL: deployed persistent nonroot worker; target boundary checks passed; aggregate resources/continuation proof remains |
 | H12 — oncojevlab export/publication | P2, observability | H3/H4/H5/H9/H11 records | PLANNED |
 | H13 — semantic/scientific evaluation corpus | P1, evaluation | Build alongside H4/H6–H10 baselines; return scoped proof to owners. Full-system conditions after H11/H12. | PLANNED |
 | H14 — frontier audit, generator contract and bounded calibration/Autoresearch (D3/D5) | P1, policy correctness and measured semantic research | Build: H0 caller inventory and H4/H6/H7 baselines. Acceptance: H13 comparisons/instability evidence. | PLANNED |
@@ -409,6 +409,11 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 **Acceptance:** each selected operation has real execution/replay/admission proof and protected design/denominator/missingness behavior; each assessed but ineligible family has explicit current-phase prerequisites. `test_boundaries.py` owns actual operation behavior, persistence covers novel retained/reference contracts, H13 reports source-bound outcomes without claiming clinical utility. H6/H10/H13 jointly deliver this work; no independent additional-science backlog remains.
 
 ### H11 — One durable Railway worker and truthful confinement status
+
+**Target observations (2026-10-02):** deployment `1ab75f2f-347a-4a5c-86a5-1684d61758ad` of `ad96dad` succeeded on the authorized existing service. `/health` returns 200; PID 1 runs UID/GID 1000. Actual Railway Linux `6.18.15+deb13-cloud-amd64` passed local scientific secret/peer/app/network/process denial and fresh replay, and both Coder roles passed filesystem/env/descendant denial checks as UID 1000. The verifier now resolves actual durable roots and isolates fixture sentinels. No Docker daemon was required. The first live Researcher closed block `c15c80a9-c0e9-4f08-a16e-6a90e3a843b3` with explicit unresolved/operational limitations, nine retained acquisitions and an owned open MAF, zero measurements/evidence; it did not fabricate a mutation result. API block/dossier identities and acquisition IDs remain unchanged during restart observation; Railway restart API timed out, so definitive restart proof is still open. Source-call exhaustion/unsupported endpoint and a reported busy lease are actionable integration findings, not scientific negatives.
+
+**Not complete:** aggregate Coder process/disk controls, actual resource ceilings/API responsiveness under heavy science, confirmed restart recovery and sequential useful live cycles remain. Scoped boundary observations are retained as PARTIAL deployment verification; governance requires explicit complete service confinement before accepting reusable promotion.
+
 
 **Cutover preparation (2026-10-02):** user authorized replacing `ontojev-api` in existing Railway project `9dfd938b-9b23-4077-b3ed-ec386131e17f`, service `7c1aeaa3-de6e-4ba4-a3d8-27fb2f1b13ae`, production environment. Existing 500 MB `/data` volume has about 83 MB free; previous files remain preserved. `ONCOJEV_DATA_ROOT=/data/oncojev` isolates new records and both workspaces on that volume, owned by the nonroot runtime user. Runtime selects confined local-venv science; Railway configuration declares one replica. Six focused role/factory/sandbox tests, architecture and diff checks passed. Deployment, target confinement, restart persistence and sequential live cycles still require actual receipts; this preparation does not close H11.
 

@@ -84,7 +84,7 @@ def review(institution, proposal_id):
                 reasons.append('missing_fresh_locked_reinstall_replay')
             deployed=[r for r in linked if r.kind==RecordKind.DEPLOYMENT_VERIFICATION]
             if deployed and not any(r.payload.get('status')=='passed' and r.payload.get('application_identity')==institution.application
-                and r.payload.get('target')=='railway' for r in deployed):reasons.append('deployment_not_verified_for_application')
+                and r.payload.get('target')=='railway' and r.payload.get('service_confinement_complete') is True for r in deployed):reasons.append('deployment_not_verified_for_application')
             if not proposal.descriptor.version or any(r.payload.get('receipt',{}).get('commit_sha')!=proposal.descriptor.version for r in candidates):reasons.append('missing_or_conflicting_immutable_operation_version')
             if not proposal.routes or any(r.tool!='run_reusable_method' or r.candidate_id not in candidate_ids or r.scope_sha256!=scope_hash for r in proposal.routes):
                 reasons.append('unsupported_declarative_execution_route')

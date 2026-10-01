@@ -7,6 +7,8 @@ import os
 import shlex
 import sys
 from pathlib import Path
+from uuid import uuid4
+from src.runtime.paths import data_root, director_root as director_path, workspace_root
 
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart, ToolReturnPart
 from pydantic_ai.models.function import DeltaToolCall, FunctionModel
@@ -41,7 +43,7 @@ def _as_stream(respond):
     return stream
 
 
-def _model(role: str, peer: Path, secret: Path):
+def _model(role: str, peer: Path, secret: Path, proof_root: Path):
     calls = 0
 
     async def respond(_messages, info):
@@ -108,6 +110,7 @@ checks["descendant_own_write"] = allowed_child.returncode == 0 and (own / "child
 (own / "boundary-check.json").write_text(json.dumps(checks))
 assert all(checks.values())
 '''
+            code = code.replace('"/app/var/', '"' + str(proof_root) + '/')
             command = shlex.quote(sys.executable) + " -c " + shlex.quote(code)
             return ModelResponse(parts=[ToolCallPart("shell", {"command": command}, tool_call_id=f"{role}-shell")])
         if calls == 5:
@@ -141,24 +144,28 @@ def main() -> None:
     block = runtime.manager.create("Coder smoke block", "verify harness composition", ResourceAllocation(seconds=3600))
     runtime.research_state.start(block.block_id, block.objective)
     runtime.skills.start(block.block_id)
+    proof_root = data_root(Path("/app")) / "verification" / str(uuid4())
+    proof_root.mkdir(parents=True)
+    os.environ["ONCOJEV_DATA_ROOT"] = str(proof_root)
     agents = create_agents("test", "test")
-    director_root = Path("/work/director")
-    researcher_root = Path("/app/var/workspaces") / block.block_id
-    peer = Path("/app/var/workspaces/peer")
+    director_root = director_path(Path("/app"))
+    researcher_root = workspace_root(Path("/app")) / block.block_id
+    peer = workspace_root(Path("/app")) / "peer"
     peer.mkdir(parents=True)
     (peer / "peer-private.txt").write_text("fake private block data")
-    secret = Path("/app/var/provider-secret-sentinel")
+    secret = proof_root / "provider-secret-sentinel"
     secret.write_text("fake secret sentinel")
-    Path("/app/var/authoritative-db-sentinel").write_text("fake authoritative records")
-    Path("/app/var/publisher-credential-sentinel").write_text("fake publisher credential")
+    (proof_root / "authoritative-db-sentinel").write_text("fake authoritative records")
+    (proof_root / "publisher-credential-sentinel").write_text("fake publisher credential")
+    director_root.mkdir(parents=True, exist_ok=True)
     (director_root / "peer-private.txt").write_text("fake Director scratch data")
     for name in ("OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "LOGFIRE_TOKEN", "AWS_SECRET_ACCESS_KEY", "GH_TOKEN", "GITHUB_TOKEN", "ONCOJEV_DB_PATH"):
         os.environ[name] = "fake-verifier-sentinel"
 
-    with agents.director.override(model=_model("director", peer, secret)):
+    with agents.director.override(model=_model("director", peer, secret, proof_root)):
         director = agents.director.run_sync("Inspect the workspace and OncoLab Index.", deps=DirectorDeps(runtime))
     researcher_agent = agents.fresh_researcher(block.block_id)
-    with researcher_agent.override(model=_model("researcher", director_root, secret)):
+    with researcher_agent.override(model=_model("researcher", director_root, secret, proof_root)):
         researcher = researcher_agent.run_sync(
             "Inspect the workspace and OncoLab Index.", deps=ResearcherDeps(runtime, block.block_id)
         )
@@ -170,7 +177,7 @@ def main() -> None:
                         if isinstance(part, ToolReturnPart) and part.tool_name == "read_file"]
         assert any("default_seconds" in json.dumps(content, default=str) for content in read_results)
     assert (director_root / "coder-write-proof.txt").read_text() == "director workspace is writable\n"
-    researcher_proof = Path("var/workspaces") / block.block_id / "coder-write-proof.txt"
+    researcher_proof = researcher_root / "coder-write-proof.txt"
     assert researcher_proof.read_text() == "researcher workspace is writable\n"
     for result, root in ((director, director_root), (researcher, researcher_root)):
         if not (root / "boundary-check.json").exists():
@@ -180,7 +187,7 @@ def main() -> None:
     results = {role: json.loads((root / "boundary-check.json").read_text())
                for role, root in (("director", director_root), ("researcher", researcher_root))}
     assert all(all(checks.values()) for checks in results.values())
-    assert Path("/app/var/authoritative-db-sentinel").read_text() == "fake authoritative records"
+    assert (proof_root / "authoritative-db-sentinel").read_text() == "fake authoritative records"
     assert not (peer / "native-write-denied.txt").exists()
     assert not (director_root / "native-write-denied.txt").exists()
     assert not Path("/app/.env.local").exists()
