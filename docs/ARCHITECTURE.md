@@ -113,3 +113,11 @@ resolves fields and paired entity rows deterministically from owned acquisitions
 Analysis keys bind content, design, population, estimand, fields and transformations;
 admission uses stable scoped identity and explicit replication identity. No
 persistence or presentation component admits evidence.
+
+F6 operational retention runs between service cycles, outside agent authority.
+It requires durable terminal records, resolves archive identity before removing
+scratch and excludes active/unknown/unresolved or linked paths. All evidence,
+retained source bytes, replay inputs and history remain durable. Persistence
+failures prevent export-driven cleanup; deletion/receipt failures are explicit.
+Read models distinguish synthetic provenance and source attempt/success/failure
+counts; API connectivity never establishes scientific success.

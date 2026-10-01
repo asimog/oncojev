@@ -1,90 +1,451 @@
 {
-  "generated_at": "2026-10-01T03:11:41.788442+00:00",
-  "conditions": [
-    "science_only",
-    "science_reasoner",
-    "science_jev_reasoner"
+  "generated_at": "2026-10-01T10:36:48.312117+00:00",
+  "conditions": [],
+  "transport": "offline_snapshot",
+  "data_provenance": "synthetic_fixture",
+  "limitations": [
+    "Scripted offline fixture; no live research, provider evaluation or scientific evidence."
   ],
   "overview": {
-    "records": 28,
+    "records": 64,
     "blocks": 1,
     "cycles": 1,
     "dossiers": 1,
-    "evidence": 2,
+    "evidence": 0,
     "latest_cycle": {
       "block_ids": [
-        "1c2a883b-107c-4c9c-9107-249a734d33be"
+        "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44"
       ],
       "direction": "Investigate a public oncology direction relevant to the project thesis.",
+      "director_error_type": null,
+      "director_outcome": "returned",
       "error_type": null,
+      "mission_id": "demo-mission",
       "mode": "deterministic",
       "status": "complete"
+    },
+    "data_provenance": "synthetic_fixture",
+    "source_activity": {
+      "attempts": 0,
+      "successes": 0,
+      "failures": 0,
+      "unresolved": 0
     }
   },
   "research_memory": [
     {
-      "provenance": [
-        "run-cycle-v2",
-        "Investigate a public oncology direction relevant to the project thesis.",
-        "1c2a883b-107c-4c9c-9107-249a734d33be"
+      "version": "research-memory-v1",
+      "digest_id": "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606:d77b1a4687e71016a9042a9460af254b0e78b474a8f004961c480737ca8cb0b5",
+      "cycle_id": "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606",
+      "mission_id": "demo-mission",
+      "direction": "Investigate a public oncology direction relevant to the project thesis.",
+      "recorded_at": "2026-10-01T10:36:48.301118Z",
+      "cycle_status": "complete",
+      "director_outcome": "returned",
+      "failure_reason": null,
+      "block_ids": [
+        "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44"
       ],
-      "summary": "Director allocated one bounded block and launched the Researcher."
+      "objectives": [
+        "Assess a public treatment-resistance signal"
+      ],
+      "lifecycle": [
+        {
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "inferred": false,
+          "run_outcome": "completed",
+          "status": "complete",
+          "termination_reason": "researcher_complete"
+        }
+      ],
+      "references": [
+        {
+          "kind": "measurement",
+          "record_id": "replicate",
+          "seq": 22,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "983b621edffa60eb30e5e4bcf00af3aaef25ce193137c01c89b53905c9f767c0"
+        },
+        {
+          "kind": "measurement",
+          "record_id": "summary",
+          "seq": 14,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "ebf33b816ddcbc791ae8a28f5f946eac345b102491fd16ec6ec764e0b23fecd4"
+        },
+        {
+          "kind": "dossier",
+          "record_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "seq": 60,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "53d7a728f7e331021497206ad919ec607c773724d4906cd6da2d182fa6c5b503"
+        },
+        {
+          "kind": "cycle",
+          "record_id": "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606",
+          "seq": 63,
+          "block_id": null,
+          "sha256": "628458deb7d9818936764be73ba9fd971e8ca0de8c266f93d9a21131a0b8f256"
+        },
+        {
+          "kind": "block",
+          "record_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "seq": 59,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "bc16f8d40648d7a10b9d3c5bcc591fb8b1d448af1a3176b8f3917fe3f0eb6bdc"
+        },
+        {
+          "kind": "block",
+          "record_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "seq": 57,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "bc16f8d40648d7a10b9d3c5bcc591fb8b1d448af1a3176b8f3917fe3f0eb6bdc"
+        },
+        {
+          "kind": "block",
+          "record_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "seq": 54,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "6df7eaca1765d6a4884578d8f89d0563ca400c19c3b2346a796f48566eac2c6b"
+        },
+        {
+          "kind": "block",
+          "record_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "seq": 4,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "c3d16b4e9f52b317d0da35afaa428be9126d384fd682f0382c9367a76c33160e"
+        },
+        {
+          "kind": "state_revision",
+          "record_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44:5",
+          "seq": 52,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "a52bd46249919a5060f5626abe6888f4d182738d2ed69cbbf12f1192ae5b9026"
+        },
+        {
+          "kind": "state_revision",
+          "record_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44:4",
+          "seq": 44,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "b69c3f52e663d089170037c474d223a6505fa4d470f7b88b1166a20243d7aa02"
+        },
+        {
+          "kind": "state_revision",
+          "record_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44:3",
+          "seq": 29,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "95f9d037db98511e8d3012a4a3f1dce02ca914bb5d46811cf96b26613e286c15"
+        },
+        {
+          "kind": "state_revision",
+          "record_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44:2",
+          "seq": 21,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "f3c605ad7c07a172483f7980fce70f7d6546380f5b290835ae6cd4823ef26582"
+        },
+        {
+          "kind": "state_revision",
+          "record_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44:1",
+          "seq": 13,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "0c3a5cd26a5b4c0ca8c36d50c67caa346f711b94d11f0bb8745a15d48ca0e41e"
+        },
+        {
+          "kind": "state_revision",
+          "record_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44:0",
+          "seq": 5,
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "sha256": "174129820e0e2e98e9eefc82d164a7a4b2f32e460f2ac8fc7630c601be1f75ca"
+        }
+      ],
+      "limitations": [
+        "Descriptive measurement of the stored response slice; population coverage is not inferred.",
+        "summary: exploratory synthetic input; not admitted evidence.",
+        "replicate: exploratory synthetic input; not admitted evidence.",
+        "Scientific negatives are not inferred from semantic rejection, missing evidence or provider failure."
+      ],
+      "unresolved_references": [],
+      "hypotheses": [
+        {
+          "item_id": "0f22ccfd-7d1e-4a02-b126-210e2dbe5db4:0",
+          "summary": "Replicate the association.",
+          "epistemic_status": "hypothesis",
+          "references": [
+            {
+              "kind": "ledger_event",
+              "record_id": "0f22ccfd-7d1e-4a02-b126-210e2dbe5db4",
+              "seq": 36,
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+              "sha256": "18fd2bb89812a77ebbf58f7d1797670762aa81bff78403c5fd626c7be83a2bd0"
+            }
+          ],
+          "details": {}
+        },
+        {
+          "item_id": "0f22ccfd-7d1e-4a02-b126-210e2dbe5db4:1",
+          "summary": "Test a causal mechanism.",
+          "epistemic_status": "hypothesis",
+          "references": [
+            {
+              "kind": "ledger_event",
+              "record_id": "0f22ccfd-7d1e-4a02-b126-210e2dbe5db4",
+              "seq": 36,
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+              "sha256": "18fd2bb89812a77ebbf58f7d1797670762aa81bff78403c5fd626c7be83a2bd0"
+            }
+          ],
+          "details": {}
+        }
+      ],
+      "scientific_negative_findings": [],
+      "candidates": [
+        {
+          "item_id": "candidate",
+          "summary": "synthetic subgroup signal",
+          "epistemic_status": "semantic_history",
+          "references": [
+            {
+              "kind": "ledger_event",
+              "record_id": "606e3bc0-6711-44a6-9498-c10b2ebb0953",
+              "seq": 34,
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+              "sha256": "aa30cacb208ebeef1622eaf3662b0bfd3ac3e3e82f160107f2560073f484b59f"
+            }
+          ],
+          "details": {}
+        },
+        {
+          "item_id": "1fb39552059d6103f6b09a118abc64a215676c82ac05228986f944543672c1ca",
+          "summary": "Assess a public treatment-resistance signal",
+          "epistemic_status": "semantic_history",
+          "references": [
+            {
+              "kind": "ledger_event",
+              "record_id": "75337065-3c48-4dbd-83e3-e79d5c958375",
+              "seq": 42,
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+              "sha256": "b42cad390d5aafefa6860c898a6051a9819351a8856bc15264b47db96c76e65f"
+            }
+          ],
+          "details": {}
+        },
+        {
+          "item_id": "7815a1967b9a37a065d73c0907952563e8728cd5c5e061f183cc5d48845296ba",
+          "summary": "Assess a public treatment-resistance signal",
+          "epistemic_status": "semantic_history",
+          "references": [
+            {
+              "kind": "ledger_event",
+              "record_id": "e38e7562-0e0a-4989-a31e-d7a03360921d",
+              "seq": 50,
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+              "sha256": "2f4fa5e2e42d8585780b30664a10a5c7755843945c689afadc936095e11e017a"
+            }
+          ],
+          "details": {}
+        }
+      ],
+      "operational_blockers": [],
+      "uncertainties": [
+        {
+          "item_id": "0f22ccfd-7d1e-4a02-b126-210e2dbe5db4",
+          "summary": "Replication needed.",
+          "epistemic_status": "uncertainty",
+          "references": [
+            {
+              "kind": "ledger_event",
+              "record_id": "0f22ccfd-7d1e-4a02-b126-210e2dbe5db4",
+              "seq": 36,
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+              "sha256": "18fd2bb89812a77ebbf58f7d1797670762aa81bff78403c5fd626c7be83a2bd0"
+            }
+          ],
+          "details": {}
+        }
+      ],
+      "continuation_proposals": [
+        {
+          "item_id": "0f22ccfd-7d1e-4a02-b126-210e2dbe5db4:test:0",
+          "summary": "replicate cohort",
+          "epistemic_status": "proposal",
+          "references": [
+            {
+              "kind": "ledger_event",
+              "record_id": "0f22ccfd-7d1e-4a02-b126-210e2dbe5db4",
+              "seq": 36,
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+              "sha256": "18fd2bb89812a77ebbf58f7d1797670762aa81bff78403c5fd626c7be83a2bd0"
+            }
+          ],
+          "details": {}
+        },
+        {
+          "item_id": "0f22ccfd-7d1e-4a02-b126-210e2dbe5db4:test:1",
+          "summary": "mechanistic experiment",
+          "epistemic_status": "proposal",
+          "references": [
+            {
+              "kind": "ledger_event",
+              "record_id": "0f22ccfd-7d1e-4a02-b126-210e2dbe5db4",
+              "seq": 36,
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+              "sha256": "18fd2bb89812a77ebbf58f7d1797670762aa81bff78403c5fd626c7be83a2bd0"
+            }
+          ],
+          "details": {}
+        }
+      ],
+      "resource_usage": {
+        "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44": {
+          "recorded_resources": {
+            "evidence": 0,
+            "jev_attempts": 3,
+            "jev_calls": 3,
+            "jev_questions_attempts": 6,
+            "reasoner_attempts": 1,
+            "reasoner_calls": 1,
+            "sandbox_calls": 0,
+            "source_byte_reports": 0,
+            "source_bytes_reported": 0,
+            "source_calls": 0,
+            "source_failures": 0,
+            "source_successes": 0,
+            "tool_attempts": 2
+          }
+        }
+      },
+      "entities": [],
+      "topics": [],
+      "inferred": false,
+      "legacy_notes": [],
+      "director_note": null,
+      "legacy_note_count": 0,
+      "director_note_available": true,
+      "omitted_items": {
+        "references": 0,
+        "hypotheses": 0,
+        "scientific_negative_findings": 0,
+        "candidates": 0,
+        "operational_blockers": 0,
+        "uncertainties": 0,
+        "continuation_proposals": 0,
+        "limitations": 0,
+        "unresolved_references": 0,
+        "entities": 0,
+        "topics": 0,
+        "lifecycle": 0
+      },
+      "truncated_text": {
+        "direction": false,
+        "objectives": 0,
+        "references": 0,
+        "hypotheses": 0,
+        "scientific_negative_findings": 0,
+        "candidates": 0,
+        "operational_blockers": 0,
+        "uncertainties": 0,
+        "continuation_proposals": 0,
+        "limitations": 0,
+        "unresolved_references": 0,
+        "entities": 0,
+        "topics": 0,
+        "lifecycle": 0
+      },
+      "summary": "complete: Assess a public treatment-resistance signal",
+      "provenance": [
+        "research-memory-v1",
+        "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606:d77b1a4687e71016a9042a9460af254b0e78b474a8f004961c480737ca8cb0b5"
+      ]
     }
   ],
   "blocks": [
     {
       "summary": {
-        "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+        "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
         "block": {
-          "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
-          "deadline": "2026-10-01T03:21:41.724436Z",
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "cycle_id": "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606",
+          "deadline": "2026-10-01T10:46:48.234623Z",
+          "mission_id": "demo-mission",
           "start": {
             "allocation": {
-              "handoff_reserve_seconds": 60,
+              "handoff_reserve_seconds": 0,
               "seconds": 600
             },
-            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
             "candidate_directions": [],
-            "constraints": [],
-            "deadline": "2026-10-01T03:21:41.724436Z",
+            "constraints": [
+              "Prior context is not inherited evidence admission authority."
+            ],
+            "deadline": "2026-10-01T10:46:48.234623Z",
+            "entities": [],
             "known_uncertainties": [],
+            "memory": {
+              "candidate_directions": [],
+              "digest_ids": [],
+              "limitations": [],
+              "omitted_digests": 0,
+              "omitted_items": 0,
+              "prior_failures": [],
+              "references": [],
+              "uncertainties": []
+            },
             "objective": "Assess a public treatment-resistance signal",
             "relevant_evidence_refs": [],
+            "topics": [],
             "why_now": "No admitted evidence addresses the direction."
           },
-          "started_at": "2026-10-01T03:11:41.724436Z",
+          "started_at": "2026-10-01T10:36:48.234623Z",
           "status": "complete",
           "termination_reason": "researcher_complete"
         },
-        "has_dossier": true
+        "has_dossier": true,
+        "run_outcome": "completed",
+        "complete": true
       },
       "reconstruction": {
-        "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+        "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
         "block": {
-          "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
-          "deadline": "2026-10-01T03:21:41.724436Z",
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "cycle_id": "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606",
+          "deadline": "2026-10-01T10:46:48.234623Z",
+          "mission_id": "demo-mission",
           "start": {
             "allocation": {
-              "handoff_reserve_seconds": 60,
+              "handoff_reserve_seconds": 0,
               "seconds": 600
             },
-            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
             "candidate_directions": [],
-            "constraints": [],
-            "deadline": "2026-10-01T03:21:41.724436Z",
+            "constraints": [
+              "Prior context is not inherited evidence admission authority."
+            ],
+            "deadline": "2026-10-01T10:46:48.234623Z",
+            "entities": [],
             "known_uncertainties": [],
+            "memory": {
+              "candidate_directions": [],
+              "digest_ids": [],
+              "limitations": [],
+              "omitted_digests": 0,
+              "omitted_items": 0,
+              "prior_failures": [],
+              "references": [],
+              "uncertainties": []
+            },
             "objective": "Assess a public treatment-resistance signal",
             "relevant_evidence_refs": [],
+            "topics": [],
             "why_now": "No admitted evidence addresses the direction."
           },
-          "started_at": "2026-10-01T03:11:41.724436Z",
+          "started_at": "2026-10-01T10:36:48.234623Z",
           "status": "complete",
           "termination_reason": "researcher_complete"
         },
         "state_revisions": [
           {
             "acquisitions": [],
-            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
             "candidates": [],
             "evidence_ids": [],
             "measurements": [],
@@ -98,22 +459,32 @@
           },
           {
             "acquisitions": [],
-            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
             "candidates": [],
             "evidence_ids": [],
             "measurements": [
               {
                 "analysis_id": "summary",
+                "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
                 "deterministic": true,
-                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
-                "origin": "source",
+                "diagnostics": {
+                  "coverage": null,
+                  "undefined": {}
+                },
+                "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+                "interpretation": "descriptive",
+                "limitations": [
+                  "Descriptive measurement of the stored response slice; population coverage is not inferred."
+                ],
+                "origin": "synthetic",
                 "provenance": [
-                  "acquisition-v1",
-                  "gdc",
+                  "acquisition-v2",
+                  "synthetic-fixture",
                   "record_count"
                 ],
+                "replication_id": null,
                 "source_refs": [
-                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+                  "07b7e6e6-bf3e-4319-ac52-760e423ac968"
                 ],
                 "values": {
                   "record_count": 2
@@ -130,58 +501,32 @@
           },
           {
             "acquisitions": [],
-            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
             "candidates": [],
-            "evidence_ids": [
-              "107363ef-b593-46be-93be-e63dd8db4571"
-            ],
+            "evidence_ids": [],
             "measurements": [
               {
                 "analysis_id": "summary",
+                "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
                 "deterministic": true,
-                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
-                "origin": "source",
+                "diagnostics": {
+                  "coverage": null,
+                  "undefined": {}
+                },
+                "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+                "interpretation": "descriptive",
+                "limitations": [
+                  "Descriptive measurement of the stored response slice; population coverage is not inferred."
+                ],
+                "origin": "synthetic",
                 "provenance": [
-                  "acquisition-v1",
-                  "gdc",
+                  "acquisition-v2",
+                  "synthetic-fixture",
                   "record_count"
                 ],
+                "replication_id": null,
                 "source_refs": [
-                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
-                ],
-                "values": {
-                  "record_count": 2
-                }
-              }
-            ],
-            "objective": "Assess a public treatment-resistance signal",
-            "observations": [],
-            "prior_actions": [],
-            "provenance": [
-              "research-state-v1"
-            ],
-            "uncertainties": []
-          },
-          {
-            "acquisitions": [],
-            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
-            "candidates": [],
-            "evidence_ids": [
-              "107363ef-b593-46be-93be-e63dd8db4571"
-            ],
-            "measurements": [
-              {
-                "analysis_id": "summary",
-                "deterministic": true,
-                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
-                "origin": "source",
-                "provenance": [
-                  "acquisition-v1",
-                  "gdc",
-                  "record_count"
-                ],
-                "source_refs": [
-                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+                  "07b7e6e6-bf3e-4319-ac52-760e423ac968"
                 ],
                 "values": {
                   "record_count": 2
@@ -189,16 +534,26 @@
               },
               {
                 "analysis_id": "replicate",
+                "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
                 "deterministic": true,
-                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
-                "origin": "source",
+                "diagnostics": {
+                  "coverage": null,
+                  "undefined": {}
+                },
+                "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+                "interpretation": "descriptive",
+                "limitations": [
+                  "Descriptive measurement of the stored response slice; population coverage is not inferred."
+                ],
+                "origin": "synthetic",
                 "provenance": [
-                  "acquisition-v1",
-                  "gdc",
+                  "acquisition-v2",
+                  "synthetic-fixture",
                   "record_count"
                 ],
+                "replication_id": null,
                 "source_refs": [
-                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+                  "07b7e6e6-bf3e-4319-ac52-760e423ac968"
                 ],
                 "values": {
                   "record_count": 2
@@ -215,61 +570,10 @@
           },
           {
             "acquisitions": [],
-            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
-            "candidates": [],
-            "evidence_ids": [
-              "107363ef-b593-46be-93be-e63dd8db4571",
-              "c2fb9df2-14e6-4240-8480-779358439f45"
-            ],
-            "measurements": [
-              {
-                "analysis_id": "summary",
-                "deterministic": true,
-                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
-                "origin": "source",
-                "provenance": [
-                  "acquisition-v1",
-                  "gdc",
-                  "record_count"
-                ],
-                "source_refs": [
-                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
-                ],
-                "values": {
-                  "record_count": 2
-                }
-              },
-              {
-                "analysis_id": "replicate",
-                "deterministic": true,
-                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
-                "origin": "source",
-                "provenance": [
-                  "acquisition-v1",
-                  "gdc",
-                  "record_count"
-                ],
-                "source_refs": [
-                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
-                ],
-                "values": {
-                  "record_count": 2
-                }
-              }
-            ],
-            "objective": "Assess a public treatment-resistance signal",
-            "observations": [],
-            "prior_actions": [],
-            "provenance": [
-              "research-state-v1"
-            ],
-            "uncertainties": []
-          },
-          {
-            "acquisitions": [],
-            "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
             "candidates": [
               {
+                "details": {},
                 "fragment_id": "candidate",
                 "kind": "candidate",
                 "provenance": [
@@ -278,23 +582,30 @@
                 "summary": "synthetic subgroup signal"
               }
             ],
-            "evidence_ids": [
-              "107363ef-b593-46be-93be-e63dd8db4571",
-              "c2fb9df2-14e6-4240-8480-779358439f45"
-            ],
+            "evidence_ids": [],
             "measurements": [
               {
                 "analysis_id": "summary",
+                "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
                 "deterministic": true,
-                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
-                "origin": "source",
+                "diagnostics": {
+                  "coverage": null,
+                  "undefined": {}
+                },
+                "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+                "interpretation": "descriptive",
+                "limitations": [
+                  "Descriptive measurement of the stored response slice; population coverage is not inferred."
+                ],
+                "origin": "synthetic",
                 "provenance": [
-                  "acquisition-v1",
-                  "gdc",
+                  "acquisition-v2",
+                  "synthetic-fixture",
                   "record_count"
                 ],
+                "replication_id": null,
                 "source_refs": [
-                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+                  "07b7e6e6-bf3e-4319-ac52-760e423ac968"
                 ],
                 "values": {
                   "record_count": 2
@@ -302,16 +613,220 @@
               },
               {
                 "analysis_id": "replicate",
+                "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
                 "deterministic": true,
-                "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
-                "origin": "source",
+                "diagnostics": {
+                  "coverage": null,
+                  "undefined": {}
+                },
+                "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+                "interpretation": "descriptive",
+                "limitations": [
+                  "Descriptive measurement of the stored response slice; population coverage is not inferred."
+                ],
+                "origin": "synthetic",
                 "provenance": [
-                  "acquisition-v1",
-                  "gdc",
+                  "acquisition-v2",
+                  "synthetic-fixture",
                   "record_count"
                 ],
+                "replication_id": null,
                 "source_refs": [
-                  "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+                  "07b7e6e6-bf3e-4319-ac52-760e423ac968"
+                ],
+                "values": {
+                  "record_count": 2
+                }
+              }
+            ],
+            "objective": "Assess a public treatment-resistance signal",
+            "observations": [],
+            "prior_actions": [],
+            "provenance": [
+              "research-state-v1"
+            ],
+            "uncertainties": []
+          },
+          {
+            "acquisitions": [],
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+            "candidates": [
+              {
+                "details": {},
+                "fragment_id": "candidate",
+                "kind": "candidate",
+                "provenance": [
+                  "researcher"
+                ],
+                "summary": "synthetic subgroup signal"
+              },
+              {
+                "details": {
+                  "proposed_test": "replicate cohort",
+                  "statement": "Replicate the association."
+                },
+                "fragment_id": "1fb39552059d6103f6b09a118abc64a215676c82ac05228986f944543672c1ca",
+                "kind": "hypothesis",
+                "provenance": [
+                  "5a00852c-79e1-45a7-b920-3f7c3895836a"
+                ],
+                "summary": "Replicate the association."
+              }
+            ],
+            "evidence_ids": [],
+            "measurements": [
+              {
+                "analysis_id": "summary",
+                "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
+                "deterministic": true,
+                "diagnostics": {
+                  "coverage": null,
+                  "undefined": {}
+                },
+                "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+                "interpretation": "descriptive",
+                "limitations": [
+                  "Descriptive measurement of the stored response slice; population coverage is not inferred."
+                ],
+                "origin": "synthetic",
+                "provenance": [
+                  "acquisition-v2",
+                  "synthetic-fixture",
+                  "record_count"
+                ],
+                "replication_id": null,
+                "source_refs": [
+                  "07b7e6e6-bf3e-4319-ac52-760e423ac968"
+                ],
+                "values": {
+                  "record_count": 2
+                }
+              },
+              {
+                "analysis_id": "replicate",
+                "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
+                "deterministic": true,
+                "diagnostics": {
+                  "coverage": null,
+                  "undefined": {}
+                },
+                "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+                "interpretation": "descriptive",
+                "limitations": [
+                  "Descriptive measurement of the stored response slice; population coverage is not inferred."
+                ],
+                "origin": "synthetic",
+                "provenance": [
+                  "acquisition-v2",
+                  "synthetic-fixture",
+                  "record_count"
+                ],
+                "replication_id": null,
+                "source_refs": [
+                  "07b7e6e6-bf3e-4319-ac52-760e423ac968"
+                ],
+                "values": {
+                  "record_count": 2
+                }
+              }
+            ],
+            "objective": "Assess a public treatment-resistance signal",
+            "observations": [],
+            "prior_actions": [],
+            "provenance": [
+              "research-state-v1"
+            ],
+            "uncertainties": []
+          },
+          {
+            "acquisitions": [],
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+            "candidates": [
+              {
+                "details": {},
+                "fragment_id": "candidate",
+                "kind": "candidate",
+                "provenance": [
+                  "researcher"
+                ],
+                "summary": "synthetic subgroup signal"
+              },
+              {
+                "details": {
+                  "proposed_test": "replicate cohort",
+                  "statement": "Replicate the association."
+                },
+                "fragment_id": "1fb39552059d6103f6b09a118abc64a215676c82ac05228986f944543672c1ca",
+                "kind": "hypothesis",
+                "provenance": [
+                  "5a00852c-79e1-45a7-b920-3f7c3895836a"
+                ],
+                "summary": "Replicate the association."
+              },
+              {
+                "details": {
+                  "proposed_test": "mechanistic experiment",
+                  "statement": "Test a causal mechanism."
+                },
+                "fragment_id": "7815a1967b9a37a065d73c0907952563e8728cd5c5e061f183cc5d48845296ba",
+                "kind": "hypothesis",
+                "provenance": [
+                  "8764dd63-45a9-47b5-a609-0176e02f9ae1"
+                ],
+                "summary": "Test a causal mechanism."
+              }
+            ],
+            "evidence_ids": [],
+            "measurements": [
+              {
+                "analysis_id": "summary",
+                "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
+                "deterministic": true,
+                "diagnostics": {
+                  "coverage": null,
+                  "undefined": {}
+                },
+                "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+                "interpretation": "descriptive",
+                "limitations": [
+                  "Descriptive measurement of the stored response slice; population coverage is not inferred."
+                ],
+                "origin": "synthetic",
+                "provenance": [
+                  "acquisition-v2",
+                  "synthetic-fixture",
+                  "record_count"
+                ],
+                "replication_id": null,
+                "source_refs": [
+                  "07b7e6e6-bf3e-4319-ac52-760e423ac968"
+                ],
+                "values": {
+                  "record_count": 2
+                }
+              },
+              {
+                "analysis_id": "replicate",
+                "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
+                "deterministic": true,
+                "diagnostics": {
+                  "coverage": null,
+                  "undefined": {}
+                },
+                "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+                "interpretation": "descriptive",
+                "limitations": [
+                  "Descriptive measurement of the stored response slice; population coverage is not inferred."
+                ],
+                "origin": "synthetic",
+                "provenance": [
+                  "acquisition-v2",
+                  "synthetic-fixture",
+                  "record_count"
+                ],
+                "replication_id": null,
+                "source_refs": [
+                  "07b7e6e6-bf3e-4319-ac52-760e423ac968"
                 ],
                 "values": {
                   "record_count": 2
@@ -327,20 +842,63 @@
             "uncertainties": []
           }
         ],
-        "capability_invocations": [],
+        "capability_invocations": [
+          {
+            "acquisition_id": "07b7e6e6-bf3e-4319-ac52-760e423ac968",
+            "analysis_id": "summary",
+            "capability_id": "science.acquisition-summary",
+            "invocation_id": "74220af8-a87b-4caa-b5e3-c97f6404b0a7",
+            "numeric_field": null,
+            "results": [
+              {
+                "analysis_id": "summary",
+                "capability_id": "science.acquisition-summary",
+                "invocation_id": "74220af8-a87b-4caa-b5e3-c97f6404b0a7",
+                "origin": "synthetic"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "acquisition_id": "07b7e6e6-bf3e-4319-ac52-760e423ac968",
+            "analysis_id": "replicate",
+            "capability_id": "science.acquisition-summary",
+            "invocation_id": "8b1c924f-fa0c-4ed3-8c77-badeb1a41ae1",
+            "numeric_field": null,
+            "results": [
+              {
+                "analysis_id": "replicate",
+                "capability_id": "science.acquisition-summary",
+                "invocation_id": "8b1c924f-fa0c-4ed3-8c77-badeb1a41ae1",
+                "origin": "synthetic"
+              }
+            ],
+            "status": "completed"
+          }
+        ],
         "measurements": [
           {
             "analysis_id": "summary",
+            "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
             "deterministic": true,
-            "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
-            "origin": "source",
+            "diagnostics": {
+              "coverage": null,
+              "undefined": {}
+            },
+            "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+            "interpretation": "descriptive",
+            "limitations": [
+              "Descriptive measurement of the stored response slice; population coverage is not inferred."
+            ],
+            "origin": "synthetic",
             "provenance": [
-              "acquisition-v1",
-              "gdc",
+              "acquisition-v2",
+              "synthetic-fixture",
               "record_count"
             ],
+            "replication_id": null,
             "source_refs": [
-              "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+              "07b7e6e6-bf3e-4319-ac52-760e423ac968"
             ],
             "values": {
               "record_count": 2
@@ -348,66 +906,33 @@
           },
           {
             "analysis_id": "replicate",
+            "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
             "deterministic": true,
-            "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
-            "origin": "source",
+            "diagnostics": {
+              "coverage": null,
+              "undefined": {}
+            },
+            "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+            "interpretation": "descriptive",
+            "limitations": [
+              "Descriptive measurement of the stored response slice; population coverage is not inferred."
+            ],
+            "origin": "synthetic",
             "provenance": [
-              "acquisition-v1",
-              "gdc",
+              "acquisition-v2",
+              "synthetic-fixture",
               "record_count"
             ],
+            "replication_id": null,
             "source_refs": [
-              "15425e22-cde3-4832-98bc-fe3b1c3fe681"
+              "07b7e6e6-bf3e-4319-ac52-760e423ac968"
             ],
             "values": {
               "record_count": 2
             }
           }
         ],
-        "evidence": [
-          {
-            "admitted_at": "2026-10-01T03:11:41.762436Z",
-            "evidence_id": "107363ef-b593-46be-93be-e63dd8db4571",
-            "measurement": {
-              "analysis_id": "summary",
-              "deterministic": true,
-              "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
-              "origin": "source",
-              "provenance": [
-                "acquisition-v1",
-                "gdc",
-                "record_count"
-              ],
-              "source_refs": [
-                "15425e22-cde3-4832-98bc-fe3b1c3fe681"
-              ],
-              "values": {
-                "record_count": 2
-              }
-            }
-          },
-          {
-            "admitted_at": "2026-10-01T03:11:41.764434Z",
-            "evidence_id": "c2fb9df2-14e6-4240-8480-779358439f45",
-            "measurement": {
-              "analysis_id": "replicate",
-              "deterministic": true,
-              "input_sha256": "7840bed66cec5855f931dc1ffcbcfa455d2bc01a48797f0137e5f2d2f32c0bb8",
-              "origin": "source",
-              "provenance": [
-                "acquisition-v1",
-                "gdc",
-                "record_count"
-              ],
-              "source_refs": [
-                "15425e22-cde3-4832-98bc-fe3b1c3fe681"
-              ],
-              "values": {
-                "record_count": 2
-              }
-            }
-          }
-        ],
+        "evidence": [],
         "jev_outputs": [
           {
             "decisions": [
@@ -415,92 +940,908 @@
                 "model_requested": "deterministic-fixture",
                 "model_resolved": "deterministic-fixture",
                 "p_true": 0.72,
-                "projection_id": "candidate-v1-030fc608aeb8e0cd",
+                "projection_id": "candidate-v2-ea9512698ed34339",
                 "question_id": "candidate-relevance",
-                "question_version": "1"
+                "question_version": "2"
               },
               {
-                "confidence": 0.56,
+                "confidence": 0.3333333333333333,
                 "model_requested": "deterministic-fixture",
                 "model_resolved": "deterministic-fixture",
                 "probabilities": {
-                  "ADVANCE": 0.56,
-                  "DEFER": 0.44
+                  "ADVANCE": 0.3333333333333333,
+                  "DEFER": 0.3333333333333333,
+                  "NONE": 0.3333333333333333
                 },
-                "projection_id": "candidate-v1-030fc608aeb8e0cd",
+                "projection_id": "candidate-v2-ea9512698ed34339",
                 "question_id": "candidate-action",
-                "question_version": "1",
+                "question_version": "2",
                 "selected_option": "ADVANCE"
+              }
+            ]
+          },
+          {
+            "decisions": [
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "hypothesis-v1-f13c96d901a65375",
+                "question_id": "7f4e786f5119b5f8:test_alignment",
+                "question_version": "semantic-contracts-v1"
+              },
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "hypothesis-v1-f13c96d901a65375",
+                "question_id": "7f4e786f5119b5f8:duplication",
+                "question_version": "semantic-contracts-v1"
+              }
+            ]
+          },
+          {
+            "decisions": [
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+                "question_id": "77f8dcdf8411616b:test_alignment",
+                "question_version": "semantic-contracts-v1"
+              },
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+                "question_id": "77f8dcdf8411616b:duplication",
+                "question_version": "semantic-contracts-v1"
               }
             ]
           }
         ],
         "jev_failures": [],
         "artifacts": [],
+        "acquisitions": [
+          {
+            "acquisition_id": "07b7e6e6-bf3e-4319-ac52-760e423ac968",
+            "content_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+            "coverage": null,
+            "origin": "synthetic",
+            "provenance": [
+              "offline-snapshot"
+            ],
+            "public_only": true,
+            "records": [
+              {
+                "file_id": "demo-a"
+              },
+              {
+                "file_id": "demo-b"
+              }
+            ],
+            "request": {
+              "snapshot": true
+            },
+            "response_bytes": null,
+            "source": "synthetic-fixture"
+          }
+        ],
+        "scientific_artifacts": [],
+        "literature": [],
+        "sandbox_requests": [],
+        "sandbox_candidates": [],
+        "verifications": [],
+        "index_receipts": [
+          {
+            "actor": "researcher",
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+            "continuation": null,
+            "contract_hashes": {},
+            "cycle_id": "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606",
+            "effective_limit": null,
+            "kinds": [],
+            "mission_id": "demo-mission",
+            "operation": "execute",
+            "query": "",
+            "receipt_id": "5562bf45-1c47-4e88-a155-a82a89a798a3",
+            "requested_id": null,
+            "requested_limit": null,
+            "retrieval_version": null,
+            "returned_ids": [],
+            "selected_id": "science.acquisition-summary",
+            "snapshot_id": null,
+            "tags": []
+          },
+          {
+            "actor": "researcher",
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+            "continuation": null,
+            "contract_hashes": {},
+            "cycle_id": "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606",
+            "effective_limit": null,
+            "kinds": [],
+            "mission_id": "demo-mission",
+            "operation": "execute",
+            "query": "",
+            "receipt_id": "86ded3ba-d5d2-4ba9-a31d-f186be67c1cd",
+            "requested_id": null,
+            "requested_limit": null,
+            "retrieval_version": null,
+            "returned_ids": [],
+            "selected_id": "science.acquisition-summary",
+            "snapshot_id": null,
+            "tags": []
+          }
+        ],
+        "jev_calls": [
+          {
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+            "call_id": "f3adf4b7-f747-44c4-8b55-1ebef6b52fa8",
+            "candidate_id": "candidate",
+            "candidate_summary": "synthetic subgroup signal",
+            "context_identity": null,
+            "context_type": "candidate",
+            "cycle_id": null,
+            "decisions": [
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "candidate-v2-ea9512698ed34339",
+                "question_id": "candidate-relevance",
+                "question_version": "2"
+              },
+              {
+                "confidence": 0.3333333333333333,
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "probabilities": {
+                  "ADVANCE": 0.3333333333333333,
+                  "DEFER": 0.3333333333333333,
+                  "NONE": 0.3333333333333333
+                },
+                "projection_id": "candidate-v2-ea9512698ed34339",
+                "question_id": "candidate-action",
+                "question_version": "2",
+                "selected_option": "ADVANCE"
+              }
+            ],
+            "duration_ms": 0.6520000024465844,
+            "failures": [],
+            "mission_id": null,
+            "model_requested": "deterministic-fixture",
+            "models_resolved": [
+              "deterministic-fixture"
+            ],
+            "outcome": "completed",
+            "policy_version": "candidate-frontier-v1",
+            "projection": {
+              "payload": {
+                "acquisition_summaries": [],
+                "candidate": "synthetic subgroup signal",
+                "candidate_id": "candidate",
+                "candidate_truncated": false,
+                "evidence_refs": [],
+                "measurements": [
+                  {
+                    "analysis_id": "summary",
+                    "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
+                    "diagnostics": {
+                      "coverage": null,
+                      "undefined": {}
+                    },
+                    "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+                    "interpretation": "descriptive",
+                    "limitations": [
+                      "Descriptive measurement of the stored response slice; population coverage is not inferred."
+                    ],
+                    "origin": "synthetic",
+                    "provenance": [
+                      "acquisition-v2",
+                      "synthetic-fixture",
+                      "record_count"
+                    ],
+                    "source_refs": [
+                      "07b7e6e6-bf3e-4319-ac52-760e423ac968"
+                    ],
+                    "values": {
+                      "record_count": 2
+                    }
+                  },
+                  {
+                    "analysis_id": "replicate",
+                    "analysis_key": "86cde0a42d9f6ee4244ec99509fc7cb8c9ef8757502f18c878064fdd0eb8c7ec",
+                    "diagnostics": {
+                      "coverage": null,
+                      "undefined": {}
+                    },
+                    "input_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+                    "interpretation": "descriptive",
+                    "limitations": [
+                      "Descriptive measurement of the stored response slice; population coverage is not inferred."
+                    ],
+                    "origin": "synthetic",
+                    "provenance": [
+                      "acquisition-v2",
+                      "synthetic-fixture",
+                      "record_count"
+                    ],
+                    "source_refs": [
+                      "07b7e6e6-bf3e-4319-ac52-760e423ac968"
+                    ],
+                    "values": {
+                      "record_count": 2
+                    }
+                  }
+                ],
+                "objective": "Assess a public treatment-resistance signal",
+                "objective_truncated": false,
+                "observations": [],
+                "omitted": {
+                  "acquisition_summaries": 0,
+                  "evidence_refs": 0,
+                  "measurements": 0,
+                  "observations": 0,
+                  "prior_actions": 0,
+                  "uncertainties": 0
+                },
+                "prior_actions": [],
+                "projection_version": "2",
+                "uncertainties": []
+              },
+              "payload_sha256": "3861522b8df36482ed9452ff4ab1825bc05ef1f7a97d892608767aa8a026cede",
+              "projection_id": "candidate-v2-ea9512698ed34339",
+              "provenance": [
+                "research-state-v2",
+                "candidate"
+              ],
+              "spec": {
+                "candidate_id": "candidate",
+                "max_items": 20,
+                "max_payload_bytes": 65536,
+                "max_text_chars": 2000,
+                "projection_name": "candidate",
+                "version": "2"
+              }
+            },
+            "projection_sha256": "3861522b8df36482ed9452ff4ab1825bc05ef1f7a97d892608767aa8a026cede",
+            "question_hashes": [
+              "1b292f88fc5a75f9fd856dc2be73690bd67e7ee8f7f568614d70549aca454892",
+              "a3fe6b2fbe0fecf20a7f6058aa457b0b4a9e5a877c2700f983c2365d01c693cf"
+            ],
+            "questions": [
+              {
+                "criteria": {
+                  "false": "The candidate is unrelated or cannot inform the active block objective.",
+                  "true": "The candidate is relevant to the active block objective and merits local consideration."
+                },
+                "failure_semantics": "failure is not judgment",
+                "instructions": "Assess whether `candidate` can inform `objective` within the active block using only the bounded state provided.",
+                "known_exclusions": [
+                  "Relevance is not scientific validity or evidence admission.",
+                  "Missing context is unknown, not absence."
+                ],
+                "primitive": "noul",
+                "projection_id": "candidate-v2-ea9512698ed34339",
+                "provenance": [],
+                "question_id": "candidate-relevance",
+                "question_version": "2",
+                "semantic_purpose": "candidate relevance",
+                "status": "local"
+              },
+              {
+                "criteria": {
+                  "ADVANCE": "Candidate can inform the objective and an in-scope investigation is actionable with available context.",
+                  "DEFER": "Potentially relevant but missing context, a dependency or uncertainty prevents choosing an actionable investigation now.",
+                  "NONE": "Available context explicitly indicates no fit to this block objective; retain the candidate identity for audit."
+                },
+                "failure_semantics": "failure is not judgment",
+                "instructions": "Select the appropriate local investigation recommendation from the bounded candidate and block context.",
+                "known_exclusions": [
+                  "This is a local recommendation, not action authority or a scientific negative result.",
+                  "Do not select NONE merely because measured input is missing or a provider failed."
+                ],
+                "primitive": "choice",
+                "projection_id": "candidate-v2-ea9512698ed34339",
+                "provenance": [],
+                "question_id": "candidate-action",
+                "question_version": "2",
+                "semantic_purpose": "local action",
+                "status": "local"
+              }
+            ],
+            "reported_metadata": null,
+            "started_at": "2026-10-01T10:36:48.273118Z"
+          },
+          {
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+            "call_id": "5a00852c-79e1-45a7-b920-3f7c3895836a",
+            "candidate_id": "1fb39552059d6103f6b09a118abc64a215676c82ac05228986f944543672c1ca",
+            "candidate_summary": "Assess a public treatment-resistance signal",
+            "context_identity": "1fb39552059d6103f6b09a118abc64a215676c82ac05228986f944543672c1ca",
+            "context_type": "hypothesis",
+            "cycle_id": "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606",
+            "decisions": [
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "hypothesis-v1-f13c96d901a65375",
+                "question_id": "7f4e786f5119b5f8:test_alignment",
+                "question_version": "semantic-contracts-v1"
+              },
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "hypothesis-v1-f13c96d901a65375",
+                "question_id": "7f4e786f5119b5f8:duplication",
+                "question_version": "semantic-contracts-v1"
+              }
+            ],
+            "duration_ms": 0.020699997548945248,
+            "failures": [],
+            "mission_id": "demo-mission",
+            "model_requested": "deterministic-fixture",
+            "models_resolved": [
+              "deterministic-fixture"
+            ],
+            "outcome": "completed",
+            "policy_version": "semantic-frontier-v2",
+            "projection": {
+              "payload": {
+                "hypothesis": "Replicate the association.",
+                "objective": "Assess a public treatment-resistance signal",
+                "prior_hypotheses": [],
+                "proposed_test": "replicate cohort"
+              },
+              "payload_sha256": "5ad7a53b8312d50faa992c69c78295c621fe57f4acf40af8bf282658fb03b917",
+              "projection_id": "hypothesis-v1-f13c96d901a65375",
+              "provenance": [
+                "hypothesis",
+                "semantic-context-v1"
+              ],
+              "spec": {
+                "candidate_id": "1fb39552059d6103f6b09a118abc64a215676c82ac05228986f944543672c1ca",
+                "max_items": 20,
+                "max_payload_bytes": 65536,
+                "max_text_chars": 2000,
+                "projection_name": "hypothesis",
+                "version": "2"
+              }
+            },
+            "projection_sha256": "5ad7a53b8312d50faa992c69c78295c621fe57f4acf40af8bf282658fb03b917",
+            "question_hashes": [
+              "6551136d41cbde07d81b2a3071694c49a90a897ca73ddb0fd0407d3deb61e83a",
+              "a197cef996da8c8cd40b45019db0e444a66dc567911a6d4d5cf145004ddd655d"
+            ],
+            "questions": [
+              {
+                "criteria": {
+                  "false": "The supplied context explicitly indicates that this property does not hold.",
+                  "true": "The specified semantic property holds on the supplied bounded context."
+                },
+                "failure_semantics": "failure is not judgment",
+                "instructions": {
+                  "question": "Does `proposed_test` actually test `hypothesis` for the target estimand in `objective`?",
+                  "uncertainty": "Missing information is unknown. Do not infer false from absence or operational failure."
+                },
+                "known_exclusions": [
+                  "Not evidence, execution permission or allocation authority."
+                ],
+                "primitive": "noul",
+                "projection_id": "hypothesis-v1-f13c96d901a65375",
+                "provenance": [
+                  "semantic-contracts-v1",
+                  "hypothesis"
+                ],
+                "question_id": "7f4e786f5119b5f8:test_alignment",
+                "question_version": "semantic-contracts-v1",
+                "semantic_purpose": "hypothesis.test_alignment",
+                "status": "local"
+              },
+              {
+                "criteria": {
+                  "false": "The supplied context explicitly indicates that this property does not hold.",
+                  "true": "The specified semantic property holds on the supplied bounded context."
+                },
+                "failure_semantics": "failure is not judgment",
+                "instructions": {
+                  "question": "Is `hypothesis` substantively the same investigation as one of `prior_hypotheses`, rather than an independent replication or distinct test?",
+                  "uncertainty": "Missing information is unknown. Do not infer false from absence or operational failure."
+                },
+                "known_exclusions": [
+                  "Not evidence, execution permission or allocation authority."
+                ],
+                "primitive": "noul",
+                "projection_id": "hypothesis-v1-f13c96d901a65375",
+                "provenance": [
+                  "semantic-contracts-v1",
+                  "hypothesis"
+                ],
+                "question_id": "7f4e786f5119b5f8:duplication",
+                "question_version": "semantic-contracts-v1",
+                "semantic_purpose": "hypothesis.duplication",
+                "status": "local"
+              }
+            ],
+            "reported_metadata": null,
+            "started_at": "2026-10-01T10:36:48.275118Z"
+          },
+          {
+            "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+            "call_id": "8764dd63-45a9-47b5-a609-0176e02f9ae1",
+            "candidate_id": "7815a1967b9a37a065d73c0907952563e8728cd5c5e061f183cc5d48845296ba",
+            "candidate_summary": "Assess a public treatment-resistance signal",
+            "context_identity": "7815a1967b9a37a065d73c0907952563e8728cd5c5e061f183cc5d48845296ba",
+            "context_type": "hypothesis",
+            "cycle_id": "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606",
+            "decisions": [
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+                "question_id": "77f8dcdf8411616b:test_alignment",
+                "question_version": "semantic-contracts-v1"
+              },
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+                "question_id": "77f8dcdf8411616b:duplication",
+                "question_version": "semantic-contracts-v1"
+              }
+            ],
+            "duration_ms": 0.01720000000204891,
+            "failures": [],
+            "mission_id": "demo-mission",
+            "model_requested": "deterministic-fixture",
+            "models_resolved": [
+              "deterministic-fixture"
+            ],
+            "outcome": "completed",
+            "policy_version": "semantic-frontier-v2",
+            "projection": {
+              "payload": {
+                "hypothesis": "Test a causal mechanism.",
+                "objective": "Assess a public treatment-resistance signal",
+                "prior_hypotheses": [
+                  {
+                    "proposed_test": "replicate cohort",
+                    "statement": "Replicate the association."
+                  }
+                ],
+                "proposed_test": "mechanistic experiment"
+              },
+              "payload_sha256": "47d4a9ab6276eba27086601cd761a575983dfed136dc64be88a84aa7a32c63ce",
+              "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+              "provenance": [
+                "hypothesis",
+                "semantic-context-v1"
+              ],
+              "spec": {
+                "candidate_id": "7815a1967b9a37a065d73c0907952563e8728cd5c5e061f183cc5d48845296ba",
+                "max_items": 20,
+                "max_payload_bytes": 65536,
+                "max_text_chars": 2000,
+                "projection_name": "hypothesis",
+                "version": "2"
+              }
+            },
+            "projection_sha256": "47d4a9ab6276eba27086601cd761a575983dfed136dc64be88a84aa7a32c63ce",
+            "question_hashes": [
+              "ecd67f0d522eea8ec72db833db0b06cb4dcfceb1fcd126ee7b62d58f5ede399e",
+              "647219a67f3cacc434067d3eef3d5348404801524c55eaa45b0b5f2e69676c07"
+            ],
+            "questions": [
+              {
+                "criteria": {
+                  "false": "The supplied context explicitly indicates that this property does not hold.",
+                  "true": "The specified semantic property holds on the supplied bounded context."
+                },
+                "failure_semantics": "failure is not judgment",
+                "instructions": {
+                  "question": "Does `proposed_test` actually test `hypothesis` for the target estimand in `objective`?",
+                  "uncertainty": "Missing information is unknown. Do not infer false from absence or operational failure."
+                },
+                "known_exclusions": [
+                  "Not evidence, execution permission or allocation authority."
+                ],
+                "primitive": "noul",
+                "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+                "provenance": [
+                  "semantic-contracts-v1",
+                  "hypothesis"
+                ],
+                "question_id": "77f8dcdf8411616b:test_alignment",
+                "question_version": "semantic-contracts-v1",
+                "semantic_purpose": "hypothesis.test_alignment",
+                "status": "local"
+              },
+              {
+                "criteria": {
+                  "false": "The supplied context explicitly indicates that this property does not hold.",
+                  "true": "The specified semantic property holds on the supplied bounded context."
+                },
+                "failure_semantics": "failure is not judgment",
+                "instructions": {
+                  "question": "Is `hypothesis` substantively the same investigation as one of `prior_hypotheses`, rather than an independent replication or distinct test?",
+                  "uncertainty": "Missing information is unknown. Do not infer false from absence or operational failure."
+                },
+                "known_exclusions": [
+                  "Not evidence, execution permission or allocation authority."
+                ],
+                "primitive": "noul",
+                "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+                "provenance": [
+                  "semantic-contracts-v1",
+                  "hypothesis"
+                ],
+                "question_id": "77f8dcdf8411616b:duplication",
+                "question_version": "semantic-contracts-v1",
+                "semantic_purpose": "hypothesis.duplication",
+                "status": "local"
+              }
+            ],
+            "reported_metadata": null,
+            "started_at": "2026-10-01T10:36:48.276118Z"
+          }
+        ],
+        "candidate_history": [
+          {
+            "action": "keep_alive",
+            "call_id": "f3adf4b7-f747-44c4-8b55-1ebef6b52fa8",
+            "candidate_id": "candidate",
+            "candidate_summary": "synthetic subgroup signal",
+            "decisions": [
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "candidate-v2-ea9512698ed34339",
+                "question_id": "candidate-relevance",
+                "question_version": "2"
+              },
+              {
+                "confidence": 0.3333333333333333,
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "probabilities": {
+                  "ADVANCE": 0.3333333333333333,
+                  "DEFER": 0.3333333333333333,
+                  "NONE": 0.3333333333333333
+                },
+                "projection_id": "candidate-v2-ea9512698ed34339",
+                "question_id": "candidate-action",
+                "question_version": "2",
+                "selected_option": "ADVANCE"
+              }
+            ],
+            "epistemic_status": "semantic_search_history",
+            "policy_version": "candidate-frontier-v1",
+            "projection_id": "candidate-v2-ea9512698ed34339",
+            "projection_sha256": "3861522b8df36482ed9452ff4ab1825bc05ef1f7a97d892608767aa8a026cede",
+            "provenance": [
+              "f3adf4b7-f747-44c4-8b55-1ebef6b52fa8",
+              "candidate-v2-ea9512698ed34339"
+            ],
+            "rationale": "close choice distribution preserves recall"
+          },
+          {
+            "action": "escalate",
+            "call_id": "5a00852c-79e1-45a7-b920-3f7c3895836a",
+            "candidate_id": "1fb39552059d6103f6b09a118abc64a215676c82ac05228986f944543672c1ca",
+            "candidate_summary": "Assess a public treatment-resistance signal",
+            "context_type": "hypothesis",
+            "decisions": [
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "hypothesis-v1-f13c96d901a65375",
+                "question_id": "7f4e786f5119b5f8:test_alignment",
+                "question_version": "semantic-contracts-v1"
+              },
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "hypothesis-v1-f13c96d901a65375",
+                "question_id": "7f4e786f5119b5f8:duplication",
+                "question_version": "semantic-contracts-v1"
+              }
+            ],
+            "eligible": true,
+            "epistemic_status": "semantic_search_history",
+            "frontier": {
+              "action": "escalate",
+              "candidate_id": "1fb39552059d6103f6b09a118abc64a215676c82ac05228986f944543672c1ca",
+              "provenance": [
+                "5a00852c-79e1-45a7-b920-3f7c3895836a",
+                "hypothesis-v1-f13c96d901a65375"
+              ],
+              "rationale": "bounded review proposal; deadlines and scope unchanged"
+            },
+            "policy_version": "semantic-frontier-v2",
+            "projection_id": "hypothesis-v1-f13c96d901a65375",
+            "projection_sha256": "5ad7a53b8312d50faa992c69c78295c621fe57f4acf40af8bf282658fb03b917",
+            "provenance": [
+              "5a00852c-79e1-45a7-b920-3f7c3895836a",
+              "hypothesis-v1-f13c96d901a65375"
+            ],
+            "rationale": "bounded review proposal; deadlines and scope unchanged"
+          },
+          {
+            "action": "escalate",
+            "call_id": "8764dd63-45a9-47b5-a609-0176e02f9ae1",
+            "candidate_id": "7815a1967b9a37a065d73c0907952563e8728cd5c5e061f183cc5d48845296ba",
+            "candidate_summary": "Assess a public treatment-resistance signal",
+            "context_type": "hypothesis",
+            "decisions": [
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+                "question_id": "77f8dcdf8411616b:test_alignment",
+                "question_version": "semantic-contracts-v1"
+              },
+              {
+                "model_requested": "deterministic-fixture",
+                "model_resolved": "deterministic-fixture",
+                "p_true": 0.72,
+                "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+                "question_id": "77f8dcdf8411616b:duplication",
+                "question_version": "semantic-contracts-v1"
+              }
+            ],
+            "eligible": true,
+            "epistemic_status": "semantic_search_history",
+            "frontier": {
+              "action": "escalate",
+              "candidate_id": "7815a1967b9a37a065d73c0907952563e8728cd5c5e061f183cc5d48845296ba",
+              "provenance": [
+                "8764dd63-45a9-47b5-a609-0176e02f9ae1",
+                "hypothesis-v1-b3e9812903ac3ae6"
+              ],
+              "rationale": "bounded review proposal; deadlines and scope unchanged"
+            },
+            "policy_version": "semantic-frontier-v2",
+            "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+            "projection_sha256": "47d4a9ab6276eba27086601cd761a575983dfed136dc64be88a84aa7a32c63ce",
+            "provenance": [
+              "8764dd63-45a9-47b5-a609-0176e02f9ae1",
+              "hypothesis-v1-b3e9812903ac3ae6"
+            ],
+            "rationale": "bounded review proposal; deadlines and scope unchanged"
+          }
+        ],
+        "resolved_inputs": {
+          "07b7e6e6-bf3e-4319-ac52-760e423ac968": {
+            "acquisition_id": "07b7e6e6-bf3e-4319-ac52-760e423ac968",
+            "content_sha256": "abcc4e256137ac6f3592a30e2278c1c6aadfdd90b572a5c5691932199e9e5316",
+            "coverage": null,
+            "origin": "synthetic",
+            "provenance": [
+              "offline-snapshot"
+            ],
+            "public_only": true,
+            "records": [
+              {
+                "file_id": "demo-a"
+              },
+              {
+                "file_id": "demo-b"
+              }
+            ],
+            "request": {
+              "snapshot": true
+            },
+            "response_bytes": null,
+            "source": "synthetic-fixture"
+          }
+        },
+        "unresolved_source_refs": [],
         "ledger": [
           {
-            "event_id": "b22ef381-fd8d-4903-9953-d2ffe42d13f7",
+            "event_id": "8bfec73b-4f1d-488d-bd7d-7ea399baf59b",
             "event_type": "DirectorBlockAllocated",
-            "occurred_at": "2026-10-01T03:11:41.725436Z",
+            "occurred_at": "2026-10-01T10:36:48.234623Z",
             "payload": {
-              "deadline": "2026-10-01T03:21:41.724436+00:00",
-              "handoff_at": "2026-10-01T03:20:41.724436+00:00",
+              "cycle_id": "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606",
+              "deadline": "2026-10-01T10:46:48.234623+00:00",
+              "handoff_at": "2026-10-01T10:46:48.234623+00:00",
+              "mission_id": "demo-mission",
               "objective": "Assess a public treatment-resistance signal"
             }
           },
           {
-            "event_id": "8c65d76c-de35-4aab-a221-74ee38eabbe5",
+            "event_id": "1f59be0e-6f4f-4ba9-96f5-f90df95d5d5b",
             "event_type": "ResearcherRunStarted",
-            "occurred_at": "2026-10-01T03:11:41.726435Z",
+            "occurred_at": "2026-10-01T10:36:48.236623Z",
             "payload": {
-              "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
-              "workspace": "var/workspaces/1c2a883b-107c-4c9c-9107-249a734d33be"
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+              "launched_by": "director",
+              "workspace": "var/workspaces/5ccb04cd-945a-4164-a5f2-2c03a7e5cc44"
             }
           },
           {
-            "event_id": "2150f028-d571-4bb9-be2f-375896dc1b1c",
-            "event_type": "ScienceMeasurement",
-            "occurred_at": "2026-10-01T03:11:41.762436Z",
+            "event_id": "7898d805-38b0-4e9b-a6c6-ccd1259be58f",
+            "event_type": "ResourceAttempt",
+            "occurred_at": "2026-10-01T10:36:48.269118Z",
             "payload": {
-              "acquisition_id": "15425e22-cde3-4832-98bc-fe3b1c3fe681",
+              "attempt": 1,
+              "limit": 100,
+              "resource": "tool"
+            }
+          },
+          {
+            "event_id": "146c519d-eb60-4a45-a8ed-65b364cc6242",
+            "event_type": "IndexReceipt",
+            "occurred_at": "2026-10-01T10:36:48.270118Z",
+            "payload": {
+              "actor": "researcher",
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+              "continuation": null,
+              "contract_hashes": {},
+              "cycle_id": "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606",
+              "effective_limit": null,
+              "kinds": [],
+              "mission_id": "demo-mission",
+              "operation": "execute",
+              "query": "",
+              "receipt_id": "5562bf45-1c47-4e88-a155-a82a89a798a3",
+              "requested_id": null,
+              "requested_limit": null,
+              "retrieval_version": null,
+              "returned_ids": [],
+              "selected_id": "science.acquisition-summary",
+              "snapshot_id": null,
+              "tags": []
+            }
+          },
+          {
+            "event_id": "fc8f071d-55ac-45b2-9068-3dd4c1381ef1",
+            "event_type": "CapabilityInvocation",
+            "occurred_at": "2026-10-01T10:36:48.270118Z",
+            "payload": {
+              "acquisition_id": "07b7e6e6-bf3e-4319-ac52-760e423ac968",
+              "analysis_id": "summary",
+              "capability_id": "science.acquisition-summary",
+              "invocation_id": "74220af8-a87b-4caa-b5e3-c97f6404b0a7",
+              "numeric_field": null
+            }
+          },
+          {
+            "event_id": "9ba986c7-b922-4e43-b7d1-e3412224876a",
+            "event_type": "ScienceMeasurement",
+            "occurred_at": "2026-10-01T10:36:48.270118Z",
+            "payload": {
+              "acquisition_id": "07b7e6e6-bf3e-4319-ac52-760e423ac968",
               "analysis_id": "summary",
               "method": "acquisition_measurement"
             }
           },
           {
-            "event_id": "c0adb448-3b60-40a7-9f45-0b30925451e0",
-            "event_type": "EvidenceAdmission",
-            "occurred_at": "2026-10-01T03:11:41.763434Z",
+            "event_id": "56b7fd48-71f2-4749-8b00-cc667c998d87",
+            "event_type": "CapabilityResult",
+            "occurred_at": "2026-10-01T10:36:48.270118Z",
             "payload": {
               "analysis_id": "summary",
-              "evidence_id": "107363ef-b593-46be-93be-e63dd8db4571"
+              "capability_id": "science.acquisition-summary",
+              "invocation_id": "74220af8-a87b-4caa-b5e3-c97f6404b0a7",
+              "origin": "synthetic"
             }
           },
           {
-            "event_id": "f24e5fc6-f181-4cdf-b80a-30f029fc8745",
-            "event_type": "ScienceMeasurement",
-            "occurred_at": "2026-10-01T03:11:41.764434Z",
+            "event_id": "b3aa83f5-92e4-459c-b85a-8de5310f81c6",
+            "event_type": "ResourceAttempt",
+            "occurred_at": "2026-10-01T10:36:48.271118Z",
             "payload": {
-              "acquisition_id": "15425e22-cde3-4832-98bc-fe3b1c3fe681",
+              "attempt": 2,
+              "limit": 100,
+              "resource": "tool"
+            }
+          },
+          {
+            "event_id": "24ac9771-731f-42da-97fe-a4c4695b6e2d",
+            "event_type": "IndexReceipt",
+            "occurred_at": "2026-10-01T10:36:48.271118Z",
+            "payload": {
+              "actor": "researcher",
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+              "continuation": null,
+              "contract_hashes": {},
+              "cycle_id": "cycle-d0ad4e11-3daa-4f0a-b700-066c5fef2606",
+              "effective_limit": null,
+              "kinds": [],
+              "mission_id": "demo-mission",
+              "operation": "execute",
+              "query": "",
+              "receipt_id": "86ded3ba-d5d2-4ba9-a31d-f186be67c1cd",
+              "requested_id": null,
+              "requested_limit": null,
+              "retrieval_version": null,
+              "returned_ids": [],
+              "selected_id": "science.acquisition-summary",
+              "snapshot_id": null,
+              "tags": []
+            }
+          },
+          {
+            "event_id": "a2fc05a0-8fcf-4c3a-896a-f48df3c6d074",
+            "event_type": "CapabilityInvocation",
+            "occurred_at": "2026-10-01T10:36:48.272118Z",
+            "payload": {
+              "acquisition_id": "07b7e6e6-bf3e-4319-ac52-760e423ac968",
+              "analysis_id": "replicate",
+              "capability_id": "science.acquisition-summary",
+              "invocation_id": "8b1c924f-fa0c-4ed3-8c77-badeb1a41ae1",
+              "numeric_field": null
+            }
+          },
+          {
+            "event_id": "beb7fa79-76f6-4e23-85ce-a9364d357609",
+            "event_type": "ScienceMeasurement",
+            "occurred_at": "2026-10-01T10:36:48.272118Z",
+            "payload": {
+              "acquisition_id": "07b7e6e6-bf3e-4319-ac52-760e423ac968",
               "analysis_id": "replicate",
               "method": "acquisition_measurement"
             }
           },
           {
-            "event_id": "1d1e06a0-3fdb-4411-95e1-85f06c006658",
-            "event_type": "EvidenceAdmission",
-            "occurred_at": "2026-10-01T03:11:41.765436Z",
+            "event_id": "2dad163b-133f-49f4-adba-a0ed21fd8356",
+            "event_type": "CapabilityResult",
+            "occurred_at": "2026-10-01T10:36:48.272118Z",
             "payload": {
               "analysis_id": "replicate",
-              "evidence_id": "c2fb9df2-14e6-4240-8480-779358439f45"
+              "capability_id": "science.acquisition-summary",
+              "invocation_id": "8b1c924f-fa0c-4ed3-8c77-badeb1a41ae1",
+              "origin": "synthetic"
             }
           },
           {
-            "event_id": "40753045-82e9-4316-9d7b-da519f85a9bb",
+            "event_id": "3d70078a-ef6e-4158-8188-6c92b78c57ab",
+            "event_type": "ResourceAttempt",
+            "occurred_at": "2026-10-01T10:36:48.273118Z",
+            "payload": {
+              "attempt": 1,
+              "limit": 4,
+              "resource": "jev"
+            }
+          },
+          {
+            "event_id": "516f5d5b-a53d-420d-82fc-0db3315685fa",
+            "event_type": "ResourceAttempt",
+            "occurred_at": "2026-10-01T10:36:48.273118Z",
+            "payload": {
+              "attempt": 2,
+              "limit": 200,
+              "resource": "jev_questions"
+            }
+          },
+          {
+            "event_id": "f99f5b27-6f93-4f04-8979-131c22d25d88",
+            "event_type": "JevCallStarted",
+            "occurred_at": "2026-10-01T10:36:48.273118Z",
+            "payload": {
+              "call_id": "f3adf4b7-f747-44c4-8b55-1ebef6b52fa8",
+              "candidate_id": "candidate",
+              "question_count": 2
+            }
+          },
+          {
+            "event_id": "6eae16a4-93e9-4d4d-be91-b34e0170fb9c",
             "event_type": "JevExecution",
-            "occurred_at": "2026-10-01T03:11:41.766435Z",
+            "occurred_at": "2026-10-01T10:36:48.274118Z",
             "payload": {
-              "projection_id": "candidate-v1-030fc608aeb8e0cd",
+              "call_id": "f3adf4b7-f747-44c4-8b55-1ebef6b52fa8",
+              "projection_id": "candidate-v2-ea9512698ed34339",
               "question_ids": [
                 "candidate-relevance",
                 "candidate-action"
@@ -508,22 +1849,63 @@
             }
           },
           {
-            "event_id": "df6f65fd-0ce7-4c38-9e06-e3c60241dab6",
+            "event_id": "606e3bc0-6711-44a6-9498-c10b2ebb0953",
             "event_type": "FrontierDecision",
-            "occurred_at": "2026-10-01T03:11:41.766435Z",
+            "occurred_at": "2026-10-01T10:36:48.274118Z",
             "payload": {
               "action": "keep_alive",
+              "call_id": "f3adf4b7-f747-44c4-8b55-1ebef6b52fa8",
               "candidate_id": "candidate",
+              "candidate_summary": "synthetic subgroup signal",
+              "decisions": [
+                {
+                  "model_requested": "deterministic-fixture",
+                  "model_resolved": "deterministic-fixture",
+                  "p_true": 0.72,
+                  "projection_id": "candidate-v2-ea9512698ed34339",
+                  "question_id": "candidate-relevance",
+                  "question_version": "2"
+                },
+                {
+                  "confidence": 0.3333333333333333,
+                  "model_requested": "deterministic-fixture",
+                  "model_resolved": "deterministic-fixture",
+                  "probabilities": {
+                    "ADVANCE": 0.3333333333333333,
+                    "DEFER": 0.3333333333333333,
+                    "NONE": 0.3333333333333333
+                  },
+                  "projection_id": "candidate-v2-ea9512698ed34339",
+                  "question_id": "candidate-action",
+                  "question_version": "2",
+                  "selected_option": "ADVANCE"
+                }
+              ],
+              "epistemic_status": "semantic_search_history",
+              "policy_version": "candidate-frontier-v1",
+              "projection_id": "candidate-v2-ea9512698ed34339",
+              "projection_sha256": "3861522b8df36482ed9452ff4ab1825bc05ef1f7a97d892608767aa8a026cede",
               "provenance": [
-                "candidate"
+                "f3adf4b7-f747-44c4-8b55-1ebef6b52fa8",
+                "candidate-v2-ea9512698ed34339"
               ],
               "rationale": "close choice distribution preserves recall"
             }
           },
           {
-            "event_id": "067c3446-3041-4a11-868f-000ff383942b",
+            "event_id": "63c40236-af61-4cc1-8c1a-267ddb8f736e",
+            "event_type": "ResourceAttempt",
+            "occurred_at": "2026-10-01T10:36:48.275118Z",
+            "payload": {
+              "attempt": 1,
+              "limit": 2,
+              "resource": "reasoner"
+            }
+          },
+          {
+            "event_id": "0f22ccfd-7d1e-4a02-b126-210e2dbe5db4",
             "event_type": "ReasonerOutput",
-            "occurred_at": "2026-10-01T03:11:41.767434Z",
+            "occurred_at": "2026-10-01T10:36:48.275118Z",
             "payload": {
               "hypotheses": [
                 {
@@ -539,33 +1921,297 @@
                   "within_scope": false
                 }
               ],
-              "interpretation": "Measured association with a modest effect",
+              "interpretation": "Two synthetic response rows; no source-bound evidence or estimated oncology effect",
               "uncertainty": "Replication needed."
             }
           },
           {
-            "event_id": "548579b5-0941-446c-a333-b2f0d30625dd",
+            "event_id": "30045b22-2cf0-4fef-aefa-a09b44adc589",
+            "event_type": "ResourceAttempt",
+            "occurred_at": "2026-10-01T10:36:48.275118Z",
+            "payload": {
+              "attempt": 2,
+              "limit": 4,
+              "resource": "jev"
+            }
+          },
+          {
+            "event_id": "2a019653-aaf9-498d-8960-7dfd79c8453d",
+            "event_type": "ResourceAttempt",
+            "occurred_at": "2026-10-01T10:36:48.275118Z",
+            "payload": {
+              "attempt": 4,
+              "limit": 200,
+              "resource": "jev_questions"
+            }
+          },
+          {
+            "event_id": "751906e0-0a01-4214-ac7c-5545355e3b60",
+            "event_type": "JevExecution",
+            "occurred_at": "2026-10-01T10:36:48.275118Z",
+            "payload": {
+              "call_id": "5a00852c-79e1-45a7-b920-3f7c3895836a",
+              "projection_id": "hypothesis-v1-f13c96d901a65375",
+              "question_ids": [
+                "7f4e786f5119b5f8:test_alignment",
+                "7f4e786f5119b5f8:duplication"
+              ]
+            }
+          },
+          {
+            "event_id": "75337065-3c48-4dbd-83e3-e79d5c958375",
+            "event_type": "FrontierDecision",
+            "occurred_at": "2026-10-01T10:36:48.276118Z",
+            "payload": {
+              "action": "escalate",
+              "call_id": "5a00852c-79e1-45a7-b920-3f7c3895836a",
+              "candidate_id": "1fb39552059d6103f6b09a118abc64a215676c82ac05228986f944543672c1ca",
+              "candidate_summary": "Assess a public treatment-resistance signal",
+              "context_type": "hypothesis",
+              "decisions": [
+                {
+                  "model_requested": "deterministic-fixture",
+                  "model_resolved": "deterministic-fixture",
+                  "p_true": 0.72,
+                  "projection_id": "hypothesis-v1-f13c96d901a65375",
+                  "question_id": "7f4e786f5119b5f8:test_alignment",
+                  "question_version": "semantic-contracts-v1"
+                },
+                {
+                  "model_requested": "deterministic-fixture",
+                  "model_resolved": "deterministic-fixture",
+                  "p_true": 0.72,
+                  "projection_id": "hypothesis-v1-f13c96d901a65375",
+                  "question_id": "7f4e786f5119b5f8:duplication",
+                  "question_version": "semantic-contracts-v1"
+                }
+              ],
+              "eligible": true,
+              "epistemic_status": "semantic_search_history",
+              "frontier": {
+                "action": "escalate",
+                "candidate_id": "1fb39552059d6103f6b09a118abc64a215676c82ac05228986f944543672c1ca",
+                "provenance": [
+                  "5a00852c-79e1-45a7-b920-3f7c3895836a",
+                  "hypothesis-v1-f13c96d901a65375"
+                ],
+                "rationale": "bounded review proposal; deadlines and scope unchanged"
+              },
+              "policy_version": "semantic-frontier-v2",
+              "projection_id": "hypothesis-v1-f13c96d901a65375",
+              "projection_sha256": "5ad7a53b8312d50faa992c69c78295c621fe57f4acf40af8bf282658fb03b917",
+              "provenance": [
+                "5a00852c-79e1-45a7-b920-3f7c3895836a",
+                "hypothesis-v1-f13c96d901a65375"
+              ],
+              "rationale": "bounded review proposal; deadlines and scope unchanged"
+            }
+          },
+          {
+            "event_id": "27b0dfaa-0bb3-4aa1-86ea-8475565f08ff",
+            "event_type": "ResourceAttempt",
+            "occurred_at": "2026-10-01T10:36:48.276118Z",
+            "payload": {
+              "attempt": 3,
+              "limit": 4,
+              "resource": "jev"
+            }
+          },
+          {
+            "event_id": "6aff1fc6-7a1d-4c8b-980a-9d3b80d37b7f",
+            "event_type": "ResourceAttempt",
+            "occurred_at": "2026-10-01T10:36:48.276118Z",
+            "payload": {
+              "attempt": 6,
+              "limit": 200,
+              "resource": "jev_questions"
+            }
+          },
+          {
+            "event_id": "c8b4f2b1-8369-4f60-a822-64fe3098b8b0",
+            "event_type": "JevExecution",
+            "occurred_at": "2026-10-01T10:36:48.277118Z",
+            "payload": {
+              "call_id": "8764dd63-45a9-47b5-a609-0176e02f9ae1",
+              "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+              "question_ids": [
+                "77f8dcdf8411616b:test_alignment",
+                "77f8dcdf8411616b:duplication"
+              ]
+            }
+          },
+          {
+            "event_id": "e38e7562-0e0a-4989-a31e-d7a03360921d",
+            "event_type": "FrontierDecision",
+            "occurred_at": "2026-10-01T10:36:48.277118Z",
+            "payload": {
+              "action": "escalate",
+              "call_id": "8764dd63-45a9-47b5-a609-0176e02f9ae1",
+              "candidate_id": "7815a1967b9a37a065d73c0907952563e8728cd5c5e061f183cc5d48845296ba",
+              "candidate_summary": "Assess a public treatment-resistance signal",
+              "context_type": "hypothesis",
+              "decisions": [
+                {
+                  "model_requested": "deterministic-fixture",
+                  "model_resolved": "deterministic-fixture",
+                  "p_true": 0.72,
+                  "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+                  "question_id": "77f8dcdf8411616b:test_alignment",
+                  "question_version": "semantic-contracts-v1"
+                },
+                {
+                  "model_requested": "deterministic-fixture",
+                  "model_resolved": "deterministic-fixture",
+                  "p_true": 0.72,
+                  "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+                  "question_id": "77f8dcdf8411616b:duplication",
+                  "question_version": "semantic-contracts-v1"
+                }
+              ],
+              "eligible": true,
+              "epistemic_status": "semantic_search_history",
+              "frontier": {
+                "action": "escalate",
+                "candidate_id": "7815a1967b9a37a065d73c0907952563e8728cd5c5e061f183cc5d48845296ba",
+                "provenance": [
+                  "8764dd63-45a9-47b5-a609-0176e02f9ae1",
+                  "hypothesis-v1-b3e9812903ac3ae6"
+                ],
+                "rationale": "bounded review proposal; deadlines and scope unchanged"
+              },
+              "policy_version": "semantic-frontier-v2",
+              "projection_id": "hypothesis-v1-b3e9812903ac3ae6",
+              "projection_sha256": "47d4a9ab6276eba27086601cd761a575983dfed136dc64be88a84aa7a32c63ce",
+              "provenance": [
+                "8764dd63-45a9-47b5-a609-0176e02f9ae1",
+                "hypothesis-v1-b3e9812903ac3ae6"
+              ],
+              "rationale": "bounded review proposal; deadlines and scope unchanged"
+            }
+          },
+          {
+            "event_id": "f0f730bc-12cf-49fe-98bf-626af7f39cd9",
+            "event_type": "ResearcherHandoffRequested",
+            "occurred_at": "2026-10-01T10:36:48.278118Z",
+            "payload": {
+              "reason": "researcher_complete"
+            }
+          },
+          {
+            "event_id": "153c82ae-d3af-43c2-bef5-f05c59abae7b",
+            "event_type": "ResearcherRunCompleted",
+            "occurred_at": "2026-10-01T10:36:48.287118Z",
+            "payload": {
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44"
+            }
+          },
+          {
+            "event_id": "969f5c97-1266-452f-b135-6780d93f220c",
             "event_type": "ResearcherCompletion",
-            "occurred_at": "2026-10-01T03:11:41.767434Z",
+            "occurred_at": "2026-10-01T10:36:48.288117Z",
             "payload": {
               "reason": "researcher_complete",
               "status": "complete"
             }
           },
           {
-            "event_id": "38f8cdcf-89a1-41d9-a3a0-a4b582fc19b6",
-            "event_type": "ResearcherRunCompleted",
-            "occurred_at": "2026-10-01T03:11:41.777437Z",
+            "event_id": "50766a08-7f4c-4397-a4b6-7622ce5c5f89",
+            "event_type": "ModelUsage",
+            "occurred_at": "2026-10-01T10:36:48.299119Z",
             "payload": {
-              "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be"
+              "budgets": {
+                "allocations": {
+                  "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44": {
+                    "code_mode_executions": {
+                      "attempted": 1,
+                      "limit": 100,
+                      "remaining": 99
+                    },
+                    "model_requests": {
+                      "attempted": 2,
+                      "limit": 200,
+                      "remaining": 198
+                    },
+                    "provider_tools": {
+                      "attempted": 6,
+                      "limit": 500,
+                      "remaining": 494
+                    }
+                  }
+                },
+                "cycle": {
+                  "model_requests": {
+                    "attempted": 4,
+                    "limit": 300,
+                    "remaining": 296
+                  },
+                  "provider_tools": {
+                    "attempted": 9,
+                    "limit": 700,
+                    "remaining": 691
+                  }
+                },
+                "director": {
+                  "code_mode_executions": {
+                    "attempted": 1,
+                    "limit": 30,
+                    "remaining": 29
+                  },
+                  "model_requests": {
+                    "attempted": 2,
+                    "limit": 50,
+                    "remaining": 48
+                  },
+                  "provider_tools": {
+                    "attempted": 3,
+                    "limit": 100,
+                    "remaining": 97
+                  }
+                }
+              },
+              "cost_complete": false,
+              "director": {
+                "input_tokens": 371,
+                "output_tokens": 60,
+                "reported_cost": null,
+                "requests": 2,
+                "tool_calls": 3
+              },
+              "provider_tool_attempts": 9,
+              "reasoners": {
+                "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44": {
+                  "input_tokens": 0,
+                  "output_tokens": 0,
+                  "reported_cost": null,
+                  "requests": 0,
+                  "tool_calls": 0
+                }
+              },
+              "researchers": {
+                "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44": {
+                  "input_tokens": 272,
+                  "output_tokens": 86,
+                  "reported_cost": null,
+                  "requests": 2,
+                  "tool_calls": 6
+                }
+              },
+              "total": {
+                "input_tokens": 643,
+                "output_tokens": 146,
+                "reported_cost": null,
+                "requests": 4,
+                "tool_calls": 9
+              }
             }
           },
           {
-            "event_id": "62ce9d0b-1031-458a-9df3-bdf581cd4245",
+            "event_id": "5dc55b3d-6d2b-479f-870f-9583a7e072e9",
             "event_type": "DossierHandoff",
-            "occurred_at": "2026-10-01T03:11:41.787438Z",
+            "occurred_at": "2026-10-01T10:36:48.301118Z",
             "payload": {
-              "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be"
+              "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+              "status": "complete"
             }
           }
         ],
@@ -574,13 +2220,12 @@
             "summary",
             "replicate"
           ],
-          "block_id": "1c2a883b-107c-4c9c-9107-249a734d33be",
-          "evidence_refs": [
-            "107363ef-b593-46be-93be-e63dd8db4571",
-            "c2fb9df2-14e6-4240-8480-779358439f45"
-          ],
+          "block_id": "5ccb04cd-945a-4164-a5f2-2c03a7e5cc44",
+          "evidence_refs": [],
           "frontier_decisions": [
-            "keep_alive"
+            "keep_alive",
+            "escalate",
+            "escalate"
           ],
           "hypotheses": [
             "Replicate the association.",
@@ -588,31 +2233,47 @@
           ],
           "important_jev_measurements": [
             "candidate-relevance",
-            "candidate-action"
+            "candidate-action",
+            "7f4e786f5119b5f8:test_alignment",
+            "7f4e786f5119b5f8:duplication",
+            "77f8dcdf8411616b:test_alignment",
+            "77f8dcdf8411616b:duplication"
           ],
+          "lifecycle_status": "complete",
           "objective": "Assess a public treatment-resistance signal",
-          "positive_findings": [
-            "admitted evidence 107363ef-b593-46be-93be-e63dd8db4571",
-            "admitted evidence c2fb9df2-14e6-4240-8480-779358439f45"
-          ],
+          "objective_attainment": "unknown",
+          "operational_failures": [],
+          "positive_findings": [],
           "preferred_continuation": "replicate cohort",
           "preferred_continuation_reason": "Within-scope continuation proposed by the Reasoner and recorded in the ledger.",
           "recommended_next_blocks": [
             "mechanistic experiment"
           ],
           "resource_usage": {
-            "evidence": 2,
-            "jev_calls": 1,
+            "evidence": 0,
+            "jev_attempts": 3,
+            "jev_calls": 3,
+            "jev_questions_attempts": 6,
+            "reasoner_attempts": 1,
             "reasoner_calls": 1,
             "sandbox_calls": 0,
-            "source_calls": 0
+            "source_byte_reports": 0,
+            "source_bytes_reported": 0,
+            "source_calls": 0,
+            "source_failures": 0,
+            "source_successes": 0,
+            "tool_attempts": 2
           },
+          "run_outcome": "completed",
+          "statements": [],
           "termination_reason": "researcher_complete",
           "unresolved_uncertainties": [
             "Replication needed."
           ]
         },
-        "complete": true
+        "complete": true,
+        "run_outcome": "completed",
+        "outcome_inferred": false
       }
     }
   ]

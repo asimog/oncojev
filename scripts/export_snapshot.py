@@ -20,7 +20,6 @@ from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 from src.application.service import ResearchApplication
 from src.block.manager import BlockManager
 from src.config.models import RuntimeMode
-from src.evals.harness import CONDITIONS
 from src.jev.client import DeterministicJevClient
 from src.persistence.repository import ResearchRepository
 from src.persistence.store import SqliteResearchStore
@@ -64,7 +63,7 @@ def _run_scripted_cycle() -> tuple[SqliteResearchStore, ResearchApplication]:
         max_jev_calls=4,
         max_reasoner_calls=2,
     )
-    acquisition = AcquisitionRecord(source="gdc", request={"snapshot": True}, records=({"file_id": "demo-a"}, {"file_id": "demo-b"}), provenance=("offline-snapshot",))
+    acquisition = AcquisitionRecord(source="synthetic-fixture", origin="synthetic", request={"snapshot": True}, records=({"file_id": "demo-a"}, {"file_id": "demo-b"}), provenance=("offline-snapshot",))
     runtime.acquisitions[acquisition.acquisition_id] = acquisition
     agents = create_agents("test", "test")
     runtime.researcher = agents.researcher
@@ -90,11 +89,9 @@ def _run_scripted_cycle() -> tuple[SqliteResearchStore, ResearchApplication]:
             code = "\n".join(
                 [
                     f'await measure_acquisition(acquisition_id="{acquisition.acquisition_id}", analysis_id="summary")',
-                    'await admit_measurement(analysis_id="summary")',
                     f'await measure_acquisition(acquisition_id="{acquisition.acquisition_id}", analysis_id="replicate")',
-                    'await admit_measurement(analysis_id="replicate")',
                     'await evaluate_candidate(candidate_id="candidate", candidate_summary="synthetic subgroup signal")',
-                    'await generate_hypotheses(finding="Measured association with a modest effect")',
+                    'await generate_hypotheses(finding="Two synthetic response rows; no source-bound evidence or estimated oncology effect")',
                     'await complete_block(reason="researcher_complete")',
                     '"researcher complete"',
                 ]
@@ -120,7 +117,10 @@ def build_snapshot() -> dict:
         )
     snapshot = {
         "generated_at": datetime.now(UTC).isoformat(),
-        "conditions": [condition.value for condition in CONDITIONS],
+        "conditions": [],
+        "transport": "offline_snapshot",
+        "data_provenance": "synthetic_fixture",
+        "limitations": ["Scripted offline fixture; no live research, provider evaluation or scientific evidence."],
         "overview": application.overview(),
         "research_memory": list(application.research_memory()),
         "blocks": blocks,

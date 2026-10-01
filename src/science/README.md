@@ -18,3 +18,8 @@ External sandbox requests retain copies and validate their identities; execution
 mounts are read-only and network-disabled. Installation dependencies remain
 unlocked: an immutable image is not a deterministic dependency-install guarantee.
 `verify_scientific_artifacts.py` proves only Linux input/root mount immutability.
+
+Presentation keeps explicit descriptive/associative/exploratory labels; undeclared
+legacy or sandbox interpretation is unclassified. GDC source-paired analyses
+require top-level endpoint entity IDs and compatible units. File/project rows
+cannot be relabelled as patient denominators; joins require a separate contract.

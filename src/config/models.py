@@ -65,7 +65,6 @@ class BlockConfig(StrictModel):
 
 class RetrievalConfig(StrictModel):
     retrieval_k: int = Field(default=20, ge=1, le=20)
-    semantic_frontier_k: int = Field(default=8, ge=1, le=20)
     max_model_requests: int = Field(default=50, ge=0)
     max_provider_tool_calls: int = Field(default=100, ge=0)
     max_code_mode_executions: int = Field(default=30, ge=0)
@@ -88,11 +87,18 @@ class SearchConfig(StrictModel):
     candidate_k: int = Field(default=80, ge=1, le=200)
 
 
-class JevConfig(SearchConfig):
+class JevConfig(StrictModel):
     max_questions_per_call: int = Field(default=100, ge=1, le=1000)
     max_payload_bytes: int = Field(default=131072, ge=4096, le=1000000)
     projection_max_items: int = Field(default=20, ge=1, le=100)
     projection_max_payload_bytes: int = Field(default=65536, ge=4096, le=1000000)
+
+
+class RetentionConfig(StrictModel):
+    enabled: bool = True
+    minimum_age_seconds: int = Field(default=604800, ge=0)
+    max_archive_bytes: int = Field(default=100_000_000, gt=0)
+    max_workspaces: int = Field(default=20, ge=1, le=100)
 
 
 class RuntimeConfig(StrictModel):
@@ -103,3 +109,4 @@ class RuntimeConfig(StrictModel):
     oncolab: SearchConfig = Field(default_factory=SearchConfig)
     jev: JevConfig = Field(default_factory=JevConfig)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
+    retention: RetentionConfig = Field(default_factory=RetentionConfig)

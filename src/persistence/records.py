@@ -18,6 +18,8 @@ class RecordKind(StrEnum):
     OUTCOME_CORRECTION = "outcome_correction"
     ACQUISITION = "acquisition"
     SCIENTIFIC_ARTIFACT = "scientific_artifact"
+    WORKSPACE_ARCHIVE = "workspace_archive"
+    WORKSPACE_CLEANUP = "workspace_cleanup"
     LITERATURE = "literature"
     SANDBOX_REQUEST = "sandbox_request"
     SANDBOX_CANDIDATE = "sandbox_candidate"

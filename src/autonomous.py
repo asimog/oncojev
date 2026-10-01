@@ -112,6 +112,16 @@ class AutonomousService:
 
     def run_once(self, direction: str = DEFAULT_DIRECTION) -> CycleResult:
         recover_interrupted_blocks(self.repository)
+        if self.policy.retention.enabled:
+            from src.persistence.retention import cleanup_workspaces
+            try:
+                results=cleanup_workspaces(self.repository,self.root / "var" / "workspaces",
+                    minimum_age_seconds=self.policy.retention.minimum_age_seconds,max_archive_bytes=self.policy.retention.max_archive_bytes,
+                    max_workspaces=self.policy.retention.max_workspaces)
+                for result in results:
+                    if result["status"]!="removed":print(f"WORKSPACE CLEANUP {result['status']}: {result['error_type']}",flush=True)
+            except Exception as error:
+                print(f"WORKSPACE RETENTION UNAVAILABLE: {type(error).__name__}",flush=True)
         system = build_system(self.models, self.policy, repository=self.repository, director=self.director)
         self.director = system.agents.director
         return run_cycle(system, direction, repository=self.repository, mission_id=f"mission-{self.store.count() + 1}")

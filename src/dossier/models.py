@@ -22,4 +22,3 @@ class JevBlockDossier(BaseModel,frozen=True):
  important_jev_measurements:tuple[str,...]=(); frontier_decisions:tuple[str,...]=(); analyses_performed:tuple[str,...]=()
  resource_usage:dict[str,int]=Field(default_factory=dict); recommended_next_blocks:tuple[str,...]=()
  preferred_continuation:str; preferred_continuation_reason:str
-Dossier=JevBlockDossier

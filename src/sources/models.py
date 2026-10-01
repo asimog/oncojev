@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, computed_field, model_validator
@@ -25,6 +25,7 @@ class AcquisitionRecord(BaseModel, frozen=True):
     request: dict[str, Any]
     records: tuple[dict[str, Any], ...]
     public_only: bool = True
+    origin: Literal["public","synthetic"] = "public"
     provenance: tuple[str, ...] = Field(min_length=1)
     response_bytes: int | None = Field(default=None, ge=0)
     coverage: CoverageContract | None = None
@@ -34,6 +35,7 @@ class AcquisitionRecord(BaseModel, frozen=True):
     def content_sha256(self) -> str:
         payload = {"source": self.source, "request": self.request, "records": self.records,
                    "public_only": self.public_only, "provenance": self.provenance}
+        if self.origin != "public":payload["origin"] = self.origin
         if self.coverage is not None:
             payload["coverage"] = self.coverage.model_dump(mode="json")
         return content_hash(payload)

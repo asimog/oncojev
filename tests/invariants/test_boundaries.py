@@ -13,7 +13,7 @@ from src.oncolab.catalogue import initial_oncolab_index
 from src.oncolab.models import OncoLabKind
 from src.config.loader import load_models_config
 from src.director.models import ResourceAllocation
-from src.dossier.models import Dossier
+from src.dossier.models import JevBlockDossier
 from src.jev.client import DeterministicJevClient
 from src.jev.frontier import FrontierAction,FrontierPolicy
 from src.jev.models import ChoiceDecision,JevExecutionFailure,JevFailureCategory,JevQuestionSpec,NoulDecision
@@ -61,7 +61,7 @@ def test_block_deadline_and_ledger():
  with pytest.raises(ValidationError):b.deadline=now # type: ignore[misc]
  l=Ledger();e=LedgerEvent(event_type='x',occurred_at=now,payload={'v':1});l.append(e);e.payload['v']=2;assert l.history()[0].payload=={'v':1}
 def test_non_science_outputs_cannot_be_evidence():
- for x in (ReasonerOutput(interpretation='x',hypotheses=(Hypothesis(hypothesis_id='h',statement='x',within_scope=True,proposed_test='x'),),uncertainty='x'),NoulDecision(question_id='q',p_true=.5,model_requested='x',model_resolved='x',question_version='1',projection_id='x'),Dossier(block_id='b',objective='o',termination_reason='x',evidence_refs=(),preferred_continuation='x',preferred_continuation_reason='x')):
+ for x in (ReasonerOutput(interpretation='x',hypotheses=(Hypothesis(hypothesis_id='h',statement='x',within_scope=True,proposed_test='x'),),uncertainty='x'),NoulDecision(question_id='q',p_true=.5,model_requested='x',model_resolved='x',question_version='1',projection_id='x'),JevBlockDossier(block_id='b',objective='o',termination_reason='x',evidence_refs=(),preferred_continuation='x',preferred_continuation_reason='x')):
   with pytest.raises(AttributeError):admit_scientific_evidence(x) # type: ignore[arg-type]
 def test_parallel_jev_and_conservative_frontier():
  qs=(JevQuestionSpec(question_id='a',semantic_purpose='a',primitive='noul',projection_id='p',instructions='a',criteria={},question_version='1'),JevQuestionSpec(question_id='b',semantic_purpose='b',primitive='choice',projection_id='p',instructions='b',criteria={'ADVANCE':'a','DEFER':'d','NONE':'n'},question_version='1'));d=DeterministicJevClient().evaluate({},qs);assert len(d)==2;assert FrontierPolicy().decide('c',d,('p',)).action is FrontierAction.KEEP_ALIVE
@@ -93,6 +93,7 @@ def test_deterministic_science_methods_produce_measurements_before_admission():
  summary=executor.execute(AnalysisSpec(analysis_id='summary',question='q',population='p',estimand='mean',method='descriptive_summary',variables=('values',),inputs={'values':[1.0,2.0,3.0]}))
  regression=executor.execute(AnalysisSpec(analysis_id='ols',question='q',population='p',estimand='slope',method='ordinary_least_squares',variables=('x','y'),inputs={'x':[1.0,2.0,3.0],'y':[2.0,4.0,6.0]}))
  assert summary.values['mean']==2.0 and regression.values['slope']==pytest.approx(2.0)
+ assert summary.interpretation=='exploratory' and regression.interpretation=='exploratory'
  assert summary.provenance[0]=='pandas.Series' and regression.provenance[0]=='statsmodels.OLS'
 def test_capability_index_is_bounded_and_distinguishes_metadata_from_execution(tmp_path):
  index=initial_oncolab_index();matches=index.search('GDC cancer',kinds=(OncoLabKind.SOURCE,),limit=3)

@@ -11,7 +11,7 @@ Both roles can use `search_research_memory`, `get_dossier`, `get_evidence`,
 `resolve_memory_reference`. Director `read_research_memory` now returns a bounded
 typed context envelope rather than a recent-prose list. Retrieval accepts mission,
 declared entity/topic and timezone-aware time filters. Search uses stable lexical
-relevance, not automatic newest-result copying; semantic memory ranking remains F6.
+relevance, not automatic newest-result copying; bounded semantic memory context is delivered in F4; broader utility validation remains an earned deferral.
 The Director receives retrieved context automatically and allocation retrieves
 again for its selected objective. Both Researcher launch paths receive the validated
 start packet, while state/evidence/measurements/skills/budgets remain fresh.
@@ -126,3 +126,17 @@ at `/input/artifacts/<byte_sha256>` with execution network disabled. Unknown lic
 and release remain null. Controlled-access and arbitrary URL acquisition remain
 unavailable. JSON acquisition hashes continue to identify structured retained
 content, not unstored HTTP bodies.
+
+F6 retains terminal scratch files as immutable byte artifacts and a manifest before
+removing a closed workspace. Default minimum age is seven days, at most 20
+workspaces and 100 MB per archive. Active, unknown, unresolved-input, linked and
+failed-export workspaces remain intact. Durable evidence/replay inputs and ledger
+records are never deleted. Oversized archives require an explicit larger budget
+or operational review; cleanup does not silently discard them.
+
+Synthetic acquisitions now propagate synthetic measurement origin and cannot be
+admitted. Offline snapshots show fixture provenance separately from API transport
+and execution mode, with no fabricated evaluated conditions. Presentation retains
+failed/incomplete outcomes, unknown objective attainment, source attempts/successes
+and scientific limitations. Historical portable records keep their original scope
+and missing inputs; new deliveries do not retroactively validate them.

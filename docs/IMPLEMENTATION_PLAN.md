@@ -212,7 +212,7 @@ Each still-open item has one primary disposition; dependencies are cross-referen
 | F3 | DONE | Typed cross-cycle memory and validated start packets |
 | F4 | DONE, P1 | Semantic search and Jev measurement core |
 | F5 | DONE, P1 correctness / P2 expansion | Scientific execution depth and curated capability expansion |
-| F6 | PLANNED, P2 | Retention, cleanup and truthful observability |
+| F6 | DONE, P2 | Retention, cleanup and truthful observability |
 
 **Mapping:** old F6 → new F4; old F4 → new F5; old F5 → new F6. Historical identifiers in F0–F3 and original verification remain unchanged; apply this mapping to their forward references. Other docs' old F6 semantic-memory references require follow-up with the relevant implementation; this rewrite does not edit them.
 
@@ -472,9 +472,9 @@ ScientificArtifact retains exact bytes with owner/source/request/hash/size/forma
 
 **Transition review:** Retained scientific inputs now live outside scratch workspaces, enabling F6 archive-before-cleanup. Preserve active/unresolved blocks and persistence failures. F4 evaluation does not justify bulk harvesting, embeddings, registry migration, ontology prerequisites or promotion. Additional methods/static GDC joins, stronger dependency locks and expanded scientific/semantic utility evaluations remain earned deferrals. F6 should also repair the snapshot's synthetic rows being presented as source-bound evidence and live UI inheriting offline evaluation-condition labels.
 
-#### F6 — PLANNED: retention, cleanup and truthful observability
+#### F6 — DONE: retention, cleanup and truthful observability
 
-##### F6a — PLANNED / P2: safe retention and dead configuration
+##### F6a — DONE / P2: safe retention and dead configuration
 
 **Dependencies:** delivered F0–F3; F5c retention contract when introduced, not all F4/F5. **Problem → behavior:** Bound workspace growth/unused config without losing evidence inputs.
 
@@ -482,13 +482,23 @@ ScientificArtifact retains exact bytes with owner/source/request/hash/size/forma
 
 **Acceptance/primary tests:** `test_persistence.py` owns retention/reopen, active/sibling/escape paths, failed export/unresolved persistence and surviving inputs using temporary roots. Focused module + architecture checker. **Docs:** retention/runtime config, README/CAPABILITIES, tracker. **Non-goals/limits:** no ledger deletion/evidence rewrite/cleanup before durable export.
 
-##### F6b — PLANNED / P2: truthful presentation and historical claims
+##### F6b — DONE / P2: truthful presentation and historical claims
 
 **Dependencies:** delivered lifecycle/provenance/memory; later outputs only where rendered. **Problem → behavior:** Explicit live/synthetic/offline and failed/incomplete/limited outcomes replace overstated presentation.
 
 **Owners/scope:** application read models, `scripts/export_snapshot.py`, `web/lib/`, `web/app/`, nearest docs. Render backend epistemic categories/effective corrections, failures/incomplete outcomes, attempts versus successes, descriptive slice limits. Separate synthetic fixture provenance from live data and offline transport. Reconcile historical phase claims with portable verification's scope/missing artifacts; Linux proof remains platform-scoped. Regenerate snapshot after relevant contracts settle.
 
 **Acceptance/primary tests:** `test_frontend.py` owns rendered provenance/outcome behavior with browser checks/web build when changed; persistence retains effective read-model authority. Focused affected checks + architecture checker. **Docs:** FRONTEND/README/historical verification explanations, tracker. **Non-goals/limits:** observability only; no orchestration/admission/backfill on reads or all-descriptors-execute claims.
+
+**F6 delivery (2026-10-01):** Archive-before-cleanup retains exact scratch bytes and an immutable manifest before bounded terminal-workspace removal. It excludes active/unknown/unresolved blocks, peers, symlinks/junctions, changed files and failed exports. Defaults are seven days, 20 workspaces, 100 MB each; oversized archives are skipped. Durable scientific inputs, evidence, replay records and ledger history survive reopen. Cleanup/deletion/receipt failures remain explicit and do not grant agent authority or resume research. Director scratch is excluded. Removed verified unused sources configuration, StartPacket/Dossier aliases and unused Jev search/Director frontier configuration; actual Index candidate budget remains separate from response cap.
+
+Synthetic acquisition origin now propagates through deterministic measurements and cannot be admitted. Snapshot generation retains synthetic rows/measurements with zero scientific evidence and no claimed evaluation conditions. UI separates transport, provenance and mode, shows failed/incomplete outcomes, objective uncertainty, source counters, statement support and scientific interpretation/limits. API read views omit binary payloads with an explicit flag while canonical retained bytes remain intact. Source counters cover recorded invocation identities, not inferred historical unrecorded activity. Historical F0–F3 evidence and portable verification scopes remain unchanged.
+
+**Additional verified F5 corrections:** GDC endpoint/entity-unit mismatch could label file rows as patient units; top-level entity IDs must now match endpoint units and joined analyses require a separate contract. Provided-array statistics now explicitly label exploratory interpretation; undeclared legacy/sandbox interpretation remains unclassified, rather than silently descriptive. Both regressions failed on detached `7f6c744` for their intended assertions (one unit mismatch and one exploratory-label failure), then passed. These are separate newly verified gaps, not changes to historical delivery evidence.
+
+**F6 verification:** Final integration `python -B -m pytest -p no:cacheprovider`: 101 passed, one existing event-loop warning, 92.77 s. The later artifact-view narrowing was checked with the actual persistence/Code Mode bridge regression (1 passed, 40 deselected). Retention regression proves reopen, active/unresolved exclusions, failed export/byte-bound refusal and an actual Windows junction to a sibling; archive survives deletion. Snapshot regression failed on detached `7f6c744` because synthetic rows produced one admitted evidence item (1 failed, 3 deselected). Four frontend tests passed, including actual async React page rendering against controlled live/failing API transport. `npm run typecheck` and `npm run build` passed using installed web dependencies. Chrome checked built overview/block pages: offline/synthetic labels, zero evidence, synthetic measurement origins, unknown objective attainment and limits visible. Architecture checker and final diff checks passed. Temporary baseline worktrees and the verification server were removed/stopped; no historical database writes, dependency installs or push.
+
+**Limits:** Retention preserves data by archival, not ledger deletion or backup rotation; oversized/unsafe/unresolved workspaces require operational review. Byte retention uses current typed SQLite records; no storage migration was justified. New local method/semantic contracts are not promoted. Expanded semantic/scientific utility, domain-specific representation generation, additional curated methods/static GDC joins and locked dependency environments remain D1–D8 below. Fixture execution, anonymous file access and mount isolation do not establish an end-to-end oncology capability family.
 
 ### 10.4 Deferred work and earned triggers
 
@@ -541,3 +551,10 @@ For every implementation batch: require a credible regression and one primary be
 | Final changed-path check | Only `docs/IMPLEMENTATION_PLAN.md`; no pre-existing edits to preserve. |
 
 No F4a blocker was verified. Semantic utility/provider behavior, selected current GDC file access/licences/releases and per-operation upstream feasibility remain future verification, not passing claims. Local historical SQLite, target Linux kernel/isolation and new provider/scientific executions were not rerun. No dependencies installed; no source/tests/config/other docs/upstream/database/snapshot/runtime artifacts edited; no implementation, commit or push. Stop here: next implementation is F4a.
+
+
+### 10.7 Current implementation completion
+
+The user subsequently authorized implementation of F4–F6 and phase commits; this supersedes the historical rewrite-only stopping instruction in 10.6. Implementation began at `c15164a65a272715fe158a2521a53f9a59023fc7` with only the rewritten plan modified. F4 committed as `0b8d4fa0b4338dc29953d5f16a19826e1bfc674b`; F5 as `7f6c744` (full identity in Git). F6 delivery is the following phase commit. No push was requested or performed.
+
+All active bounded batches F4a-e, F5a-e and F6a-b are delivered. The baseline finding table retains its verified-at-rewrite facts and primary phase ownership; delivery paragraphs above supersede “absent/remaining” observations. Optional static extraction and unselected MAF/VCF/count/expression/TMB/survival branches remain D7, with F5b/e dependencies. No unfinished commitment was silently removed. The earned triggers in 10.4 remain unmet for bulk harvesting, embeddings/storage migration, general ontology prerequisites and automatic promotion. No blocker remains for the delivered scope; broader empirical utility and dependency locking remain explicit verification limits.

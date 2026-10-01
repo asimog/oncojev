@@ -24,15 +24,14 @@ director:
   max_code_mode_tool_calls: 100
   max_cost: null
   retrieval_k: 20
-  semantic_frontier_k: 8
 cycle:
   max_model_requests: 300
   max_provider_tool_calls: 700
   max_cost: null
 oncolab:
   search_k: 20
+  candidate_k: 80
 jev:
-  search_k: 20
   max_questions_per_call: 100
   max_payload_bytes: 131072
   projection_max_items: 20
@@ -43,3 +42,8 @@ sandbox:
   cpu: 2
   memory_mb: 4096
   timeout_seconds: 300
+retention:
+  enabled: true
+  minimum_age_seconds: 604800
+  max_archive_bytes: 100000000
+  max_workspaces: 20

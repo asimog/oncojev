@@ -25,4 +25,3 @@ class JevBlockStart(BaseModel, frozen=True):
     memory: StartMemory = Field(default_factory=StartMemory)
     entities: tuple[MemoryTag, ...] = Field(default=(), max_length=20)
     topics: tuple[MemoryTag, ...] = Field(default=(), max_length=20)
-StartPacket = JevBlockStart

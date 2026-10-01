@@ -22,5 +22,5 @@ class MeasuredResult(BaseModel, frozen=True):
     deterministic:Literal[True]=True
     analysis_key: str | None = None
     replication_id: str | None = None
-    interpretation: Literal["descriptive","associative","exploratory"] = "descriptive"
+    interpretation: Literal["descriptive","associative","exploratory","unclassified"] = "unclassified"
     diagnostics: dict[str,Any] = Field(default_factory=dict)

@@ -25,7 +25,7 @@ class ScienceExecutor:
         else:raise ValueError(f"unsupported method: {spec.method}")
         self._require_finite(values)
         digest=self._hash({"method":spec.method,"inputs":spec.inputs,"source_refs":spec.source_refs})
-        return MeasuredResult(analysis_id=spec.analysis_id,values=values,provenance=(source,spec.analysis_id),origin="provided",source_refs=spec.source_refs,input_sha256=digest)
+        return MeasuredResult(analysis_id=spec.analysis_id,values=values,provenance=(source,spec.analysis_id),origin="provided",source_refs=spec.source_refs,input_sha256=digest,interpretation="exploratory")
 
     def measure_acquisition(self,record:AcquisitionRecord,analysis_id:str,field:str|None=None)->MeasuredResult:
         if field is None:
@@ -43,9 +43,9 @@ class ScienceExecutor:
                     "standard_deviation":float(series.std(ddof=1)) if len(extracted)>1 else None}
             method=f"numeric_summary:{field}"
         self._require_finite(values)
-        return MeasuredResult(analysis_id=analysis_id,values=values,provenance=("acquisition-v2",record.source,method),origin="source",source_refs=(record.acquisition_id,),input_sha256=record.content_sha256,
+        return MeasuredResult(analysis_id=analysis_id,values=values,provenance=("acquisition-v2",record.source,method),origin="synthetic" if record.origin=="synthetic" else "source",source_refs=(record.acquisition_id,),input_sha256=record.content_sha256,
                               limitations=("Descriptive measurement of the stored response slice; population coverage is not inferred.",),
-                              analysis_key=self._hash({"input":record.content_sha256,"method":method,"version":"source-summary-v3"}),
+                              interpretation="descriptive",analysis_key=self._hash({"input":record.content_sha256,"method":method,"version":"source-summary-v3"}),
                               diagnostics={"coverage":record.coverage.model_dump(mode="json") if record.coverage else None,
                                            "undefined":{key:"no valid numeric observations" if not values.get("n") else "sample SD requires n>=2"
                                                         for key in ("mean","median","standard_deviation") if key in values and values[key] is None}})
@@ -58,6 +58,11 @@ class ScienceExecutor:
             raise ValueError("unsupported source-resolved method")
         if set(spec.fields)!={"x","y"} or not spec.entity_field or not spec.population.strip() or not spec.estimand.strip():
             raise ValueError("declare entity key, population, estimand and x/y fields")
+        if record.source=="gdc":
+            endpoint=record.coverage.endpoint if record.coverage else record.provenance[-1]
+            units={"cases":{"case","patient"},"files":{"file"},"projects":{"project"},"annotations":{"annotation"}}
+            if endpoint not in units or spec.entity_unit not in units[endpoint] or spec.entity_field!="id":
+                raise ValueError("GDC entity unit/key must match endpoint; joined rows require a separate contract")
         if spec.covariates or set(spec.transformations)-{"x","y"}:
             raise ValueError("this operation does not implement covariates or undeclared transformations")
         pairs={"x":[],"y":[]};entities=[];seen=set();excluded={};counts={"total_rows":len(record.records),"complete_pairs":0,"excluded_rows":0}
@@ -87,7 +92,7 @@ class ScienceExecutor:
         exploratory=self.execute(spec.model_copy(update={"inputs":pairs}))
         contract=spec.model_dump(mode="json",exclude={"analysis_id","source_refs","inputs","replication_id"})
         key=self._hash({"content":record.content_sha256,"contract":contract,"version":"source-paired-v1"})
-        return exploratory.model_copy(update={"origin":"source","source_refs":(record.acquisition_id,),"input_sha256":record.content_sha256,
+        return exploratory.model_copy(update={"origin":"synthetic" if record.origin=="synthetic" else "source","source_refs":(record.acquisition_id,),"input_sha256":record.content_sha256,
             "analysis_key":key,"replication_id":spec.replication_id,"interpretation":"associative",
             "provenance":(*exploratory.provenance,"source-paired-v1",key),
             "diagnostics":{"counts":counts,"excluded_fields":excluded,"paired_entities":entities,"fields":spec.fields,

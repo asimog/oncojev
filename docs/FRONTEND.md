@@ -28,3 +28,17 @@ Regenerate the snapshot after backend changes:
 ```bash
 uv run python scripts/export_snapshot.py
 ```
+
+F6 separates transport (`live_api` or `offline_snapshot`), data provenance and
+recorded execution mode. Live API pages do not inherit fixture evaluation
+conditions. Offline fallback displays its synthetic/no-live-research limitation;
+synthetic measurements have no evidence-admission authority. Lifecycle and run
+outcomes, unknown objective attainment, operational failures, source counters,
+statement support, interpretation and scientific limits are shown explicitly.
+Historical completion corrections come from effective backend read models.
+
+The frontend regression renders the real async pages against controlled API
+responses and fallback using the installed TypeScript/React environment. Web
+build and browser checks are separate from Python source-bound execution tests.
+
+Read models omit retained artifact byte payloads while preserving identities and an explicit omission flag; durable scientific input bytes remain unchanged.

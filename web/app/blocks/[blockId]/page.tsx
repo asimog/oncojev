@@ -3,12 +3,13 @@ import { notFound } from "next/navigation";
 
 import { Row, Section } from "@/components/Section";
 import { categoriseEvent } from "@/lib/categories";
-import { findBlock } from "@/lib/snapshot";
+import { getData } from "@/lib/snapshot";
 
 export const dynamic = "force-dynamic";
 
 export default async function BlockPage({ params }: { params: { blockId: string } }) {
-  const view = await findBlock(params.blockId);
+  const data = await getData();
+  const view = data.blocks.find((item)=>item.reconstruction.block_id===params.blockId);
   if (!view) {
     notFound();
   }
@@ -22,12 +23,14 @@ export default async function BlockPage({ params }: { params: { blockId: string 
       <p>
         <Link href="/">← mission overview</Link>
       </p>
+      <p className="muted">Transport {data.transport} · provenance {data.data_provenance}. {data.limitations.join(" ")}</p>
       <h1>{block?.start.objective ?? reconstruction.block_id}</h1>
       <p className="muted">
         {reconstruction.block_id} · status {String(block?.status)} · termination{" "}
         {String(block?.termination_reason)} · deadline {String(block?.deadline)}
       </p>
 
+      <p>Run outcome {reconstruction.run_outcome ?? "unknown"} · objective attainment {dossier?.objective_attainment ?? "unknown"}{reconstruction.outcome_inferred ? " · historical completion claim contradicted or unverified" : ""}</p>
       <Section category="action" title="Agent actions and lifecycle" hint="append-only ledger" count={reconstruction.ledger.length}>
         {reconstruction.ledger.length === 0 ? <p className="muted">No ledger events recorded.</p> : null}
         {reconstruction.ledger.map((event) => (
@@ -53,8 +56,8 @@ export default async function BlockPage({ params }: { params: { blockId: string 
           <Row
             key={measurement.analysis_id}
             name={measurement.analysis_id}
-            meta={`deterministic=${String(measurement.deterministic)} · ${measurement.provenance.join(" · ")}`}
-            detail={measurement.values}
+            meta={`origin=${measurement.origin ?? "unknown"} · interpretation=${measurement.interpretation ?? "unknown"} · deterministic=${String(measurement.deterministic)}`}
+            detail={{values:measurement.values,limitations:measurement.limitations,diagnostics:measurement.diagnostics,provenance:measurement.provenance}}
           />
         ))}
       </Section>
@@ -68,7 +71,7 @@ export default async function BlockPage({ params }: { params: { blockId: string 
               key={item.evidence_id}
               name={`evidence ${item.evidence_id}`}
               meta={`admitted ${item.admitted_at}${referenced ? " · referenced by dossier" : ""}`}
-              detail={item.measurement.values}
+              detail={{values:item.measurement.values,origin:item.measurement.origin,interpretation:item.measurement.interpretation,limitations:item.measurement.limitations,diagnostics:item.measurement.diagnostics}}
             />
           );
         })}
@@ -106,6 +109,8 @@ export default async function BlockPage({ params }: { params: { blockId: string 
         {!dossier ? <p className="muted">No dossier assembled.</p> : null}
         {dossier ? (
           <>
+            <Row name="operational failures" detail={dossier.operational_failures ?? []} />
+            <Row name="statement-specific support" detail={dossier.statements ?? []} />
             <Row name="termination" meta={dossier.termination_reason} />
             <Row name="evidence references" meta="traceability" detail={dossier.evidence_refs} />
             <Row name="analyses performed" detail={dossier.analyses_performed} />

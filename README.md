@@ -100,3 +100,20 @@ uv run python scripts/check_architecture.py
 Web UI: see [docs/FRONTEND.md](docs/FRONTEND.md).
 
 Read [AGENTS.md](AGENTS.md) first. The canonical design is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); epistemic rules are in [docs/EPISTEMIC_CONSTITUTION.md](docs/EPISTEMIC_CONSTITUTION.md).
+
+Workspace retention runs between service cycles under `retention` in
+`config/runtime.yaml`. It archives exact closed-block scratch bytes to durable
+SQLite before cleanup; active/unknown/unresolved blocks and failed exports are
+excluded. Defaults: seven days, 20 workspaces, 100 MB each. Director scratch is
+excluded. The ledger, source inputs and replay records survive cleanup.
+
+OncoLab progressive retrieval uses `oncolab.candidate_k` separately from the
+per-response `search_k`. Director memory semantics has separate call/question/
+byte/time limits. Unused `jev.search_k`, `jev.candidate_k`,
+`director.semantic_frontier_k`, empty sources configuration and unused aliases
+were removed; configuration remains strict.
+
+The web fallback is explicitly an offline synthetic fixture with zero admitted
+evidence. API availability does not certify scientific validity or completion.
+See the phase delivery records in `docs/IMPLEMENTATION_PLAN.md` for scoped checks
+and unresolved scientific/semantic utility and dependency-lock limitations.

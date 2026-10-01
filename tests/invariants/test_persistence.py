@@ -849,6 +849,10 @@ def test_source_resolved_paired_analysis_and_repeat_admission_survive_reopen(tmp
   runtime.science.execute_source(record.model_copy(update={"records":({"id":"same","x":1,"y":2},{"id":"same","x":3,"y":4})}),spec)
  with pytest.raises(ValueError,match="nonconstant"):
   runtime.science.execute_source(record.model_copy(update={"records":({"id":"a","x":1,"y":2},{"id":"b","x":1,"y":4})}),spec)
+ from src.sources.models import CoverageContract
+ file_rows=record.model_copy(update={"source":"gdc","coverage":CoverageContract(endpoint="files",returned_rows=4)})
+ with pytest.raises(ValueError,match="entity unit/key"):
+  runtime.science.execute_source(file_rows,spec.model_copy(update={"entity_unit":"patient"}))
  with pytest.raises(ValueError,match="not supplied arrays"):
   runtime.science.execute_source(record,spec.model_copy(update={"inputs":{"x":[1,2],"y":[3,4]}}))
  repository.store.close()
@@ -919,10 +923,66 @@ def test_exact_public_artifact_retention_ownership_and_sandbox_replay(tmp_path):
   response=system.agents.researcher.run_sync("bounded file bridge",deps=ResearcherDeps(runtime=runtime,block_id=block.block_id))
  assert len(store.records(kind=RecordKind.EVIDENCE,block_id=block.block_id))==1, response.all_messages()
  assert len(store.records(kind=RecordKind.SCIENTIFIC_ARTIFACT,block_id=block.block_id))==1
+ presentation=ResearchApplication(store).reconstruction(block.block_id)
+ assert presentation.scientific_artifacts[0]["content_bytes_omitted"] is True
+ assert "content_base64" not in presentation.scientific_artifacts[0]
+ assert "content_base64" in reconstruct_block(store,block.block_id).scientific_artifacts[0]
  assert reconstruct_block(store,block.block_id).unresolved_source_refs==()
  # Access and byte limits are transport failures, never negative scientific results.
  denied=GdcPublicSource(httpx.MockTransport(lambda req:httpx.Response(200,json={"data":{"access":"controlled"}})))
  with pytest.raises(ValueError,match="explicitly open"):asyncio.run(denied.acquire_file(file_id,"owner","tsv"))
  bounded=GdcPublicSource(httpx.MockTransport(transport),max_download_bytes=10)
  with pytest.raises(ValueError,match="byte budget"):asyncio.run(bounded.acquire_file(file_id,"owner","tsv"))
+ store.close()
+
+
+def test_workspace_retention_exports_before_cleanup_and_preserves_active_or_unresolved(tmp_path,monkeypatch):
+ from datetime import timedelta
+ from src.persistence.retention import cleanup_workspaces
+ store=SqliteResearchStore(tmp_path/"retention.sqlite3");repo=ResearchRepository(store);manager=BlockManager()
+ workspace=tmp_path/"workspaces";workspace.mkdir()
+ def make(status="failed",unresolved=False):
+  block=manager.create("retention","archive",ResourceAllocation(seconds=60,handoff_reserve_seconds=5))
+  directory=workspace/block.block_id;directory.mkdir();(directory/"method.py").write_bytes(b"print('retained')\n")
+  if status=="active":repo.record_block(block)
+  else:
+   terminal=block.model_copy(update={"status":BlockStatus.FAILED,"termination_reason":"fixture_failed"})
+   repo.record_terminal(terminal,build_dossier(terminal,(),None,"fixture_failed"))
+  if unresolved:
+   from src.science.models import MeasuredResult
+   repo.record_measurement(MeasuredResult(analysis_id="lost",values={"n":1},origin="source",source_refs=("missing-acquisition",),provenance=("legacy",),input_sha256="0"*64),block.block_id)
+  return block,directory
+ closed,closed_dir=make();active,active_dir=make("active");lost,lost_dir=make(unresolved=True)
+ peer=tmp_path/"peer";peer.mkdir();(peer/"keep").write_text("peer")
+ future=datetime.now(UTC)+timedelta(days=8)
+ before=store.count()
+ results=cleanup_workspaces(repo,workspace,now=future)
+ assert len(results)==1 and results[0]["status"]=="removed"
+ assert not closed_dir.exists() and active_dir.exists() and lost_dir.exists() and (peer/"keep").exists()
+ archive=store.latest(RecordKind.WORKSPACE_ARCHIVE,block_id=closed.block_id)
+ retained_id=archive.payload["files"][0]["artifact_id"]
+ assert repo.resolve_scientific_artifact(closed.block_id,retained_id).bytes()==b"print('retained')\n"
+ broken,broken_dir=make()
+ original=repo.record_scientific_artifact
+ monkeypatch.setattr(repo,"record_scientific_artifact",lambda artifact:(_ for _ in ()).throw(OSError("export failed")))
+ failed=cleanup_workspaces(repo,workspace,now=future)
+ assert failed[0]["status"]=="skipped" and broken_dir.exists()
+ monkeypatch.setattr(repo,"record_scientific_artifact",original)
+ assert cleanup_workspaces(repo,workspace,now=future,max_archive_bytes=1)[0]["status"]=="skipped" and broken_dir.exists()
+ assert cleanup_workspaces(repo,workspace,now=future,excluded_block_ids=(broken.block_id,))==()
+ escaped,escaped_dir=make()
+ import os,subprocess
+ link=escaped_dir/"peer-link"
+ if os.name=="nt":
+  created=subprocess.run(["cmd","/c","mklink","/J",str(link),str(peer)],capture_output=True).returncode==0
+ else:
+  link.symlink_to(peer,target_is_directory=True);created=True
+ if created:
+  skipped=cleanup_workspaces(repo,workspace,now=future,excluded_block_ids=(broken.block_id,))
+  assert skipped[0]["status"]=="skipped" and escaped_dir.exists() and (peer/"keep").read_text()=="peer"
+
+ store.close();store=SqliteResearchStore(tmp_path/"retention.sqlite3");repo=ResearchRepository(store)
+ assert repo.resolve_scientific_artifact(closed.block_id,retained_id).bytes()==b"print('retained')\n"
+ assert len(store.records(kind=RecordKind.WORKSPACE_CLEANUP))==1
+ assert store.count()>before and store.latest(RecordKind.DOSSIER,block_id=closed.block_id)
  store.close()

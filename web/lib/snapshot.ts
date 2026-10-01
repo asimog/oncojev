@@ -23,12 +23,16 @@ export interface MeasurementView {
   deterministic: boolean;
   provenance: string[];
   values: Record<string, unknown>;
+  origin?: string;
+  interpretation?: string;
+  limitations?: string[];
+  diagnostics?: Record<string,unknown>;
 }
 
 export interface EvidenceView {
   evidence_id: string;
   admitted_at: string;
-  measurement: { analysis_id: string; values: Record<string, unknown> };
+  measurement: MeasurementView;
 }
 
 export interface LedgerEventView {
@@ -49,7 +53,10 @@ export interface DossierView {
   preferred_continuation: string;
   preferred_continuation_reason: string;
   frontier_decisions: string[];
-  resource_usage: Record<string, number>;
+  resource_usage: Record<string, unknown>;
+  objective_attainment?: string;
+  operational_failures?: Record<string,unknown>[];
+  statements?: Record<string,unknown>[];
 }
 
 export interface BlockView {
@@ -72,11 +79,17 @@ export interface BlockView {
     dossier: DossierView | null;
     capability_invocations: Record<string, unknown>[];
     complete: boolean;
+    run_outcome?: string;
+    outcome_inferred?: boolean;
   };
 }
 
 export interface SnapshotShape {
   generated_at: string;
+  transport: "live_api" | "offline_snapshot";
+  data_provenance: string;
+  api_status?: "available" | "unavailable";
+  limitations: string[];
   conditions: string[];
   overview: {
     records: number;
@@ -84,7 +97,9 @@ export interface SnapshotShape {
     cycles: number;
     dossiers: number;
     evidence: number;
-    latest_cycle: { mode: string } | null;
+    latest_cycle: { mode: string; status?:string; error_type?:string|null } | null;
+    data_provenance?: string;
+    source_activity?: {attempts:number;successes:number;failures:number;unresolved:number};
   };
   research_memory: { summary: string; provenance: string[] }[];
   blocks: BlockView[];
@@ -94,7 +109,7 @@ const fallback = snapshot as unknown as SnapshotShape;
 const apiBase = process.env.ONCOJEV_API_URL ?? "http://127.0.0.1:8080";
 
 async function api<T>(path: string): Promise<T> {
-  const response = await fetch(`${apiBase}${path}`, { cache: "no-store" });
+  const response = await fetch(`${apiBase}${path}`, { cache: "no-store", signal: AbortSignal.timeout(5000) });
   if (!response.ok) throw new Error(`OncoJev API ${path} returned ${response.status}`);
   return response.json() as Promise<T>;
 }
@@ -114,17 +129,18 @@ export async function getData(): Promise<SnapshotShape> {
     );
     return {
       generated_at: new Date().toISOString(),
-      conditions: fallback.conditions,
+      conditions: [],
+      transport: "live_api",
+      api_status: "available",
+      data_provenance: overview.data_provenance ?? "unknown",
+      limitations: ["API connectivity does not establish successful research or scientific utility."],
       overview,
       research_memory: memory.research_memory,
       blocks,
     };
   } catch {
-    return fallback;
+    return { ...fallback, transport: "offline_snapshot", api_status: "unavailable",
+      data_provenance: fallback.data_provenance ?? "unknown",
+      limitations: [...(fallback.limitations ?? []), "Live API unavailable; displaying committed offline snapshot."] };
   }
-}
-
-export async function findBlock(blockId: string): Promise<BlockView | undefined> {
-  const data = await getData();
-  return data.blocks.find((block) => block.reconstruction.block_id === blockId);
 }
