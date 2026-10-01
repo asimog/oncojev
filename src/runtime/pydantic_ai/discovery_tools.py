@@ -53,3 +53,22 @@ def register_discovery_tools(agent):
     async def describe_external_capability(ctx:RunContext[Any],source:str,external_id:str)->dict[str,Any]:
         """Expand one external ID, preserving EDAM/links/licence and blocked execution authority."""
         return await lookup(ctx,'describe',source,external_id=external_id)
+
+
+    @agent.tool
+    async def propose_capability_change(ctx:RunContext[Any],capability_id:str,transition:str,descriptor:dict[str,Any],
+        routes:list[dict[str,Any]],scope:dict[str,Any],reference_seqs:list[int],rationale:str,requires_code_change:bool=False)->dict[str,Any]:
+        """Retain a reference-linked proposal; Python qualification decides registry acceptance."""
+        from src.memory.service import reference
+        from src.oncolab.governance import CapabilityProposal, propose
+        runtime=ctx.deps.runtime
+        if runtime.repository is None:raise ValueError('durable proposal references required')
+        runtime.initialize_institution()
+        if not 1<=len(reference_seqs)<=30:raise ValueError('bounded references required')
+        records=[runtime.repository.store.record_at(seq) for seq in reference_seqs]
+        if any(record is None for record in records):raise ValueError('unresolved capability proposal reference')
+        proposal=CapabilityProposal(capability_id=capability_id,transition=transition,descriptor=descriptor,routes=routes,scope=scope,
+            references=tuple(reference(r) for r in records),rationale=rationale,requires_code_change=requires_code_change,
+            parent=runtime.institution.pin().oncolab_registry_revision)
+        saved=propose(runtime.institution,proposal)
+        return {'proposal_id':saved.record_id,'status':'proposed','authority':'none'}

@@ -1,6 +1,6 @@
 # Next-stage autonomous laboratory implementation plan
 
-**Stage status: IN PROGRESS - H0/H1 DONE; H2-H8 PARTIAL; H9-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
+**Stage status: IN PROGRESS - H0/H1 DONE; H2-H9 PARTIAL; H10-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
 
 The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](references/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
@@ -82,7 +82,7 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 | H6 — GDC files/assets, deeper representation/schema search (D2) | P1, source correctness + scoped method | Build: H5, existing F4c/F5. Return-pass proof: incremental H13 misses. Supplies D7 input gates. | PARTIAL: discovery/reservation baseline; R2/D2 return work below |
 | H7 — bio.tools, EDAM and measured search expansion (D6) | P1, capability retrieval | Build: H5 and H4 baseline policy primitives. Return-pass proof: H13 scale/coverage evidence. | PARTIAL: bounded discovery/live smoke; R3/D6 evaluation return work below |
 | H8 — ecosystem enrichment | P2, scoped adapters | H7 | PARTIAL: targeted metadata/live smokes; R4 operation-reference return work below |
-| H9 — governed capability promotion/review (D1) | P1, governance | Build: H5/H7/H8 as applicable. Acceptance: H10a/D8 promotion-grade qualification, measured H13 utility and applicable H11 deployment proof. | PLANNED |
+| H9 — governed capability promotion/review (D1) | P1, governance | Build: H5/H7/H8 as applicable. Acceptance: H10a/D8 promotion-grade qualification, measured H13 utility and applicable H11 deployment proof. | PARTIAL: proposal/rejection path; accepted qualified reuse awaits return proof |
 | H10 — execution backend, scientific operations and dependency locking (D7/D8) | P0 for Railway execution, scientific correctness | Build: H2 and existing F5 admission; H6 inputs for selected science. Return-pass proof: scoped H13 evaluation; deployment in H11. | PLANNED |
 | H11 — durable Railway deployment/confinement | P0 for deployment, operations | H2/H3/H5/H10 | PLANNED |
 | H12 — oncojevlab export/publication | P2, observability | H3/H4/H5/H9/H11 records | PLANNED |
@@ -314,6 +314,12 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 **Exit proof:** distinct source fixtures prove candidate identity/filter/pagination/enrichment and truthful unsupported-runtime/access/licence status; source-specific failures do not create negatives or promote records. Reuse H7 test owner rather than duplicating interface assertions for every provider. Run owning `test_boundaries.py` cases and architecture/diff checks; bounded smokes only for adapters actually delivered.
 
 ### H9 — Governed promotion, review and engineering proposals
+
+**H9.1 — delivered proposal/rejection governance (2026-10-02):** role tools retain typed source-linked promotion/update/retirement/reverification proposals without CRUD authority. Factory composition reviews pending proposals once before the next block. Versioned Python policy requires candidate-bound admitted use across distinct inputs/blocks, immutable operation/command identity, scoped canonical/changed-input/invalid-input/scientific validation, measured utility, licence binding, fresh recoverable locked reinstall/independent replay and current-application Railway proof before reusable acceptance. Generic routes bind candidate and scope; code-requiring proposals produce EngineeringProposal. Reverification stays history-only; retirement requires scoped failed reverification. Accepted state changes use H5's atomic governed revision path; proposals/rejections preserve registry/evidence. Historical revision hashes verify exact saved content, retaining compatibility as optional route fields evolve.
+
+**Proof:** `.venv/Scripts/python.exe -m pytest tests/invariants/test_persistence.py -k 'governance or block_registry'` — 3 passed, 59 deselected in 7.64s before final factory/adverse-case gate additions. Architecture and diff checks pass. Actual source measurement/admission followed by proposed reuse is rejected for missing qualification/deployment/repeated-use proof; evidence and pinned revision stay unchanged, reviews deduplicate, and code requirements retain an engineering proposal.
+
+**Remaining acceptance/D1 disposition:** exploratory success remains ineligible for reusable promotion. H10/H13/H11 must emit actual qualification/utility/deployment proofs and the generic executor must deliver accepted reuse in a fresh block before H9 is DONE. No accepted reusable capability or target confinement is claimed by scaffolding/rejection fixtures.
 
 **Owner:** `src/oncolab/` governance/execution/registry models, persistence transitions, Director proposal tools, H10 execution identities.
 

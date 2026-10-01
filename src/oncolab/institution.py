@@ -91,8 +91,7 @@ class OncoLabInstitution:
             if history is None or history.kind != RecordKind.INSTITUTIONAL_OBSERVATION:
                 raise ValueError('unresolved institutional history boundary')
         revision = RegistryRevision.model_validate(saved.payload)
-        excluded = {'revision_id'} | ({'governance_version'} if 'governance_version' not in saved.payload else set())
-        check = revision.model_dump(mode='json', exclude=excluded)
+        check = {key:value for key,value in saved.payload.items() if key!='revision_id'}
         if content_hash(check) != revision.revision_id:
             raise ValueError('registry revision integrity mismatch')
         index = OncoLabIndex(revision.descriptors, routes=revision.routes,

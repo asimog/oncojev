@@ -67,6 +67,8 @@ def bind_repository(runtime: HarnessRuntime, repository) -> None:
             record = OncoLabVerificationRecord.model_validate(saved.payload)
             resolve_reference(repository.store, record.execution_reference)
         runtime.initialize_institution()
+        from src.oncolab.governance import review_pending
+        review_pending(runtime.institution)
         runtime.index_for()
 
 

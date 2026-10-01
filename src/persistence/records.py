@@ -13,6 +13,11 @@ from pydantic import BaseModel, Field
 
 
 class RecordKind(StrEnum):
+    CAPABILITY_PROPOSAL = "capability_proposal"
+    ENVIRONMENT_QUALIFICATION = "environment_qualification"
+    REFERENCE_VALIDATION = "reference_validation"
+    DEPLOYMENT_VERIFICATION = "deployment_verification"
+    UTILITY_EVALUATION = "utility_evaluation"
     EXTERNAL_LOOKUP = "external_lookup"
     REGISTRY_REVISION = "registry_revision"
     REGISTRY_REVIEW = "registry_review"

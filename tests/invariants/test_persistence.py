@@ -1612,3 +1612,42 @@ def test_external_discovery_tool_retains_query_identity_and_has_no_execution_aut
     reopened = SqliteResearchStore(path)
     assert reopened.records(kind=RecordKind.EXTERNAL_LOOKUP)[0].payload == saved[0].payload
     reopened.close()
+
+
+@pytest.mark.parametrize('requires_code', [False, True])
+def test_governance_rejects_unqualified_use_without_revision_or_evidence_mutation(tmp_path, requires_code):
+    from src.oncolab.governance import CapabilityProposal, propose, review_pending
+    from src.oncolab.models import OncoLabAvailability, OncoLabValidationState
+    from src.oncolab.execution import ExecutionRoute
+    from src.memory.service import reference
+    from src.runtime.pydantic_ai.factory import bind_repository
+    from src.provenance import content_hash
+    system=cycle_system();runtime=system.runtime
+    store=SqliteResearchStore(tmp_path/'governance.sqlite3')
+    bind_repository(runtime,ResearchRepository(store))
+    block=runtime.manager.allocate('descriptive attempt','qualification is separate')
+    acquisition=AcquisitionRecord(source='fixture',request={},records=({'id':'participant'},),provenance=('controlled-source',))
+    runtime.repository.record_acquisition(block.block_id,acquisition)
+    result=runtime.science.measure_acquisition(acquisition,'summary')
+    measured=runtime.repository.record_measurement(result,block.block_id)
+    evidence=runtime.repository.record_evidence(admit_scientific_evidence(result),block.block_id)
+    scope={'design':'response slice','external_id':'method'}
+    descriptor=runtime.index_for(block.block_id).describe('science.acquisition-summary').model_copy(update={
+        'capability_id':'proposed.method','availability':OncoLabAvailability.REUSABLE,
+        'validation_state':OncoLabValidationState.REUSABLE,'version':'a'*40})
+    parent=runtime.institution.pin().oncolab_registry_revision
+    proposal=CapabilityProposal(capability_id=descriptor.capability_id,transition='promotion',parent=parent,
+        descriptor=descriptor,routes=(ExecutionRoute(tool='run_reusable_method',candidate_id='unknown',scope_sha256=content_hash(scope)),),
+        scope=scope,references=(reference(measured),reference(evidence)),requires_code_change=requires_code,rationale='one observed analysis')
+    propose(runtime.institution,proposal)
+    assert runtime.institution.pin().oncolab_registry_revision==parent
+    decisions=review_pending(runtime.institution)
+    assert len(decisions)==1 and decisions[0]['status']=='rejected'
+    assert 'missing:environment_qualification' in decisions[0]['reasons']
+    assert 'missing:deployment_verification' in decisions[0]['reasons']
+    assert 'missing_repeated_validated_use_history' in decisions[0]['reasons']
+    assert not review_pending(runtime.institution)
+    assert runtime.institution.pin().oncolab_registry_revision==parent
+    assert store.records(kind=RecordKind.EVIDENCE)==(evidence,)
+    assert bool(store.records(kind=RecordKind.ENGINEERING_PROPOSAL))==requires_code
+    store.close()

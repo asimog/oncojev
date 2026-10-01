@@ -13,6 +13,8 @@ class ExecutionRoute(BaseModel, frozen=True):
     required_inputs: tuple[str, ...] = ()
     minimum_rows: int = Field(default=0, ge=0)
     exploratory: bool = False
+    candidate_id: str | None = None
+    scope_sha256: str | None = None
 
 
 ROUTES = {
