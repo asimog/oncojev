@@ -112,6 +112,70 @@ def test_director_global_frontier_retains_replication_relations_and_rejects_stal
     reopened.close()
 
 
+
+def test_block_registry_search_remains_pinned_after_governed_change(tmp_path):
+    """Old tool contracts/history survive accepted changes; next allocation refreshes."""
+    import asyncio
+    from src.oncolab.institution import InstitutionalObservation
+    from src.oncolab.models import OncoLabAvailability
+    from src.provenance import content_hash
+    from src.runtime.pydantic_ai.contracts import ResearcherDeps
+    from src.runtime.pydantic_ai.factory import bind_repository
+    system = cycle_system()
+    runtime = system.runtime
+    store = SqliteResearchStore(tmp_path / 'institution.sqlite3')
+    bind_repository(runtime, ResearchRepository(store))
+    first = runtime.manager.allocate('check registry', 'pin initial contracts')
+    old = runtime.index_for(first.block_id)
+    descriptor = old.describe('stat.scipy')
+    changed = descriptor.model_copy(update={'purpose': 'Governed changed scientific contract', 'availability': OncoLabAvailability.FORBIDDEN})
+    descriptors = tuple(changed if d.capability_id == changed.capability_id else d for d in old.descriptors())
+    change = {'descriptors': [d.model_dump(mode='json') for d in descriptors],
+              'routes': {k: [r.model_dump(mode='json') for r in v] for k, v in old.routes.items()}}
+    review = store.append(StoredRecord(kind=RecordKind.REGISTRY_REVIEW, record_id='review',
+        payload={'status': 'accepted', 'parent': old.revision_id, 'change_sha256': content_hash(change)}))
+    runtime.institution.accept(descriptors, old.routes, expected_parent=old.revision_id, governance_reference=review.seq)
+    runtime.institution.observe(InstitutionalObservation(observation_id='demand', capability_id='stat.scipy',
+        kind='demand', source_seq=review.seq, payload={'need': 'distinct test'}, provenance='review-linked demand'))
+    second = runtime.manager.allocate('check next registry', 'refresh accepted contracts')
+    assert second.start.oncolab_registry_revision != first.start.oncolab_registry_revision
+    assert second.start.oncolab_history_high_water > first.start.oncolab_history_high_water
+    runtime.index_for()  # Director sees new state while the old Researcher is active.
+    results = []
+    async def model(messages, info):
+        if not any(isinstance(m, ModelResponse) for m in messages):
+            return ModelResponse(parts=[ToolCallPart('run_code', {'code':
+                'contract = await describe_oncolab(capability_id="stat.scipy")\n'
+                'assert contract is not None\ncontract["descriptor"]["purpose"]'}, tool_call_id='pinned')])
+        results.extend(str(p.content) for m in messages for p in m.parts if hasattr(p, 'content'))
+        return ModelResponse(parts=[TextPart('checked')])
+    with system.agents.researcher.override(model=scripted(model)):
+        asyncio.run(system.agents.researcher.run('describe original contract', deps=ResearcherDeps(runtime, first.block_id)))
+    assert any(descriptor.purpose in result for result in results), results
+    receipts = store.records(kind=RecordKind.INDEX_RECEIPT)
+    assert receipts[-1].payload['oncolab_registry_revision'] == old.revision_id
+    assert receipts[-1].payload['oncolab_history_high_water'] == first.start.oncolab_history_high_water
+    assert runtime.index_for(second.block_id).describe('stat.scipy').purpose == changed.purpose
+    revision = runtime.institution.pin().oncolab_registry_revision
+    runtime.append_event(first.block_id, 'CapabilityInvocation', {'capability_id': 'stat.scipy', 'invocation_id': 'old-scope'})
+    assert runtime.institution.pin().oncolab_registry_revision == revision
+    assert runtime.institution.pin().oncolab_history_high_water > second.start.oncolab_history_high_water
+    assert runtime.index_for(first.block_id).history_high_water == first.start.oncolab_history_high_water
+    with pytest.raises(ValueError, match='pinned registry'):
+        runtime.append_event(second.block_id, 'CapabilityInvocation', {'capability_id': 'stat.scipy'})
+    cursor = old.search_page(limit=1).continuation
+    with pytest.raises(ValueError, match='continuation'):
+        runtime.index_for(second.block_id).search_page(limit=1, continuation=cursor)
+    pin = first.start
+    store.close()
+    reopened = SqliteResearchStore(tmp_path / 'institution.sqlite3')
+    from src.oncolab.institution import OncoLabInstitution, RegistryPin
+    institution = OncoLabInstitution(reopened, old, pin.application_identity)
+    historical = institution.index(RegistryPin(oncolab_registry_revision=pin.oncolab_registry_revision,
+        oncolab_history_high_water=pin.oncolab_history_high_water, application_identity=pin.application_identity))
+    assert historical.describe('stat.scipy') == descriptor
+    reopened.close()
+
 def scripted(function):
     async def stream(messages, info):
         response = await function(messages, info)

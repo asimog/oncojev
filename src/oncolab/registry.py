@@ -95,7 +95,8 @@ class OncoLabIndex:
         return tuple(descriptor for _, descriptor in ranked[:limit])
 
     def describe(self, capability_id: str) -> OncoLabDescriptor | None:
-        return self._by_id.get(capability_id)
+        item = self._by_id.get(capability_id)
+        return item.model_copy(deep=True) if item is not None else None
 
     @property
     def snapshot_id(self) -> str:

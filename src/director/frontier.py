@@ -35,7 +35,6 @@ class PreparedFrontier(BaseModel, frozen=True):
     relations: tuple[dict[str, Any], ...] = Field(max_length=40)
     limitations: tuple[str, ...] = (
         "Semantic relations and rejection are not scientific findings or resolutions.",
-        "Application and verification-history revision pins await H5.",
         "Lexical retrieval can miss synonyms; labelled utility remains unverified.",
     )
 
@@ -50,7 +49,9 @@ def current_basis(runtime) -> str:
     # Global measurements/notes do not invalidate themselves. Scientific and
     # operational block changes do; no mutable in-memory counter is a basis.
     latest = {kind.value: record.seq if (record := store.latest(kind)) else 0 for kind in MATERIAL_KINDS}
-    return content_hash({"records": latest, "index": runtime.oncolab.snapshot_id,
+    index = runtime.index_for()
+    pin = runtime.institution.pin().model_dump(mode="json") if runtime.institution else None
+    return content_hash({"records": latest, "index": index.snapshot_id, "institution": pin,
                          "mission": runtime.mission_id, "version": "global-frontier-v1"})
 
 

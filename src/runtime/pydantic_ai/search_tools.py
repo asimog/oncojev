@@ -25,7 +25,7 @@ def register_search_page(agent):
         if effective<1:
             return {"cards":[],"exhausted":False,"status":"retrieval_budget_exhausted","retryable":False}
         kinds=tuple(OncoLabKind(k) for k in kinds)
-        page=runtime.oncolab.search_page(query,kinds=kinds,tags=tags,limit=effective,continuation=continuation)
+        page=runtime.index_for(block_id).search_page(query,kinds=kinds,tags=tags,limit=effective,continuation=continuation)
         runtime._counts[key]=runtime._counts.get(key,0)+len(page.cards)
         receipt=runtime.index_receipt("researcher" if block_id else "director","search_page",block_id=block_id,
             query=query,kinds=tuple(kinds),tags=tuple(tags),requested_limit=limit,effective_limit=effective,
@@ -85,13 +85,13 @@ def register_local_semantic_tools(agent):
                             operation: str | None = None) -> dict[str, Any]:
         """Describe an ID, check owned inputs/routes, measure semantic fit; never grants execution."""
         runtime=ctx.deps.runtime; block_id=ctx.deps.block_id
-        contract=runtime.oncolab.describe_with_verification(capability_id)
+        contract=runtime.index_for(block_id).describe_with_verification(capability_id)
         if contract is None:raise ValueError("unknown capability ID")
         receipt=runtime.index_receipt("researcher","describe",block_id=block_id,requested_id=capability_id,
-            returned_ids=(capability_id,),contract_hashes={capability_id:contract["contract_sha256"]},snapshot_id=runtime.oncolab.snapshot_id)
-        checks=check_routes(runtime.oncolab.describe(capability_id),available_inputs(runtime,block_id,acquisition_ids),operation)
+            returned_ids=(capability_id,),contract_hashes={capability_id:contract["contract_sha256"]},snapshot_id=runtime.index_for(block_id).snapshot_id)
+        checks=check_routes(runtime.index_for(block_id).describe(capability_id),available_inputs(runtime,block_id,acquisition_ids),operation,routes=runtime.index_for(block_id).routes)
         payload={"need":need,"contract":contract["descriptor"],"execution_routes":contract["execution_routes"],"checks":checks,
-                 "contract_sha256":contract["contract_sha256"],"description_receipt":receipt.receipt_id,"snapshot_id":runtime.oncolab.snapshot_id}
+                 "contract_sha256":contract["contract_sha256"],"description_receipt":receipt.receipt_id,"snapshot_id":runtime.index_for(block_id).snapshot_id}
         result=await measure_async(runtime,block_id,"method",capability_id,payload,eligible=checks["eligible"])
         assessment={**result,"checks":checks,"contract_sha256":contract["contract_sha256"],"need_sha256":content_hash(need)}
         runtime.method_assessments[f"{block_id}:{capability_id}"]=assessment

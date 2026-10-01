@@ -74,4 +74,10 @@ Current source/analysis, replay and retention behavior is described in
 The bundled Pearson verification proves only its declared three-row fixture;
 provided-array statistics and SVG figures remain exploratory.
 
-Registry/history revisions, external discovery and reusable qualification belong to the [active plan](IMPLEMENTATION_PLAN.md) (H5-H10).
+OncoLab registry revisions retain accepted descriptors and routes separately from
+append-only institutional usage, failure, suitability and verification history.
+Blocks pin their registry revision, history boundary and application identity;
+subsequent observations or accepted changes do not rewrite their contracts.
+New allocations see the current accepted basis. Legacy unpinned context remains
+unknown. External discovery and reusable qualification acceptance remain in the
+[active plan](IMPLEMENTATION_PLAN.md).

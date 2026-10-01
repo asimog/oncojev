@@ -281,9 +281,26 @@ class HarnessRuntime:
     def append_event(self, block_id: str, event_type: str, payload: dict[str, Any]) -> LedgerEvent:
         if self._owner_thread is not None and threading.get_ident() != self._owner_thread:
             raise RuntimeError("runtime mutations belong to the service event-loop owner")
+        if event_type == "CapabilityInvocation":
+            from src.oncolab.models import OncoLabAvailability, OncoLabAccessPolicy
+            index = self.index_for(block_id)
+            capability = payload.get("capability_id")
+            descriptor = index.describe(capability)
+            if (descriptor is None or not index.routes.get(capability)
+                    or descriptor.availability in {OncoLabAvailability.FORBIDDEN, OncoLabAvailability.UNAVAILABLE, OncoLabAvailability.KNOWN}
+                    or descriptor.access_policy in {OncoLabAccessPolicy.FORBIDDEN, OncoLabAccessPolicy.REVIEW_REQUIRED}):
+                raise ValueError("capability execution disallowed by pinned registry")
         event = LedgerEvent(event_type=event_type, occurred_at=datetime.now(UTC), payload=payload)
         self.manager.ledger(block_id).append(event)
         stored = self.repository.record_ledger_event(block_id, event) if self.repository else None
+        history_kind = {"CapabilityInvocation": "usage", "CapabilityResult": "execution",
+                        "CapabilityFailure": "failure", "ExternalCapabilityRequested": "demand"}.get(event_type)
+        if stored and history_kind:
+            self.initialize_institution()
+            from src.oncolab.institution import InstitutionalObservation
+            self.institution.observe(InstitutionalObservation(observation_id=event.event_id,
+                capability_id=payload.get("capability_id"), kind=history_kind, source_seq=stored.seq,
+                payload=payload, provenance="typed runtime event; execution outcome is not a scientific interpretation"))
         if event_type in {"EvidenceAdmission", "ScopeEscalationRequested", "CapabilityFailure"}:
             notification = {"event_id": event.event_id, "event_type": event_type, "block_id": block_id,
                             "ledger_seq": stored.seq if stored else None, "detail": payload}
@@ -331,15 +348,28 @@ class HarnessRuntime:
             execution_scope=scope, outcome=outcome, source_reference="runtime typed execution",
             evidence=(kind, record_id))
         if self.repository is not None:
-            self.repository.record_verification(record)
-        self.oncolab.record_verification(record)
+            saved = self.repository.record_verification(record)
+        self.initialize_institution()
+        if self.institution is not None:
+            from src.oncolab.institution import InstitutionalObservation
+            self.institution.observe(InstitutionalObservation(
+                observation_id='durable:' + saved.record_id, capability_id=capability_id,
+                kind='verification', source_seq=saved.seq, payload=saved.payload,
+                provenance='durable verification; historical block pins unknown'))
+        else:
+            self.oncolab.record_verification(record)
 
     def index_receipt(self, actor, operation, *, block_id=None, **detail):
+        index = self.index_for(block_id)
         selected = detail.get("selected_id")
-        if selected is not None and self.oncolab.describe(selected) is None:
+        if selected is not None and index.describe(selected) is None:
             raise ValueError("selected capability is not in the catalogue")
         receipt = IndexReceipt(actor=actor, operation=operation, block_id=block_id,
-                               mission_id=self.mission_id, cycle_id=self.cycle_id, **detail)
+                               mission_id=self.mission_id, cycle_id=self.cycle_id,
+                               oncolab_registry_revision=index.revision_id,
+                               oncolab_history_high_water=index.history_high_water,
+                               application_identity=(self.manager.block(block_id).start.application_identity if block_id
+                                   else self.institution.application if self.institution else None), **detail)
         if self.repository is not None:
             self.repository.record_index_receipt(receipt)
         if block_id is not None:
@@ -565,16 +595,16 @@ def register_director_tools(
         ctx: RunContext[DirectorDeps], query: str = "", kinds: list[OncoLabKind] = [], tags: list[str] = [], limit: int = 8
     ) -> list[dict[str, Any]]:
         """Search bounded capability planning metadata; this never executes science."""
-        matches = ctx.deps.runtime.oncolab.search(query, kinds=kinds, tags=tags, limit=min(limit, ctx.deps.runtime.oncolab_search_k))
+        matches = ctx.deps.runtime.index_for().search(query, kinds=kinds, tags=tags, limit=min(limit, ctx.deps.runtime.oncolab_search_k))
         ctx.deps.runtime.index_receipt("director", "search", query=query, kinds=tuple(kinds), tags=tuple(tags),
                                       requested_limit=limit, effective_limit=min(limit, ctx.deps.runtime.oncolab_search_k),
                                       returned_ids=tuple(m.capability_id for m in matches))
-        return [ctx.deps.runtime.oncolab.card(match).model_dump(mode="json") for match in matches]
+        return [ctx.deps.runtime.index_for().card(match).model_dump(mode="json") for match in matches]
 
     @agent.tool
     async def describe_oncolab(ctx: RunContext[DirectorDeps], capability_id: str) -> dict[str, Any] | None:
         """Describe one capability and bounded verification history; neither grants execution authority."""
-        result = ctx.deps.runtime.oncolab.describe_with_verification(capability_id)
+        result = ctx.deps.runtime.index_for().describe_with_verification(capability_id)
         ctx.deps.runtime.index_receipt("director", "describe", requested_id=capability_id,
                                       returned_ids=(capability_id,) if result else ())
         return result
@@ -592,6 +622,7 @@ def register_director_tools(
         if pending:
             runtime.append_event(pending[0].block_id, "DirectorAllocationRejected", {"reason": "single_researcher_allocation"})
             raise RuntimeError("another Researcher block is already allocated")
+        runtime.initialize_institution()
         memory = runtime.memory_service()
         start_memory = memory.start_context(objective, context=await semantic_memory_context_async(runtime,objective)) if memory else None
         if frontier_id is not None or candidate_id is not None:
@@ -708,16 +739,16 @@ def register_researcher_tools(
         """Search the same bounded global index for local block planning; this never executes a result."""
         runtime = ctx.deps.runtime
         effective = min(limit, runtime.oncolab_search_k)
-        matches = runtime.oncolab.search(query, kinds=kinds, tags=tags, limit=effective)
+        matches = runtime.index_for(ctx.deps.block_id).search(query, kinds=kinds, tags=tags, limit=effective)
         runtime.index_receipt("researcher", "search", block_id=ctx.deps.block_id, query=query, kinds=tuple(kinds),
                               tags=tuple(tags), requested_limit=limit, effective_limit=effective,
                               returned_ids=tuple(m.capability_id for m in matches))
-        return [runtime.oncolab.card(match).model_dump(mode="json") for match in matches]
+        return [runtime.index_for(ctx.deps.block_id).card(match).model_dump(mode="json") for match in matches]
 
     @agent.tool
     async def describe_oncolab(ctx: RunContext[ResearcherDeps], capability_id: str) -> dict[str, Any] | None:
         """Describe one global capability and its verification history before choosing a typed wrapper."""
-        result = ctx.deps.runtime.oncolab.describe_with_verification(capability_id)
+        result = ctx.deps.runtime.index_for(ctx.deps.block_id).describe_with_verification(capability_id)
         ctx.deps.runtime.index_receipt("researcher", "describe", block_id=ctx.deps.block_id, requested_id=capability_id,
                                       returned_ids=(capability_id,) if result else ())
         return result
@@ -792,7 +823,7 @@ def register_researcher_tools(
         if not why_existing_capabilities_are_inadequate.strip():
             raise ValueError("an explicit inadequacy rationale is required before external acquisition")
         runtime = ctx.deps.runtime
-        matches = runtime.oncolab.search(capability_need, limit=runtime.oncolab_search_k)
+        matches = runtime.index_for(ctx.deps.block_id).search(capability_need, limit=runtime.oncolab_search_k)
         runtime.index_receipt("researcher", "search", block_id=ctx.deps.block_id, query=capability_need,
                               requested_limit=20, effective_limit=runtime.oncolab_search_k,
                               returned_ids=tuple(m.capability_id for m in matches))

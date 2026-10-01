@@ -19,6 +19,7 @@ async def prepare_frontier(runtime, objective, *, limit=10):
         raise RuntimeError("durable memory required for global frontier")
     memory.backfill()
     basis = current_basis(runtime)
+    index = runtime.index_for()
     candidates, omitted = generate(memory.search(objective, mission_id=runtime.mission_id, limit=20), limit=limit)
     measured, relations = [], []
     seen_pairs = set()
@@ -57,10 +58,10 @@ async def prepare_frontier(runtime, objective, *, limit=10):
             runtime.repository.store.append(StoredRecord(kind=RecordKind.GLOBAL_RELATION,
                 record_id=relation["relation_id"], payload=relation))
             relations.append(relation)
-        cards = runtime.oncolab.search(candidate.objective, limit=3)
+        cards = index.search(candidate.objective, limit=3)
         payload = {"mission": objective, "candidate": candidate.model_dump(mode="json"),
                    "comparison": [c.model_dump(mode="json") for c in neighbours],
-                   "capabilities": [runtime.oncolab.card(c).model_dump(mode="json") for c in cards],
+                   "capabilities": [index.card(c).model_dump(mode="json") for c in cards],
                    "block_seconds": runtime.manager.policy.default_seconds if runtime.manager.policy else 900,
                    "relations": [{"relation_id": r["relation_id"], "status": r["status"]} for r in relations[-2:]]}
         result, failure = await measure("global_investigation", candidate.candidate_id, payload)

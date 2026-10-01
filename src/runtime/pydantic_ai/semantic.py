@@ -68,6 +68,15 @@ async def measure_async(runtime, block_id, context_type, identity, payload, *, e
     receipt=receipt.model_copy(update={"outcome":"completed","duration_ms":(perf_counter()-started)*1000,"decisions":tuple(decisions),
         "models_resolved":tuple(sorted({d.model_resolved for d in decisions})),"reported_metadata":getattr(decisions,"metadata",None)})
     record(receipt)
+    if block_id is not None and context_type == "method" and runtime.repository is not None:
+        from src.oncolab.institution import InstitutionalObservation
+        from src.persistence.records import RecordKind
+        runtime.initialize_institution()
+        saved = runtime.repository.store.latest(RecordKind.JEV_CALL)
+        runtime.institution.observe(InstitutionalObservation(observation_id="suitability:" + receipt.call_id,
+            capability_id=identity, kind="suitability", source_seq=saved.seq,
+            payload={"call_id": receipt.call_id, "eligible": eligible, "need": payload.get("need")},
+            provenance="semantic suitability; no scientific validation or execution authority"))
     frontier=policy.interpret(identity,decisions,questions,(receipt.call_id,projection.projection_id),eligible=eligible,escalate=escalate)
     result={"call_id":receipt.call_id,"context_type":context_type,"projection_id":projection.projection_id,"projection_sha256":projection.payload_sha256,
             "policy_version":receipt.policy_version,"decisions":[d.model_dump(mode="json") for d in decisions],

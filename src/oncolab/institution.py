@@ -21,6 +21,7 @@ class RegistryRevision(BaseModel, frozen=True):
     revision_id: str
     parent: str | None = None
     application_identity: str
+    governance_version: Literal["registry-governance-v1"] = "registry-governance-v1"
     descriptors: tuple[OncoLabDescriptor, ...]
     routes: dict[str, tuple[ExecutionRoute, ...]]
     governance_reference: int | None = None
@@ -52,7 +53,7 @@ class OncoLabInstitution:
                 self._append_revision(None, seed.descriptors(), seed.routes, None, 'curated_seed')
             for descriptor in seed.descriptors():
                 for verification in seed.verification_records(descriptor.capability_id):
-                    self.observe(InstitutionalObservation(observation_id='bundled:' + verification.verification_id,
+                    self.observe(InstitutionalObservation(observation_id='bundled:' + verification.capability_id + ':' + verification.verification_id,
                         capability_id=verification.capability_id, kind='verification',
                         payload=verification.model_dump(mode='json'), provenance='integrity-checked bundled seed; historical block pins unknown'))
             for record in store.records(kind=RecordKind.VERIFICATION):
@@ -85,8 +86,13 @@ class OncoLabInstitution:
         saved = next((r for r in self.store.records(kind=RecordKind.REGISTRY_REVISION) if r.record_id == pin.oncolab_registry_revision), None)
         if saved is None:
             raise ValueError('unresolved immutable registry revision')
+        if pin.oncolab_history_high_water:
+            history = self.store.record_at(pin.oncolab_history_high_water)
+            if history is None or history.kind != RecordKind.INSTITUTIONAL_OBSERVATION:
+                raise ValueError('unresolved institutional history boundary')
         revision = RegistryRevision.model_validate(saved.payload)
-        check = revision.model_dump(mode='json', exclude={'revision_id'})
+        excluded = {'revision_id'} | ({'governance_version'} if 'governance_version' not in saved.payload else set())
+        check = revision.model_dump(mode='json', exclude=excluded)
         if content_hash(check) != revision.revision_id:
             raise ValueError('registry revision integrity mismatch')
         index = OncoLabIndex(revision.descriptors, routes=revision.routes,

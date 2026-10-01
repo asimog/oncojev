@@ -1,6 +1,6 @@
 # Next-stage autonomous laboratory implementation plan
 
-**Stage status: IN PROGRESS - H0/H1 DONE; H2-H4 PARTIAL; H5-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
+**Stage status: IN PROGRESS - H0/H1 DONE; H2-H5 PARTIAL; H6-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
 
 The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](references/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
@@ -78,7 +78,7 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 | H2 — non-blocking single-Researcher lifecycle | P0, lifecycle correctness | H1 | PARTIAL: H2.1/H2.2 local proof; return tasks below |
 | H3 — event-driven turns, BlockDelta and stale-basis revalidation | P0, lifecycle/provenance | H2, existing F3/F6 | PLANNED |
 | H4 — global semantics, generators and hypothesis refinement (D3/D4) | P1, semantic method | Build: H3. Return-pass proof: H6/H7 generators and H13/H14 contract comparison. | PLANNED |
-| H5 — revisioned institutional OncoLab | P1, durable contracts | H3, existing catalogue/F2 | PLANNED |
+| H5 — revisioned institutional OncoLab | P1, durable contracts | H3, existing catalogue/F2 | PARTIAL: immutable basis/history integrated; R1/evaluation return work below |
 | H6 — GDC files/assets, deeper representation/schema search (D2) | P1, source correctness + scoped method | Build: H5, existing F4c/F5. Return-pass proof: incremental H13 misses. Supplies D7 input gates. | PLANNED |
 | H7 — bio.tools, EDAM and measured search expansion (D6) | P1, capability retrieval | Build: H5 and H4 baseline policy primitives. Return-pass proof: H13 scale/coverage evidence. | PLANNED |
 | H8 — ecosystem enrichment | P2, scoped adapters | H7 | PLANNED |
@@ -207,6 +207,12 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 **Acceptance:** useful alternative tests and independent replication remain retained; exact/semantic duplicates are distinguished; hypotheses, semantic rejection and relation candidates never become evidence or scientific negatives. Behavioral regressions belong to `test_boundaries.py`; durable portfolio identity/reopen belongs to `test_persistence.py`; utility/alignment labels belong to H13.
 
 ### H5 — Dynamic, immutable OncoLab institutional knowledge
+
+**H5.1 — delivered local immutable-basis integration (2026-10-01):** every block search/describe/suitability path resolves its frozen registry and verification-history boundary; search/selection receipts include registry/history/application identities. New allocations refresh accepted state without restart. Runtime execution checks reject absent, unavailable, forbidden or unrouted capabilities against the pinned revision; ordinary usage/results/failures, verification and suitability append source-linked institutional history without creating revisions. Bundled verification identity includes capability ID to prevent seed collisions. H4 prepared-frontier revalidation includes current registry/history/application basis. Historical revisions remain reconstructible and unpinned legacy starts remain explicitly unknown.
+
+**Proof:** `.venv/Scripts/python.exe -m pytest tests/invariants/test_persistence.py tests/invariants/test_boundaries.py tests/invariants/test_live_mode.py` — 112 passed in 84.65s during integration. Final `.venv/Scripts/python.exe -m pytest tests/invariants/test_persistence.py tests/invariants/test_boundaries.py -k 'block_registry or director_global_frontier or semantic_method or researcher_can_use_sandbox'` — 5 passed, 77 deselected in 9.77s. The new real Researcher/CodeMode regression first exposed seed identity collision, then failed with the newer contract returned to the original block; after repair it protects old/new contract isolation, observation-only history, forbidden execution, cursor rejection and immutable reopen. Architecture and diff checks pass. Local proof only.
+
+**Remaining acceptance:** R1 explicit scientific attempt/outcome context and H4/H13 labelled retrieval comparisons remain; H9 governs promotion/review transitions and H10/H11 qualify execution/deployment. H5 is PARTIAL; these integration tests do not close its scientific utility gate.
 
 **Owner:** `src/oncolab/{models,registry,catalogue,execution}.py`, `src/persistence/{records,repository,reconstruct,store}.py`, allocation/start models, factory/search tools.
 
