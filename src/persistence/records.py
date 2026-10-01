@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 
 class RecordKind(StrEnum):
+    EXTERNAL_LOOKUP = "external_lookup"
     REGISTRY_REVISION = "registry_revision"
     REGISTRY_REVIEW = "registry_review"
     INSTITUTIONAL_OBSERVATION = "institutional_observation"

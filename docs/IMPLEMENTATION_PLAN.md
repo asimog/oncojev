@@ -1,6 +1,6 @@
 # Next-stage autonomous laboratory implementation plan
 
-**Stage status: IN PROGRESS - H0/H1 DONE; H2-H6 PARTIAL; H7-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
+**Stage status: IN PROGRESS - H0/H1 DONE; H2-H7 PARTIAL; H8-H14 PLANNED.** Delivered local batches and remaining integrations are recorded below; deployment, promotion and publication are not yet claimed.
 
 The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](references/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
 
@@ -80,7 +80,7 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 | H4 — global semantics, generators and hypothesis refinement (D3/D4) | P1, semantic method | Build: H3. Return-pass proof: H6/H7 generators and H13/H14 contract comparison. | PLANNED |
 | H5 — revisioned institutional OncoLab | P1, durable contracts | H3, existing catalogue/F2 | PARTIAL: immutable basis/history integrated; R1/evaluation return work below |
 | H6 — GDC files/assets, deeper representation/schema search (D2) | P1, source correctness + scoped method | Build: H5, existing F4c/F5. Return-pass proof: incremental H13 misses. Supplies D7 input gates. | PARTIAL: discovery/reservation baseline; R2/D2 return work below |
-| H7 — bio.tools, EDAM and measured search expansion (D6) | P1, capability retrieval | Build: H5 and H4 baseline policy primitives. Return-pass proof: H13 scale/coverage evidence. | PLANNED |
+| H7 — bio.tools, EDAM and measured search expansion (D6) | P1, capability retrieval | Build: H5 and H4 baseline policy primitives. Return-pass proof: H13 scale/coverage evidence. | PARTIAL: bounded discovery/live smoke; R3/D6 evaluation return work below |
 | H8 — ecosystem enrichment | P2, scoped adapters | H7 | PLANNED |
 | H9 — governed capability promotion/review (D1) | P1, governance | Build: H5/H7/H8 as applicable. Acceptance: H10a/D8 promotion-grade qualification, measured H13 utility and applicable H11 deployment proof. | PLANNED |
 | H10 — execution backend, scientific operations and dependency locking (D7/D8) | P0 for Railway execution, scientific correctness | Build: H2 and existing F5 admission; H6 inputs for selected science. Return-pass proof: scoped H13 evaluation; deployment in H11. | PLANNED |
@@ -261,6 +261,12 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 **Acceptance:** demonstrated available useful representations survive retrieval and frontier policy; wrong entity unit/access/schema/prerequisite remains rejected deterministically. `test_boundaries.py` protects those source-to-frontier behaviors; H13 measures missed/recovered alternatives. This batch supplies available-schema/input contracts to H10's D7 scientific operation batches without declaring those operations delivered.
 
 ### H7 — bio.tools, EDAM and measured catalogue/search expansion
+
+**H7.1 — delivered bounded metadata discovery (2026-10-02):** shared source/need/filter/query-bound continuation search and single-ID describe use public bio.tools, preserving bounded EDAM operation/input/output/topic/format, software links, version/licence/publication metadata and omissions. Exact bounded raw responses, retrieval timestamps, hashes and requests persist separately from registry contracts; institutional inspections/failures append history only. Director has an independent ten-lookup ceiling; Researcher uses its source allowance, with service download metering. Agent tools return at most 32 KiB, never raw payloads. Unsupported filters, foreign cursors, changed query identity and missing executable catalogue identity fail explicitly; no listing grants installation, validation, evidence or reusable promotion. Selection evaluation now uses the actual pinned block index/routes.
+
+**Proof:** `.venv/Scripts/python.exe -m pytest tests/invariants/test_persistence.py tests/invariants/test_evaluation.py -k 'external_discovery or selection'` — 3 passed, 67 deselected in 7.42s before final response assertion. Architecture/diff checks pass. Live search `q=deseq2`, `name=DESeq2`, `per_page=2`, page 1 returned one candidate/3,986 bytes, response SHA-256 `940412ac6b512ff2bcf81d7704df355197390da3b9c3ae9ace16e1d2b3a7cb01`; describe returned 3,937 bytes/SHA-256 `724ab94fb2d6a2ce819e0a620e240a50dc65eec03abd86f7925fd23a127a103e`. Its returned count-matrix input, differential-expression operation and LGPL metadata are discovery facts, not scientific or R runtime qualification. Current [API reference](https://biotools.readthedocs.io/en/latest/api_reference.html) checked for supported filters/page/IDs.
+
+**D6 baseline/evaluation disposition:** `.venv/Scripts/python.exe -m scripts.evaluate_selection --output var/h7-selection.json` evaluated all 108 current descriptors, retained 1.0 recall for each labelled useful set under both fixture conditions, zero operational failures; maximum per-task durations were 0.0311s deterministic and 0.1697s fixture-assisted. Current-scale scan is retained; this corpus does not justify FTS, ontology ingestion or embeddings and does not establish held-out method suitability. R3 paired method/representation cases, growing-curated-catalogue comparisons and any earned vocabulary/FTS extensions remain current-phase return work through H13; H7 stays PARTIAL.
 
 **Owner:** one external discovery contract/adapter family in `src/oncolab/`, typed persistence/search receipts, `src/runtime/pydantic_ai/search_tools.py` and semantic adapter.
 

@@ -170,6 +170,7 @@ class HarnessRuntime:
     _owner_loop: asyncio.AbstractEventLoop | None = None
     _owner_thread: int | None = None
     _counts: dict[str, int] = field(default_factory=dict)
+    external_discovery: Any = None
     institution: Any = None
     _block_indexes: dict[str, Any] = field(default_factory=dict)
 
@@ -563,6 +564,8 @@ def register_director_tools(
 ) -> None:
     register_memory_tools(agent)
     register_search_page(agent)
+    from src.runtime.pydantic_ai.discovery_tools import register_discovery_tools
+    register_discovery_tools(agent)
     from src.runtime.pydantic_ai.global_tools import register_global_tools
     register_global_tools(agent)
     @agent.tool
@@ -686,6 +689,8 @@ def register_researcher_tools(
 ) -> None:
     register_memory_tools(agent)
     register_search_page(agent)
+    from src.runtime.pydantic_ai.discovery_tools import register_discovery_tools
+    register_discovery_tools(agent)
     semantic_tools=register_local_semantic_tools(agent)
     from src.runtime.pydantic_ai.scientific_tools import register_scientific_tools
     register_scientific_tools(agent)

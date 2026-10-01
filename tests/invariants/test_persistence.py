@@ -1556,3 +1556,59 @@ def test_research_event_turn_is_bounded_and_never_cancels_the_researcher(notific
     finally:
         release.set()
         repo.store.close()
+
+
+@pytest.mark.parametrize("outage", [False, True])
+def test_external_discovery_tool_retains_query_identity_and_has_no_execution_authority(tmp_path, outage):
+    import asyncio
+    import httpx
+    from src.oncolab.discovery import ExternalDiscovery
+    from src.runtime.pydantic_ai.contracts import DirectorDeps
+    from src.runtime.pydantic_ai.factory import bind_repository
+    requests = []
+    row = {"biotoolsID": "method", "name": "Method", "description": "Reference operation with count inputs",
+        "license": "GPL-3.0", "function": [{"operation": [{"uri": "http://edamontology.org/operation_1", "term": "Testing"}],
+            "input": [{"data": {"uri": "http://edamontology.org/data_1", "term": "Counts"}}]}],
+        "link": [{"url": "https://github.com/example/method", "type": ["Repository"]}]}
+    def transport(request):
+        requests.append(request)
+        if outage:return httpx.Response(503, json={"error": "registry temporarily unavailable"})
+        return httpx.Response(200, json={"list": [row], "count": 2, "next": "?page=2"})
+    system = cycle_system()
+    runtime = system.runtime
+    path = tmp_path / 'external.sqlite3'
+    store = SqliteResearchStore(path)
+    bind_repository(runtime, ResearchRepository(store))
+    revision = runtime.institution.pin().oncolab_registry_revision
+    runtime.external_discovery = ExternalDiscovery(httpx.MockTransport(transport))
+    results = []
+    async def model(messages, info):
+        if not any(isinstance(m, ModelResponse) for m in messages):
+            return ModelResponse(parts=[ToolCallPart('run_code', {'code':
+                'await search_external_capabilities(source="bio.tools", need="count testing", filters={"operationID":"operation_1"}, limit=1)'}, tool_call_id='external')])
+        results.extend(str(p.content) for m in messages for p in m.parts if hasattr(p, 'content'))
+        return ModelResponse(parts=[TextPart('registry inspected')])
+    with system.agents.director.override(model=scripted(model)):
+        asyncio.run(system.agents.director.run('inspect a missing method', deps=DirectorDeps(runtime)))
+    saved = store.records(kind=RecordKind.EXTERNAL_LOOKUP)
+    assert len(saved) == 1
+    assert requests[0].url.params['operationID'] == '"operation_1"'
+    if outage:
+        assert saved[0].payload['status'] == 'failed' and saved[0].payload['error_type'] == 'HTTPStatusError'
+    else:
+        payload = saved[0].payload
+        assert payload['cards'][0]['external_id'] == 'method'
+        assert payload['cards'][0]['inputs'][0]['data']['term'] == 'Counts'
+        assert payload['raw_json'] and payload['response_sha256']
+        assert all('raw_json' not in result for result in results)
+        assert any('Counts' in result and 'metadata_only' in result for result in results), results
+        with pytest.raises(ValueError, match='continuation'):
+            asyncio.run(runtime.external_discovery.search('bio.tools','changed need',continuation=payload['continuation'],limit=1))
+        with pytest.raises(ValueError, match='catalogue'):
+            runtime.index_receipt('director','execute',selected_id='bio.tools:method')
+    assert runtime.institution.pin().oncolab_registry_revision == revision
+    assert not store.records(kind=RecordKind.EVIDENCE)
+    store.close()
+    reopened = SqliteResearchStore(path)
+    assert reopened.records(kind=RecordKind.EXTERNAL_LOOKUP)[0].payload == saved[0].payload
+    reopened.close()

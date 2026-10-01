@@ -81,3 +81,11 @@ subsequent observations or accepted changes do not rewrite their contracts.
 New allocations see the current accepted basis. Legacy unpinned context remains
 unknown. External discovery and reusable qualification acceptance remain in the
 [active plan](IMPLEMENTATION_PLAN.md).
+
+
+External bio.tools search and describe retain public method metadata and bounded
+EDAM terms separately from the executable registry. Role tools expose compact
+cards; exact responses remain resolvable in persistence. Mutable-source pages
+carry query-bound continuations and explicit snapshot limitations. Discovery,
+installation, execution, scientific validation and reusable qualification remain
+distinct.

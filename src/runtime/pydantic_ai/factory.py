@@ -148,6 +148,8 @@ def build_harness_runtime(
                     "service_consumed_bytes": runtime.service_resources.downloaded_bytes})
     for client in (runtime.gdc, runtime.xena, runtime.literature):
         client.meter = meter_download
+    from src.oncolab.discovery import ExternalDiscovery
+    runtime.external_discovery = ExternalDiscovery()
     bind_repository(runtime, repository)
     def reserve_file(owner, declared):
         from pathlib import Path

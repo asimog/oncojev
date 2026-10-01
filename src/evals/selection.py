@@ -39,19 +39,20 @@ def evaluate_selection(runtime,block_id,tasks=SELECTION_TASKS,*,condition="jev_a
     Label recall measures retrieval/retention, not scientific validity. Execution
     outcomes are unknown unless the caller actually performs source-bound work.
     """
+    index = runtime.index_for(block_id)
     rows=[]
     for task in tasks:
         start=perf_counter();query=(queries or {}).get(task.task_id,task.query)
         retrieved=[];cursor=None;pages=[]
         while len(retrieved)<runtime.oncolab_candidate_k:
-            page=runtime.oncolab.search_page(query,limit=min(runtime.oncolab_search_k,runtime.oncolab_candidate_k-len(retrieved)),continuation=cursor)
+            page=index.search_page(query,limit=min(runtime.oncolab_search_k,runtime.oncolab_candidate_k-len(retrieved)),continuation=cursor)
             pages.append({"snapshot_id":page.snapshot_id,"retrieval_version":page.retrieval_version,"returned_ids":[c.capability_id for c in page.cards],"continuation":cursor})
             retrieved.extend(c.capability_id for c in page.cards);cursor=page.continuation
             if cursor is None:break
         candidates=[];retained=[];failures=[]
         for identity in retrieved:
-            contract=runtime.oncolab.describe_with_verification(identity)
-            checks=check_routes(runtime.oncolab.describe(identity),task.available_inputs)
+            contract=index.describe_with_verification(identity)
+            checks=check_routes(index.describe(identity),task.available_inputs,routes=index.routes)
             candidate={"capability_id":identity,"checks":checks,"contract_sha256":contract["contract_sha256"]}
             # Planning-only results stay visible and count toward discovery recall.
             if condition=="jev_assisted" and checks["eligible"]:

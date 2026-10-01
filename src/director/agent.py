@@ -22,6 +22,7 @@ DIRECTOR_INSTRUCTIONS = (
     "Recognize when no material next question or missing human direction warrants a future program pause; "
     "this runtime still requires exactly one allocation and has no zero-block pause outcome. "
     "Search the OncoLab Index and allocate exactly one bounded block. "
+    "Use search_external_capabilities/describe_external_capability for bounded public method metadata; listings grant no execution or admission authority. "
     "Launch exactly that block's Researcher; launch returns an active run identity promptly. "
     "Perform bounded independent global planning while Python owns the running investigation. "
     "Never allocate a second block in the same cycle. "
