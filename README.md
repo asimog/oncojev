@@ -13,7 +13,7 @@ while preserving candidate recall.
 | [Architecture](docs/ARCHITECTURE.md) | Current structure, ownership and invariants |
 | [Implementation plan](docs/IMPLEMENTATION_PLAN.md) | Unfinished work and completion criteria |
 | [Task log](docs/TASK_LOG.md) | Two most recent completed tasks; older proof is archived |
-| [Current testing ADR](docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md) | Accepted local testing decision; implementation unverified |
+| [Current testing ADR](docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md) | Accepted isolated testing decision, reconciliation and scoped proof |
 | [Agent guidance](AGENTS.md) | Working rules and task navigation |
 
 ## Run
@@ -37,6 +37,15 @@ one cycle. The service defaults to SQLite at `var/oncojev.sqlite3`. An absolute
 `ONCOJEV_DATA_ROOT` changes the data root; `ONCOJEV_DB_PATH` overrides the database
 file. `HOST` and `PORT` configure the API bind address and port (default 8080).
 
+Set `ONCOJEV_TESTING=1` in ignored `.env.local` for isolated application runs.
+Edit the `testing` section in runtime YAML: defaults are 90/60/90 s allocation,
+15 s reserve, 10 MB data response, 20 MB data per block and 50 MB data per service.
+Lower ordinary ceilings win. Each process retains a new `testing/<uuid>/` history
+and owned workspaces; `serve` preserves continuity across cycles. A normal database
+override fails explicitly in testing. Process `ONCOJEV_TESTING=0` overrides local `1`.
+Providers and scientific execution stay unchanged. The 120 s observation target
+reports elapsed `run_once` time, excludes post-block review, and is not a timeout.
+
 The web UI reads that API, falling back to a labelled committed snapshot when it
 is unavailable. Run it from `web/` with `npm run dev`; `ONCOJEV_API_URL` overrides
 its default API address, `http://127.0.0.1:8080`.
@@ -46,10 +55,22 @@ its default API address, `http://127.0.0.1:8080`.
 For routine Windows development, choose the test file that owns the change:
 
 ```powershell
+$env:ONCOJEV_TESTING='0' # Normal fixture defaults; testing contracts enable their own profile.
+$env:LOGFIRE_SEND_TO_LOGFIRE='false'
 .venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' <owning-test-file>
 .venv/Scripts/python.exe -B scripts/check_architecture.py
 git diff --check
 ```
+
+For the short isolated-profile check, use the same environment and:
+
+```powershell
+.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_live_mode.py tests/invariants/test_boundaries.py tests/invariants/test_persistence.py -k testing -q --durations=5
+```
+
+These checks use scripted models, mock transport and clocks, with no WSL/provider
+launch. Run native/live or long scientific trajectories explicitly for their task;
+record outstanding proof without turning every implementation iteration into one.
 
 Native probes are separate from local contract tests. The explicit WSL2 setup
 helper is [scripts/verify_native.py](scripts/verify_native.py); its cache is

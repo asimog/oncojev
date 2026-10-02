@@ -11,10 +11,14 @@ from src.persistence.records import RecordKind, StoredRecord
 from src.provenance import content_hash
 
 
-def application_identity():
+def application_identity(policy=None):
     root = Path(__file__).resolve().parents[2]
     paths = sorted((*root.joinpath('src').rglob('*.py'), *root.joinpath('config').glob('*.yaml'), root / 'pyproject.toml'))
-    return 'application-v1:' + content_hash({str(p.relative_to(root)).replace('\\', '/'): content_hash(p.read_text(encoding='utf-8')) for p in paths})
+    files = {str(p.relative_to(root)).replace('\\', '/'): content_hash(p.read_text(encoding='utf-8')) for p in paths}
+    if policy is not None and policy.testing_enabled:
+        return 'application-testing-v1:' + content_hash({'files': files, 'profile': 'isolated-testing-v1',
+                                                        'effective_config': policy.model_dump(mode='json')})
+    return 'application-v1:' + content_hash(files)
 
 
 class RegistryRevision(BaseModel, frozen=True):

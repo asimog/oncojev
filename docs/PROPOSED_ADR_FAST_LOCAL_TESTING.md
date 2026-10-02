@@ -2,13 +2,14 @@
 
 Date: 2026-10-02.
 Decision status: **ACCEPTED**, by explicit user instruction on 2026-10-02.
-Implementation and behavioral/native verification: unverified.
+Implementation: delivered through existing owners; local behavioral proof retained in
+[TASK_LOG](TASK_LOG.md). Live/native/scientific qualification remains unverified.
 Owning documents: [Architecture](ARCHITECTURE.md), [implementation plan](IMPLEMENTATION_PLAN.md),
 `src/config/loader.py`, `src/runtime/paths.py` and `src/autonomous.py`.
 
 ## Context
 
-Assessment basis: HEAD `2302b4bcc0ede6b94da466f5b3d6342548271b6c` on 2026-10-02.
+Original assessment basis: HEAD `2302b4bcc0ede6b94da466f5b3d6342548271b6c` on 2026-10-02.
 The worktree is already dirty, including this untracked proposal, the plan,
 AGENTS, ADR guidance and architecture-checker changes. Those unrelated edits and
 archive deletions are preserved; this assessment does not adopt or implement the ADR.
@@ -45,7 +46,7 @@ into agent context or credential-free execution children.
 
 Keep editable profile parameters in a small typed `testing` section of the existing
 `config/runtime.yaml`, owned by `src/config/models.py` and `src/config/loader.py`.
-The following is a proposed configuration shape, not installed configuration:
+The following profile shape is installed in that YAML; the environment switch selects it:
 
 ```yaml
 testing:
@@ -68,8 +69,10 @@ and data metadata; literature and external software/catalogue metadata retain th
 ordinary limits. Future data clients must declare their acquisition category at
 composition rather than inherit a software limit accidentally. No additional
 environment variables, alternate RuntimeConfig, provider profile or test dispatcher
-are needed. A future `.env.example` comment should point to this section. Do not
-edit the developer's actual `.env.local` during proposal assessment.
+are needed. `.env.example` documents this section and defaults to `0`; the current
+implementation request authorizes `ONCOJEV_TESTING=1` in ignored `.env.local`,
+preserving all other local contents. The earlier proposal-only assessment did not
+edit the developer's actual environment.
 
 ### What centralized downward caps mean
 
@@ -193,8 +196,9 @@ Extend the existing institutional application identity with an unambiguous testi
 profile discriminator and effective-profile/configuration binding; retain it in
 registry revisions, block pins and existing receipts. Keep the normal identity
 algorithm otherwise intact. Do not put the random storage run ID into application
-content identity. `application_identity()` currently hashes source/configuration
-files, not a testing setting; this distinction is proposed, not already enforced.
+content identity. `application_identity()` retains the normal source/configuration
+algorithm and adds the testing discriminator and validated effective runtime config
+for testing. The service freezes this identity at startup and passes it to institutions.
 
 Extend the existing `local_verification_passed` consumer to reject qualification
 for the frozen testing profile, even for a complete receipt matching a testing
@@ -261,17 +265,53 @@ utility are not established by these local contracts.
 
 **ACCEPTED — explicitly accepted by the user on 2026-10-02.**
 
-Acceptance adopts the reconciled isolated-testing decision; implementation and
-behavioral/native proof remain unverified. At the user's explicit instruction, keep
-this ADR at its current `docs/` path and remove Task 17 without adding a replacement
-plan item. This removal is a planning exception, not completion of the capability.
+Acceptance adopts the reconciled isolated-testing decision. The follow-up request
+explicitly authorizes planning and implementation, superseding the earlier proposal-only
+Task 17 removal. The bounded implementation slice is completed; native/live assessment
+remains in the existing plan. Keep this ADR at its current `docs/` path as instructed.
+Implementation is not native or scientific qualification.
 The dated investigation below retains its original proposed status as historical
 evidence; it does not override this acceptance or establish implementation.
 
+## Implementation reconciliation report — 2026-10-02
+
+Recommendation: **ADOPT WITH LIMITATIONS**. Verified from clean HEAD
+`d791ee8a204706bbda3c5d19f95607588eb8fb68` before implementation. The original
+investigation correctly identified the missing switch, startup ordering, mutable
+path helpers, software's GDC reservation and missing testing qualification guard.
+Its dirty-worktree narrative, proposed-only status and absent implementation are
+historical facts, not this checkout's current state. No second configuration,
+runtime mode, store, registry, importer or test dispatcher was introduced.
+
+| Affected flow / owner | Reconciled implementation and proof scope |
+| --- | --- |
+| `environment.py` → service → `paths.py` | Local env loads first; literal switch and both database overrides validate before mkdir/store/recovery. Paths use one UUID per process. Resolved database/role links cannot reach normal history, including junctions to another directory under the same base. Process `0` overrides local `1`. |
+| `models.py` / `loader.py` → BlockManager | Ordinary validation, downward overlay and full revalidation; shorter 20/30/40/5 and 1/2/3/0 settings remain. Fake-clock proof checks actual handoff without waiting 75 s. Other budgets/providers remain unchanged. |
+| Factory / ServiceResources → GDC/Xena | Explicit public-data category, bounded metadata/file reservations, cumulative service/block sublimits and charging of failed chunks. Shared disk/download limits remain. Local repositories/dependencies use an ordinary software reservation, available after data-only exhaustion. Literature/catalogue ceilings remain ordinary. |
+| Service → agents / sandboxes / retention | Frozen paths propagate across cycles, roles and block experiments. Docker receives an owned scratch parent and retains scratch cleanup. Retention uses only the frozen workspace root; no whole-run deletion. Bootstrap prepares the base and the exec process chooses its UUID. |
+| Identity → institution / pins → qualification | Service freezes content/profile identity, independent of run UUID. Composed cycles retain it. An otherwise complete matching testing receipt fails qualification and normal exact identity matching rejects testing receipts. Existing governance proof confirms this specific rejection while evidence and registry state remain retained. |
+| `run_live_cycle.py` / `run_live_phase3.py` | Direct live storage bypass removed through the service entry point. The phase-3 demo remains explicitly live-agent/fixture-Jev/Reasoner, now using factory policy, accounting and paths; it is not full live-service proof. |
+| Logs / development workflow | Safe profile/path/timing/data summaries and observed `run_once` elapsed time are reported. Target overruns are observations, not failures/cancellation. AGENTS/README separate short offline checks from explicit native/provider/long trajectories. No scientific phase is shortened. |
+
+Owning proof is in the existing live-mode, boundaries and persistence test files;
+exact final checks and implementation identity are in [TASK_LOG](TASK_LOG.md).
+Archived ADR guidance was read only for this explicit ADR task. Current Architecture,
+AGENTS and reviewed projection describe delivered semantics; the plan retains
+unfinished proof. The historical report below is preserved as the assessment basis.
+
+Limits: Windows checks use scripted models and mock transport; they do not prove
+provider connectivity, real two-minute trajectories, WSL2/kernel confinement,
+scientific utility or reusable qualification. Local software and Docker paths have
+contract proof, not new native qualification. Docker's existing transfer accounting
+is not replaced or claimed equivalent to local software accounting. Scheduled 300 s
+Director review and long scientific phases need explicit scenarios; they are not
+prerequisites for code iteration. No cross-store ingestion or authority relabelling.
+
 ## Investigation report appended 2026-10-02
 
-This report records current code and read-only test inspection on the HEAD/worktree
-basis above. Proposed configuration and guards in Decision are not runtime facts.
+Historical report: this records code and read-only inspection on the original
+HEAD/worktree basis above, before implementation. Its proposed-status and absent-code
+claims retain their original meaning; the reconciliation above owns the current result.
 
 ### Environment and entry-point findings
 
@@ -379,12 +419,13 @@ implementation task, so its completion/log transfer has not occurred.
 
 ## Suggested testing application sites and limits
 
-Recommendation updated 2026-10-02 after the documentation cleanup. These are proposed
-profile settings, not changes to `config/runtime.yaml` or implemented behavior.
+Recommendation implemented 2026-10-02 after reconciliation. The table retains the
+ordinary pre-implementation baseline beside the adopted profile; the profile is now
+installed in `config/runtime.yaml` and applied through the owners above.
 Byte units below are decimal MB, except where MiB is stated. Lower existing user
 ceilings win; all unlisted ordinary controls retain their current values.
 
-| Application site | Current configuration / behavior | Suggested testing configuration / behavior |
+| Application site | Ordinary baseline before implementation | Adopted testing configuration / behavior |
 | --- | --- | --- |
 | Enable/profile selection | No `ONCOJEV_TESTING` parser | `ONCOJEV_TESTING=1` in ignored `.env.local`; parameters in existing typed runtime YAML; invalid values fail before storage side effects |
 | `BlockManager` allocation | Default/min/max 900/300/3600 s | Default/min/max 90/60/90 s, preserving shorter valid settings |
@@ -445,4 +486,5 @@ script's storage bypass, data-versus-software reservation, frozen identity/pins 
 qualification consumption. Analysis uses retained records now; selected later use
 retains provenance and ordinary admission. A universal cross-store importer and
 scientific improvement measurement are separate work, not blockers for enabling
-useful isolated testing. Decision remains PROPOSED and implementation unverified.
+useful isolated testing. Decision is ACCEPTED and implementation has scoped local
+contract proof; native/live/scientific qualification remains unverified.

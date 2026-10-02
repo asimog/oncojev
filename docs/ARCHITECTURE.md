@@ -107,11 +107,43 @@ Coder commands and the default local-venv scientific backend use the owned Linux
 command-family controls. Installed Science currently runs in worker threads under
 the shared heavy-work lease, rather than that process-family governor.
 
-The service uses SQLite under its configured data root or explicit database path.
+The service loads local environment and validates literal `ONCOJEV_TESTING=0/1`
+before storage/recovery. Config validates ordinary settings, applies only downward
+block-time and public-data caps from typed `testing` YAML, then revalidates. Live
+providers, role/cycle/tool budgets, scientific phases and native confinement stay
+unchanged. The service freezes policy, application identity and owned paths at startup;
+edits take effect on restart.
+
+Testing uses `<configured-data-root or var>/testing/<process-uuid>/` for SQLite,
+Director, Researcher and sandbox experiments. Services/cycles in one process share
+the UUID; another process gets a fresh namespace. Database overrides and resolved
+linked paths cannot escape it; bootstrap prepares only the base before exec.
+Retention traverses that frozen workspace root and keeps its ordinary policy;
+records/run roots are retained. Docker scratch receives an owned parent and keeps
+its existing cleanup. Windows contract checks do not qualify Linux execution.
+
+ServiceResources keeps shared download/disk ceilings and adds GDC/Xena data-only
+response/block/service caps, including metadata and failed bytes. Local software
+uses an ordinary software reservation; literature/catalogue limits stay ordinary.
+Docker acquisition accounting remains its existing backend behavior; this change
+does not establish Docker native/resource qualification.
+
+Testing identity binds source/configuration content and effective runtime profile
+with `application-testing-v1:`, without the random storage UUID. Existing registry
+revisions, pins and receipts carry it. The local-verification consumer rejects even
+complete matching testing receipts; normal identities reject them by exact matching.
+Ordinary source-bound admission and retained observations/proposals remain available;
+no automatic cross-store ingestion or authority transfer is added.
+
+Normal service storage uses SQLite under its configured data root or explicit database path.
 Disposable workspaces are separate from retained inputs and canonical records.
 The [implementation plan](IMPLEMENTATION_PLAN.md) owns unfinished work; the
 [current testing ADR](PROPOSED_ADR_FAST_LOCAL_TESTING.md) is accepted; its testing
-profile is not implemented or behaviorally verified by that decision.
+profile is implemented through those owners with scoped local behavioral proof.
+The default testing block is 90 s with handoff at 75 s; the 120 s observation target
+is logged for `run_once` (excluding post-block review) and never cancels draining or
+required science. Live wall time, usefulness and WSL2 qualification remain separate
+explicit checks in the plan, rather than implicit blockers of ordinary code iteration.
 [TASK_LOG](TASK_LOG.md) retains only the two most recent completed-task entries,
 newest first; displaced entries are preserved in `docs/Archive/PREVIOUS_TASK_LOG.md`.
 Other Markdown within `docs/` and retired ADRs are archived, excluded from routine

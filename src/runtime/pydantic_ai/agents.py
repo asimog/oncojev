@@ -20,7 +20,8 @@ from src.runtime.pydantic_ai.telemetry import configure_agent_telemetry
 from src.runtime.pydantic_ai.controls import RuntimeControls
 from src.runtime.pydantic_ai.workspace import ConfinedWorkspace
 from src.runtime.pydantic_ai.shell import owned_shell
-from src.runtime.paths import workspace_root, director_root
+from src.runtime.paths import select_paths
+from src.config.environment import process_settings
 
 
 def _code_mode_tools(_ctx: object, tool_definition: object) -> bool:
@@ -63,12 +64,15 @@ def _build(
     director_settings: dict | None = None, researcher_settings: dict | None = None,
     researcher_code_calls: int | None = None,
     director=None,
+    paths=None,
 ) -> OncoJevAgents:
     workspace = Path(__file__).resolve().parents[3]
+    paths = paths or select_paths(workspace, process_settings(workspace))
 
     def build_researcher(block_id: str | None = None) -> Agent[ResearcherDeps, str]:
-        researcher_workspace = workspace_root(workspace) / (block_id or "unassigned")
-        if not researcher_workspace.resolve().is_relative_to(workspace_root(workspace).resolve()):
+        researcher_workspace = paths.workspaces / (block_id or "unassigned")
+        paths.require_owned(researcher_workspace)
+        if not researcher_workspace.resolve().is_relative_to(paths.workspaces.resolve()):
             raise ValueError("Researcher workspace must remain under the block workspace root")
         researcher = Agent(
             researcher_model, name="oncojev-researcher", instructions=RESEARCHER_INSTRUCTIONS,
@@ -83,7 +87,7 @@ def _build(
     director = director or Agent(
         director_model, name="oncojev-director", instructions=DIRECTOR_INSTRUCTIONS,
         deps_type=DirectorDeps, model_settings=director_settings,
-        capabilities=_runtime_capabilities(director_root(workspace), max_tool_calls, "director"),
+        capabilities=_runtime_capabilities(paths.require_owned(paths.director), max_tool_calls, "director"),
         defer_model_check=True,
     )
     if fresh_director:
@@ -95,12 +99,14 @@ def create_agents(director_model: str, researcher_model: str, max_tool_calls: in
     return _build(director_model, researcher_model, max_tool_calls)
 
 
-def create_configured_agents(config: ModelsConfig, max_tool_calls: int = 100, researcher_code_calls: int | None = None, *, director=None) -> OncoJevAgents:
-    load_local_environment()
+def create_configured_agents(config: ModelsConfig, max_tool_calls: int = 100, researcher_code_calls: int | None = None, *, director=None, paths=None) -> OncoJevAgents:
+    if paths is None:
+        load_local_environment()
     configure_agent_telemetry()
     return _build(
         configured_model(config.director), configured_model(config.researcher), max_tool_calls,
         model_settings(config.director), model_settings(config.researcher),
         researcher_code_calls,
         director,
+        paths,
     )

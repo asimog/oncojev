@@ -7,6 +7,7 @@ provider credential is present. Deterministic services are explicit test fixture
 
 from dataclasses import dataclass
 import os
+from pathlib import Path
 
 from src.block.manager import BlockManager
 from src.config.authentication import resolve_mode
@@ -20,7 +21,8 @@ from src.runtime.pydantic_ai.telemetry import configure_agent_telemetry
 from src.runtime.pydantic_ai.reasoner import BudgetedLiveReasoner
 from src.science.execution import ScienceExecutor
 from src.science.sandbox import DockerScientificSandbox, SandboxPolicy
-from src.runtime.paths import workspace_root
+from src.runtime.paths import select_paths
+from src.config.environment import process_settings
 from src.oncolab.registry import OncoLabVerificationRecord
 from src.persistence.records import RecordKind
 from src.persistence.references import resolve_reference
@@ -82,8 +84,14 @@ def build_harness_runtime(
     environment: dict[str, str] | None = None,
     repository=None,
     resources=None,
+    paths=None,
+    application_content_identity=None,
 ) -> HarnessRuntime:
     source = environment if environment is not None else os.environ
+    root = Path(__file__).resolve().parents[3]
+    paths = paths or select_paths(root, process_settings(root))
+    if paths.testing != policy.testing_enabled:
+        raise ValueError("runtime paths and testing policy must agree")
     mode = resolve_mode(policy.mode, source)
     manager = manager or BlockManager()
     manager.policy = policy.block
@@ -123,65 +131,63 @@ def build_harness_runtime(
         memory_jev_bytes=policy.director.max_memory_jev_bytes,
         memory_jev_seconds=policy.director.max_memory_jev_seconds,
         sandbox=DockerScientificSandbox(SandboxPolicy(image=policy.sandbox.image, cpu=policy.sandbox.cpu, memory_mb=policy.sandbox.memory_mb, timeout_seconds=policy.sandbox.timeout_seconds)),
-        gdc=GdcPublicSource(max_download_bytes=policy.block.max_download_bytes),
-        xena=XenaPublicSource(max_download_bytes=policy.block.max_download_bytes),
+        gdc=GdcPublicSource(max_download_bytes=policy.testing.public_data.max_response_bytes if policy.testing_enabled else policy.block.max_download_bytes),
+        xena=XenaPublicSource(max_download_bytes=policy.testing.public_data.max_response_bytes if policy.testing_enabled else policy.block.max_download_bytes),
         literature=PublicLiteratureSource(max_download_bytes=policy.block.max_download_bytes),
     )
     if resources is not None:
         runtime.service_resources = resources
     else:
         from src.runtime.resources import ServiceResources
-        runtime.service_resources = ServiceResources(max_file_bytes=policy.block.max_download_bytes,
-            max_block_download_bytes=policy.resources.max_block_download_bytes,
-            max_service_download_bytes=policy.resources.max_service_download_bytes,
-            max_workspace_bytes=policy.resources.max_workspace_bytes,
-            max_durable_artifact_bytes=policy.resources.max_durable_artifact_bytes,
-            minimum_free_disk_bytes=policy.resources.minimum_free_disk_bytes,
-            max_coder_processes=policy.resources.max_coder_processes,
-            max_coder_memory_mb=policy.resources.max_coder_memory_mb,
-            max_coder_cpu=policy.resources.max_coder_cpu,
-            max_coder_seconds=policy.resources.max_coder_seconds,
-            max_science_processes=policy.resources.max_science_processes)
-    def meter_download(byte_count):
+        runtime.service_resources = ServiceResources.from_policy(policy)
+    runtime.runtime_paths = paths
+    from src.oncolab.institution import application_identity
+    runtime.application_content_identity = application_content_identity or application_identity(policy)
+    def meter_download(byte_count, category):
         active = runtime.active_research
         owner = active.block_id if active else "unassigned"
         try:
-            runtime.service_resources.charge_download(owner, byte_count)
+            runtime.service_resources.charge_download(owner, byte_count, category=category)
         except ValueError as error:
             if active:
                 runtime.append_event(owner, "ResourceRejected", getattr(error, "directive", {"reason": str(error)}))
             raise
         finally:
             if active:
-                runtime.append_event(owner, "DownloadUsage", {"bytes": byte_count,
+                runtime.append_event(owner, "DownloadUsage", {"bytes": byte_count, "category": category,
                     "service_consumed_bytes": runtime.service_resources.downloaded_bytes})
-    for client in (runtime.gdc, runtime.xena, runtime.literature):
-        client.meter = meter_download
+    for client, category in ((runtime.gdc, "public_data"), (runtime.xena, "public_data"),
+                             (runtime.literature, "other")):
+        client.meter = lambda count, category=category: meter_download(count, category)
     from src.oncolab.discovery import ExternalDiscovery
     runtime.external_discovery = ExternalDiscovery()
     bind_repository(runtime, repository)
-    def reserve_file(owner, declared):
-        from pathlib import Path
+    def reserve_file(owner, declared, category):
         from src.runtime.resources import ResourceRejected
-        root = Path(__file__).resolve().parents[3]
-        workspace = workspace_root(root) / owner
+        workspace = paths.workspaces / owner
+        paths.require_owned(workspace)
         if workspace.exists() and (workspace.is_symlink() or workspace.is_junction()):
             raise ResourceRejected("workspace capacity cannot follow linked paths", 0)
         from src.runtime.process import workspace_bytes
         used = workspace_bytes(workspace)
         durable = 0
-        paths = [workspace]
+        disk_paths = [workspace]
         if runtime.repository is not None:
             durable = sum(r.payload.get('size_bytes', 0) for r in runtime.repository.store.records(kind=RecordKind.SCIENTIFIC_ARTIFACT))
             if runtime.repository.store.path is not None:
-                paths.append(runtime.repository.store.path.parent)
-        return runtime.service_resources.reserve_download(owner, declared, workspace_used=used,
-            durable_used=durable, paths=tuple(paths), archive_limit=policy.retention.max_archive_bytes)
+                disk_paths.append(runtime.repository.store.path.parent)
+        return runtime.service_resources.reserve_download(owner, declared, category=category, workspace_used=used,
+            durable_used=durable, paths=tuple(disk_paths), archive_limit=policy.retention.max_archive_bytes)
     if policy.sandbox.provider == "local_venv":
         from src.science.local import LocalVenvScientificBackend
-        from pathlib import Path
-        runtime.sandbox = LocalVenvScientificBackend(workspace_root(Path(__file__).resolve().parents[3]), runtime.sandbox.policy)
-    runtime.gdc.reserve = reserve_file
+        runtime.sandbox = LocalVenvScientificBackend(paths.workspaces, runtime.sandbox.policy)
+    else:
+        runtime.sandbox.owned_parent = paths.workspaces / "unassigned" / "experiments"
+    runtime.gdc.reserve = lambda owner, size: reserve_file(owner, size, "public_data")
+    runtime.reserve_software = lambda owner, size: reserve_file(owner, size, "software")
+    if policy.testing_enabled:
+        for client in (runtime.gdc, runtime.xena):
+            client.response_reserve = lambda: reserve_file(runtime.active_research.block_id if runtime.active_research else "unassigned", None, "public_data")
     runtime.gdc.transfer_receipt = lambda owner, detail: runtime.append_event(owner, "DataTransferReceipt", detail)
     return runtime
 
@@ -196,6 +202,8 @@ def build_system(
     repository=None,
     director=None,
     resources=None,
+    paths=None,
+    application_content_identity=None,
 ) -> ConfiguredSystem:
     """Wire the autonomous live system; offline fixtures are constructed explicitly in tests."""
     if policy.mode is not RuntimeMode.LIVE:
@@ -206,7 +214,12 @@ def build_system(
     if max_tool_calls is not None:
         director_code = min(director_code, max_tool_calls)
         researcher_code = min(researcher_code, max_tool_calls)
-    agents = create_configured_agents(models, director_code, researcher_code, director=director)
-    runtime = build_harness_runtime(models, policy, manager=manager, environment=environment, repository=repository, resources=resources)
+    root = Path(__file__).resolve().parents[3]
+    paths = paths or select_paths(root, process_settings(root, environment))
+    if paths.testing != policy.testing_enabled:
+        raise ValueError("runtime paths and testing policy must agree")
+    agents = create_configured_agents(models, director_code, researcher_code, director=director, paths=paths)
+    runtime = build_harness_runtime(models, policy, manager=manager, environment=environment, repository=repository,
+        resources=resources, paths=paths, application_content_identity=application_content_identity)
     runtime.researcher_factory = agents.fresh_researcher
     return ConfiguredSystem(agents=agents, runtime=runtime, mode=RuntimeMode.LIVE)

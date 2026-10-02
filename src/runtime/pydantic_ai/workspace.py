@@ -89,6 +89,9 @@ class ConfinedWorkspace(AbstractCapability):
     application: Path
 
     def get_workspace(self, ctx, *, ref):
+        paths = ctx.deps.runtime.runtime_paths
+        if paths is not None:
+            paths.require_owned(self.working_dir)
         backend = ConfinedBackend(self.working_dir, self.application, ctx.deps.runtime,
                                   getattr(ctx.deps, "block_id", "director"))
         return backend if ref is None or ref == backend.ref else None

@@ -12,13 +12,7 @@ import os
 from pathlib import Path
 
 from src.config.environment import load_local_environment
-from src.config.loader import load_models_config, load_runtime_config
-from src.config.models import RuntimeMode
-from src.autonomous import recover_interrupted_blocks
-from src.persistence.repository import ResearchRepository
-from src.persistence.store import SqliteResearchStore
-from src.runtime.cycle import run_cycle
-from src.runtime.pydantic_ai.factory import build_system
+from src.autonomous import service_from_environment
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,19 +23,13 @@ def main() -> None:
     if missing:
         raise RuntimeError(f"live cycle requires: {', '.join(missing)}")
 
-    models = load_models_config(ROOT / "config/models.yaml")
-    policy = load_runtime_config(ROOT / "config/runtime.yaml")
-    live_policy = policy.model_copy(update={"mode": RuntimeMode.LIVE})
-    system = build_system(models, live_policy)
-    (ROOT / "var").mkdir(exist_ok=True)
-    store = SqliteResearchStore(ROOT / "var" / "oncojev.sqlite3")
-    repository = ResearchRepository(store)
-    recover_interrupted_blocks(repository)
-    result = run_cycle(
-        system,
-        "Validate one autonomous public-data path. Allocate exactly one block. In that block, acquire at most three public GDC case records, measure and admit their source-bound record count, evaluate that candidate once with Jev, ask the Reasoner for one hypothesis, then complete the block. Do not repeat equivalent calls.",
-        repository=repository,
-    )
+    service = service_from_environment(ROOT)
+    try:
+        result = service.run_once(
+            "Validate one autonomous public-data path. Allocate exactly one block. In that block, acquire at most three public GDC case records, measure and admit their source-bound record count, evaluate that candidate once with Jev, ask the Reasoner for one hypothesis, then complete the block. Do not repeat equivalent calls.",
+        )
+    finally:
+        service.close()
 
     print(
         json.dumps(
@@ -58,7 +46,6 @@ def main() -> None:
             indent=2,
         )
     )
-    store.close()
 
 
 if __name__ == "__main__":

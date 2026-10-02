@@ -3,12 +3,17 @@ import os
 from pathlib import Path
 import sys
 
-from src.runtime.paths import data_root
+from src.config.environment import process_settings
 
 
 def main():
     if os.getuid() == 0:
-        root = data_root(Path(__file__).resolve().parents[1])
+        application = Path(__file__).resolve().parents[1]
+        settings = process_settings(application)
+        # Bootstrap prepares the base only. The final exec process owns its UUID.
+        root = Path(settings.data_root) if settings.data_root else application / "var"
+        if not root.is_absolute():
+            raise ValueError("ONCOJEV_DATA_ROOT must be absolute")
         if any(p.is_symlink() for p in (root, *root.parents)):
             raise RuntimeError("worker data root must not traverse links")
         root.mkdir(parents=True, exist_ok=True)

@@ -140,13 +140,16 @@ class ScientificExecutionBackend(Protocol):
 class DockerScientificSandbox:
     """Run external code only in a credential-free Docker container sequence."""
 
-    def __init__(self, policy: SandboxPolicy | None = None, runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run) -> None:
+    def __init__(self, policy: SandboxPolicy | None = None, runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run, *, owned_parent: Path | None = None) -> None:
         self.policy = policy or SandboxPolicy()
         self._runner = runner
+        self.owned_parent = owned_parent
 
     def acquire_and_execute(self, request: GithubMethodRequest) -> SandboxMeasurementCandidate:
         request.input_identity()  # Reject corrupted bytes before acquisition or execution.
-        with tempfile.TemporaryDirectory(prefix="oncojev-sandbox-") as temporary:
+        if self.owned_parent is not None:
+            self.owned_parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="oncojev-sandbox-", dir=self.owned_parent) as temporary:
             root = Path(temporary)
             environment = self._environment(root)
             image = self._resolve_image(root, environment)
@@ -194,7 +197,7 @@ class DockerScientificSandbox:
         validate_sandbox_candidate(candidate, "replay-preflight")
         policy = candidate.policy.model_copy(update={"image": candidate.receipt.environment["image"]})
         request = candidate.request.model_copy(update={"requested_ref": candidate.receipt.commit_sha})
-        replayed = DockerScientificSandbox(policy, self._runner).acquire_and_execute(request)
+        replayed = DockerScientificSandbox(policy, self._runner, owned_parent=self.owned_parent).acquire_and_execute(request)
         if replayed.receipt.first_run.stdout_sha256 != candidate.receipt.first_run.stdout_sha256:
             raise SandboxError("independent historical replay produced different output")
         return replayed

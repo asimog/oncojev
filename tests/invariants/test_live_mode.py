@@ -29,6 +29,62 @@ from src.science.execution import ScienceExecutor
 
 ROOT = Path(__file__).resolve().parents[2]
 
+
+@pytest.mark.parametrize("timing", [(300, 900, 3600, 90), (20, 30, 40, 5), (1, 2, 3, 0)])
+def test_testing_overlay_preserves_shorter_bounds_and_other_allowances(tmp_path, timing):
+    import yaml
+    from datetime import UTC, datetime, timedelta
+    from src.block.manager import HandoffRequired
+    from src.config.models import RuntimeConfig
+    from src.oncolab.institution import application_identity
+
+    values = yaml.safe_load((ROOT / "config/runtime.yaml").read_text())
+    minimum, default, maximum, reserve = timing
+    values["block"].update(min_seconds=minimum, default_seconds=default,
+                           max_seconds=maximum, handoff_reserve_seconds=reserve)
+    values['block']['max_download_bytes'] = 5
+    values['resources'].update(max_block_download_bytes=7, max_service_download_bytes=11)
+    path = tmp_path / "runtime.yaml"
+    path.write_text(yaml.safe_dump(values))
+    normal = load_runtime_config(path, testing=False)
+    tested = load_runtime_config(path, testing=True)
+    expected = normal.model_dump()
+    expected['testing']['public_data'].update(max_response_bytes=5,
+        max_block_download_bytes=7, max_service_download_bytes=11)
+    if default == 900:
+        expected["block"].update(min_seconds=60, default_seconds=90, max_seconds=90, handoff_reserve_seconds=15)
+    assert tested.model_dump() == expected
+    assert normal.model_dump() == RuntimeConfig.model_validate(values).model_dump()
+    assert normal.mode == tested.mode == RuntimeMode.LIVE
+    assert application_identity(normal).startswith("application-v1:")
+    identity = application_identity(tested)
+    assert identity.startswith("application-testing-v1:") and identity != application_identity(normal)
+    now = datetime(2026, 10, 2, tzinfo=UTC)
+    manager = BlockManager(lambda: now, policy=tested.block)
+    block = manager.allocate("bounded work", "profile test")
+    assert (block.handoff_at - now).total_seconds() == tested.block.default_seconds - tested.block.handoff_reserve_seconds
+    now = block.handoff_at - timedelta(microseconds=1)
+    manager.require_work_window(block)
+    now = block.handoff_at
+    with pytest.raises(HandoffRequired):
+        manager.require_work_window(block)
+    assert application_identity(load_runtime_config(path, testing=True)) == identity
+
+
+@pytest.mark.parametrize("change", [
+    {"min_seconds": 91}, {"default_seconds": 0}, {"max_seconds": 50},
+    {"handoff_reserve_seconds": 60},
+])
+def test_testing_profile_revalidates_invalid_bounds_even_when_disabled(tmp_path, change):
+    import yaml
+    from pydantic import ValidationError
+    values = {"testing": {"block": change}}
+    path = tmp_path / "runtime.yaml"
+    path.write_text(yaml.safe_dump(values))
+    for enabled in (False, True):
+        with pytest.raises(ValidationError):
+            load_runtime_config(path, testing=enabled)
+
 LIVE_ENV = {"OPENROUTER_API_KEY": "k", "TYPESAFE_API_KEY": "k"}
 QUESTION = JevQuestionSpec(
     question_id="q",

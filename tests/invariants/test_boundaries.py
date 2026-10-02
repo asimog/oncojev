@@ -48,6 +48,68 @@ def test_local_credentials_are_loaded_without_overriding_host_environment(tmp_pa
  (tmp_path/'.env.local').write_text('OPENROUTER_API_KEY=local-openrouter\nTYPESAFE_API_KEY=local-typesafe\n',encoding='utf-8')
  load_local_environment(tmp_path);assert os.environ['OPENROUTER_API_KEY']=='local-openrouter' and os.environ['TYPESAFE_API_KEY']=='local-typesafe'
  monkeypatch.setenv('OPENROUTER_API_KEY','railway-wins');load_local_environment(tmp_path);assert os.environ['OPENROUTER_API_KEY']=='railway-wins'
+@pytest.mark.parametrize('source_kind', ['gdc', 'xena'])
+def test_testing_data_sublimits_charge_failed_streams_without_blocking_software(tmp_path, source_kind):
+ import asyncio
+ import yaml
+ from src.config.loader import load_runtime_config
+ from src.config.environment import ProcessSettings
+ from src.runtime.paths import select_paths
+ from src.runtime.pydantic_ai.factory import build_harness_runtime
+ from src.runtime.resources import ResourceRejected
+ payload = b'{"data":{"hits":[]}}' if source_kind == 'gdc' else b'[]'
+ size = len(payload)
+ values = yaml.safe_load((ROOT / 'config/runtime.yaml').read_text())
+ values['mode'] = 'deterministic'
+ values['block']['max_download_bytes'] = size * 5
+ values['resources'].update(max_block_download_bytes=size * 8, max_service_download_bytes=size * 10)
+ values['testing']['public_data'].update(max_response_bytes=size + 1,
+     max_block_download_bytes=size * 2 - 1, max_service_download_bytes=size * 2 - 1)
+ config = tmp_path / 'runtime.yaml'; config.write_text(yaml.safe_dump(values))
+ policy = load_runtime_config(config, testing=True)
+ paths = select_paths(ROOT, ProcessSettings(True, str(tmp_path)))
+ runtime = build_harness_runtime(load_models_config(ROOT / 'config/models.yaml'), policy, environment={}, paths=paths)
+ from src.runtime.pydantic_ai.contracts import ActiveResearchContext
+ block = runtime.manager.allocate('small public data', 'fixture')
+ runtime.active_research = ActiveResearchContext('run', block.block_id, 'mission', 'cycle', 0)
+ resources = runtime.service_resources
+ calls = []
+ class Stream(httpx.AsyncByteStream):
+  async def __aiter__(self): yield payload
+ def respond(request):
+  calls.append(request)
+  return httpx.Response(200, stream=Stream())
+ original = runtime.gdc if source_kind == 'gdc' else runtime.xena
+ source = (GdcPublicSource if source_kind == 'gdc' else XenaPublicSource)(httpx.MockTransport(respond), max_download_bytes=size+1)
+ source.meter = original.meter; source.response_reserve = original.response_reserve
+ async def search():
+  return await source.search('cases', {}, ('case_id',), size=1) if source_kind == 'gdc' else await source.search_datasets('oncology')
+ async def run():
+  try:
+   await search()
+   assert resources.data_downloaded_bytes == size
+   with pytest.raises(ResourceRejected): await search()
+   assert resources.data_downloaded_bytes == size * 2
+   assert resources.downloaded_bytes == size * 2 and not resources.reservations
+   # Both metadata clients share this category; new blocks cannot reset service usage.
+   with pytest.raises(ResourceRejected):
+    with runtime.gdc.reserve('next-block', None): pytest.fail('data limit reset')
+   with runtime.reserve_software(block.block_id, size * 3) as reservation:
+    assert reservation.capacity == size * 3
+    reservation.consume(size * 3)
+    resources.charge_download(block.block_id, size * 3, category='software')
+   assert resources.data_downloaded_bytes == size * 2
+   assert resources.downloaded_bytes == size * 5
+   # Literature remains under ordinary aggregate accounting.
+   resources.charge_download(block.block_id, 1, category='other')
+   assert resources.downloaded_bytes == size * 5 + 1
+   with pytest.raises(ResourceRejected): await search()
+   assert len(calls) == 2 and not resources.reservations
+  finally:
+   await asyncio.gather(source.aclose(), runtime.gdc.aclose(), runtime.xena.aclose(), runtime.literature.aclose())
+ asyncio.run(run())
+
+
 def test_two_agents_and_model_policy_config():
  a=create_agents('test','test');assert a.director is not a.researcher
  c=load_models_config(ROOT/'config/models.yaml');roles=(c.director,c.researcher,c.reasoner)
@@ -200,7 +262,7 @@ def test_capability_index_is_bounded_and_distinguishes_metadata_from_execution(t
  (tmp_path/'invalid.yaml').write_text(yaml.safe_dump({'records':[invalid.model_dump(mode='json')]}),encoding='utf-8')
  with pytest.raises(ValueError,match='integrity mismatch'):
   index.load_verification_records(tmp_path)
-def test_github_sandbox_is_commit_pinned_credential_free_and_replay_validated():
+def test_github_sandbox_is_commit_pinned_credential_free_and_replay_validated(tmp_path):
  seen=[]
  def runner(arguments,**kwargs):
   seen.append((arguments,kwargs))
@@ -211,7 +273,8 @@ def test_github_sandbox_is_commit_pinned_credential_free_and_replay_validated():
    output='{"values":{"effect":1.25}}\n' if command==('python','method.py','/input/request.json') else 'ok\n'
    return subprocess.CompletedProcess(arguments,0,output,'')
   return subprocess.CompletedProcess(arguments,0,'','')
- sandbox=DockerScientificSandbox(runner=runner)
+ parent=tmp_path/'testing'/'run'/'workspaces'/'block'/'experiments'
+ sandbox=DockerScientificSandbox(runner=runner,owned_parent=parent)
  request=GithubMethodRequest(repository_url='https://github.com/example/public-method',requested_ref='main',test_command=('python','-m','pytest'),execute_command=('python','method.py','/input/request.json'),input_json={'x':[1,2,3]})
  candidate=sandbox.acquire_and_execute(request);measurement=validate_sandbox_candidate(candidate,'sandbox-analysis')
  assert candidate.receipt.commit_sha=='a'*40 and measurement.values=={'effect':1.25}
@@ -225,6 +288,9 @@ def test_github_sandbox_is_commit_pinned_credential_free_and_replay_validated():
  replayed=sandbox.replay(candidate)
  assert replayed.receipt.commit_sha==candidate.receipt.commit_sha and replayed.values==candidate.values
  assert replayed.receipt.environment['image']=='sha256:'+'b'*64
+ assert all(Path(kwargs['cwd']).is_relative_to(parent) for _,kwargs in seen)
+ assert not list(parent.iterdir())  # Existing backend scratch cleanup remains.
+ assert all('ONCOJEV_TESTING' not in kwargs['env'] for _,kwargs in seen)
  from src.provenance import content_hash
  corrupt=candidate.model_copy(update={'values':{'effect':99.0}})
  with pytest.raises(SandboxError,match='values'):validate_sandbox_candidate(corrupt,'bad')

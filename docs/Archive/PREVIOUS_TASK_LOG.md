@@ -206,3 +206,21 @@ Limits: Source/test/API/document assessment and static integrity only. No behavi
 tests, provider/native runs, empirical scientific/search/learning/semantic utility,
 framework adaptation or testing-profile implementation were verified. New research
 ADR remains proposed; testing ADR acceptance is separate from implementation proof.
+
+## 2026-10-02 — Make implementation-plan numbering consecutive
+
+Result: Renumbered former active Tasks 14 and 15 as Tasks 11 and 12. Updated all
+references throughout the plan, including the catalogue-extension reference;
+clarified the historical-to-current mapping in the reconciled assessment ADR.
+The three conditional feature specs and all capability scope/proof text are retained.
+
+Basis: HEAD `b27a6b220cd183bd51aff06aec8b8f778187d1b1` plus the existing documentation
+worktree. Earlier assessment, testing acceptance and unrelated edits are preserved.
+Proof: [implementation plan](IMPLEMENTATION_PLAN.md) and
+`docs/Archive/ADR/PROPOSED_ADR_RESEARCH_PLAN_RECONCILIATION.md`.
+Checks: Inline Python numbering/preservation review passed (exit 0): headings exactly
+1 through 12, no old 14/15 references, all singular task references resolve, plural
+catalogue reference updated, and three conditional specs retained. Documentation-only
+architecture check passed (exit 0); `git -c core.safecrlf=false diff --check` passed
+(exit 0). Log rotation preserves the displaced entry intact.
+Limits: Documentation/reference integrity only; no runtime or test changes.

@@ -172,13 +172,17 @@ class HarnessRuntime:
     _owner_thread: int | None = None
     _counts: dict[str, int] = field(default_factory=dict)
     external_discovery: Any = None
+    application_content_identity: str | None = None
+    runtime_paths: Any = None
+    reserve_software: Any = None
     institution: Any = None
     _block_indexes: dict[str, Any] = field(default_factory=dict)
 
     def initialize_institution(self):
         if self.repository is not None and self.institution is None:
             from src.oncolab.institution import OncoLabInstitution, application_identity
-            self.institution = OncoLabInstitution(self.repository.store, self.oncolab, application_identity())
+            self.institution = OncoLabInstitution(self.repository.store, self.oncolab,
+                self.application_content_identity or application_identity())
             self.manager.registry_pin_provider = lambda: self.institution.pin().model_dump()
 
     def index_for(self, block_id=None):
@@ -500,7 +504,8 @@ class HarnessRuntime:
             self.append_event(block_id, "ResearcherLaunchRejected", {"reason": "no_retry_contract"})
             raise RuntimeError("Researcher already launched for this block; retries are forbidden")
         self.manager.require_work_window(self.manager.block(block_id))
-        self.append_event(block_id, "ResearcherRunStarted", {"block_id": block_id, "launched_by": launched_by, "workspace": f"var/workspaces/{block_id}"})
+        self.append_event(block_id, "ResearcherRunStarted", {"block_id": block_id, "launched_by": launched_by,
+            "workspace": str(self.runtime_paths.workspaces / block_id) if self.runtime_paths else f"var/workspaces/{block_id}"})
 
     def complete_researcher(self, block_id: str) -> None:
         self.append_event(block_id, "ResearcherRunCompleted", {"block_id": block_id})
@@ -875,11 +880,13 @@ def register_researcher_tools(
             from src.science.local import LocalVenvScientificBackend
             if isinstance(runtime.sandbox, LocalVenvScientificBackend):
                 owner = ctx.deps.block_id
+                if runtime.runtime_paths is not None:
+                    runtime.runtime_paths.require_owned(runtime.sandbox.root / owner / "experiments")
                 backend = LocalVenvScientificBackend(runtime.sandbox.root / owner / "experiments", runtime.sandbox.policy,
                     workspace_limit=runtime.service_resources.max_workspace_bytes,workspace_base=runtime.sandbox.root / owner,
                     max_processes=runtime.service_resources.max_science_processes,
                     minimum_free_disk_bytes=runtime.service_resources.minimum_free_disk_bytes)
-                with runtime.gdc.reserve(owner, None) as reservation:
+                with runtime.reserve_software(owner, None) as reservation:
                     backend.download_limit = reservation.capacity
                     try:
                         candidate = await runtime.heavy_operation(owner, backend.acquire_and_execute, request.model_copy(deep=True))
@@ -888,7 +895,7 @@ def register_researcher_tools(
                             reservation.consume(backend.downloaded)
                         finally:
                             try:
-                                runtime.service_resources.charge_download(owner, backend.downloaded)
+                                runtime.service_resources.charge_download(owner, backend.downloaded, category="software")
                             finally:
                                 try:
                                     append(ctx, "ScientificResourceReceipt", {'executions':backend.process_resources,'operational_only':True})
@@ -896,7 +903,12 @@ def register_researcher_tools(
                                     append(ctx, "ScientificTransferReceipt", {"consumed_bytes": backend.downloaded,
                                         "reserved_bytes": reservation.capacity, "backend": "local_venv"})
             else:
-                candidate = await runtime.heavy_operation(ctx.deps.block_id, runtime.sandbox.acquire_and_execute, request.model_copy(deep=True))
+                backend = runtime.sandbox
+                if runtime.runtime_paths is not None:
+                    parent = runtime.runtime_paths.workspaces / ctx.deps.block_id / "experiments"
+                    runtime.runtime_paths.require_owned(parent)
+                    backend = DockerScientificSandbox(runtime.sandbox.policy, runtime.sandbox._runner, owned_parent=parent)
+                candidate = await runtime.heavy_operation(ctx.deps.block_id, backend.acquire_and_execute, request.model_copy(deep=True))
             if runtime.repository is not None:
                 runtime.repository.record_immutable(RecordKind.SANDBOX_CANDIDATE, candidate.candidate_id, candidate, ctx.deps.block_id)
         except Exception as error:

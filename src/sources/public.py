@@ -10,23 +10,29 @@ from src.runtime.resources import ResourceRejected
 from src.sources.models import AcquisitionRecord, CoverageContract, ScientificArtifact, LiteratureRecord, LiteratureSearchResult
 
 
-async def bounded_response(client, method, url, ceiling, meter=None, **kwargs):
+async def bounded_response(client, method, url, ceiling, meter=None, reserve=None, **kwargs):
     """Bound decoded response content while streaming, including failed attempts."""
     chunks = []
     size = 0
-    async with client.stream(method, url, **kwargs) as response:
-        response.raise_for_status()
-        declared = response.headers.get("content-length")
-        if declared is not None and int(declared) > ceiling:
-            raise ResourceRejected("public source response exceeded the configured byte budget", size)
-        async for chunk in response.aiter_bytes(chunk_size=min(65536, ceiling + 1)):
-            size += len(chunk)
-            if meter is not None:
-                meter(len(chunk))
-            if size > ceiling:
+    with reserve() if reserve is not None else nullcontext(None) as capacity:
+        effective_ceiling = min(ceiling, capacity.capacity) if capacity is not None else ceiling
+        async with client.stream(method, url, **kwargs) as response:
+            response.raise_for_status()
+            declared = response.headers.get("content-length")
+            if declared is not None and int(declared) > effective_ceiling:
                 raise ResourceRejected("public source response exceeded the configured byte budget", size)
-            chunks.append(chunk)
-        return httpx.Response(response.status_code, content=b"".join(chunks), request=response.request)
+            async for chunk in response.aiter_bytes(chunk_size=min(65536, effective_ceiling + 1)):
+                size += len(chunk)
+                try:
+                    if capacity is not None:
+                        capacity.consume(len(chunk))
+                finally:
+                    if meter is not None:
+                        meter(len(chunk))
+                if size > effective_ceiling:
+                    raise ResourceRejected("public source response exceeded the configured byte budget", size)
+                chunks.append(chunk)
+            return httpx.Response(response.status_code, content=b"".join(chunks), request=response.request)
 
 
 class GdcPublicSource:
@@ -39,6 +45,7 @@ class GdcPublicSource:
         self._max_download_bytes = min(max_download_bytes, 10_000_000)
         self.meter = None
         self.reserve = None
+        self.response_reserve = None
         self.transfer_receipt = None
 
     async def aclose(self):
@@ -57,7 +64,7 @@ class GdcPublicSource:
         if filters:
             from copy import deepcopy
             payload["filters"] = deepcopy(filters)
-        response=await bounded_response(self._client,"POST",f"/{endpoint}",self._max_download_bytes,self.meter,json=payload);body=await asyncio.to_thread(response.json);hits=body.get("data",{}).get("hits",[])
+        response=await bounded_response(self._client,"POST",f"/{endpoint}",self._max_download_bytes,self.meter,self.response_reserve,json=payload);body=await asyncio.to_thread(response.json);hits=body.get("data",{}).get("hits",[])
         if body.get('error'):
             raise RuntimeError('GDC query failed despite HTTP success')
         if not isinstance(hits,list) or any(not isinstance(row,dict) for row in hits):
@@ -113,7 +120,7 @@ class GdcPublicSource:
         if format not in {"tsv","json","text","binary","gzip"}:raise ValueError("declare supported byte format")
         declared=None;size=0;metadata_bytes=None;status='failed';error_type=None
         try:
-            metadata=await bounded_response(self._client,"GET",f"/files/{file_id}",self._max_download_bytes,self.meter,
+            metadata=await bounded_response(self._client,"GET",f"/files/{file_id}",self._max_download_bytes,self.meter,self.response_reserve,
                 params={"fields":"file_id,access,file_name,data_format,data_type,analysis.workflow_type,md5sum,file_size"})
             metadata_bytes=len(metadata.content)
             info=metadata.json().get("data",{})
@@ -167,6 +174,7 @@ class XenaPublicSource:
         if max_download_bytes <= 0: raise ValueError("download ceiling must be positive")
         self._max_download_bytes=min(max_download_bytes, 10_000_000)
         self.meter = None
+        self.response_reserve = None
     async def aclose(self):
         await self._client.aclose()
 
@@ -175,7 +183,7 @@ class XenaPublicSource:
         if not re.fullmatch(r"[A-Za-z0-9 ._-]{1,100}", query): raise ValueError("query must contain only simple search text")
         escaped=query.replace('"', '\\"')
         xena_query=f'(query {{:select [:dataset.name :dataset.longtitle :dataset.type] :from [:dataset] :where [:like :dataset.name "%{escaped}%"] :limit {limit}}})'
-        response=await bounded_response(self._client,"POST","/data/",self._max_download_bytes,self.meter,content=xena_query,headers={"Content-Type":"text/plain"})
+        response=await bounded_response(self._client,"POST","/data/",self._max_download_bytes,self.meter,self.response_reserve,content=xena_query,headers={"Content-Type":"text/plain"})
         if len(response.content)>self._max_download_bytes:raise ResourceRejected("public source response exceeded the configured byte budget", len(response.content))
         body=response.json()
         if not isinstance(body,list): raise ValueError("unexpected Xena dataset response")

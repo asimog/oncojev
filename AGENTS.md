@@ -30,6 +30,11 @@ OncoJev is an autonomous computational oncology research system.
   checks, `scripts/check_architecture.py` and `git diff --check`; documentation-only
   edits use `scripts/check_architecture.py --docs-only`, scope/preservation review
   and `git diff --check`. Honor narrower task-specific limits.
+- Keep routine implementation moving with focused offline checks. Do not launch
+  WSL/native/provider/full-trajectory checks implicitly during a code iteration;
+  schedule them explicitly for their owning qualification task and record missing
+  proof in the plan. A long scientific procedure still retains its required phases
+  and limits; the testing observation target is reporting, not cancellation.
 - Update the owning current document when a fact changes. Review the
   `architecture.yaml` projection against Architecture/AGENTS before refreshing its
   hashes; reference checks do not prove semantic boundaries or native qualification.

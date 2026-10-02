@@ -40,6 +40,175 @@ from src.sources.models import AcquisitionRecord
 ROOT = Path(__file__).resolve().parents[2]
 
 
+@pytest.mark.parametrize("switch", ["", "true", "2", " 1", "false"])
+def test_invalid_testing_switch_fails_before_storage(tmp_path, monkeypatch, switch):
+    from src.autonomous import AutonomousService, service_from_environment
+    monkeypatch.setenv("ONCOJEV_TESTING", switch)
+    monkeypatch.setenv("ONCOJEV_DATA_ROOT", str(tmp_path / "data"))
+    explicit = tmp_path / "explicit" / "history.sqlite3"
+    for create in (lambda: AutonomousService(ROOT, explicit), lambda: service_from_environment(ROOT)):
+        with pytest.raises(ValueError, match="literal 0 or 1"):
+            create()
+    assert not explicit.parent.exists() and not (tmp_path / "data").exists()
+
+
+@pytest.mark.parametrize("override", ["environment", "constructor", "both"])
+def test_testing_database_escape_rejects_before_open_or_recovery(tmp_path, monkeypatch, override):
+    from src.autonomous import AutonomousService
+    monkeypatch.setenv("ONCOJEV_TESTING", "1")
+    monkeypatch.setenv("ONCOJEV_DATA_ROOT", str(tmp_path / "data"))
+    monkeypatch.delenv("ONCOJEV_DB_PATH", raising=False)
+    database = tmp_path / "normal.sqlite3"
+    store = SqliteResearchStore(database)
+    try:
+        store.append(StoredRecord(kind=RecordKind.MISSION, record_id="normal", payload={"direction": "preserve"}))
+    finally:
+        store.close()
+    original = database.read_bytes()
+    if override in {"environment", "both"}:
+        monkeypatch.setenv("ONCOJEV_DB_PATH", str(database))
+    from src.config.environment import process_settings
+    from src.runtime.paths import select_paths
+    paths = select_paths(ROOT, process_settings(ROOT))
+    explicit = paths.data / "inside.sqlite3" if override == "both" else database
+    with pytest.raises(ValueError, match="isolated run root"):
+        AutonomousService(ROOT, explicit if override != "environment" else None)
+    assert database.read_bytes() == original and not paths.data.exists()
+
+
+def test_testing_store_cycles_paths_and_identity_remain_frozen(tmp_path, monkeypatch, capsys):
+    import shutil
+    from src.autonomous import service_from_environment
+    from src.config.loader import load_runtime_config
+    from src.runtime.pydantic_ai.factory import build_system as real_build_system
+    from src.oncolab.institution import application_identity
+    from src.runtime.verification import LOCAL_CHECKS, local_verification_passed
+    application = tmp_path / "application"
+    shutil.copytree(ROOT / "config", application / "config")
+    (application / ".env.local").write_text("ONCOJEV_TESTING=1\n")
+    monkeypatch.delenv("ONCOJEV_TESTING", raising=False)
+    monkeypatch.delenv("ONCOJEV_DB_PATH", raising=False)
+    monkeypatch.setenv("ONCOJEV_DATA_ROOT", str(tmp_path / "data"))
+    monkeypatch.setenv("OPENROUTER_API_KEY", "fixture")
+    monkeypatch.setenv("TYPESAFE_API_KEY", "fixture")
+    captured_workspaces = []
+    from src.runtime.pydantic_ai.agents import _runtime_capabilities
+    def capabilities(workspace, *args):
+        captured_workspaces.append(workspace)
+        return _runtime_capabilities(workspace, *args)
+    monkeypatch.setattr("src.runtime.pydantic_ai.agents._runtime_capabilities",
+        capabilities)
+    async def director(messages, info):
+        if not any(isinstance(m, ModelResponse) for m in messages):
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code":
+                'b = await allocate_block(objective="small isolated observation", why_now="fixture")\n'
+                'await launch_researcher(block_id=b["block_id"])'}, tool_call_id="allocate")])
+        return ModelResponse(parts=[TextPart("yield")])
+    async def researcher(messages, info):
+        return ModelResponse(parts=[TextPart("completed without evidence")])
+    def compose(models, policy, **kwargs):
+        system = real_build_system(models, policy, environment={"OPENROUTER_API_KEY": "fixture", "TYPESAFE_API_KEY": "fixture"}, **kwargs)
+        agents, runtime = system.agents, system.runtime
+        agents.director.model = scripted(director)
+        def fresh(block_id):
+            agent = agents.fresh_researcher(block_id)
+            agent.model = scripted(researcher)
+            return agent
+        runtime.researcher_factory = fresh
+        return system
+    monkeypatch.setattr("src.autonomous.build_system", compose)
+    service = service_from_environment(application)
+    paths = service.paths
+    identity = application_identity(service.policy)
+    try:
+        assert service.store.path == paths.data / "oncojev.sqlite3"
+        assert paths.data.parent.name == "testing" and len(paths.data.name) == 32
+        assert service.policy.block.default_seconds == 90
+        # Mutating settings after startup must not redirect the next cycle.
+        monkeypatch.setenv("ONCOJEV_TESTING", "0")
+        monkeypatch.setenv("ONCOJEV_DATA_ROOT", str(tmp_path / "elsewhere"))
+        import yaml
+        edited = yaml.safe_load((application / "config/runtime.yaml").read_text())
+        edited['testing']['block']['default_seconds'] = 80
+        (application / "config/runtime.yaml").write_text(yaml.safe_dump(edited))
+        results = [service.run_once("same direction") for _ in range(2)]
+        assert all(r.status.value == "complete" for r in results)
+        assert len(service.store.records(kind=RecordKind.CYCLE)) == 2
+        blocks = service.store.records(kind=RecordKind.BLOCK)
+        assert {r.payload["start"]["application_identity"] for r in blocks} == {identity}
+        assert all(r.payload["start"]["allocation"]["seconds"] == 90 for r in blocks)
+        assert len({r.record_id for r in blocks}) == 2
+        assert service._last_system.runtime.sandbox.root == paths.workspaces
+        assert captured_workspaces and all(p.is_relative_to(paths.data) for p in captured_workspaces)
+        assert not (tmp_path / "elsewhere").exists()
+        proof = {"contract_version": "local-verification-v1", "status": "passed", "application_identity": identity,
+            "backend": "local_venv", "execution_environment": {"system": "Linux", "machine": "x86_64",
+                "release": "6.6-microsoft-standard-WSL2", "python": "3.12", "executable": "/native/python"},
+            "checks": {group: {name: True for name in names} for group, names in LOCAL_CHECKS.items()}}
+        assert not local_verification_passed(proof, identity)
+        normal = application_identity(load_runtime_config(application / "config/runtime.yaml", testing=False))
+        assert not local_verification_passed(proof, normal)
+        proof["application_identity"] = normal
+        assert local_verification_passed(proof, normal)
+        logs = capsys.readouterr().out
+        assert '"testing": true' in logs and '"elapsed_seconds"' in logs
+        assert "fixture" not in logs
+    finally:
+        service.close()
+    assert paths.data.exists()  # No whole-run deletion.
+    monkeypatch.setenv("ONCOJEV_TESTING", "0")
+    monkeypatch.setenv("ONCOJEV_DATA_ROOT", str(tmp_path / "normal"))
+    normal_service = service_from_environment(application)
+    try:
+        assert normal_service.policy.block.default_seconds == 900
+        assert normal_service.store.path == tmp_path / "normal" / "oncojev.sqlite3"
+    finally:
+        normal_service.close()
+
+
+@pytest.mark.parametrize("linked_path", ["run-root", "workspaces", "director", "database-parent"])
+def test_testing_linked_paths_cannot_reach_normal_history(tmp_path, monkeypatch, linked_path):
+    import os
+    import subprocess
+    from src.autonomous import AutonomousService
+    from src.config.environment import process_settings
+    from src.runtime.paths import select_paths
+    monkeypatch.setenv("ONCOJEV_TESTING", "1")
+    monkeypatch.setenv("ONCOJEV_DATA_ROOT", str(tmp_path / "data"))
+    monkeypatch.delenv("ONCOJEV_DB_PATH", raising=False)
+    paths = select_paths(ROOT, process_settings(ROOT))
+    # Target stays under the same configured base: it is still normal history.
+    normal = tmp_path / "data" / "normal"
+    normal.mkdir(parents=True)
+    link = {'run-root': paths.data, 'workspaces': paths.workspaces,
+        'director': paths.director, 'database-parent': paths.data / 'db-link'}[linked_path]
+    link.parent.mkdir(parents=True, exist_ok=True)
+    if os.name == 'nt':
+        subprocess.run(['cmd', '/c', 'mklink', '/J', str(link), str(normal)], check=True, capture_output=True)
+    else:
+        link.symlink_to(normal, target_is_directory=True)
+    database = link / 'normal.sqlite3' if linked_path == 'database-parent' else None
+    with pytest.raises(ValueError, match='testing|isolated'):
+        AutonomousService(ROOT, database)
+    assert not list(normal.iterdir())
+
+
+def test_testing_run_id_is_shared_in_process_and_fresh_in_another(tmp_path):
+    import os
+    import subprocess
+    import sys
+    from src.config.environment import ProcessSettings
+    from src.runtime.paths import select_paths
+    settings = ProcessSettings(True, str(tmp_path))
+    first = select_paths(ROOT, settings)
+    assert select_paths(ROOT, settings) == first
+    command = 'from pathlib import Path; from src.config.environment import process_settings; from src.runtime.paths import select_paths; root=Path.cwd(); print(select_paths(root, process_settings(root)).data.name)'
+    child = subprocess.run([sys.executable, '-B', '-c', command], cwd=ROOT,
+        env={**os.environ, 'ONCOJEV_TESTING':'1', 'ONCOJEV_DATA_ROOT':str(tmp_path)},
+        capture_output=True, text=True, check=True, timeout=10)
+    assert len(child.stdout.strip()) == 32 and child.stdout.strip() != first.data.name
+
+
 def test_notebook_export_and_publication_are_deterministic_downstream_only(tmp_path, monkeypatch):
     """Public rendering/publish failure cannot mutate evidence or consume notebook edits."""
     import subprocess
@@ -2111,7 +2280,7 @@ def test_external_discovery_tool_retains_query_identity_and_has_no_execution_aut
 
 
 @pytest.mark.parametrize('requires_code', [False, True])
-@pytest.mark.parametrize('local_proof', ['missing', 'valid', 'historical', 'changed_app', 'partial', 'missing_control', 'unsupported_version', 'non_boolean', 'wrong_backend', 'wrong_platform'])
+@pytest.mark.parametrize('local_proof', ['missing', 'valid', 'testing', 'historical', 'changed_app', 'partial', 'missing_control', 'unsupported_version', 'non_boolean', 'wrong_backend', 'wrong_platform'])
 def test_governance_rejects_unqualified_use_without_revision_or_evidence_mutation(tmp_path, requires_code, local_proof):
     from src.oncolab.governance import CapabilityProposal, propose, review_pending
     from src.oncolab.models import OncoLabAvailability, OncoLabValidationState
@@ -2120,6 +2289,10 @@ def test_governance_rejects_unqualified_use_without_revision_or_evidence_mutatio
     from src.runtime.pydantic_ai.factory import bind_repository
     from src.provenance import content_hash
     system=cycle_system();runtime=system.runtime
+    if local_proof == 'testing':
+        from src.config.loader import load_runtime_config
+        from src.oncolab.institution import application_identity
+        runtime.application_content_identity = application_identity(load_runtime_config(ROOT / 'config/runtime.yaml', testing=True))
     store=SqliteResearchStore(tmp_path/'governance.sqlite3')
     bind_repository(runtime,ResearchRepository(store))
     block=runtime.manager.allocate('descriptive attempt','qualification is separate')

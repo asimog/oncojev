@@ -1,7 +1,7 @@
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 
 class StrictModel(BaseModel):
@@ -116,7 +116,41 @@ class ServiceResourceConfig(StrictModel):
     max_service_download_bytes: int = Field(default=500_000_000, gt=0)
 
 
+class TestingBlockConfig(StrictModel):
+    default_seconds: int = Field(default=90, gt=0)
+    min_seconds: int = Field(default=60, gt=0)
+    max_seconds: int = Field(default=90, gt=0)
+    handoff_reserve_seconds: int = Field(default=15, gt=0)
+
+    @model_validator(mode="after")
+    def allocation_bounds(self):
+        if not self.min_seconds <= self.default_seconds <= self.max_seconds:
+            raise ValueError("require testing min <= default <= max")
+        if self.handoff_reserve_seconds >= self.min_seconds:
+            raise ValueError("testing reserve must be shorter than minimum")
+        return self
+
+
+class TestingDataConfig(StrictModel):
+    max_response_bytes: int = Field(default=10_000_000, gt=0)
+    max_block_download_bytes: int = Field(default=20_000_000, gt=0)
+    max_service_download_bytes: int = Field(default=50_000_000, gt=0)
+
+
+class TestingConfig(StrictModel):
+    observation_target_seconds: int = Field(default=120, gt=0)
+    block: TestingBlockConfig = Field(default_factory=TestingBlockConfig)
+    public_data: TestingDataConfig = Field(default_factory=TestingDataConfig)
+
+
 class RuntimeConfig(StrictModel):
+    _testing_enabled: bool = PrivateAttr(default=False)
+    testing: TestingConfig = Field(default_factory=TestingConfig)
+
+    @property
+    def testing_enabled(self) -> bool:
+        return self._testing_enabled
+
     mode: RuntimeMode = RuntimeMode.DETERMINISTIC
     block: BlockConfig = Field(default_factory=BlockConfig)
     director: RetrievalConfig = Field(default_factory=RetrievalConfig)

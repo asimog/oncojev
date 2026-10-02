@@ -24,6 +24,9 @@ class ServiceResources:
     max_file_bytes: int = 10_000_000
     max_block_download_bytes: int = 50_000_000
     max_service_download_bytes: int = 500_000_000
+    max_data_response_bytes: int | None = None
+    max_data_block_download_bytes: int | None = None
+    max_data_service_download_bytes: int | None = None
     max_workspace_bytes: int = 100_000_000
     max_durable_artifact_bytes: int = 1_000_000_000
     minimum_free_disk_bytes: int = 10_000_000
@@ -36,8 +39,18 @@ class ServiceResources:
     reservations: dict[str, dict] = field(default_factory=dict)
     heavy_owner: str | None = None
     downloaded_bytes: int = 0
+    data_downloaded_bytes: int = 0
+    data_block_downloaded_bytes: dict[str, int] = field(default_factory=dict)
     block_downloaded_bytes: dict[str, int] = field(default_factory=dict)
     receipts: list[dict] = field(default_factory=list)
+
+    @classmethod
+    def from_policy(cls, policy):
+        data = policy.testing.public_data
+        return cls(max_file_bytes=policy.block.max_download_bytes, **policy.resources.model_dump(),
+            max_data_response_bytes=data.max_response_bytes if policy.testing_enabled else None,
+            max_data_block_download_bytes=data.max_block_download_bytes if policy.testing_enabled else None,
+            max_data_service_download_bytes=data.max_service_download_bytes if policy.testing_enabled else None)
 
     @asynccontextmanager
     async def heavy(self, owner):
@@ -58,11 +71,12 @@ class ServiceResources:
             self.heavy_owner = None
 
     @contextmanager
-    def reserve_download(self, owner, declared_size, *, workspace_used=0, durable_used=0, paths=(), archive_limit=None):
+    def reserve_download(self, owner, declared_size, *, category="other", workspace_used=0, durable_used=0, paths=(), archive_limit=None):
         """Reserve before opening bytes; unknown size reserves bounded available capacity."""
         import shutil
         from pathlib import Path
         from uuid import uuid4
+        self._check_category(category)
         if declared_size is not None and (isinstance(declared_size, bool) or not isinstance(declared_size, int) or declared_size < 0):
             raise ValueError("invalid declared file size")
         held = sum(max(0, r['capacity'] - r['consumed']) for r in self.reservations.values())
@@ -75,6 +89,14 @@ class ServiceResources:
             self.max_durable_artifact_bytes - durable_used - disk_held)
         if archive_limit is not None:
             capacity = min(capacity, archive_limit - workspace_used)
+        if category == "public_data":
+            data_held, data_owner_held = self._data_held(owner)
+            capacity = min(capacity,
+                self.max_data_response_bytes if self.max_data_response_bytes is not None else self.max_file_bytes,
+                (self.max_data_service_download_bytes - self.data_downloaded_bytes - data_held)
+                    if self.max_data_service_download_bytes is not None else capacity,
+                (self.max_data_block_download_bytes - self.data_block_downloaded_bytes.get(owner, 0) - data_owner_held)
+                    if self.max_data_block_download_bytes is not None else capacity)
         for path in paths:
             target = Path(path).resolve()
             while not target.exists():
@@ -85,7 +107,7 @@ class ServiceResources:
             raise ResourceRejected("insufficient reserved download/disk capacity", 0)
         amount = capacity if declared_size is None else declared_size
         key = str(uuid4())
-        receipt = {'reservation_id': key, 'owner': owner, 'declared_size': declared_size,
+        receipt = {'reservation_id': key, 'owner': owner, 'category': category, 'declared_size': declared_size,
                    'capacity': amount, 'consumed': 0, 'status': 'reserved'}
         self.reservations[key] = receipt
         self.receipts.append(receipt)
@@ -108,17 +130,40 @@ class ServiceResources:
             receipt['status'] = 'released'
             self.reservations.pop(key, None)
 
-    def charge_download(self, owner, byte_count):
+    @staticmethod
+    def _check_category(category):
+        if category not in {"public_data", "software", "other"}:
+            raise ValueError("unknown acquisition category")
+
+    def _data_held(self, owner):
+        data = [r for r in self.reservations.values() if r['category'] == 'public_data']
+        return (sum(max(0, r['capacity'] - r['consumed']) for r in data),
+                sum(max(0, r['capacity'] - r['consumed']) for r in data if r['owner'] == owner))
+
+    def charge_download(self, owner, byte_count, *, category="other"):
+        self._check_category(category)
         if byte_count < 0:
             raise ValueError("download usage cannot decrease")
         # Failed attempts and the final rejected chunk remain consumed usage.
         self.downloaded_bytes += byte_count
         self.block_downloaded_bytes[owner] = self.block_downloaded_bytes.get(owner, 0) + byte_count
+        data_exhausted = False
+        if category == "public_data":
+            self.data_downloaded_bytes += byte_count
+            self.data_block_downloaded_bytes[owner] = self.data_block_downloaded_bytes.get(owner, 0) + byte_count
+            data_held, data_owner_held = self._data_held(owner)
+            data_exhausted = (
+                self.max_data_service_download_bytes is not None
+                and self.data_downloaded_bytes + data_held > self.max_data_service_download_bytes
+            ) or (
+                self.max_data_block_download_bytes is not None
+                and self.data_block_downloaded_bytes[owner] + data_owner_held > self.max_data_block_download_bytes
+            )
         held = sum(max(0, r['capacity'] - r['consumed']) for r in self.reservations.values())
         held_owner = sum(max(0, r['capacity'] - r['consumed']) for r in self.reservations.values() if r['owner'] == owner)
-        if self.downloaded_bytes + held > self.max_service_download_bytes or self.block_downloaded_bytes[owner] + held_owner > self.max_block_download_bytes:
+        if data_exhausted or self.downloaded_bytes + held > self.max_service_download_bytes or self.block_downloaded_bytes[owner] + held_owner > self.max_block_download_bytes:
             self.receipts.append({"resource": "download_bytes", "owner": owner,
-                                  "status": "rejected", "transferred_bytes": self.downloaded_bytes})
+                                  "status": "rejected", "category": category, "transferred_bytes": self.downloaded_bytes})
             raise ResourceRejected("service or block download budget exhausted", self.downloaded_bytes)
 
     def snapshot(self):
@@ -128,6 +173,10 @@ class ServiceResources:
                 "max_block_download_bytes": self.max_block_download_bytes,
                 "max_service_download_bytes": self.max_service_download_bytes,
                 "downloaded_bytes": self.downloaded_bytes,
+                "public_data": {"max_response_bytes": self.max_data_response_bytes,
+                    "max_block_download_bytes": self.max_data_block_download_bytes,
+                    "max_service_download_bytes": self.max_data_service_download_bytes,
+                    "downloaded_bytes": self.data_downloaded_bytes},
                 "coder_limits": {"processes": self.max_coder_processes, "memory_mb": self.max_coder_memory_mb,
                     "cpu": self.max_coder_cpu, "seconds": self.max_coder_seconds,
                     "workspace_bytes": self.max_workspace_bytes},

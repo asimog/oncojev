@@ -31,6 +31,13 @@ provided by source metadata. See the official
 [download contract](https://docs.gdc.cancer.gov/API/Users_Guide/Downloading_Files/).
 Successful acquisition does not establish scientific utility.
 
+In isolated testing, GDC/Xena responses and files share additional public-data
+block/service sublimits, including metadata and rejected/failed chunks. The existing
+ServiceResources owner reserves before streaming and retains shared disk/download
+guards. Local software uses a separate ordinary software reservation; literature
+and external catalogue ceilings are unchanged. Testing does not change access,
+input identity, scientific admission or qualification requirements.
+
 Data-asset discovery and external source expansion belong to the [active plan](../../docs/IMPLEMENTATION_PLAN.md).
 
 `representation.py` checks a bounded declared need against retained row schemas,

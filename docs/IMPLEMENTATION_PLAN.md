@@ -39,6 +39,13 @@ application content identity and declared WSL2/control fields, but does not comp
 an exact current environment identity. Bind and check the measured interpreter,
 dependencies and effective control configuration so environment drift invalidates proof.
 
+Isolated-testing native assessment: explicitly exercise the frozen testing root,
+both role workspaces and local-venv experiment/command-family paths on WSL2 native
+storage, including linked-path denial and retention scope. Keep testing receipts
+non-qualifying; qualification is produced only for the ordinary `ONCOJEV_TESTING=0`
+application identity. Windows local profile contracts are already verified and
+do not block code iteration while these kernel observations remain outstanding.
+
 Owning code: `src/runtime/verification.py`, `src/runtime/process.py`,
 `src/science/local.py`, `scripts/verify_coder_container.py`,
 `scripts/verify_coder_resources.py`, `scripts/verify_local_science.py`,
@@ -425,6 +432,14 @@ otherwise, without blocking the core trajectory or claiming remote delivery.
 If required original history is unavailable locally, first establish the exact
 missing record/input identity and provenance through read-only inspection; recovery
 must preserve original stores without assuming remote completeness or merging data.
+
+Isolated-profile live assessment: retain provider-backed elapsed `run_once` and
+post-block-review phases separately, a consecutive-cycle `serve` trajectory and
+unchanged scientific preparation/install/test/execution/replay. Report the 120 s
+target as observation only, including overruns and exhausted data ceilings. Use an
+explicit longer scenario for the unchanged 300 s scheduled Director review. Scripted
+Windows profile checks establish contracts, not live timing or scientific benefit;
+these trajectories remain separate from routine implementation checks.
 
 Owning code: `src/autonomous.py`, `src/runtime/cycle.py`,
 `src/runtime/pydantic_ai/`, `src/persistence/`, `src/dossier/delta.py`,

@@ -15,6 +15,8 @@ LOCAL_CHECKS = {
 
 def local_verification_passed(payload, application):
     """Check one complete receipt; controls cannot be combined across environments."""
+    if application.startswith("application-testing-v1:"):
+        return False
     environment = payload.get("execution_environment", {})
     checks = payload.get("checks", {})
     if not isinstance(environment, dict) or not isinstance(checks, dict):

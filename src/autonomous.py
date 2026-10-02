@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from src.runtime.paths import data_root, workspace_root
+from src.runtime.paths import select_paths
 
 import asyncio
 import os
 import threading
+import json
+from time import perf_counter
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -15,7 +17,7 @@ from src.runtime.resources import ServiceResources
 from src.api.server import create_server
 from src.application.service import ResearchApplication
 from src.block.models import BlockStatus, CycleStatus, DirectorOutcome, JevBlock, RunOutcome, run_outcome
-from src.config.environment import load_local_environment
+from src.config.environment import process_settings
 from src.config.loader import load_models_config, load_runtime_config
 from src.dossier.builder import build_dossier
 from src.ledger.events import LedgerEvent
@@ -102,28 +104,32 @@ def recover_interrupted_blocks(repository: ResearchRepository) -> tuple[str, ...
 
 
 class AutonomousService:
-    def __init__(self, root: Path, database_path: Path) -> None:
-        load_local_environment(root)
+    def __init__(self, root: Path, database_path: Path | None = None) -> None:
+        self.root = root.resolve()
+        self.settings = process_settings(self.root)
+        self.paths = select_paths(self.root, self.settings)
+        # Validate both overrides before any filesystem/store/recovery side effect.
+        if self.settings.database_path is not None:
+            self.paths.database(self.settings.database_path)
+        database_path = self.paths.database(database_path if database_path is not None else self.settings.database_path)
+        self.models = load_models_config(self.root / "config" / "models.yaml")
+        self.policy = load_runtime_config(self.root / "config" / "runtime.yaml", testing=self.settings.testing)
+        from src.oncolab.institution import application_identity
+        self.application_content_identity = application_identity(self.policy)
         database_path.parent.mkdir(parents=True, exist_ok=True)
-        self.root = root
         self.store = SqliteResearchStore(database_path)
         self.repository = ResearchRepository(self.store)
         self.application = ResearchApplication(self.store)
-        self.models = load_models_config(root / "config" / "models.yaml")
-        self.policy = load_runtime_config(root / "config" / "runtime.yaml")
         recover_interrupted_blocks(self.repository)
         ResearchMemory(self.store).backfill()
-        self.resources = ServiceResources(max_file_bytes=self.policy.block.max_download_bytes,
-            max_block_download_bytes=self.policy.resources.max_block_download_bytes,
-            max_service_download_bytes=self.policy.resources.max_service_download_bytes,
-            max_workspace_bytes=self.policy.resources.max_workspace_bytes,
-            max_durable_artifact_bytes=self.policy.resources.max_durable_artifact_bytes,
-            minimum_free_disk_bytes=self.policy.resources.minimum_free_disk_bytes,
-            max_coder_processes=self.policy.resources.max_coder_processes,
-            max_coder_memory_mb=self.policy.resources.max_coder_memory_mb,
-            max_coder_cpu=self.policy.resources.max_coder_cpu,
-            max_coder_seconds=self.policy.resources.max_coder_seconds,
-            max_science_processes=self.policy.resources.max_science_processes)
+        self.resources = ServiceResources.from_policy(self.policy)
+        print("SERVICE PROFILE " + json.dumps({"testing": self.settings.testing,
+            "block": {key: getattr(self.policy.block, key) for key in
+                ("default_seconds", "min_seconds", "max_seconds", "handoff_reserve_seconds")},
+            "public_data": self.resources.snapshot()["public_data"],
+            "data_root": str(self.paths.data), "database": str(database_path),
+            "director": str(self.paths.director), "workspaces": str(self.paths.workspaces),
+            "observation_target_seconds": self.policy.testing.observation_target_seconds if self.settings.testing else None}), flush=True)
         self._last_system = None
         self.director = None
         self._loop_runner = asyncio.Runner()
@@ -135,14 +141,15 @@ class AutonomousService:
         if self.policy.retention.enabled:
             from src.persistence.retention import cleanup_workspaces
             try:
-                results=cleanup_workspaces(self.repository,workspace_root(self.root),
+                results=cleanup_workspaces(self.repository,self.paths.require_owned(self.paths.workspaces),
                     minimum_age_seconds=self.policy.retention.minimum_age_seconds,max_archive_bytes=self.policy.retention.max_archive_bytes,
                     max_workspaces=self.policy.retention.max_workspaces)
                 for result in results:
                     if result["status"]!="removed":print(f"WORKSPACE CLEANUP {result['status']}: {result['error_type']}",flush=True)
             except Exception as error:
                 print(f"WORKSPACE RETENTION UNAVAILABLE: {type(error).__name__}",flush=True)
-        system = build_system(self.models, self.policy, repository=self.repository, director=self.director, resources=self.resources)
+        system = build_system(self.models, self.policy, repository=self.repository, director=self.director,
+            resources=self.resources, paths=self.paths, application_content_identity=self.application_content_identity)
         self._last_system = system
         self.director = system.agents.director
         try:
@@ -172,7 +179,15 @@ class AutonomousService:
         if self._cycle_lock.locked():
             raise RuntimeError("one service cycle is already active")
         async with self._cycle_lock:
-            return await self._run_once(direction)
+            started = perf_counter()
+            try:
+                return await self._run_once(direction)
+            finally:
+                if self.settings.testing:
+                    elapsed = perf_counter() - started
+                    target = self.policy.testing.observation_target_seconds
+                    print("TESTING OBSERVATION " + json.dumps({"scope": "run_once: recovery, retention, composition, cycle and drain; excludes post-block review",
+                        "elapsed_seconds": elapsed, "target_seconds": target, "target_exceeded": elapsed > target}), flush=True)
 
     def run_once(self, direction: str = DEFAULT_DIRECTION) -> CycleResult:
         return self._loop_runner.run(self.run_once_async(direction))
@@ -246,5 +261,4 @@ class AutonomousService:
 
 
 def service_from_environment(root: Path) -> AutonomousService:
-    database = Path(os.environ.get("ONCOJEV_DB_PATH", str(data_root(root) / "oncojev.sqlite3")))
-    return AutonomousService(root, database)
+    return AutonomousService(root)

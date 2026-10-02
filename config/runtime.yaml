@@ -1,4 +1,15 @@
 mode: live
+testing:
+  observation_target_seconds: 120
+  block:
+    default_seconds: 90
+    min_seconds: 60
+    max_seconds: 90
+    handoff_reserve_seconds: 15
+  public_data:
+    max_response_bytes: 10000000
+    max_block_download_bytes: 20000000
+    max_service_download_bytes: 50000000
 block:
   default_seconds: 900
   min_seconds: 300
