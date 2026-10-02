@@ -1,17 +1,57 @@
 # ADR: <decision title>
 
-Status: **PROPOSED / ACCEPTED / REJECTED / SUPERSEDED** (choose one).
 Date: YYYY-MM-DD.
-Owning document: <link to existing authority>.
+Owning document(s): <link to existing current authorities>.
+
+<Start from HEAD/worktree and verify the affected owner, configuration/input flow
+and tests before saving the reconciled proposal. Rewrite unsupported claims in the
+proposal itself; do not first save an untouched supplied version. This archived
+template is used explicitly, not as routine repository authority.>
 
 ## Context
 
-<Concrete problem requiring a decision.>
+<Verified HEAD/worktree basis. Existing behavior and owner; real remaining problem.
+Identify correct, partial, stale/false assumptions, already implemented behavior
+and reusable mechanisms. Trace the affected flow; flag ownership conflicts.>
 
-## Decision and reason
+## Decision
 
-<Decision, brief rationale and any rejected alternative.>
+<Smallest justified change and reason, distinguished from existing behavior. Extend
+the current owner. If no code change is needed, say so. Do not describe planned
+behavior as implemented. An ADR does not become configuration or a roadmap.>
+
+## Alternatives
+
+<Relevant options, including retaining/extending the existing mechanism or no change,
+and why they were rejected. Do not redesign because the supplied proposal suggested it.>
 
 ## Consequences
 
-<Scope and implications. Link to any superseding decision. Do not duplicate a roadmap.>
+<Concrete benefits, costs, coupling/drift risks and limits. Keep unfinished execution
+scope in IMPLEMENTATION_PLAN and completed proof in TASK_LOG; link instead of copying
+their task/status/evidence history.>
+
+## Invariants/boundaries affected
+
+<Owners, authority/state/persistence/execution boundaries preserved or changed.
+Name the current documents, code/config and behavioral tests that own those facts.
+For adopted changes, align affected owners and review architecture.yaml before
+refreshing canonical hashes. Preserve ENFORCED/TESTED/REVIEWED scope; static integrity
+does not prove semantics or scientific/native qualification.>
+
+## Verification
+
+<Actual commands/results, implementation basis and retained evidence links; state
+what was not verified. Test changed behavior/invariants, not prose/source strings.
+Use the repository environment, focused owning tests where applicable,
+scripts/check_architecture.py and git diff --check. Documentation-only changes can
+use --docs-only plus explicit ADR/template link and scope review. Run expensive
+WSL/native/provider/integration checks only when the decision depends on them.>
+
+## Status
+
+<Choose PROPOSED / ACCEPTED / REJECTED / SUPERSEDED; record the actual decision and
+its basis/date, linking a superseding ADR if applicable. Separately state delivered
+implementation scope and supported/unproven evidence. Writing or passing checks
+does not imply acceptance; acceptance does not imply implementation completion.
+An unresolved proposal is PROPOSED; rejected proposals authorize no work.>

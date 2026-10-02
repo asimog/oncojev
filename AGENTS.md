@@ -13,6 +13,11 @@ OncoJev is an autonomous computational oncology research system.
   records. New capability work needs a short feature spec in the plan: goal,
   scope, owning code, actual blockers and completion proof. Use an ADR for
   consequential architecture, ownership, state, persistence or execution changes.
+- Treat supplied ADRs as proposals. Verify the owning flow and reconcile the
+  proposal itself before implementing the smallest justified decision. Record
+  decision status separately from implementation and proof; passing checks does
+  not accept an ADR. Reflect adopted changes in the existing document owners and
+  reviewed projection; keep unfinished work in the plan.
 - Test observable behavior and invariants, not prose/source strings. Keep fast
   checks separate from explicit WSL/native/integration verification. Run focused
   checks, `scripts/check_architecture.py` and `git diff --check`; documentation-only

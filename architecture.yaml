@@ -5,7 +5,7 @@ canonical_sources:
   - path: docs/ARCHITECTURE.md
     sha256: bbbc2148fe30b77ba1125a3f5523ad6cb273f8acc5f9a07ecbc23c0dd8664a35
   - path: AGENTS.md
-    sha256: d1261ec27e07643640f1364c639ba0e82771c834ac938bd9ed21df7b64a2807a
+    sha256: 24585a245360d8c735e3f4da6512286e951096a31a504b6e229888e4e5b15437
 # Owners/directions are REVIEWED authority/data flow, not an import DAG.
 classification:
   ENFORCED: Named executable guard enforces only its stated scope.

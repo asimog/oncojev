@@ -98,3 +98,42 @@ and data-flow semantics, framework exclusivity, shallow state freezing, native
 command controls and declared qualification consumption remain REVIEWED. Existing
 TESTED labels cite scoped behavioral tests, not fresh native/runtime certification.
 No application runtime, provider, integration, scientific or native tests were run.
+
+## 2026-10-02 — Reconcile the ADR-handling workflow and template
+
+Task: Verify the supplied workflow against existing governance and implement its
+bounded documentation clarification.
+
+Result: Created a reconciled proposal directly, without an untouched supplied copy.
+Extended AGENTS and the explicitly requested archived template to distinguish
+repository facts, justified changes, decision status, implementation and proof.
+Reused existing owners and checks; the projection changed only the reviewed AGENTS
+hash. No application code, tests, configuration or architecture semantics changed.
+Decision adoption is not inferred from document creation or passing checks.
+
+Basis: HEAD `f8165fd43e108f26863754380b486b40f27c1063`, initially clean worktree,
+plus this documentation patch. The template and ADR convention were read explicitly
+for this request; other archive/source-input content was excluded.
+
+Verification:
+
+- `.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_architecture_checks.py tests/invariants/test_repo_index.py -q`
+  — 32 passed in 15.92s before edits; checker/index/test code remains unchanged.
+- `.venv/Scripts/python.exe -B scripts/check_architecture.py` and the same command
+  with `--docs-only` — passed before and after documentation implementation.
+- Explicit inline ADR/template review — required sections and local link targets
+  checked outside the routine archive-excluding scan. Preservation hashes retain
+  the implementation plan, Architecture, checker, index, tests and configuration;
+  YAML semantic comparison retains all other projection facts/classifications.
+- `git diff --check` — passed.
+
+Evidence: [reconciled proposal](PROPOSED_ADR_REPOSITORY_VERIFIED_DECISIONS.md),
+[working rules](../AGENTS.md), [projection](../architecture.yaml) and the existing
+[checker](../scripts/check_architecture.py). The archived template was updated only
+under this task's explicit authorization.
+
+Limitations: Documentation implementation is complete; ADR decision status is recorded
+in the proposal rather than inferred from this log. No application decision was
+supplied. Semantic ADR review/acceptance remains explicit and is not checker-enforced;
+static integrity provides no native/scientific qualification. No new prose tests,
+application/runtime, native/WSL, provider, scientific or integration tests were run.
