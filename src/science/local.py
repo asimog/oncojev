@@ -60,7 +60,10 @@ class LocalVenvScientificBackend:
         settings={'root':str(root),'application':str(Path(__file__).resolve().parents[2]),'phase':phase,
             'memory_mb':self.policy.memory_mb,'timeout':self.policy.timeout_seconds,'max_output_bytes':1_000_000}
         launcher=Path(__file__).with_name('confined_exec.py')
-        argv=[str(root/'venv'/'bin'/'python'),'-I',str(launcher),json.dumps(settings),*effective]
+        # Installation can replace files in the experiment venv. Always apply
+        # confinement with the application interpreter before exec'ing any of
+        # those files, including the experiment's Python/pytest entry points.
+        argv=[sys.executable,'-I',str(launcher),json.dumps(settings),*effective]
         env={'PATH':str(root/'venv'/'bin')+':/usr/local/bin:/usr/bin:/bin','HOME':str(root/'outputs'),
             'TMPDIR':str(root/'outputs'),'PYTHONNOUSERSITE':'1','PYTHONDONTWRITEBYTECODE':'1',
             'OPENBLAS_NUM_THREADS':'1','OMP_NUM_THREADS':'1','LANG':'C.UTF-8','PIP_NO_INPUT':'1','PIP_DISABLE_PIP_VERSION_CHECK':'1'}
@@ -132,12 +135,12 @@ class LocalVenvScientificBackend:
             first=self._command(root,request.execute_command,'execute')
             replay=self._command(root,request.execute_command,'replay')
             values=DockerScientificSandbox._parse_replayed_output(first[1],replay[1])
-            environment={'backend':'local_venv','executor_version':'local-venv-v2','platform':platform.platform(),
+            environment={'backend':'local_venv','executor_version':'local-venv-v3','platform':platform.platform(),
                 'python_version':platform.python_version(),'python_sha256':hashlib.sha256(Path(sys.executable).resolve().read_bytes()).hexdigest(),
                 'interpreter_link_mode':'read_only_base_interpreter','base_python_prefix':sys.base_prefix,
                 'archive_sha256':hashlib.sha256(archive).hexdigest(),'dependencies':[w.model_dump(mode='json') for w in request.dependency_wheels],
                 'dependencies_sha256':content_hash([w.model_dump(mode='json') for w in request.dependency_wheels]),
-                'network':'disabled_for_install_test_execute','confinement':'landlock-seccomp-single-process-v1',
+                'network':'disabled_for_install_test_execute','confinement':'landlock-seccomp-single-process-v2-trusted-launcher',
                 'cpu':self.policy.cpu,'memory_mb':self.policy.memory_mb,'workspace_bytes':self._disk_used(),
                 'downloaded_bytes':self.downloaded,'experiment_path':str(root),'dependency_lock':'retained exact wheel bytes/hashes; fresh qualification is separate'}
             receipt=SandboxReceipt(repository_url=request.repository_url,commit_sha=commit,environment=environment,

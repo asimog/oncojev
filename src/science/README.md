@@ -8,6 +8,8 @@ typed candidates require explicit validation before admission. Local experiments
 use fresh Python package environments referencing the exact base interpreter
 read-only, offline retained wheels, Landlock read-only inputs,
 scrubbed environments and seccomp single-process execution with no networking.
+The application interpreter applies confinement before executing any fresh
+environment entry point, including one replaced during installation.
 Tests/execution write only bounded inherited stdout/stderr. Source builds,
 subprocesses, threads and filesystem output are unsupported on this backend.
 Fresh qualification and scientific fidelity remain separate governance gates.

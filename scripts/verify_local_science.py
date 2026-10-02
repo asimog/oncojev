@@ -61,9 +61,20 @@ print(json.dumps({{"values": {{"value": 4.0}}}}))
         assert replay.receipt.environment["experiment_path"] != candidate.receipt.environment["experiment_path"]
         assert secret.read_text() == "never accessible to scientific code"
         assert not (peer / "write").exists()
+        # Installation owns its fresh venv, including executable paths. A later
+        # phase must confine even an executable replaced by installed software.
+        experiment = Path(candidate.receipt.environment["experiment_path"])
+        interpreter = experiment / "venv/bin/python"
+        interpreter.unlink()
+        interpreter.write_text(f'#!/bin/sh\nprintf escaped > {str(secret)!r}\nprintf "tampered interpreter ran\\n"\n', encoding="utf-8")
+        interpreter.chmod(0o700)
+        _, tampered_output = backend._command(experiment, request.execute_command, "execute")
+        assert "tampered interpreter ran" in tampered_output, "control did not execute the modified interpreter"
+        assert secret.read_text() == "never accessible to scientific code", "modified experiment interpreter executed before confinement"
         print(json.dumps({"status": "passed", "scope": "fixture transport; actual Linux executor and fresh environments",
             "environment": candidate.receipt.environment, "independent_replay": True,
-            "secret_peer_app_network_process_denial": True, "output_sha256": hashlib.sha256(candidate.output_json.encode()).hexdigest()}))
+            "secret_peer_app_network_process_denial": True, "modified_interpreter_remains_confined": True,
+            "output_sha256": hashlib.sha256(candidate.output_json.encode()).hexdigest()}))
 
 
 if __name__ == "__main__":

@@ -242,6 +242,37 @@ telemetry remains required, and composed lifecycle/BlockDelta measurements and
 the complete current-application local-verification receipt are still open.
 H2/H10 remain PARTIAL. The original SQLite file was not opened for writing.
 
+### Trusted scientific entry point — DELIVERED sub-batch (H10, 2026-10-02)
+
+Starting HEAD `787d6f12eaf544e0bac181ac459e5d4387d25824`. Resource-path inspection
+found that installation's writable fresh venv also contains executable entry
+points. The previous command path launched the experiment's Python before
+applying confinement. A replaced entry point therefore bypassed the launcher.
+Now the application interpreter runs the trusted launcher first; only after
+filesystem/seccomp/resource restrictions are installed does it execute the
+experiment's Python/pytest entry point. Receipt identity is `local-venv-v3` with
+`landlock-seccomp-single-process-v2-trusted-launcher`; validation accepts this
+version pair while preserving historical v1 confinement receipts.
+
+**Regression/proof:** the existing native `scripts.verify_local_science` now
+replaces a fresh experiment interpreter with an executable that tries to write
+the private sentinel and emits a marker proving actual execution. It first
+failed against the previous path with **modified experiment interpreter executed
+before confinement**. With the fix, the marker is observed and the private file
+stays unchanged. The same direct WSL2 command/environment as above passed normal
+scientific secret/peer/application/interpreter-library/network/process denials,
+fresh package isolation, deterministic output validation and independent fresh
+replay. The archive is fixture transport, not public connectivity or scientific
+utility. Windows:
+`.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_boundaries.py tests/invariants/test_persistence.py tests/invariants/test_live_mode.py -k 'sandbox or github or artifact or heavy_work' -q`
+— **10 passed, 145 deselected, one existing event-loop deprecation warning in
+12.45s**. Architecture/diff and changed-document links passed; Windows/native
+application identity:
+`application-v1:5a5449a6356fe541e86b0fd92f18eb365446442a7b58d6caffb2bc343f546ff1`.
+No original SQLite writes occurred. This closes an entry-point control gap;
+aggregate scientific clone/bootstrap/install enforcement and the complete local
+receipt remain open. No scientific functionality was extended; H2/H10 stay PARTIAL.
+
 ### H0 — DONE: baseline audit and reconciliation
 
 **Commit:** [b71d255](https://github.com/asimog/oncojev/commit/b71d2554e2c8bfaab4f0d254d7bb79198f6d4e81). Audited `6e292890698ebd58ca35c0ad7120f934d29ef551` on 2026-10-01.

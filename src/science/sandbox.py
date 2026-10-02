@@ -274,7 +274,11 @@ def validate_sandbox_candidate(candidate: SandboxMeasurementCandidate, analysis_
         required=('python_sha256','archive_sha256','dependencies_sha256','executor_version','platform')
         if any(not receipt.environment.get(k) for k in required) or receipt.environment.get('network')!='disabled_for_install_test_execute':
             raise SandboxError('incomplete confined local environment identity')
-        if receipt.environment.get('confinement')!='landlock-seccomp-single-process-v1':raise SandboxError('unqualified local confinement')
+        confinement=receipt.environment.get('confinement')
+        if confinement not in {'landlock-seccomp-single-process-v1','landlock-seccomp-single-process-v2-trusted-launcher'}:
+            raise SandboxError('unqualified local confinement')
+        if confinement=='landlock-seccomp-single-process-v2-trusted-launcher' and receipt.environment.get('executor_version')!='local-venv-v3':
+            raise SandboxError('local trusted launcher version mismatch')
         if receipt.environment.get('dependencies_sha256')!=content_hash([w.model_dump(mode='json') for w in candidate.request.dependency_wheels]):
             raise SandboxError('local dependency identity mismatch')
     else:raise SandboxError('unsupported scientific execution backend')
