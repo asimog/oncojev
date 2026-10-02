@@ -137,3 +137,72 @@ in the proposal rather than inferred from this log. No application decision was
 supplied. Semantic ADR review/acceptance remains explicit and is not checker-enforced;
 static integrity provides no native/scientific qualification. No new prose tests,
 application/runtime, native/WSL, provider, scientific or integration tests were run.
+
+## 2026-10-02 — Investigate the fast local testing proposal
+
+Result: Traced environment/config/path, download/resource, lifecycle, admission and
+qualification owners. Appended the investigation and reconciled Task 17. No runtime
+or actual local environment settings changed; decision remained PROPOSED.
+
+Basis: HEAD `2302b4bcc0ede6b94da466f5b3d6342548271b6c` plus the existing worktree.
+Proof: [current testing ADR](PROPOSED_ADR_FAST_LOCAL_TESTING.md).
+Checks: explicit active document/ADR link, whitespace and earlier-plan preservation
+checks passed (exit 0); `git diff --check` passed (exit 0). Documentation-only
+architecture checking failed (exit 1) on the pre-existing stale AGENTS projection hash.
+Limits: Source/document assessment only; no behavior, provider or native qualification.
+
+## 2026-10-02 — Archive surplus docs and enforce a two-task log
+
+Result: Archived nine docs, including the retired ADRs/guide and all previous log
+content. Restored all ten READMEs outside `docs/` and removed their empty archive
+directories after scope correction. Root navigation and one subsystem link were
+then updated. Package metadata and native-copy inputs remain unchanged.
+AGENTS and the existing checker enforce docs-only archiving, scoped historical
+exceptions and at most two completed log entries. The testing ADR now compares
+current/proposed limits and separates a 90 s block allowance from a 120 s observation
+target; recommends WSL2/local_venv for full execution and Windows for fast contracts.
+
+Basis: HEAD `2302b4bcc0ede6b94da466f5b3d6342548271b6c` plus the existing worktree.
+Completed Task 18 removed from the plan. Runtime/scientific records are unchanged.
+Proof: [previous log](Archive/PREVIOUS_TASK_LOG.md), [ADR](PROPOSED_ADR_FAST_LOCAL_TESTING.md),
+checker/tests; local relocation snapshot at
+`var/document-cleanup-02e3557814c741599a5cf71894a98c47/baseline.json` (ignored).
+
+Checks: `.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_architecture_checks.py tests/invariants/test_repo_index.py tests/invariants/test_native_setup.py -q`
+— 51 passed in 14.75 s. The third-entry case first failed because the old checker
+accepted it; the revised checker rejects it and preserves external READMEs.
+Full and `--docs-only` architecture checks passed; projection semantics retained,
+only reviewed canonical hashes refreshed. Relocation/body/hash preservation and
+`git diff --check` passed.
+Limits: Local governance/fixture proof only; no native/provider execution or platform
+speed measurement. Testing-profile implementation remains proposed in Task 17.
+
+## 2026-10-02 — Assess research-plan reconciliation and accept the testing ADR
+
+Result: Assessed the supplied research-plan ADR with the archived template and
+traced frontier, memory, semantic, evaluation, runtime and qualification owners.
+Recorded ADOPT WITH LIMITATIONS as a proposed technical recommendation in
+`docs/Archive/ADR/PROPOSED_ADR_RESEARCH_PLAN_RECONCILIATION.md`; reconciled plan specs
+for neutral evaluation, formal open proposals, experience lineage and whole-lab
+semantic/runtime experiments. Retained publication/scaling/shared-generation specs
+under explicit triggers. Accepted the fast-testing ADR at the user's instruction,
+kept its active path and removed Task 17 without claiming implementation completion.
+
+Basis: HEAD `b27a6b220cd183bd51aff06aec8b8f778187d1b1`, initially clean; this
+documentation worktree is the implementation identity. No source, configuration,
+tests, dependencies or scientific records changed. README/Architecture now reflect
+the testing decision; reviewed YAML semantics are unchanged, with only its canonical
+Architecture hash refreshed.
+Proof: reconciled ADR and [implementation plan](IMPLEMENTATION_PLAN.md),
+[accepted testing decision](PROPOSED_ADR_FAST_LOCAL_TESTING.md); displaced predecessor
+preserved intact in [previous log](Archive/PREVIOUS_TASK_LOG.md).
+
+Checks: `.venv/Scripts/python.exe -B scripts/check_architecture.py --docs-only`
+passed (exit 0); `git diff --check` passed (exit 0). Inline Python scope/preservation
+review passed (exit 0): eight unaffected task specs unchanged; all three conditional
+spec bodies preserved; Task 17 explicitly removed; expected task inventory; unchanged
+projection semantics; exact ADR template sections and resolving archived links.
+Limits: Source/test/API/document assessment and static integrity only. No behavioral
+tests, provider/native runs, empirical scientific/search/learning/semantic utility,
+framework adaptation or testing-profile implementation were verified. New research
+ADR remains proposed; testing ADR acceptance is separate from implementation proof.

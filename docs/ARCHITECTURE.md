@@ -100,6 +100,9 @@ resume a Researcher run. Each block permits one Researcher launch.
 [model](../config/models.yaml) and [runtime](../config/runtime.yaml) configuration.
 Live mode requires provider credentials; deterministic clients are explicit
 fixtures. Linux agents combine Coder and Code Mode; Windows uses Code Mode.
+The Linux Coder adapter replaces only Shell and retains installed result clearing,
+near-limit warnings, output truncation and argument repair. Their composition is
+present; live effectiveness and native qualification require separate proof.
 Coder commands and the default local-venv scientific backend use the owned Linux
 command-family controls. Installed Science currently runs in worker threads under
 the shared heavy-work lease, rather than that process-family governor.
@@ -107,7 +110,8 @@ the shared heavy-work lease, rather than that process-family governor.
 The service uses SQLite under its configured data root or explicit database path.
 Disposable workspaces are separate from retained inputs and canonical records.
 The [implementation plan](IMPLEMENTATION_PLAN.md) owns unfinished work; the
-[current testing ADR](PROPOSED_ADR_FAST_LOCAL_TESTING.md) remains a proposal.
+[current testing ADR](PROPOSED_ADR_FAST_LOCAL_TESTING.md) is accepted; its testing
+profile is not implemented or behaviorally verified by that decision.
 [TASK_LOG](TASK_LOG.md) retains only the two most recent completed-task entries,
 newest first; displaced entries are preserved in `docs/Archive/PREVIOUS_TASK_LOG.md`.
 Other Markdown within `docs/` and retired ADRs are archived, excluded from routine

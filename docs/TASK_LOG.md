@@ -5,41 +5,50 @@ predecessor, newest first; append displaced entries intact to
 [Previous Task Log](Archive/PREVIOUS_TASK_LOG.md). The architecture checker rejects
 a third level-two entry. Future work belongs only in IMPLEMENTATION_PLAN.
 
-## 2026-10-02 — Archive surplus docs and enforce a two-task log
+## 2026-10-02 — Correct research-plan reconciliation after adversarial audit
 
-Result: Archived nine docs, including the retired ADRs/guide and all previous log
-content. Restored all ten READMEs outside `docs/` and removed their empty archive
-directories after scope correction. Root navigation and one subsystem link were
-then updated. Package metadata and native-copy inputs remain unchanged.
-AGENTS and the existing checker enforce docs-only archiving, scoped historical
-exceptions and at most two completed log entries. The testing ADR now compares
-current/proposed limits and separates a 90 s block allowance from a 120 s observation
-target; recommends WSL2/local_venv for full execution and Windows for fast contracts.
+Result: Kept configured-budget OncoLab recall measurement in Task 3 and bounded
+canonical retrieval repair in Task 11. Publication now activates on a selected
+deliverable; isolated publisher setup, connectivity and remote SHA proof remain
+work/completion requirements. Corrected the research ADR and Architecture to identify
+Linux Coder's inherited result clearing, warnings, output truncation and argument
+repair. Research ADR remains PROPOSED; fast-testing ADR remains ACCEPTED in docs
+with Task 17 absent. No runtime capability was implemented.
 
-Basis: HEAD `2302b4bcc0ede6b94da466f5b3d6342548271b6c` plus the existing worktree.
-Completed Task 18 removed from the plan. Runtime/scientific records are unchanged.
-Proof: [previous log](Archive/PREVIOUS_TASK_LOG.md), [ADR](PROPOSED_ADR_FAST_LOCAL_TESTING.md),
-checker/tests; local relocation snapshot at
-`var/document-cleanup-02e3557814c741599a5cf71894a98c47/baseline.json` (ignored).
+Basis: HEAD `b27a6b220cd183bd51aff06aec8b8f778187d1b1` plus the prior documentation
+worktree; this task's commit contains the assessment, numbering and audit corrections.
+Proof: [implementation plan](IMPLEMENTATION_PLAN.md),
+[Architecture](ARCHITECTURE.md) and
+`docs/Archive/ADR/PROPOSED_ADR_RESEARCH_PLAN_RECONCILIATION.md`.
+The displaced assessment entry is preserved intact in the previous log.
 
-Checks: `.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_architecture_checks.py tests/invariants/test_repo_index.py tests/invariants/test_native_setup.py -q`
-— 51 passed in 14.75 s. The third-entry case first failed because the old checker
-accepted it; the revised checker rejects it and preserves external READMEs.
-Full and `--docs-only` architecture checks passed; projection semantics retained,
-only reviewed canonical hashes refreshed. Relocation/body/hash preservation and
-`git diff --check` passed.
-Limits: Local governance/fixture proof only; no native/provider execution or platform
-speed measurement. Testing-profile implementation remains proposed in Task 17.
+Checks: `.venv/Scripts/python.exe -B scripts/check_architecture.py --docs-only`
+and `git -c core.safecrlf=false diff --check` passed (exit 0). Inline
+scope/preservation/link review passed: Tasks 1/2/4/5/6/7/8/9/10 unchanged from the
+pre-correction worktree, active numbering 1–12, three conditional specs retained,
+ADR template/local links valid, log rotation intact, and projection semantics
+unchanged with only the reviewed Architecture hash refreshed. Fixed-query catalogue
+reproduction at page size 20: 109 candidates; budget 80 retrieves 80, labelled
+`stat.scipy` recall 0; budget 200 retrieves 109, recall 1.
 
-## 2026-10-02 — Investigate the fast local testing proposal
+Limits: Documentation integrity and local fixed-query candidate coverage only.
+Runtime, configuration and tests unchanged. No live providers, scientific utility,
+native controls, actual retrieval repair or remote notebook publication verified.
 
-Result: Traced environment/config/path, download/resource, lifecycle, admission and
-qualification owners. Appended the investigation and reconciled Task 17. No runtime
-or actual local environment settings changed; decision remained PROPOSED.
+## 2026-10-02 — Make implementation-plan numbering consecutive
 
-Basis: HEAD `2302b4bcc0ede6b94da466f5b3d6342548271b6c` plus the existing worktree.
-Proof: [current testing ADR](PROPOSED_ADR_FAST_LOCAL_TESTING.md).
-Checks: explicit active document/ADR link, whitespace and earlier-plan preservation
-checks passed (exit 0); `git diff --check` passed (exit 0). Documentation-only
-architecture checking failed (exit 1) on the pre-existing stale AGENTS projection hash.
-Limits: Source/document assessment only; no behavior, provider or native qualification.
+Result: Renumbered former active Tasks 14 and 15 as Tasks 11 and 12. Updated all
+references throughout the plan, including the catalogue-extension reference;
+clarified the historical-to-current mapping in the reconciled assessment ADR.
+The three conditional feature specs and all capability scope/proof text are retained.
+
+Basis: HEAD `b27a6b220cd183bd51aff06aec8b8f778187d1b1` plus the existing documentation
+worktree. Earlier assessment, testing acceptance and unrelated edits are preserved.
+Proof: [implementation plan](IMPLEMENTATION_PLAN.md) and
+`docs/Archive/ADR/PROPOSED_ADR_RESEARCH_PLAN_RECONCILIATION.md`.
+Checks: Inline Python numbering/preservation review passed (exit 0): headings exactly
+1 through 12, no old 14/15 references, all singular task references resolve, plural
+catalogue reference updated, and three conditional specs retained. Documentation-only
+architecture check passed (exit 0); `git -c core.safecrlf=false diff --check` passed
+(exit 0). Log rotation preserves the displaced entry intact.
+Limits: Documentation/reference integrity only; no runtime or test changes.

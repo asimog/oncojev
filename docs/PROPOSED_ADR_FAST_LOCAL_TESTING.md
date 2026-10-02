@@ -1,7 +1,9 @@
 # ADR: Isolated fast local testing through existing owners
 
 Date: 2026-10-02.
-Owners: [Architecture](ARCHITECTURE.md), [implementation plan](IMPLEMENTATION_PLAN.md),
+Decision status: **ACCEPTED**, by explicit user instruction on 2026-10-02.
+Implementation and behavioral/native verification: unverified.
+Owning documents: [Architecture](ARCHITECTURE.md), [implementation plan](IMPLEMENTATION_PLAN.md),
 `src/config/loader.py`, `src/runtime/paths.py` and `src/autonomous.py`.
 
 ## Context
@@ -245,7 +247,7 @@ projection; the plan and log retain their distinct future-work/completed-proof r
 
 ## Verification
 
-Required local evidence is owned by [the assigned feature spec](IMPLEMENTATION_PLAN.md#task-17--add-isolated-fast-local-testing-limits):
+Required local evidence for this accepted decision covers:
 normal defaults and invalid switch rejection; preservation of shorter/custom and
 all unchanged budgets; isolated actual stores and role/sandbox workspace paths;
 shorter real allocation/handoff; data-only rejection/charging and unaffected software
@@ -257,9 +259,14 @@ utility are not established by these local contracts.
 
 ## Status
 
-**PROPOSED — repository-reconciled; implementation not yet verified.** Adoption
-is distinct from implementation/proof. No application change beyond this bounded
-decision is authorized by the supplied proposal itself.
+**ACCEPTED — explicitly accepted by the user on 2026-10-02.**
+
+Acceptance adopts the reconciled isolated-testing decision; implementation and
+behavioral/native proof remain unverified. At the user's explicit instruction, keep
+this ADR at its current `docs/` path and remove Task 17 without adding a replacement
+plan item. This removal is a planning exception, not completion of the capability.
+The dated investigation below retains its original proposed status as historical
+evidence; it does not override this acceptance or establish implementation.
 
 ## Investigation report appended 2026-10-02
 

@@ -13,7 +13,7 @@ while preserving candidate recall.
 | [Architecture](docs/ARCHITECTURE.md) | Current structure, ownership and invariants |
 | [Implementation plan](docs/IMPLEMENTATION_PLAN.md) | Unfinished work and completion criteria |
 | [Task log](docs/TASK_LOG.md) | Two most recent completed tasks; older proof is archived |
-| [Current testing ADR](docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md) | Proposed local testing profile and investigated limits |
+| [Current testing ADR](docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md) | Accepted local testing decision; implementation unverified |
 | [Agent guidance](AGENTS.md) | Working rules and task navigation |
 
 ## Run

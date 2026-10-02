@@ -51,10 +51,10 @@ failure and unconfirmed cleanup fail honestly; partial or historical records can
 satisfy the gate, including a changed environment with unchanged application content.
 Windows fixtures and provider connectivity are reported separately.
 
-## Task 3 — Build independent scientific and semantic evaluations
+## Task 3 — Extend the neutral evaluation substrate and independent corpus
 
-Goal: Measure scientific validity and the marginal benefit and cost of semantic
-assistance beyond the existing generated contract cases.
+Goal: Provide reusable, independent measurement of scientific validity and research
+decisions beyond the existing generated contract cases.
 
 Scope: Extend the corpus and fresh-condition harness with independently reviewed
 labels/reference outputs for representation and method fit, relation distinctions,
@@ -68,13 +68,32 @@ Add source-bound validity, false-positive, alternative-recall, uncertainty-resol
 and verified replication metrics; replication IDs alone are not corroboration.
 Produce candidate/scope-bound `utility_evaluation` records for measured reusable
 candidates, without admitting benchmark labels as scientific evidence. Own the shared
-corpus, comparison harness and metrics; capability-specific evaluations retain their
-own scientific scope and completion proof. Reuse suitable cases/results while keeping
+corpus, labels, held-out splits, condition adapters, comparison harness, metrics and
+resource accounting, independently of Jev, Reasoner, memory or search policy.
+Generalize the existing fresh-condition harness rather than build another harness;
+its current three conditions omit a Jev-only comparison and multi-block memory/search
+ablations. Task 11 consumes this substrate for whole-lab evaluation; it does not
+recreate corpus, labels, harness, utility records or accounting. Capability-specific
+evaluations retain their own scientific scope and completion proof. Reuse suitable cases/results while keeping
 ability-level acceptance distinct from complete-lab utility.
+Run selection-recall baselines at the configured search/candidate limits through
+the actual consumer. Report larger-budget diagnostic runs separately; the existing
+200-candidate evaluation override must not stand in for the configured 80-candidate
+baseline. Retain the current fixed-query lexical-mismatch case and budget identity
+for Task 11's bounded retrieval repair, without claiming scientific utility.
 
 Owning code: `src/evals/`, `evals/`, `scripts/evaluate_selection.py`,
 `scripts/evaluate_representation.py`, `src/persistence/records.py`;
 `tests/invariants/test_evaluation.py`.
+
+Actual blockers: Current selection labels are embedded contract examples, the
+representation corpus lacks broader independent scientific labels, and the
+fresh-condition harness has three fixed semantic conditions and mostly operational
+counts. It does not yet provide matched multi-block experience/search comparisons
+or the candidate-bound utility producer required by reusable governance.
+The current 109-item catalogue misses labelled `stat.scipy` for
+`co movement linear association` at candidate budget 80; the evaluation override
+of 200 retrieves it by exhausting the catalogue and hides the configured-budget miss.
 
 Done when: A bounded, versioned scientific corpus runs through the actual consumers
 and fresh conditions, with per-case results, independent label basis, native model/
@@ -82,11 +101,14 @@ policy identity, resource accounting, failures and uncertainty. Reports distingu
 contract correctness, scientific utility and connectivity; scoped utility records
 resolve their measured candidate and retained comparison. No improvement is a valid
 measured result, not a reason to manufacture a winner.
+Configured-budget recall failures and separate larger-budget diagnostics are visible
+with their query, snapshot, labels and effective limits; passing exhaustive retrieval
+does not close a bounded retrieval failure.
 
-## Task 4 — Complete investigation lifecycle and regeneration
+## Task 4 — Extend formal investigation search and outcome-linked continuity
 
-Goal: Make retained hypotheses, relations and prerequisite gaps usable for selecting
-scientifically distinct future investigations.
+Goal: Let formal search compare new mission-grounded proposals with retained work,
+and make the effect of scientific outcomes on later selection reference-resolvable.
 
 Scope: Extend the observable portfolio with source-linked blocked, newly testable,
 deferred and scientifically resolved transitions. Generate or regenerate candidates
@@ -96,17 +118,44 @@ sides of contradictions, distinguishing population/design differences from actua
 conflicts and identifying a test that could discriminate them. Scientific resolution
 requires supporting admitted results; allocation completion and semantic agreement
 are insufficient. Existing frontier preparation, mission continuity and revalidation
-remain the foundation.
+remain the foundation. Free-form Director allocation already accepts new questions;
+do not add a second generator/runtime or require a new Director Reasoner. Extend
+the existing frontier to accept bounded Director-authored proposals grounded in the
+retained mission and inspected capability/source context, even with no prior hypothesis.
+Preserve proposal provenance separately from scientific support, stable identities,
+scope, omissions, alternatives, budget limits and stale-basis revalidation. Do not
+encode a growing list of biological search rules.
+
+Connect retained attempt/follow-up outcomes and unresolved prerequisites to actual
+next choices through existing memory retrieval receipts, frontier records and
+allocation/review records. Extend those records only where the current lineage is
+insufficient; retain which experience informed a choice and which relevant change
+made a deferred question actionable. Existing outcome-to-candidate generation and
+block-start memory already work; no parallel memory, learned ranker or automatic
+scientific resolution is needed. Repair zero-overlap retrieval only against labelled
+misses using a bounded alternative in ResearchMemory, measured with Task 3 cases.
 
 Owning code: `src/director/frontier.py`, `src/director/review.py`,
 `src/runtime/pydantic_ai/global_tools.py`, `src/memory/models.py`,
-`src/memory/service.py`, `src/jev/questions.py`, `src/persistence/records.py`;
+`src/memory/service.py`, `src/jev/questions.py`, `src/persistence/records.py`,
+`src/runtime/pydantic_ai/contracts.py`, `src/runtime/pydantic_ai/search_tools.py`;
 `tests/invariants/test_persistence.py`, `tests/invariants/test_boundaries.py`.
 
-Done when: Real tools recover a deferred/blocked investigation after a relevant
-basis change, retain distinct tests and independent replication, and reconstruct
+Actual blockers: The formal generator consumes only retrieved digest items, and
+ResearchMemory excludes zero-lexical-overlap items before Jev can compare them.
+Free-form allocation need not name a frontier; retained retrieval and follow-up
+lineage alone does not establish that an autonomous next choice used it.
+
+Done when: Real tools compare a new mission-grounded question with no prior hypothesis
+and retain its provenance without admitting it as evidence. They recover a
+deferred/blocked investigation after a relevant basis change, retain distinct tests
+and independent replication, and reconstruct
 lifecycle/relation lineage after reopen. Independent cases assess resolvable conflict,
 useful next-test selection and missed alternatives; unknown resolution stays unknown.
+Source-bound failed, inconclusive and contrary outcomes lead to observable later
+choices after reopen, with no experience fabricated from execution errors. Task 11
+measures marginal benefit using matched memory/search conditions; this task proves
+the mechanism and lineage, without claiming learned scientific utility.
 
 ## Task 5 — Generate usable representation alternatives
 
@@ -262,7 +311,148 @@ historical pins remain reproducible. Missing/stale/changed-scope proof rejects;
 rejection and reverification remain history-only; governed updates and retirement
 change only their scoped contracts. The real admission path remains authoritative.
 
-## Task 11 — Automate isolated notebook publication
+## Task 11 — Evaluate whole-lab search, experience use and semantic composition
+
+Goal: Evaluate the complete lab's investigation selection, scientific continuation
+and semantic decisions, adopting refinements only where measured failures justify them.
+
+Scope: Consume Task 3's neutral corpus, held-out methodology, condition adapters,
+metrics, utility-record producer and accounting. Own multi-block experiments and
+their scientific interpretation, not another evaluation substrate. Compare the
+current composed lab with matched memory-present/withheld, retained-only/open-proposal
+search and suitable capability/representation/method/tool conditions; account for
+unavailable paths instead of simulating scientific success. Trace whether prior
+experience, OncoLab, representations, methods, scientific tools, Jev and search
+alternatives actually affect useful choices and source-bound outcomes.
+Compare bounded offline reflection,
+proximity/diversity and branch/analysis/debug-budget variants on matched needs, inputs
+and budgets. Follow actual Director allocation/review, Researcher tool choices,
+retained measurements, memory and subsequent selections across blocks. Evaluate
+scientific coverage/concentration and whether review leads to a useful next test or
+an actionable capability/engineering proposal. The current program review counts
+declared entity/topic tags and leaves scientific value unknown; those observations
+alone are not measured scientific coverage or decision utility.
+
+Replay independently labelled paraphrase, alternative-test, population/design,
+replication and blocked-to-actionable cases through actual consumers. Repair
+normalization/alignment/retention failures only when demonstrated, including retrieval
+that drops useful zero-overlap memory before semantic comparison. Measure repeated
+fixed-input semantic instability before spending an explicit extra allowance on
+calibration, self-consistency or a bounded Autoresearch-style variant loop. Preserve
+native distributions, alternatives, failure fallback and separate local/global
+policies; adoption uses reviewed engineering. Use capability-specific results as
+scoped inputs, without treating their separate successes as complete-lab benefit.
+
+Keep current-catalogue retrieval repair active independently of scale infrastructure.
+Use Task 3's configured-budget baseline to repair demonstrated OncoLab misses in
+the canonical registry/discovery path and its agent consumer. Start with the retained
+lexical-mismatch case; compare the smallest bounded deterministic retrieval or
+query-expansion change before broader mechanisms. Measure useful recall and resource
+cost at unchanged budgets, preserving stable query/snapshot identity and continuation
+correctness. Additional queries, semantic calls and returned candidates consume the
+existing allowances. Broader held-out cases must expose regressions and limits;
+this repair establishes candidate coverage, not complete-lab scientific benefit.
+
+Keep Jev semantic design separate from the evaluation machinery. For demonstrated
+failures, compare existing batched Noul dimensions with a scoped Choice relation or
+alignment classification (including unknown) and, where ordered graded relevance is
+useful, descriptive Score levels plus independent Noul checks. Include meaningful
+distinction, contradiction versus scope difference, replication, alternative
+explanations, uncertainty linkage, coherence and representation/method fit only as
+needed by actual consumers. Retain native distributions and versioned Python
+interpretation; prune unused questions rather than increasing calls by default.
+
+Before a measured context/output/runtime failure leads to custom generic machinery,
+compare the installed Pydantic AI/Harness capability and owner-preserving adapter.
+Coder, Code Mode, capability hooks, SDK usage limits and telemetry already exist.
+Linux Coder already retains ClearToolResults, WarnNearLimits, output truncation and
+RepairToolArguments because the owned adapter replaces only Shell; Windows uses
+Code Mode without this Coder composition. Record the platform-specific baseline and
+evaluate those existing controls before changing them. Additional summarizing
+compaction or reminder mechanisms require retained problematic trajectories and a
+measured benefit, charging costs and preserving resolvable scientific context.
+Do not replace ResearchMemory, BlockSkillStore, OncoLab, admission, cross-role budgets,
+terminal drain or native confinement with framework memory, Skills or safety defaults.
+No standalone runtime-migration task is justified without a demonstrated blocker.
+
+Owning code: `src/autonomous.py`, `src/director/frontier.py`,
+`src/director/review.py`, `src/jev/frontier.py`, `src/jev/questions.py`,
+`src/runtime/pydantic_ai/global_tools.py`, `src/runtime/pydantic_ai/semantic.py`,
+`src/runtime/pydantic_ai/search_tools.py`, `src/runtime/pydantic_ai/agents.py`,
+`src/runtime/pydantic_ai/controls.py`, `src/runtime/pydantic_ai/workspace.py`,
+`src/memory/service.py`, `src/oncolab/registry.py`, `src/oncolab/discovery.py`,
+`src/oncolab/enrichment.py`, `src/evals/`;
+`tests/invariants/test_persistence.py`, `tests/invariants/test_boundaries.py`,
+`tests/invariants/test_evaluation.py`.
+
+Actual blockers: Current program review leaves scientific value unknown and
+reports declared tag concentration. Existing fixtures do not measure autonomous
+experience-to-choice benefit. Task 3 supplies independent held-out cases and
+comparison adapters; Task 4 supplies the formal open-proposal path and choice
+lineage for those comparisons. No semantic or framework refinement is required
+until its failure/benefit trigger is measured.
+Current-catalogue candidate coverage already has a labelled configured-budget miss;
+its bounded repair must not wait for a growing-scale failure or a larger-budget pass.
+
+Done when: Repeated matched-budget held-out comparisons through the composed lab
+support scoped versioned changes or measured no-change, with false merges, useful
+recall, next-test alignment, coverage/concentration, instability, scientific outcomes
+and resources reported. Retain the case basis and actual review-to-next-selection
+lineage; report unavailable capabilities and unmeasured utility explicitly.
+Extra variants run only when their measured trigger and allowance hold. Conditional
+dispositions state covered limits; no automatic live question/policy rewrite or
+semantic termination of the research program is introduced.
+The current labelled OncoLab miss is recovered at configured limits through the
+actual consumer, with held-out recall, continuation and resource regressions checked
+and retained. A measured remaining limit stays explicit rather than being hidden by
+increasing the evaluation budget.
+
+## Task 12 — Verify a composed oncology research trajectory
+
+Goal: Establish one exact-basis scientific and operational trajectory through the
+real service rather than infer composition from separate slice checks.
+
+Scope: Use an eligible computational-cancer question and exact retained source,
+software, registry/history and application identities. Trace need, representation
+alternatives, method choice, controlled validated analysis, challenge or explicit
+unavailable prerequisite, literature context, memory-driven next selection and
+export. Include a misleading/invalid alternative and contradiction or inconclusive
+outcome. Exercise bounded independent Director work/event wait, early completion,
+post-block revalidation, another allocation, shutdown and reconstruction. Include
+qualified reuse once its missing path is available. Add isolated publication only
+when its conditional-extension trigger is met; report publication as unavailable
+otherwise, without blocking the core trajectory or claiming remote delivery.
+If required original history is unavailable locally, first establish the exact
+missing record/input identity and provenance through read-only inspection; recovery
+must preserve original stores without assuming remote completeness or merging data.
+
+Owning code: `src/autonomous.py`, `src/runtime/cycle.py`,
+`src/runtime/pydantic_ai/`, `src/persistence/`, `src/dossier/delta.py`,
+`src/memory/`, `src/application/`; `tests/invariants/test_persistence.py`,
+`tests/invariants/test_live_mode.py`.
+
+Done when: A retained execution resolves the entire trajectory and demonstrates
+that scientific outcomes/limitations determine continuation on the pinned basis.
+Exactly-once closure, honest interruption, unchanged future defaults after one fast
+block and refreshed next-block pins compose correctly. Local contracts, live source/
+model connectivity, scientific utility, WSL2 qualification and remote publication
+have separate supported conclusions; absent required external proof stays explicit.
+Correct the stale Delta pin limitation only where composed behavior establishes it.
+
+## Conditional extensions
+
+These retained feature specs become active only when their stated trigger is met.
+They are not prerequisites for the core research-loop work. Active tasks are numbered
+consecutively; the reconciled ADR retains the original numbering for traceability.
+
+### Automatic isolated notebook publication
+
+Trigger: Activate only when automatic external publication is explicitly needed
+for a selected research deliverable. Approved remote/credential setup, connectivity
+and remote SHA verification are work and completion requirements after activation,
+not prerequisites for activating the spec. Retained exports remain usable beforehand.
+This is a scheduling decision; the missing event-to-publisher handoff remains an
+unfinished capability, not a completed or disproven requirement.
 
 Goal: Connect retained export events to the existing separate publisher and establish
 actual publication to `asimog/oncojevlab`.
@@ -286,7 +476,13 @@ publication and exhausted retries retain durable outcomes without changing scien
 closure/evidence or overwriting external edits. Local Git simulations and live remote
 proof remain distinguishable.
 
-## Task 12 — Improve catalogue retrieval when scale requires it
+### Catalogue scaling
+
+Trigger: Activate only on measured growing-catalogue recall, latency, context or
+continuation failures. Task 3 owns configured-budget measurement and Task 11 owns
+current-catalogue OncoLab retrieval repair; Task 5 owns representation/input misses.
+A scale platform is not their prerequisite. Task 3/11 measurements can activate
+this extension; the benchmark below is not the only way to establish its trigger.
 
 Goal: Resolve measured catalogue-scale or vocabulary recall problems with the smallest
 compatible retrieval change.
@@ -310,7 +506,11 @@ the declared recall/latency objective while preserving query/snapshot identity,
 stable ordering, bounded resources and continuations. Small-catalogue success alone
 cannot close the growing-scale assessment.
 
-## Task 13 — Share candidate generation only when useful
+### Shared candidate-generation mechanics
+
+Trigger: Activate only after the representation generator exists and multiple
+production generators demonstrate the same useful mechanical contract or costly
+duplication. No common abstraction is required to deliver Tasks 4 or 5.
 
 Goal: Determine whether common retrieval/composition mechanics improve multiple real
 domain generators without erasing their scientific meaning.
@@ -332,136 +532,3 @@ Done when: The paired multi-domain comparison supports adoption or a measured
 rejection. An adopted contract is used by actual domain consumers with retained
 identity/provenance and useful-alternative recall. Similar-looking models or the
 existing representation assessor/parser alone do not establish the trigger.
-
-## Task 14 — Evaluate frontier refinement and semantic calibration
-
-Goal: Evaluate the complete lab's investigation selection, scientific continuation
-and semantic decisions, adopting refinements only where measured failures justify them.
-
-Scope: Compare the current composed lab with bounded offline reflection,
-proximity/diversity and branch/analysis/debug-budget variants on matched needs, inputs
-and budgets. Follow actual Director allocation/review, Researcher tool choices,
-retained measurements, memory and subsequent selections across blocks. Evaluate
-scientific coverage/concentration and whether review leads to a useful next test or
-an actionable capability/engineering proposal. The current program review counts
-declared entity/topic tags and leaves scientific value unknown; those observations
-alone are not measured scientific coverage or decision utility.
-
-Replay independently labelled paraphrase, alternative-test, population/design,
-replication and blocked-to-actionable cases through actual consumers. Repair
-normalization/alignment/retention failures only when demonstrated, including retrieval
-that drops useful zero-overlap memory before semantic comparison. Measure repeated
-fixed-input semantic instability before spending an explicit extra allowance on
-calibration, self-consistency or a bounded Autoresearch-style variant loop. Preserve
-native distributions, alternatives, failure fallback and separate local/global
-policies; adoption uses reviewed engineering. Use capability-specific results as
-scoped inputs, without treating their separate successes as complete-lab benefit.
-
-Owning code: `src/autonomous.py`, `src/director/frontier.py`,
-`src/director/review.py`, `src/jev/frontier.py`, `src/jev/questions.py`,
-`src/runtime/pydantic_ai/global_tools.py`, `src/runtime/pydantic_ai/semantic.py`,
-`src/runtime/pydantic_ai/search_tools.py`, `src/memory/service.py`, `src/evals/`;
-`tests/invariants/test_persistence.py`, `tests/invariants/test_boundaries.py`,
-`tests/invariants/test_evaluation.py`.
-
-Done when: Repeated matched-budget held-out comparisons through the composed lab
-support scoped versioned changes or measured no-change, with false merges, useful
-recall, next-test alignment, coverage/concentration, instability, scientific outcomes
-and resources reported. Retain the case basis and actual review-to-next-selection
-lineage; report unavailable capabilities and unmeasured utility explicitly.
-Extra variants run only when their measured trigger and allowance hold. Conditional
-dispositions state covered limits; no automatic live question/policy rewrite or
-semantic termination of the research program is introduced.
-
-## Task 15 — Verify a composed oncology research trajectory
-
-Goal: Establish one exact-basis scientific and operational trajectory through the
-real service rather than infer composition from separate slice checks.
-
-Scope: Use an eligible computational-cancer question and exact retained source,
-software, registry/history and application identities. Trace need, representation
-alternatives, method choice, controlled validated analysis, challenge or explicit
-unavailable prerequisite, literature context, memory-driven next selection and
-export. Include a misleading/invalid alternative and contradiction or inconclusive
-outcome. Exercise bounded independent Director work/event wait, early completion,
-post-block revalidation, another allocation, shutdown and reconstruction. Include
-qualified reuse and isolated publication once their missing paths are available.
-If required original history is unavailable locally, first establish the exact
-missing record/input identity and provenance through read-only inspection; recovery
-must preserve original stores without assuming remote completeness or merging data.
-
-Owning code: `src/autonomous.py`, `src/runtime/cycle.py`,
-`src/runtime/pydantic_ai/`, `src/persistence/`, `src/dossier/delta.py`,
-`src/memory/`, `src/application/`; `tests/invariants/test_persistence.py`,
-`tests/invariants/test_live_mode.py`.
-
-Done when: A retained execution resolves the entire trajectory and demonstrates
-that scientific outcomes/limitations determine continuation on the pinned basis.
-Exactly-once closure, honest interruption, unchanged future defaults after one fast
-block and refreshed next-block pins compose correctly. Local contracts, live source/
-model connectivity, scientific utility, WSL2 qualification and remote publication
-have separate supported conclusions; absent required external proof stays explicit.
-Correct the stale Delta pin limitation only where composed behavior establishes it.
-
-## Task 17 — Add isolated fast local testing limits
-
-Goal: Make implementation runs smaller through `ONCOJEV_TESTING=1` without a
-different lifecycle, scientific authority or qualification claim.
-
-Scope: Reconcile [the proposed testing ADR](PROPOSED_ADR_FAST_LOCAL_TESTING.md)
-before implementation. Read `ONCOJEV_TESTING` from ignored `.env.local` through the
-existing environment owner: unset/`0` is normal, `1` enables testing; unsupported
-values fail before storage side effects. Keep editable timing/public-data ceilings
-in a typed section of existing runtime YAML and revalidate the same RuntimeConfig.
-Use a 90-second default, min/max 60/90 and reserve 15; retain shorter valid user
-bounds. The separate 120-second observation target is reporting metadata, not a
-hard full-cycle timeout. Add only GDC/Xena data byte sublimits beneath existing service
-accounting; preserve ordinary software reservations and failed-byte charging.
-Do not cap role/tool/source-call/Jev/Reasoner/sandbox/search/Code Mode budgets,
-providers, costs or execution controls for testing.
-
-Extend path/service ownership with one fixed per-process
-`<data-root or application var>/testing/<run-id>/` database/Director/Researcher/
-sandbox namespace. Use WSL2/Linux native storage with the existing local_venv backend
-for full application testing, and Windows for focused contract/UI checks. Do not
-switch backends automatically or introduce Windows confinement in this task.
-Load local env before paths; validate environment and constructor
-database paths before opening/recovery, including resolved escapes. Thread frozen
-settings through all consumers and direct live-script storage paths; preserve
-within-process history, actual path receipts and existing retention. Retain analysis
-and export access without automatic deletion/merge. Selected later normal ingestion
-requires provenance-preserving ordinary validation/admission; there is no generic
-cross-store importer today, and this switch does not introduce one. Keep replay,
-admission and normal defaults intact. Bind testing institutional identities/pins
-separately and reject testing local qualification in the existing consumer, retaining
-exploratory execution, admission and proposal/review history.
-
-Owning code: `src/config/environment.py`, `src/config/loader.py`,
-`src/config/models.py`, `config/runtime.yaml`, `.env.example`, `src/runtime/paths.py`,
-`src/autonomous.py`, `src/runtime/resources.py`, `src/runtime/pydantic_ai/factory.py`,
-`src/runtime/pydantic_ai/agents.py`, `src/runtime/pydantic_ai/contracts.py`,
-`src/science/sandbox.py`, `src/oncolab/institution.py`, `src/runtime/verification.py`,
-`scripts/run_live_cycle.py` and relevant standalone/worker entry points;
-`tests/invariants/test_boundaries.py`, `tests/invariants/test_live_mode.py`,
-`tests/invariants/test_persistence.py`.
-
-Actual blockers: Shared GDC/software reservation cannot provide data-only caps by
-scalar rewrite. Environment selection is too late and paths are reread per cycle;
-the direct live-cycle script bypasses service database ownership; Docker experiments
-use system temporary storage. Identity/qualification consumers lack profile guards.
-Soft allocation does not bound total cycle/drain/review time; the observation target
-does not cancel required work. Generic cross-store ingestion and Docker qualification
-are not prerequisites of this testing switch. Assessment report in the ADR records these facts;
-implementation and live/native/scientific utility remain unverified.
-
-Done when: Focused behavior tests preserve unset/disabled defaults, stricter custom
-bounds and every unchanged budget; reject invalid switches/database escapes before
-storage writes; demonstrate isolated actual records and role/backend paths, fixed
-settings, within-process continuity and distinct-process roots. Show real shorter
-allocation/handoff, data-only cap rejection/charging across cycles and unaffected
-ordinary software acquisition. Retain analysis access and scientific admission;
-prove testing-specific local qualification rejection using otherwise complete policy
-inputs, without denying exploratory observations or manufacturing reusable proof.
-Relevant existing checks pass; no native/live/scientific qualification or generic
-cross-store ingestion is inferred. Log completed implementation/proof separately
-from ADR decision status.
