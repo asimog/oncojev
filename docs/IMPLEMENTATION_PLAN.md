@@ -62,7 +62,7 @@ Current contracts and explicit remaining limits (future acceptance below is not 
 | --- | --- | --- |
 | `ActiveResearchContext` / run handle | `src/runtime/pydantic_ai/contracts.py`, composed by service/cycle lifecycle | Actual context/handle: mission/cycle/block/run IDs, start sequence, task/terminal state and output/dossier/delta ownership. Application/registry/history pins live in the linked `JevBlockStart`; independent usage/budgets live in `HarnessRuntime`, not copied into the handle. Never share mutable ResearchState with Director. |
 | Service work state / event | Python service lifecycle, block/cycle models and persistence | Implemented `ServiceResearchState`: ALLOCATING, RESEARCHER_ACTIVE, DIRECTOR_GLOBAL_WORK, WAITING_FOR_RESEARCH_EVENT, POST_BLOCK_REVIEW; active-run identity, event identity/deduplication. Operational only: never mission completion, semantic exhaustion or required human direction. Run outcome and objective attainment remain distinct. |
-| Single-worker resource policy / heavy-work lease | Existing runtime controls and service-owned reservations; H2 baseline, H3 telemetry, H6 acquisition, H10 execution | Per-operation/block/service ceilings and usage; independent Director allowance; one heavy-local-work lease; typed busy/rejection receipts and observed byte/wall-duration measurements. Complete aggregate process/CPU/memory/disk enforcement remains unproved. No scientific judgment or additional agent/service. |
+| Single-worker resource policy / heavy-work lease | Existing runtime controls and service-owned reservations; H2 baseline, H3 telemetry, H6 acquisition, H10 execution | Per-operation/block/service ceilings and usage; independent Director allowance; one heavy-local-work lease; typed busy/rejection receipts and observed byte/wall-duration measurements. Coder aggregate process/CPU/memory/disk and cancellation controls have native WSL2 proof below; scientific clone/bootstrap/install integration and complete telemetry remain open. No scientific judgment or additional agent/service. |
 | `BlockDelta` | `src/dossier/delta.py`, derived from stored block-owned references | Actual start/end sequence and run/block IDs; explicit supported record/event categories with at most 20 references each and omission counts. Resource keys include `allocated_seconds`, `actual_elapsed_seconds`, `unused_allowance_seconds`, `reason_for_terminal_state`, Researcher/Director turn/idle wall time, metered download bytes and recorded execution/lease/limit-failure counts. `workspace_observed_bytes`, `workspace_peak_bytes` and `cpu_seconds` are currently unknown. Global relation records are not automatically copied into a block delta; only explicit matching block-owned events are included. No inferred negatives/resolutions or resource-derived scientific value. |
 | Global frontier / relations / review | Director domain with deterministic policy and memory references | `global-frontier-v2` pins mission and candidate identity. `current_basis` hashes latest sequence per material kind, Index snapshot, institutional registry/history/application pin, mission and version; it is not a raw whole-DB high-water or separately stored digest/active-block tuple. Read-only review/export/global measurement records do not invalidate selection themselves. Projections/native receipts retain question/policy versions, distributions, source references and limits. Portfolio/review observations cannot declare scientific resolution. |
 | OncoLab registry revision | `src/oncolab/` plus append-only persistence; Python governance | Parent revision, content hash, accepted state transition and governance version, reconstructable descriptors/contracts/routes/reusable status. Only governed capability-state changes create revisions; blocks pin immutable state, no agent CRUD. |
@@ -73,7 +73,7 @@ Current contracts and explicit remaining limits (future acceptance below is not 
 
 ## 4. Phase tracker and dependency order
 
-The H0–H15 numbering is retained, with H11 deployment/target proof CANCELLED and excluded from all active prerequisites. **H9 accepted executable promotion still requires H10a/D8 promotion-grade fresh reinstall/replay qualification, scoped scientific/reference validation, measured H13 utility, licence/access review and explicit governance with required local execution controls.** Proposal/rejection scaffolding can precede qualification; it does not prove accepted reuse. Current `src/oncolab/governance.py` still requires a Railway deployment record: a known code/scope mismatch recorded as an open question, not a reinstated H11 work order or a claim that the gate was removed. H13 cases start alongside delivered baselines; H14 retains comparative/calibration gates after its delivered caller reconciliation. No production cutover is scheduled.
+The H0–H15 numbering is retained, with H11 deployment/target proof CANCELLED and excluded from all active prerequisites. **H9 accepted executable promotion still requires H10a/D8 promotion-grade fresh reinstall/replay qualification, scoped scientific/reference validation, measured H13 utility, licence/access review and explicit governance with required local execution controls.** Proposal/rejection scaffolding can precede qualification; it does not prove accepted reuse. The delivered local baseline replaces the Railway gate with `local-verification-v1`; producing its complete passing current-application proof remains required. H13 cases start alongside delivered baselines; H14 retains comparative/calibration gates after its delivered caller reconciliation. No production cutover is scheduled.
 
 Integrated batches use two passes where necessary: build the concrete mechanism and evaluation cases in the owning phase, then return with H13 evidence to complete its qualified extension. D1 belongs to H9; D2 to H6; D3 and D4 to H4, with D3's shared-contract decision completed in H14; D5 to H14; D6 to H7; D7 and D8 to H10, using H6's source/input gates. H15 checks these phase results directly rather than reconciling a separate deferred list.
 
@@ -194,6 +194,53 @@ TasksMax/MemoryMax/CPUQuota/RuntimeMaxSec executed successfully on this WSL2 hos
 that feasibility probe is not production enforcement. H2/H10 stay PARTIAL. The
 next coherent resource batch must implement and adversarially verify those controls
 before extending science or claiming the complete local gate.
+
+### Coder aggregate enforcement — DELIVERED sub-batch (H2/H10, 2026-10-02)
+
+Starting HEAD `7989a77b7e98ef163da3c0c74d79e7810f3ddae9`. The public Harness
+capability replacement preserves Coder file tools, context and CodeMode while
+making scratch shell foreground-only. All file/shell commands use one Python-owned
+transient user-systemd cgroup and private user/mount/network namespace. Effective
+process, CPU-rate, memory/swap and wall settings are checked before execution;
+aggregate scratch bytes/inodes are bounded by tmpfs, and inherited Landlock/seccomp
+deny credentials, peer paths, host process/mount authority and unmetered network.
+The lease covers launch, cancellation draining, descendant cleanup and bounded
+scratch commit. Original scratch survives OOM/timeout before commit; trusted
+exclusive no-follow output creation and descriptor reads withstand pre-existing
+scratch symlinks and later stdout-path replacement. Unconfirmed stop/cgroup
+cleanup preserves recovery copies and rejects all subsequent heavy work. Native
+resource observations reach Coder receipts and resource inspection; missing counters
+remain unknown. Scratch results remain operational, never scientific evidence.
+
+**Regression and proof:** running the new owning native verifier against an
+immutable `git archive` of `7989a77` first failed on **detached child survived
+command/lease return**; that fixture's exact child was cleaned immediately. Current
+`LOGFIRE_SEND_TO_LOGFIRE=false /home/rahul_khatri/.cache/oncojev-wsl-venv/bin/python -B -m scripts.verify_coder_resources`
+on the native WSL2 source tree passed **11 checks / 11 executions**: pre-existing
+output-symlink rejection, new-session
+descendant draining, shell dollar-literal preservation, aggregate process count,
+aggregate disk exhaustion, native CPU throttling, cgroup OOM, wall timeout,
+cancellation/competing lease, denied network and stdout-path replacement. Quotas
+were 8 processes, 128 MiB memory, one CPU, 2 MB scratch and five seconds (one second
+for timeout). `scripts.verify_coder_container` passed **21/21 checks for each role**
+with native file tools and CodeMode. Kernel/Python/environment are the preceding
+sub-batch's recorded WSL2 basis; neither script invokes Docker, uses a model/provider
+or establishes scientific utility. Routine Windows command:
+`.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_boundaries.py tests/invariants/test_persistence.py tests/invariants/test_live_mode.py -k 'resource or heavy_work or code_mode or runtime_applies or launch_returns or shutdown' -q`
+— **18 passed, 137 deselected in 20.37s**. Architecture, diff and changed-document
+link checks passed. The pre-existing-output regression separately failed against
+the initial supervisor for its intended sentinel-truncation reason before the fix.
+Windows/native application identity:
+`application-v1:526a4dbca9e80e19e70b8bce5e9434535cea776feed14a70bfcec4ee98d594c4`.
+No command units remained after proof.
+
+**Remaining gates:** required user-systemd cgroup controllers, unprivileged
+namespaces, a service-owned native scratch directory/writable parent and bounded
+disk headroom are fail-closed prerequisites. Scientific clone/bootstrap/install
+must use the same aggregate governor, complete download/reservation failure
+telemetry remains required, and composed lifecycle/BlockDelta measurements and
+the complete current-application local-verification receipt are still open.
+H2/H10 remain PARTIAL. The original SQLite file was not opened for writing.
 
 ### H0 — DONE: baseline audit and reconciliation
 
@@ -688,7 +735,7 @@ External setup to verify during implementation: current direct WSL2 Python/Landl
 2. **SQLite-only runtime compliance — resolved:** service/export use `SqliteResearchStore` directly; PostgreSQL selection, migration tooling and dependencies are removed. Original path and records remain intact; the obsolete selector cannot redirect startup.
 3. **Original data completeness:** does the existing local original SQLite file contain every historical record needed for the baseline, or is required history only on the preserved worker/PostgreSQL? File/default identity and read-only local integrity/counts are verified in the baseline batch above; equality with preserved remote history is unknown. No remote access, migration or merge occurred; recovery remains an explicit question unless needed.
 4. **Composed current-HEAD acceptance:** no single recorded result proves pins, STAR parsing, need-bound methods, declared follow-up/comparison, continuation, next selection and export together. Existing owning regressions prove their stated slices; full scientific/decision utility and exact composed basis remain active phase acceptance.
-5. **Current WSL2 enforcement:** historical Linux probes retain their exact kernels/environments; the current native WSL2 application environment and complete aggregate Coder/process/CPU/memory/disk enforcement were not reverified. Direct WSL2 is the Linux verification route; Windows fixtures cannot certify those controls. No Docker or target proof is required.
+5. **Current WSL2 enforcement — Coder slice verified:** the native WSL2 environment, Coder filesystem/credential/descendant controls and aggregate process/CPU/memory/disk/cancellation controls have direct proof above. Scientific clone/bootstrap/install aggregate integration and the complete local-verification receipt remain open. Historical probes retain their exact basis; Windows fixtures cannot certify Linux controls. No Docker or target proof is required.
 6. **Known code descriptions:** local-baseline delivery corrects `SandboxConfig` and `software.github-scientific`. BlockDelta's stale exact-pins limitation remains for the composed lifecycle batch; actual pin behavior stays protected.
 
 Historical planning verification and the complete H0 audit remain in Git history

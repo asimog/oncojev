@@ -183,6 +183,8 @@ def main() -> None:
         read_results = [part.content for message in result.new_messages() for part in message.parts
                         if isinstance(part, ToolReturnPart) and part.tool_name == "read_file"]
         assert any("default_seconds" in json.dumps(content, default=str) for content in read_results), read_results
+    assert (director_root / "coder-write-proof.txt").exists(), [part.content for message in director.new_messages()
+        for part in message.parts if getattr(part, "tool_name", None) == "write_file" and hasattr(part, "content")]
     assert (director_root / "coder-write-proof.txt").read_text() == "director workspace is writable\n"
     researcher_proof = researcher_root / "coder-write-proof.txt"
     assert researcher_proof.read_text() == "researcher workspace is writable\n"

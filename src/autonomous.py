@@ -118,7 +118,11 @@ class AutonomousService:
             max_service_download_bytes=self.policy.resources.max_service_download_bytes,
             max_workspace_bytes=self.policy.resources.max_workspace_bytes,
             max_durable_artifact_bytes=self.policy.resources.max_durable_artifact_bytes,
-            minimum_free_disk_bytes=self.policy.resources.minimum_free_disk_bytes)
+            minimum_free_disk_bytes=self.policy.resources.minimum_free_disk_bytes,
+            max_coder_processes=self.policy.resources.max_coder_processes,
+            max_coder_memory_mb=self.policy.resources.max_coder_memory_mb,
+            max_coder_cpu=self.policy.resources.max_coder_cpu,
+            max_coder_seconds=self.policy.resources.max_coder_seconds)
         self._last_system = None
         self.director = None
         self._loop_runner = asyncio.Runner()

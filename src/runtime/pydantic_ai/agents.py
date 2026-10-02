@@ -8,6 +8,7 @@ from pathlib import Path
 from pydantic_ai import Agent
 from pydantic_ai_harness import CodeMode
 from pydantic_ai_harness.coder import Coder
+from pydantic_ai_harness.shell import Shell
 
 from src.config.environment import load_local_environment
 from src.config.models import ModelsConfig
@@ -18,6 +19,7 @@ from src.runtime.pydantic_ai.providers import configured_model, model_settings
 from src.runtime.pydantic_ai.telemetry import configure_agent_telemetry
 from src.runtime.pydantic_ai.controls import RuntimeControls
 from src.runtime.pydantic_ai.workspace import ConfinedWorkspace
+from src.runtime.pydantic_ai.shell import owned_shell
 from src.runtime.paths import workspace_root, director_root
 
 
@@ -36,9 +38,11 @@ def _runtime_capabilities(workspace: Path, max_tool_calls: int, role: str) -> li
     capabilities: list[object] = [RuntimeControls(role, max_tool_calls), CodeMode(tools=_code_mode_tools, max_tool_calls=sdk_tool_calls)]
     if os.name == "posix":
         workspace.mkdir(parents=True, exist_ok=True)
+        coder = Coder(sub_agents=False, unrestricted_filesystem=True).visit_and_replace(
+            lambda capability: owned_shell() if isinstance(capability, Shell) else capability)
         capabilities[:0] = [
             ConfinedWorkspace(workspace, Path(__file__).resolve().parents[3]),
-            Coder(sub_agents=False, unrestricted_filesystem=True),
+            coder,
         ]
     return capabilities
 

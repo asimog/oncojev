@@ -18,6 +18,32 @@ class PathRule(ctypes.Structure):
     _fields_ = [("allowed_access", ctypes.c_uint64), ("parent_fd", ctypes.c_int)]
 
 
+def restrict_process_authority(*, single_process=False):
+    """Inherited x86_64 seccomp: no network, host process or namespace authority.
+
+    Coder may create bounded children; scientific external operations are single
+    process. Trusted supervisors apply quotas before installing this filter.
+    """
+    if sys.platform != "linux" or platform.machine() != "x86_64":
+        raise RuntimeError("process confinement requires Linux x86_64")
+    class Filter(ctypes.Structure):
+        _fields_ = [("code", ctypes.c_ushort), ("jt", ctypes.c_ubyte), ("jf", ctypes.c_ubyte), ("k", ctypes.c_uint)]
+    class Program(ctypes.Structure):
+        _fields_ = [("len", ctypes.c_ushort), ("filter", ctypes.POINTER(Filter))]
+    instructions = [(0x20, 0, 0, 4), (0x15, 1, 0, 0xc000003e), (0x06, 0, 0, 0x80000000),
+                    (0x20, 0, 0, 0), (0x35, 0, 1, 0x40000000), (0x06, 0, 0, 0x80000000)]
+    denied = (41, 42, 43, 49, 50, 53, 288, 62, 101, 200, 234, 310, 311,
+              133, 259, 165, 166, 169, 246, 272, 308, 298, 304, 321, 424, 425, 434, 438)
+    if single_process: denied += (56, 57, 58, 435, 109, 112)
+    for syscall in denied: instructions.extend(((0x15, 0, 1, syscall), (0x06, 0, 0, 0x00050001)))
+    instructions.append((0x06, 0, 0, 0x7fff0000))
+    filters = (Filter * len(instructions))(*(Filter(*item) for item in instructions))
+    program = Program(len(instructions), filters)
+    libc = ctypes.CDLL(None, use_errno=True)
+    if libc.prctl(38, 1, 0, 0, 0) != 0 or libc.prctl(22, 2, ctypes.byref(program), 0, 0) != 0:
+        raise OSError(ctypes.get_errno(), "syscall confinement unavailable")
+
+
 def restrict_filesystem(writable: tuple[Path, ...], readonly: tuple[Path, ...]) -> int:
     if sys.platform != "linux" or platform.machine() not in {"x86_64", "aarch64"}:
         raise RuntimeError("filesystem confinement requires Linux x86_64/aarch64")

@@ -104,6 +104,10 @@ class RetentionConfig(StrictModel):
 
 
 class ServiceResourceConfig(StrictModel):
+    max_coder_processes: int = Field(default=16, ge=4, le=64)
+    max_coder_memory_mb: int = Field(default=512, ge=128, le=4096)
+    max_coder_cpu: int = Field(default=2, ge=1, le=8)
+    max_coder_seconds: int = Field(default=60, ge=1, le=300)
     max_workspace_bytes: int = Field(default=100_000_000, gt=0)
     max_durable_artifact_bytes: int = Field(default=1_000_000_000, gt=0)
     minimum_free_disk_bytes: int = Field(default=10_000_000, ge=0)

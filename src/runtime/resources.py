@@ -27,6 +27,11 @@ class ServiceResources:
     max_workspace_bytes: int = 100_000_000
     max_durable_artifact_bytes: int = 1_000_000_000
     minimum_free_disk_bytes: int = 10_000_000
+    max_coder_processes: int = 16
+    max_coder_memory_mb: int = 512
+    max_coder_cpu: int = 2
+    max_coder_seconds: int = 60
+    execution_failure: str | None = None
     reservations: dict[str, dict] = field(default_factory=dict)
     heavy_owner: str | None = None
     downloaded_bytes: int = 0
@@ -35,6 +40,8 @@ class ServiceResources:
 
     @asynccontextmanager
     async def heavy(self, owner):
+        if self.execution_failure:
+            raise ResourceRejected(self.execution_failure, 0)
         if self.heavy_owner is not None:
             receipt = ResourceBusy("heavy_local_execution", self.heavy_owner).directive
             self.receipts.append({**receipt, "requester": owner})
@@ -114,9 +121,14 @@ class ServiceResources:
             raise ResourceRejected("service or block download budget exhausted", self.downloaded_bytes)
 
     def snapshot(self):
+        last_coder = next((r["process_resources"] for r in reversed(self.receipts) if "process_resources" in r), None)
         return {"heavy_local_execution_limit": 1, "heavy_owner": self.heavy_owner,
                 "max_file_bytes": self.max_file_bytes,
                 "max_block_download_bytes": self.max_block_download_bytes,
                 "max_service_download_bytes": self.max_service_download_bytes,
                 "downloaded_bytes": self.downloaded_bytes,
-                "process_cpu_memory_enforcement": "requires backend and deployment verification"}
+                "coder_limits": {"processes": self.max_coder_processes, "memory_mb": self.max_coder_memory_mb,
+                    "cpu": self.max_coder_cpu, "seconds": self.max_coder_seconds,
+                    "workspace_bytes": self.max_workspace_bytes},
+                "last_coder_execution": last_coder, "execution_failure": self.execution_failure,
+                "process_cpu_memory_enforcement": "Coder owned-command-v1; scientific aggregate integration pending"}

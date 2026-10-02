@@ -50,6 +50,10 @@ retention:
   max_archive_bytes: 100000000
   max_workspaces: 20
 resources:
+  max_coder_processes: 16
+  max_coder_memory_mb: 512
+  max_coder_cpu: 2
+  max_coder_seconds: 60
   max_workspace_bytes: 100000000
   max_durable_artifact_bytes: 1000000000
   minimum_free_disk_bytes: 10000000

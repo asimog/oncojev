@@ -136,7 +136,11 @@ def build_harness_runtime(
             max_service_download_bytes=policy.resources.max_service_download_bytes,
             max_workspace_bytes=policy.resources.max_workspace_bytes,
             max_durable_artifact_bytes=policy.resources.max_durable_artifact_bytes,
-            minimum_free_disk_bytes=policy.resources.minimum_free_disk_bytes)
+            minimum_free_disk_bytes=policy.resources.minimum_free_disk_bytes,
+            max_coder_processes=policy.resources.max_coder_processes,
+            max_coder_memory_mb=policy.resources.max_coder_memory_mb,
+            max_coder_cpu=policy.resources.max_coder_cpu,
+            max_coder_seconds=policy.resources.max_coder_seconds)
     def meter_download(byte_count):
         active = runtime.active_research
         owner = active.block_id if active else "unassigned"
