@@ -1,4 +1,4 @@
-"""Read-only Python declaration queries. See docs/REPO_GOVERNANCE_SPEC.md."""
+"""Read-only Python declaration queries; never imports indexed code. See AGENTS.md."""
 from __future__ import annotations
 
 import argparse

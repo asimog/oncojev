@@ -208,5 +208,5 @@ needs recovery work only if an exact required input/history depends on it.
   external account, original database, provider or publisher was accessed; no
   dependency setup, Docker run, deployment or native WSL probe was performed.
 - The plan and original worktree changes are preserved. Proposed planning changes
-  are isolated in [a proposed ADR](PROPOSED_ADR_PLAN_STATUS.md); neither this report
-  nor that draft changes authoritative status.
+  were proposed in [the now-rejected archived ADR](Archive/ADR/PLAN_STATUS.md);
+  neither this report nor that rejected proposal changes authoritative status.

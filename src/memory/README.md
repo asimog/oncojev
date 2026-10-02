@@ -16,7 +16,7 @@ summaries prioritize unfinished/invalid work so repeated supported results canno
 hide it. Start packets carry prior-attempt summaries and references without
 inheriting measurements or evidence authority.
 
-Memory-v3 also carries tentative literature context, with exact analysis,
+Digests carry tentative literature context, with exact analysis,
 measurement, source, selected-search and native-receipt references. Required
 comparison scope and claim support remain separate semantic dimensions. Missing
 abstracts, unresolved dimensions and failed context measurement retain unknown;
@@ -24,7 +24,7 @@ incomplete or failed queries cannot support a potential-novelty annotation.
 Context categories, coverage limits and unresolved issues survive bounded retrieval
 and start packets without changing evidence or establishing independent replication.
 
-Memory-v4 adds declared/completed scientific follow-ups with original/target
+Digests also carry declared/completed scientific follow-ups with original/target
 references, effect intervals, case overlap, local confirmation exposure and unresolved
 explanations. Pending declarations remain attempted; unavailable references remain
 unknown. Model-conditional comparison summaries reach Director continuation and
@@ -59,8 +59,8 @@ cycles and restarts; changing the exact direction appends a linked new mission.
 Each cycle has a new runtime, and each block
 has a fresh Researcher, state, skill selections and usage budgets.
 
-Semantic annotations follow deterministic retrieval of selected digests. Separate global retrieval budgets bound calls, questions, bytes and elapsed time. Failures return F3 ordering with operational receipts. Native answers remain in Jev receipts; no whole-memory context or evidence authority is introduced.
+Semantic annotations follow deterministic retrieval of selected digests. Separate global retrieval budgets bound calls, questions, bytes and elapsed time. Failures return deterministic ordering with operational receipts. Native answers remain in Jev receipts; no whole-memory context or evidence authority is introduced.
 
-Remaining memory and export work belongs to the [active plan](../../docs/IMPLEMENTATION_PLAN.md) (H3/H4/H12).
+Remaining memory and export work belongs to the [active plan](../../docs/IMPLEMENTATION_PLAN.md).
 
 Director global retrieval can filter capability, hypothesis, shared reference and lineage. Global frontier records retain original source references and a material-history/Index basis; allocation revalidates that basis. Relation candidates and engineering proposals are derived context without scientific admission or mutation authority.

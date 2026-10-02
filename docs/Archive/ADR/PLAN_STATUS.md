@@ -1,7 +1,19 @@
-# PROPOSED ADR: capability-level planning status and evidence
+# ADR: capability-level planning status and evidence
 
-Status: **PROPOSED — not adopted**. Date: 2026-10-02.
-Basis: [reconciliation at f1376d6](PLAN_RECONCILIATION.md).
+Status: **REJECTED**. Date: 2026-10-02.
+Basis: [reconciliation at f1376d6](../../PLAN_RECONCILIATION.md).
+
+## Rejection
+
+The proposal improves status precision but preserves too much old planning
+structure, terminology, obligation tracking and historical complexity.
+
+- Do not preserve H/D/R identifiers as active planning structure.
+- Do not create a permanent obligation/evidence ledger from the reconciliation.
+- Do not carry historical delivery structure into the future plan.
+- Do not add another planning/status authority.
+
+The rejected proposal below is retained as history only; it authorizes no change.
 
 ## Context
 

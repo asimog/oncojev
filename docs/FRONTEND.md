@@ -15,21 +15,7 @@ The interface visually distinguishes six categories, each with its own colour an
 
 The UI reads `ONCOJEV_API_URL` (default `http://127.0.0.1:8080`) with uncached server-side requests. The generated `web/data/snapshot.json` remains an offline/build fallback, not the primary runtime data source.
 
-## Development
-
-```bash
-cd web
-npm install
-npm run build
-```
-
-Regenerate the snapshot after backend changes:
-
-```bash
-uv run python scripts/export_snapshot.py
-```
-
-F6 separates transport (`live_api` or `offline_snapshot`), data provenance and
+The UI separates transport (`live_api` or `offline_snapshot`), data provenance and
 recorded execution mode. Live API pages do not inherit fixture evaluation
 conditions. Offline fallback displays its synthetic/no-live-research limitation;
 synthetic measurements have no evidence-admission authority. Lifecycle and run
@@ -43,4 +29,4 @@ build and browser checks are separate from Python source-bound execution tests.
 
 Read models omit retained artifact byte payloads while preserving identities and an explicit omission flag; durable scientific input bytes remain unchanged.
 
-Future read-model additions belong to the [active plan](IMPLEMENTATION_PLAN.md) (H2-H5/H9-H12/H15). Render new fields only after their backend contracts exist; absent fields remain unknown.
+Unfinished work is tracked only in the [active plan](IMPLEMENTATION_PLAN.md).

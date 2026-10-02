@@ -32,4 +32,6 @@ ranking is not a suitability judgment. Describe selected IDs to obtain contracts
 and declared routes. Execution checks distinguish metadata-only, access, missing
 inputs and callable operation prerequisites. Library installation is not authority.
 
-Institutional revisions, external discovery and promotion are specified only in the [active plan](../../docs/IMPLEMENTATION_PLAN.md) (H5-H9).
+Current institutional and discovery contracts are described in
+[Index semantics](../../docs/CAPABILITIES.md). Unfinished work is tracked only in
+the [active plan](../../docs/IMPLEMENTATION_PLAN.md).

@@ -4,7 +4,7 @@
 
 Jev is TypeSafe System One: typed semantic measurement, not an autonomous agent or an evidence source. Use it after deterministic retrieval/candidate generation and before deterministic frontier management. Prefer atomic Noul, Choice, and Score questions with structured criteria, explicit exclusions, and failure semantics. Preserve full distributions when they influence search.
 
-`jev.client.TypeSafeJevClient` adapts current `typesafe-sdk` Noul, Choice, and Score calls to project-owned types; its deterministic counterpart drives tests. Full native probabilities and Choice/Score confidence are retained. A TypeSafe execution failure raises `jev.failure.JevOperationalFailure` (timeout, rate limit, transport, validation, or service) and is recorded operationally: it never becomes a Noul value, a Choice, or a Score. The supplied deep reference is [references/TYPESAFE_JEV_DOSSIER.md](references/TYPESAFE_JEV_DOSSIER.md).
+`jev.client.TypeSafeJevClient` adapts current `typesafe-sdk` Noul, Choice, and Score calls to project-owned types; its deterministic counterpart drives tests. Full native probabilities and Choice/Score confidence are retained. A TypeSafe execution failure raises `jev.failure.JevOperationalFailure` (timeout, rate limit, transport, validation, or service) and is recorded operationally: it never becomes a Noul value, a Choice, or a Score.
 
 Every candidate evaluation has a unique call ID and append-only started/prepared/
 terminal receipts. They retain the bounded projection and its specification/hash,
@@ -34,7 +34,7 @@ call/projection linkage, full distributions, policy version and rationale.
 KEEP_ALIVE and REJECT_RETAIN are semantic search history, never a scientific
 negative finding, evidence admission or authority to extend scope/deadlines.
 
-F4 adds local, versioned contracts in `src/jev/questions.py`: method fit, available
+Local, versioned contracts live in `src/jev/questions.py`: method fit, available
 representation sufficiency, hypothesis/test alignment, individual statement
 support/overstatement, and selected memory relevance/duplication/contradiction/
 gaps/uncertainty. Independent questions share bounded state in one native batch.
@@ -46,7 +46,7 @@ input checks remain Python decisions. Failed batches never supply a negative
 judgment. Exact normalized hypothesis/test duplicates precede semantic comparison.
 
 Statement references resolve before measurement; semantic failure cannot stop
-terminal dossier creation. Global memory semantics runs after F3 retrieval under
+terminal dossier creation. Global memory semantics runs after deterministic retrieval under
 separate call/question/byte/time limits and falls back to deterministic ordering.
 Native distributions and operational receipts remain durable even when context
 contains only bounded receipt references. No new Director acquisition tools exist.
@@ -65,12 +65,6 @@ authority. Uncertain distributions or scope remain unknown; required material an
 potential-novelty coverage checks are deterministic. The distribution thresholds
 are uncalibrated annotation policy, not scientific confidence or proof of novelty.
 
-The TypeSafe skill-suggestion, rerank and citation-check cookbooks informed compact
-shortlist expansion, recall-before-reranking and per-statement checks. Cookbook
-thresholds were not adopted as scientific validation. The scoped provider report
-is `src/evals/results/f4-selection.json`; equal useful-candidate recall in these
-five tasks is not evidence of downstream scientific advantage.
-
-Global semantic operations and frontier-policy changes belong to the [active plan](IMPLEMENTATION_PLAN.md) (H3/H4/H14).
+Unfinished work is tracked only in the [active plan](IMPLEMENTATION_PLAN.md).
 
 Global investigation and relation contracts use `global-contracts-v1` and a separate `global-frontier-policy-v1`. They reuse native projection/receipt decoding under Director semantic allowances, preserve alternatives on failure, and cannot admit evidence or resolve scientific contradictions. Original relation sides and native distributions remain reference-resolvable.

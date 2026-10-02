@@ -1,160 +1,114 @@
 # OncoJev architecture
 
-## Purpose
+OncoJev turns a human research direction into bounded investigations. Python owns
+lifecycle and canonical state; agents choose investigations and propose meaning.
 
-OncoJev searches large biological information spaces under bounded research allocations. It is a research system, not a predefined GDC workflow or a specialist-agent swarm.
-
-This document owns system structure and component authority. Current runtime behavior is described below; the [active implementation plan](IMPLEMENTATION_PLAN.md) owns delivery status, upcoming changes and acceptance proof. Historical/source documents are provenance, not current work orders.
-
-## Two architectural scopes
+## Components and authority flow
 
 ```mermaid
 flowchart TD
-  H[Human direction] --> D[Director]
-  D --> C[Control]
-  D --> CI[OncoLab Index]
-  D --> RM[Research Memory]
-  C --> B[BlockManager]
-  B --> JB[JevBlock]
-  JB --> R[Researcher]
-  R --> CI
-  R --> A[Acquisition and deterministic Science]
-  R --> RS[Deterministic ResearchState]
-  R --> J[Jev projections and Jev]
-  R --> F[Local FrontierPolicy]
-  R --> X[Reasoner]
-  R --> SS[Optional sandbox and visualization]
-  R --> DOS[Block dossier and next-block proposals]
-  A --> E[ScientificEvidence]
-  E --> RM
-  DOS --> RM
+    Human[Human research direction] --> Service[AutonomousService and runtime]
+    Service --> Director[Director: global allocation and review]
+    Director -->|allocation through typed tools| Lifecycle[BlockManager: lifecycle and budgets]
+    Lifecycle --> Block[Fresh JevBlock and Researcher]
+    subgraph Local[Block-local investigation]
+        Block -->|select inputs and operations| Sources[Public acquisition]
+        Sources -->|owned inputs| Science[Deterministic Science and admission]
+        Block -->|hypothesis requests| Reasoner[Reasoner proposals]
+        Block -->|bounded projections| Jev[Jev semantic measurements]
+        Jev --> Policy[Deterministic frontier policy]
+        Policy -->|retained alternatives| Block
+        Reasoner -->|proposals| Block
+        Science -->|measurements and admitted evidence| State[ResearchState snapshots]
+    end
+    Director <-->|discovery and context| Lab[OncoLab Index and governed revisions]
+    Block <-->|discovery and proposals| Lab
+    Director <-->|reference-linked context| Memory[Derived Research Memory]
+    Block <-->|reference-linked context| Memory
+    Service -->|runtime-owned record writes| Store[(Append-only SQLite records)]
+    State -->|runtime-owned persistence| Store
+    Lab -->|revisions and separate observations| Store
+    Store --> Memory
+    Store --> Views[Dossier, BlockDelta, read-only API and exports]
+    Views --> Web[Web UI: live API or labelled snapshot fallback]
+    Views -->|explicit export CLI| Publisher[Separate notebook publisher]
 ```
 
-The global scope contains only Director Control, the OncoLab Index, and Research Memory. Control includes global allocation and deterministic block lifecycle. Director and Researcher are separate Pydantic AI agents. `BlockManager` owns soft handoff deadlines and per-block budgets. Entering the handoff window prevents new expensive work but never cancels an in-flight operation.
+Arrows describe authority and data flow, not Python imports. Acquisition records,
+measurements, evidence, state revisions, run receipts and institutional records
+retain separate identities in the same canonical store. Derived views do not
+write scientific conclusions back into those records.
 
-The Director's global management
-instructions cover reference-linked cross-block synthesis, uncertainty/duplication/
-contradiction review, diversification, dependencies, capability/failure triage,
-resource planning and non-authoritative engineering proposals. The Director
-allocates questions; local source, method, representation, analysis and strategy
-remain Researcher-owned. `inspect_director_resources` supplies independent
-Director and aggregate allowances, memory-semantic counters, configured monetary
-bounds and reported-cost completeness without allocating a block or changing
-active research. Future global operations and scheduling are specified in the active plan.
+## Research lifecycle
 
-Each JevBlock is the Researcher’s local scope. It contains capability discovery/use, acquisition, deterministic science, deterministic ResearchState, Jev projections/measurement, local deterministic frontier policy, Reasoner, optional sandboxed software, visualization, and dossier construction. There are no separate global Science, source, Jev, visualization, or sandbox planes.
+```mermaid
+flowchart LR
+    Start[Recover interrupted records] --> Allocate[Director selects bounded allocation]
+    Allocate --> Launch[Python launches one fresh Researcher]
+    Launch --> Active[Researcher investigates; Director may do bounded global work]
+    Active --> Wait[Python waits for material or terminal events]
+    Wait --> Active
+    Active --> Terminal[Drain work; persist run outcome, block and dossier]
+    Terminal --> Review[Persist Delta; Director reviews terminal changes]
+    Review --> Allocate
+```
 
-## Agent harness
+The [service](../src/autonomous.py) retains one Director instance across cycles;
+each block receives a fresh Researcher, state, workspace, skills and budgets.
+Continuity comes from persisted context rather than previous agent transcripts.
+Python owns event waits, shared resource leases, shutdown and reconstruction.
+Recovery records interruption or failure and preserves originals; it does not
+resume a Researcher run. Each block permits one Researcher launch.
 
-In Linux, both agents compose Pydantic AI Harness `Coder` with `CodeMode`. The Director retains Coder in `/work/director` for scratch engineering (or the configured data root's `director` directory). Each JevBlock receives a fresh writable Researcher workspace under `var/workspaces/<block-id>` for code and local investigation. The application tree is read-only to both coding contexts. Native file tools and shell commands share a command-only backend: the Harness file tools remain intact, while its detached Shell is replaced through the public capability API by an owned foreground shell. Python waits and drains every descendant, including new-session grandchildren, before releasing the shared heavy-work lease. No model polling or detached command handle is exposed.
+## Ownership boundaries
 
-`src/runtime/process.py` owns the Linux x86_64 command family. A transient user-systemd cgroup enforces aggregate process, CPU-rate, memory/swap and wall limits; an isolated user/mount/network namespace supplies a size/inode-bounded tmpfs scratch tree. Trusted code verifies the effective kernel settings before launch, records native usage and commits scratch only after descendants drain. Interrupted staging preserves the original scratch recovery copy. The parent confirms unit termination and an empty recorded cgroup; unconfirmed cleanup locks further heavy work and preserves recovery files. Scratch requires a service-owned native directory with a writable parent and free-disk headroom for bounded staging. Required user-systemd/controllers, namespaces or filesystem controls being unavailable fails closed.
+| Owner | Authority and boundary |
+| --- | --- |
+| [Director](../src/runtime/pydantic_ai/global_tools.py) | Chooses global allocations and reviews referenced portfolio/context. Cannot acquire local scientific inputs, run local Science, admit evidence or mutate an active block's state/deadline. |
+| [Researcher and runtime](../src/runtime/pydantic_ai/contracts.py) | Researcher chooses block-local investigation through typed tools; runtime owns state updates and persistence. Researcher cannot allocate global blocks or extend its allowance. |
+| [Science](../src/science/admission.py) | Produces deterministic measurements and owns explicit admission. Runtime callers resolve owned inputs and validate/replay external results before admission; execution success alone does not establish scientific validity. |
+| [Jev and frontier policy](../src/runtime/pydantic_ai/semantic.py) | Jev returns typed semantic measurements on bounded projections. Deterministic policy interprets them while retaining alternatives and failures; neither grants scientific evidence authority. |
+| [Reasoner](../src/runtime/pydantic_ai/reasoner.py) | Proposes hypotheses, interpretations and tests within the block allowance. Its output does not directly mutate canonical state or become evidence. |
+| [OncoLab](../src/oncolab/institution.py) | Owns capability contracts, pinned revisions and separate usage/verification history. Python governance reviews proposals against scoped qualification records; discovery, metadata and route declarations do not install tools or qualify reusable execution. |
+| [Memory](../src/memory/service.py) | Derives bounded, reference-linked context from records. Retrieval and semantic annotations do not admit evidence or resolve scientific uncertainty. |
+| [Persistence and read models](../src/persistence/repository.py) | Store canonical records and reconstruct outcomes. Dossiers, API, UI and exports report those records; they do not decide scientific validity. Publication credentials belong to a separate downstream process. |
 
-Landlock ABI 3 or newer and inherited seccomp restrict the actual commands. Only selected public application paths and the exact active Python environment/base interpreter are read-only dependencies; only the role's scratch is writable. Peer workspaces, credential files and `/proc` environment files are excluded, command environments omit provider secrets, and tools cannot override them. Scratch sockets, namespace/mount changes and host-process signalling are denied. Public downloads and software acquisition must use typed, metered tools; scratch cannot create unmetered network traffic. Code Mode exposes typed acquisition, Science, Jev, evidence and lifecycle tools; only those paths can admit evidence. Windows development retains Monty Code Mode. Validate actual Coder controls directly in WSL2 on native Linux storage with `scripts/verify_coder_resources.py` and the historical `verify_coder_container.py` filename; neither invokes a container. A Windows-mounted application tree currently fails its application-read probe and is not qualified. Local external science now shares this governor for archive/bootstrap/install/test/replay; its [local owner](../src/science/README.md) defines that contract. Installed in-process Science resource integration, composed telemetry and the complete local verification gate remain acceptance work in the active plan.
+## Core invariants
 
-Production composition enforces configured allocation bounds (300–3600 seconds, default 900) and a 90-second reserve. Director model/tool headroom is independent of Researcher headroom. Nested and fallback Researcher launches receive explicit limits and independent usage objects; live Reasoner requests also consume the Researcher's allocation. Cycle-wide request, tool-attempt and optional reported-cost limits cover all roles. Resource exhaustion returns a structured non-retryable handoff directive before effects; inspection and Python finalization remain available, while in-flight work finishes. SDK request exhaustion terminates the bounded run and retains the failed receipt. Ledger `ResourceAttempt`, `WorkNotStarted` and `ModelUsage` records expose attempted work, remaining local counters and role usage. Missing provider cost remains unknown and cannot establish a complete monetary bound.
+- A successful run, block closure and scientific objective attainment are separate
+  facts. `complete_block` requests handoff; successful finalization requires a
+  Researcher completion receipt. Failures take precedence over contradictory
+  completion, and terminal block/dossier writes are atomic and idempotent.
+- Evidence admission requires deterministic source/sandbox origin, provenance,
+  source references and finite top-level numeric values. Provided arrays,
+  synthetic fixtures, model prose and raw scratch output cannot become evidence.
+  This gate does not itself prove biological validity or resolve every reference.
+- Retained inputs bind exact content and block ownership. Active blocks pin the
+  registry revision, institutional history boundary and application content
+  identity. New observations or revisions do not silently change their contracts.
+- ResearchState uses frozen models and recorded snapshots; nested mappings are
+  not deeply immutable Python objects. Runtime-owned updates append revisions;
+  SQLite rejects record UPDATE/DELETE, and corrections append new records.
+- Missing inputs, unknown results and operational failures are not scientific
+  negatives. Soft handoff prevents new expensive work while preserving in-flight
+  work. Required command controls fail closed and ownership remains held until
+  work drains.
 
-Every block begins with a fresh immutable `ResearchState`. Exact public acquisitions and literature context are persisted before use, with stable content hashes independent of execution UUIDs. Science resolves acquisitions within their owning block. Typed summaries feed bounded, versioned Jev projections containing origin, references, limitations and explicit omission counts; Jev never receives provider JSON, dataframes, or shell output. The factory loads bundled and validated durable execution verifications into the shared OncoLab Index without resuming research or promoting descriptors. Index discovery and selection have durable actor/scope receipts, including Director discovery before allocation.
+## Composition and execution
 
-Researcher procedural skills are selected locally and afresh per JevBlock. They are short guidance, not executable capabilities or standing prompt context. When a missing method requires public GitHub software, the repository is resolved to a commit and run only in the configured credential-free scientific backend. Full requests, inputs, backend/environment identity, commands, outputs and validator version survive restart. Independent replay is explicit and compares output hashes through the same isolated executor. Local installation uses retained wheels offline; historical Docker dependency resolution remains unlocked and disclosed. Reusable reinstall qualification is separate, and replay can fail when dependencies are unavailable or drift. Raw stdout and files cannot become evidence.
+[factory.py](../src/runtime/pydantic_ai/factory.py) composes the live runtime from
+[model](../config/models.yaml) and [runtime](../config/runtime.yaml) configuration.
+Live mode requires provider credentials; deterministic clients are explicit
+fixtures. Linux agents combine Coder and Code Mode; Windows uses Code Mode.
+Coder commands and the default local-venv scientific backend use the owned Linux
+command-family controls. Installed Science currently runs in worker threads under
+the shared heavy-work lease, rather than that process-family governor.
 
-## Boundaries
+The service uses SQLite under its configured data root or explicit database path.
+Disposable workspaces are separate from retained inputs and canonical records.
+The [implementation plan](IMPLEMENTATION_PLAN.md) owns unfinished work;
+[TASK_LOG](TASK_LOG.md) records completed-task verification only.
 
-| Concept | Responsibility | Never does |
-| --- | --- | --- |
-| Science | Deterministic block-local source, cohort, transformation, statistics, validation | Semantic judgment or global allocation |
-| Jev | Typed semantic measurements after bounded retrieval and before deterministic frontier policy | Evidence admission or agent control |
-| Reasoner | Block-local hypotheses, interpretations, possible tests | Evidence admission |
-| Researcher | Local investigation and facilities inside one JevBlock | Extend its block or allocate new global scope |
-| Director | Global Control, OncoLab Index search, and Research Memory use, including existing typed memory semantics | Direct scientific acquisition/analysis/admission or unrestricted Jev operation |
-| Python policy | Lifecycle, provenance, admission, composition, frontier | Treat uncertainty as a negative result |
-
-## Search policy
-
-Inside a JevBlock, the canonical pattern is deterministic candidate generation, bounded Jev questions, complete distributions, deterministic local frontier policy, then Researcher action or a proposal to Director. A Choice winner is not suitability proof; preserve a beam when ambiguity has material recall risk. Jev failures remain operational failures.
-
-Each Jev call retains its projection and question specifications, hashes, requested/resolved model, timing, reported usage and outcome. SDK construction and decoding failures retain operational receipts and produce no frontier judgment. Candidate history links native distributions and deterministic policy rationale to the originating call; semantic rejection never establishes a scientific negative.
-
-## Live and deterministic modes
-
-One composition point, `src/runtime/pydantic_ai/factory.py`, constructs the autonomous live system from strict repository-owned configuration. Missing provider credentials fail closed. Deterministic clients exist only as explicit test fixtures. The Reasoner is an independent Pydantic AI sub-agent, and TypeSafe failures are operational (`JevOperationalFailure`), never decisions.
-
-`AutonomousService` owns one Director Agent for its process lifetime and passes it
-back through factory composition. Each cycle still has a new runtime and each
-block a fresh Researcher, state, skills and budgets. Previous Director messages
-are not retained; continuity is reconstructed from persisted records after restart.
-
-## Persistence and application API
-
-`src/persistence/` writes block, ledger, state, measurement, evidence, Jev, artifact, and dossier records as work occurs into the original append-only SQLite record store (default `var/oncojev.sqlite3`, or the configured existing SQLite path). It preserves typed envelopes, immutable sequence references and atomic terminal bundles; no environment variable selects another database backend. Block closure and its terminal dossier are committed atomically and idempotently. A durable cycle-start receipt and mission-linked block records let recovery finish a missing cycle receipt after an interrupted write sequence. Recovery runs at startup and before every service cycle, closes interrupted blocks with a current-time recovery event and partial dossier, and never resumes research. A dossier alone does not establish closure. `src/application/service.py` assembles read models, and `src/api/server.py` exposes them read-only.
-
-Lifecycle closure, Researcher run outcome, Director outcome, and scientific objective attainment are separate contracts. Under the no-retry contract, each block permits one Researcher launch. `complete_block` records a handoff request; only `ResearcherRunCompleted` permits successful finalization. Any `ResearcherRunFailed` overrides a normal Director return. Hard Director errors and invalid allocation counts close all allocated blocks as failed and preserve partial dossiers before propagating the error; pre-allocation failure records a failed cycle without inventing a block. Only installed `UsageLimitExceeded` and `IncompleteToolCall` exceptions qualify as Director truncation, which produces an incomplete cycle even after a completed Researcher run. Authentication, transport, tool crashes and generic `UnexpectedModelBehavior` remain hard failures. Objective attainment defaults to unknown; neither model prose nor a completed run establishes a scientific estimate.
-
-Effective reconstruction and API views give failure receipts precedence over contradictory legacy completion. Recovery appends an outcome correction linked to original block, ledger, dossier and cycle sequence numbers. Original cycles, dossiers, measurements and evidence remain unchanged. Legacy completion without a Researcher completion receipt is explicitly inferred as unverified/interrupted. This applies to historical block 4 as well as any matching history.
-
-`src/memory/` appends versioned cycle digests from resolvable records, including
-failed and pre-allocation outcomes. References pin kind, sequence, identity,
-owner and content hash. New corrections produce new derived snapshots; old
-records remain intact. Missing historical inputs and legacy prose are explicitly
-labelled. Search ranks structured context deterministically, with stable ties and
-mission/entity/topic/time filters. Entity/topic tags are declared at allocation.
-Retrieved context is bounded to 32 KiB and start memory to 16 KiB, with omissions
-and truncation marked. Director and Researcher can resolve historical dossiers,
-evidence, hypotheses and open uncertainties from persistence. Scientific negatives
-have their own field; current Science outputs do not declare such interpretations,
-so no negatives are inferred from missing evidence, failure or semantic rejection.
-
-Allocation retrieves context for the actual objective and stores selected
-references, prior failures, uncertainty, candidate directions and limitations in
-the start packet. Both launch paths deliver it to the fresh Researcher without
-inheriting admission authority or prior transcripts. API reads expose bounded
-typed outcomes with derived summary/provenance compatibility fields; archive prose
-without a digest is labelled unverified context. API reads never backfill memory.
-
-## Observability and evaluation
-
-`web/` is a dynamic Next.js App Router interface that reads the live API server-side and uses the committed snapshot only as an offline fallback. `src/evals/` runs fresh autonomous conditions and reports source-bound evidence, failed/incomplete cycles, condition failures, verified run completion, and elapsed time without declaring a winner. Failed conditions retain partial measurements/evidence and continue to remaining conditions. Custom-runner failures receive a condition failure outcome without duplicating an already-recorded cycle.
-
-## Evolution
-
-Scientific and Jev capabilities begin local. Only repeat use, validation, provenance, and evaluation justify a reusable registry entry. Skills explain when and how to approach work; registries contain contracts for executable or evaluated artifacts. See [the upstream rule](../AGENTS.md#upstream-rule), [JEV.md](JEV.md), and [FRONTEND.md](FRONTEND.md).
-
-F4 discovery uses shared OncoLab cards, snapshot-bound continuation and explicit contract expansion. Researcher suitability extends the existing frontier; Python checks route, access and inputs. Semantic Research Memory follows bounded F3 retrieval with separate global budgets and deterministic fallback. Director Control receives context, not scientific acquisition authority. Terminal dossier construction never requires successful Jev annotation.
-
-ScientificArtifact stores exact bytes, source/request identity, byte hash, size,
-format and block ownership independently of analysis identity. Retained inputs
-live in append-only persistence, outside disposable Coder workspaces. Runtime
-resolves owner/hash before sandbox input mounting and validation. Source analysis
-resolves fields and paired entity rows deterministically from owned acquisitions.
-Analysis keys bind content, design, population, estimand, fields and transformations;
-admission uses stable scoped identity and explicit replication identity. No
-persistence or presentation component admits evidence.
-
-F6 operational retention runs between service cycles, outside agent authority.
-It requires durable terminal records, resolves archive identity before removing
-scratch and excludes active/unknown/unresolved or linked paths. All evidence,
-retained source bytes, replay inputs and history remain durable. Persistence
-failures prevent export-driven cleanup; deletion/receipt failures are explicit.
-Read models distinguish synthetic provenance and source attempt/success/failure
-counts; API connectivity never establishes scientific success.
-
-## Durable evolution boundaries
-
-Continuous research is the intended service contract: Director chooses the strongest
-allowed bounded continuation while preserving uncertainty. When independent work
-is finished, Python waits for useful events without model polling; waiting is an
-operational work state, not a semantic decision to end the program. Only explicit
-service shutdown, prohibitive hard resource limits, unrecoverable execution failure
-or required fail-closed local confinement can prevent continuation. The current
-service owns an asynchronous Researcher task and terminal-event persistence;
-Director performs bounded independent planning while Python owns waiting and
-shared resource enforcement.
-
-The database remains authoritative. Derived Research Memory and human-readable
-exports have no scientific write-back authority. Registry revisions describe
-governed capability state; ordinary institutional observations append history
-without automatically changing executable contracts. Exploration and reusable
-qualification remain separate, both subject to Science validation/admission.
-
-Implementation details, resource policy, registry/history pins, backend qualification
-and export acceptance live only in the [active plan](IMPLEMENTATION_PLAN.md).
+[architecture.yaml](../architecture.yaml) projects these boundaries and agent rules
+for mechanical reference checks. It is not runtime policy or another authority;
+ENFORCED, TESTED and REVIEWED claims retain their named proof scope.

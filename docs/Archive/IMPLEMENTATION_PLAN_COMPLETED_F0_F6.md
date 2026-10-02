@@ -2,7 +2,7 @@
 
 **Status: DONE (bounded F0-F6 scope); archived 2026-10-01.**
 
-This is the completed historical plan, not the active phase/status tracker. The original plan follows unchanged, including all completion evidence, limits and D1-D8 triggers. Historical references to the sole tracker or to planned F phases reflect their recording time. The active next-stage tracker is [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md); it carries every deferred item forward without declaring it implemented.
+This is the completed historical plan, not the active phase/status tracker. The original plan follows unchanged, including all completion evidence, limits and D1-D8 triggers. Historical references to the sole tracker or to planned F phases reflect their recording time. The active next-stage tracker is [IMPLEMENTATION_PLAN.md](../IMPLEMENTATION_PLAN.md); it carries every deferred item forward without declaring it implemented.
 
 ---
 

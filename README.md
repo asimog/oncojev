@@ -1,28 +1,48 @@
 # OncoJev
 
-OncoJev is an autonomous computational oncology research system for searching
-large biological information spaces. A human supplies a broad direction; Director
-allocates bounded questions and a fresh Researcher chooses how to investigate
-The research thesis is whether typed semantic measurement, deterministic science
-and selective reasoning improve useful discovery while preserving candidate recall.
+OncoJev is an autonomous computational oncology research system. A human supplies
+a broad direction; Director allocates bounded questions, and a fresh Researcher
+chooses how to investigate each one. The research thesis is whether typed semantic
+measurement, deterministic science and selective reasoning improve useful discovery
+while preserving candidate recall.
 
-## Documentation map
+## Navigation
 
-| Document | Read for |
+| Document | Owner |
 | --- | --- |
-| [Architecture](docs/ARCHITECTURE.md) | Durable structure and component authority |
-| [Active plan](docs/IMPLEMENTATION_PLAN.md) | Next changes, status and acceptance |
-| [Jev](docs/JEV.md) / [Capabilities](docs/CAPABILITIES.md) | Current subsystem contracts |
-| [Frontend](docs/FRONTEND.md) | Current observability/read models |
-| `src/*/README.md` | Current local implementation |
+| [Architecture](docs/ARCHITECTURE.md) | Current structure, ownership and invariants |
+| [Implementation plan](docs/IMPLEMENTATION_PLAN.md) | Unfinished work and completion criteria |
+| [Task log](docs/TASK_LOG.md) | Completed-task verification and proof limits |
+| [Agent guidance](AGENTS.md) | Working rules and task navigation |
 
-The completed F0-F6 archive and `docs/references/` preserve history and source
-inputs. Read them only for a concrete historical/provenance question; they are not
-normal working context or active instructions.
+## Run
 
-## Local development
+Use an existing Python environment with the project dependencies installed. Live
+mode reads [model configuration](config/models.yaml) and
+[runtime configuration](config/runtime.yaml), and requires `OPENROUTER_API_KEY`
+and `TYPESAFE_API_KEY` in the process environment or ignored `.env.local`.
+Linux command execution requires native Linux storage and the controls described
+in [Architecture](docs/ARCHITECTURE.md#composition-and-execution).
 
-Use the existing Windows environment for routine checks:
+From the repository root in Linux/WSL2:
+
+```sh
+.venv/bin/python -B -m src serve --direction "Investigate a public oncology signal"
+.venv/bin/python -B -m src cycle --direction "Investigate a public oncology signal"
+```
+
+`serve` runs research continuously and exposes the read-only API; `cycle` runs
+one cycle. The service defaults to SQLite at `var/oncojev.sqlite3`. An absolute
+`ONCOJEV_DATA_ROOT` changes the data root; `ONCOJEV_DB_PATH` overrides the database
+file. `HOST` and `PORT` configure the API bind address and port (default 8080).
+
+The web UI reads that API, falling back to a labelled committed snapshot when it
+is unavailable. Run it from `web/` with `npm run dev`; `ONCOJEV_API_URL` overrides
+its default API address, `http://127.0.0.1:8080`.
+
+## Focused checks
+
+For routine Windows development, choose the test file that owns the change:
 
 ```powershell
 .venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' <owning-test-file>
@@ -30,7 +50,9 @@ Use the existing Windows environment for routine checks:
 git diff --check
 ```
 
-The service uses the original SQLite database, default `var/oncojev.sqlite3`.
-Linux-only scientific execution and confinement checks run directly in WSL2;
-local-venv is the default scientific backend. Deployment is outside the current
-scope. The [active plan](docs/IMPLEMENTATION_PLAN.md) owns acceptance and limits.
+Native probes are separate from local contract tests. The explicit WSL2 setup
+helper is [scripts/verify_native.py](scripts/verify_native.py); its cache is
+developer setup, not qualification evidence. Run only the checks needed for the
+task. For documentation-only changes, run
+`scripts/check_architecture.py --docs-only`, review scope/preservation and run
+`git diff --check`.

@@ -27,12 +27,11 @@ or credentials and follows no redirects. The service reserves block/service down
 workspace/archive and durable-artifact capacity before opening the data stream;
 unknown size reserves bounded remaining capacity. Failed transfers retain actual
 bytes and operational receipts. Disk checks include SQLite/base64 headroom. Licence/release are unknown unless
-provided by verified source metadata. The official
-[download contract](https://docs.gdc.cancer.gov/API/Users_Guide/Downloading_Files/)
-and one 51,100-byte anonymous example were checked on 2026-10-01; this does not
-establish accessibility of all examples or scientific utility.
+provided by source metadata. See the official
+[download contract](https://docs.gdc.cancer.gov/API/Users_Guide/Downloading_Files/).
+Successful acquisition does not establish scientific utility.
 
-Data-asset discovery and external source expansion belong to the [active plan](../../docs/IMPLEMENTATION_PLAN.md) (H6-H8).
+Data-asset discovery and external source expansion belong to the [active plan](../../docs/IMPLEMENTATION_PLAN.md).
 
 `representation.py` checks a bounded declared need against retained row schemas,
 entity identities, explicit source units/build facts and coverage. Metadata listings

@@ -1,0 +1,3 @@
+# Historical inputs are excluded from normal repository search, including tracked files.
+/docs/Archive/
+/.upstream/

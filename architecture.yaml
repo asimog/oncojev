@@ -3,14 +3,10 @@ schema_version: 1
 authority: projection
 canonical_sources:
   - path: docs/ARCHITECTURE.md
-    sha256: 16649e4f2e566fc2b39cdff18287cce7989d527fdcefd36c2690616f7d4cb57f
+    sha256: bbbc2148fe30b77ba1125a3f5523ad6cb273f8acc5f9a07ecbc23c0dd8664a35
   - path: AGENTS.md
-    sha256: 7006de39a81402eff244d71162ffcb4a865d994ecd0cb414dcfdc4f93c1463e1
-review_basis:
-  head: f1376d6035c78da4f3a52f5e58f246e6daef77aa
-  scope: Current working tree; see docs/REPOSITORY_TRUTH_REPORT.md for dirty paths and proof limits.
-  directions: Authority and data flow, not an enforced acyclic Python import graph.
-  ownership_and_direction_classification: REVIEWED
+    sha256: d1261ec27e07643640f1364c639ba0e82771c834ac938bd9ed21df7b64a2807a
+# Owners/directions are REVIEWED authority/data flow, not an import DAG.
 classification:
   ENFORCED: Named executable guard enforces only its stated scope.
   TESTED: Named behavior test proves its exercised local contract.
@@ -24,14 +20,13 @@ owners:
     paths: [src/runtime/pydantic_ai]
     responsibility: Framework composition, tools, role dependencies and bounded agent execution.
     forbidden: [scientific meaning from execution success, policy authority from framework defaults]
-    exception: LiveReasoner constructs an Agent in src/reasoner/agent.py outside the designated integration owner.
   director:
     paths: [src/director]
     responsibility: Global allocation, reference-linked portfolio review and continuation proposals.
     forbidden: [local scientific acquisition, analysis or admission, mutating active ResearchState, extending its deadline]
   researcher:
     paths: [src/researcher]
-    responsibility: Block-local investigation, deterministic state and local frontier decisions.
+    responsibility: Block-local investigation and local frontier decisions; runtime owns state writes.
     forbidden: [global block allocation, deadline extension, unvalidated evidence admission]
   jev:
     paths: [src/jev]
@@ -40,7 +35,7 @@ owners:
   reasoner:
     paths: [src/reasoner]
     responsibility: Block-local hypotheses, interpretations and possible tests.
-    forbidden: [scientific evidence admission, global allocation]
+    forbidden: [scientific evidence admission, global allocation, direct canonical state mutation]
   oncolab:
     paths: [src/oncolab]
     responsibility: Shared Index, descriptors, contracts, immutable governed revisions and separate verification/history.
@@ -92,7 +87,7 @@ authority_boundaries:
     classification: TESTED
     statement: Missing qualification rejects reusable acceptance without creating a registry revision or mutating evidence.
     evidence: [tests/invariants/test_persistence.py::test_governance_rejects_unqualified_use_without_revision_or_evidence_mutation]
-    limit: No accepted qualified reusable execution is established; the required reusable dispatcher is absent.
+    limit: Rejection proof does not establish accepted qualified reusable execution or scientific utility.
 dependency_directions:
   - from: director
     to: service
@@ -124,9 +119,9 @@ high_consequence_invariants:
   - id: framework_integration_boundary
     owner: framework
     classification: REVIEWED
-    statement: Integration belongs under src/runtime/pydantic_ai; factory.py is the live/deterministic composition point.
-    evidence: [src/runtime/pydantic_ai/factory.py::build_system, src/reasoner/agent.py]
-    limit: Current Reasoner Agent construction is an exception; existing architecture checks do not enforce exclusivity.
+    statement: factory.py composes production role execution under src/runtime/pydantic_ai, including BudgetedLiveReasoner.
+    evidence: [src/runtime/pydantic_ai/factory.py::build_system, src/runtime/pydantic_ai/reasoner.py::BudgetedLiveReasoner, src/reasoner/agent.py::LiveReasoner]
+    limit: Standalone LiveReasoner also constructs an Agent outside this integration package; exclusivity is not enforced.
   - id: pinned_registry_and_history
     owner: oncolab
     classification: TESTED
@@ -152,7 +147,7 @@ high_consequence_invariants:
     classification: REVIEWED
     statement: Owned Linux command execution checks required cgroup/namespace controls, drains descendants and rejects unconfirmed cleanup.
     evidence: [src/runtime/process.py::run_owned_command, scripts/verify_coder_resources.py, scripts/verify_science_resources.py]
-    limit: Current native confinement was not executed in this audit. In-process Science is thread-offloaded without this kernel command-family governor.
+    limit: Source inspection is not current native confinement proof. In-process Science is thread-offloaded without this kernel command-family governor.
   - id: bounded_admission_identity
     owner: science
     classification: TESTED
@@ -169,4 +164,10 @@ high_consequence_invariants:
     classification: REVIEWED
     statement: Local qualification consumption checks declared application/backend/platform/versioned boolean controls.
     evidence: [src/runtime/verification.py::local_verification_passed]
-    limit: No canonical passing receipt in the three inspected databases; no production receipt writer. Gate does not compare current HEAD or exact current environment.
+    limit: Gate does not independently compare the exact current environment; declared controls are not current native execution proof.
+  - id: repository_integrity
+    owner: support
+    classification: ENFORCED
+    statement: Fast checker rejects stale canonical hashes, unresolved projection references, broken active Markdown links, detectable planning structures outside the plan and forbidden direct admission/upstream imports.
+    evidence: [scripts/check_architecture.py::check_projection, scripts/check_architecture.py::check_documents, scripts/check_architecture.py::check_imports]
+    limit: Applies to the explicit current-document surface and static Python imports; does not prove prose completeness, dynamic access or runtime semantics.

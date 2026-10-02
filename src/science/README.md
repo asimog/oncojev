@@ -84,4 +84,4 @@ legacy or sandbox interpretation is unclassified. GDC source-paired analyses
 require top-level endpoint entity IDs and compatible units. File/project rows
 cannot be relabelled as patient denominators; joins require a separate contract.
 
-Backend portability, scientific expansion and reusable dependency qualification belong to the [active plan](../../docs/IMPLEMENTATION_PLAN.md) (H10).
+Backend portability, scientific expansion and reusable dependency qualification belong to the [active plan](../../docs/IMPLEMENTATION_PLAN.md).

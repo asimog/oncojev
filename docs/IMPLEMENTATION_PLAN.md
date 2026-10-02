@@ -1,802 +1,404 @@
-# Next-stage autonomous laboratory implementation plan
-
-**Stage status: IN PROGRESS — H0/H1 DONE; H2–H10 and H12–H15 PARTIAL; H11 deployment and target proof CANCELLED.** Historical delivery evidence remains below. Accepted reusable promotion and live notebook publication are not established; cancelled deployment work cannot block the active phases.
-
-The completed plan is archived as [IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md](references/IMPLEMENTATION_PLAN_COMPLETED_F0_F6.md), marked **DONE for its bounded F0–F6 scope**. Its original text, delivery evidence, limitations and deferred history are preserved unchanged below an archival header. Historical instructions and statuses there are recording-time facts, not current work orders.
-
-D1–D8 are integrated implementation batches inside H4, H6, H7, H9, H10 and H14, with H13 supplying their comparative evaluations. Their original triggers are preserved as execution and acceptance gates within those phases. There is no separate deferred-work section or backlog: each owning phase implements its baseline, runs its gate, delivers the justified extension and records the actual outcome. A gate that is not met produces a reference-linked limitation or not-eligible decision in that phase; it cannot be silently postponed or reported as implemented.
-
-## 1. Goal and authority
-
-Build a continuously running computational oncology laboratory with **one local Python service, one persistent Director, at most one active fresh Researcher per JevBlock, the original authoritative SQLite database, one revisioned OncoLab, one scientific-execution abstraction and one separate generated `asimog/oncojevlab` repository**. Both agents retain their bounded Coder and CodeMode/Monty capabilities. Researcher strategy remains adaptive; no fixed source/modality pipeline is introduced.
-
-**Current scope override (2026-10-02):** use the original SQLite record store and existing data; the local default remains `var/oncojev.sqlite3` (or the existing configured SQLite path). No migrations, additional persistent databases, PostgreSQL adoption/separate database service, Railway cutover, deployment or target proof are scheduled. H11 deployment and target proof are CANCELLED, with no prerequisites or blockers in other phases. Preserve existing local/remote data and historical receipts; any genuinely required data recovery must first resolve exact identity/completeness, never assume or merge it. The initial reconciliation changed only this plan. The SQLite/local baseline delivery below now removes PostgreSQL selection/migration code and Railway-dependent governance, and corrects sandbox defaults/descriptions. Local confinement and scientific qualification remain required. Tests use the existing Windows environment for routine checks and WSL2 for Linux-only execution/confinement, with no Docker runs.
-
-The thesis remains: high-throughput semantic judgment can guide search and comparison without becoming scientific evidence or execution authority. Director decides global allocation, supervision and continuation; Researcher decides investigation inside one block; Jev measures bounded semantic properties; Reasoner proposes possibilities; deterministic Science alone validates and admits measurements. Python owns lifecycle, deadlines, budgets, provenance, frontier composition, registry governance and persistence. Persistence stores admitted records; it cannot admit evidence itself.
-
-The autonomous research program remains running unless the service is explicitly stopped, a hard resource/budget limit prevents further work, an unrecoverable operational failure prevents execution, or failure of required local confinement requires fail-closed behavior. These are operational states, never semantic judgments that nothing deserves investigation or that human direction is required. Director continues retrieving/generating alternatives from open uncertainties, retained hypotheses, contradictions, cross-block relations, replication opportunities, capability gaps, underexplored mission areas, new representations, new external capabilities, alternative tests and previously deferred candidates. Retain alternatives and choose the strongest allowed bounded continuation even when the top candidate is weak. Record low expected information value, high uncertainty, capability-constrained or weak continuation honestly; never fabricate scientific certainty to continue. A missing required allocation remains an operational/incomplete outcome, never successful program completion.
-
-Global scope contains Director Control, Research Memory and OncoLab, including typed global portfolios and semantic analyses. Block-local scope contains Researcher, immutable ResearchState, source acquisition, Science, Jev use, Reasoner, workspace, measurements, evidence and dossier. A global Jev **operation** is a typed measurement facility, never a global Jev agent or autonomous authority. Director cannot mutate active ResearchState, extend its deadline, execute scientific acquisition/analysis/admission, or use scratch code to edit production source, policy, questions, prompts, registry state or deployment configuration.
-
-
-
-**REJECT:** imported agent architectures/frameworks or orchestration layers, additional workflow engines, wholesale ontology ingestion, self-rated novelty as proof, and confirmation-only discovery. Transfer scientific practices from [SPARK](https://github.com/cpath-ukk/SPARK), [Google co-scientist](https://research.google/blog/accelerating-scientific-breakthroughs-with-an-ai-co-scientist/) and [AI Scientist v2](https://github.com/SakanaAI/AI-Scientist-v2) through existing owners; their architectures and self-evaluation scores do not become OncoJev authority or scientific truth.
-
-## 2. Verified starting point and reusable foundations
-
-Planning started on clean `main` at **`c9712e67050548354d32fcd6bb5b910569449431`**, matching the supplied baseline. Recheck HEAD and status at H0 and before each implementation batch; do not overwrite unrelated changes or assume this stays current. This planning pass inspected the supplied target, current documents, configuration and the relevant runtime/source paths; it did not rerun historical live research, inspect/change the historical database, install dependencies or inspect `.upstream/`.
-
-**Current code/plan audit baseline (2026-10-02):** clean `main` at `3c456ab43edf1c3839a733320eb30eaad730b3d9`; all H0–H15 reviewed against current owners, behavior-level tests and retained evaluation artifacts. The preceding planning hash remains historical. Before PostgreSQL commit `13b221f`, the service already used `SqliteResearchStore` with the same `var/oncojev.sqlite3` default; that existing local file is present. No database connection, migration, remote recovery, deployment or code change was needed for this audit. Historical test totals, environments and model/renderer versions below are recording-time results at their respective scopes; they are not a current whole-suite or whole-system certification.
-
-| Area | Historical planning baseline at `c9712e…` | Delivery disposition at audit HEAD `3c456ab…` |
-| --- | --- | --- |
-| Service/Director | `src/autonomous.py:AutonomousService.run_once` retains one Director Agent; `build_system` rebinds it to each new runtime. Prior transcripts are not retained. | Persistent Agent retained; H2/H3 deliver service-owned asynchronous run/event context; H4 delivers exact-direction durable mission continuity. Scientific continuity/utility acceptance remains scoped below. |
-| Launch/cycle | At the planning baseline, `register_director_tools.launch_researcher` awaited `researcher.run`; `src/runtime/cycle.py:run_cycle` required one new block and could launch fallback synchronously. | H2 delivers prompt run-handle return and a common owned async nested/fallback start. Each allocation cycle requires one real block; independent turns cannot allocate a second block or create successful empty cycles. |
-| Harness | Linux Director Coder uses `/work/director`; fresh block Coder and Monty CodeMode exist; `workspace.py`/`landlock_exec.py` fail closed. | H1/H10 historical local Linux probes retain their exact environments; current local confinement checks use WSL2. H11 target proof is cancelled. Credentials remain outside scratch authority. |
-| Memory/semantics | F3 typed digests/start packets and F4 bounded memory, suitability, representations, hypotheses and dossier support. | H4 delivers relations/frontier, observable portfolio and program reviews; H5/H10/H12 extend scoped scientific/context history through memory-v4. Scientific resolution, broader generation and utility remain open. |
-| OncoLab | `initial_oncolab_index`, `OncoLabIndex`, cards, snapshot-bound `search_page`, routes and durable verification loading. | H5 delivers immutable governed revisions and separate append-only institutional history, pinned with application identity; observations do not create revisions. Broader return-pass/qualification acceptance remains below. |
-| GDC/artifacts | At the planning baseline, `GdcPublicSource.search` supported `/files`, offset/size/sort and coverage with implicit open-access filtering; `acquire_file`/ScientificArtifact retained exact bytes and hashes. | H6.1 removes that implicit discovery filter, retains controlled/unknown alternatives and keeps anonymous byte acquisition explicitly open-only. H6a/H6.2 add owned-input checks and one reviewed STAR parser, with exact scope limits. |
-| External execution | Historical `DockerScientificSandbox`, independent replay, retained inputs/outputs and Science admission; unlocked dependency limitations and a Docker-configured runtime without a supplied daemon. | H10 delivers a confined local-venv backend selected by `config/runtime.yaml`; historical Docker receipts remain readable. `SandboxConfig` still defaults to Docker and the catalogue has stale Docker wording: open code-description questions, not current test requirements. Promotion-grade qualification remains separate. |
-| Operations | Append-only SQLite recovery/atomic terminal dossiers; F6 archive-before-cleanup; read-only API/UI with truthful failure/synthetic provenance. | H3 delivers completion-driven sequential cycles/deltas/read coherence; H12 delivers downstream projection and isolated publisher contracts. Local integration and live publication acceptance remain open. Railway work is cancelled. |
-| Policy | At H0's audited revision, one `FrontierPolicy` exposed both multidimensional `interpret` and production candidate `decide` behavior. | H14 separates `FrontierPolicy.interpret` (`semantic-frontier-v2`) and `CandidateFrontierPolicy.decide` (`candidate-frontier-v1`); global/literature policies stay distinct. Comparative/calibration acceptance remains open. |
-
-Preserve the completed contracts: F0 truthful lifecycle/recovery; F1 allocation, budgets and authority; F2 replayable provenance, receipts and telemetry; F3 typed memory and validated start packets; F4 semantic search/Jev slices; F5 undefined statistics, missing/invalid denominators, coverage, source-resolved pairing, stable admission identity and exact artifacts; F6 retention and truthful live/synthetic/offline and failed/incomplete presentation. Historical missing bytes remain missing unless verifiably recovered. New features do not retroactively validate old records.
-
-**Audit resolution:** later recorded delivery closes stale work orders, not the whole owning phase. H2/H3 scheduling, cancellation/event turns, representative API responsiveness and H5 pins are implemented; H4 portfolio/program review, H6 input gating/STAR parsing, H7 method generation and scoped R8/R9 history are delivered. Their broader integrated/scientific/utility acceptance stays PARTIAL. H8's metadata-to-operation gap remains valid. H11 evidence stays historical after cancellation. Counts and versions from different revisions/corpora are preserved rather than normalized into a fabricated current result.
-
-## 3. Delivery rules and shared contracts
-
-**Scientific priorities for H5–H15:** improve defensible representation selection (H6), canonical-operation validation (H8–H10), statistical design safeguards and deliberate replication/falsification (H10b), and structured history that improves the next research decision (H5/H12). Preserve assay-aware denominators, participant independence, multiplicity, effect uncertainty, confounding/leakage controls and honest inconclusive outcomes. R1–R12 below specify purpose, owning phase, inputs, operation, outputs, validation, decision effect and evaluation; H11 deployment/target proof is cancelled; active local operational acceptance belongs to H2/H3/H10/H15. Implementation references are linked beside their owning additions.
-
-Each phase is split into small coherent batches below. Extend the existing owner rather than creating a parallel canonical implementation. Current names and owners are reconciled below; future additions remain explicitly labelled acceptance work; Pydantic AI construction/dependencies/tool registration remain exclusively under `src/runtime/pydantic_ai/`, with `factory.py` the deterministic/live composition point. Domain contracts and policies belong in their owning `src/` packages. This reconciliation changes only `docs/IMPLEMENTATION_PLAN.md`; it neither edits code/other documents nor certifies runtime removal of out-of-scope paths. Future implementation requires its own reviewed changes and proof within the revised scope.
-
-Before a new regression, state its observable contract, credible failure, why existing coverage misses it and its primary owner. Prefer real service/tool/persistence boundaries and shared/table-driven fixtures. Do not add source-string, copied-fixture, descriptor-existence or mock-ordering tests as proof of capability. A bug regression must fail before the fix for its intended reason. Fixtures establish correctness; bounded live smokes establish connectivity/execution; labelled evaluations address utility; actual WSL2 execution probes establish only the local confinement they exercise; historical target receipts retain their own scope and further Railway proof is cancelled. None substitutes for the others.
-
-After an implementation batch, run minimal focused owning tests with the existing Windows `.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts=''`, `.venv/Scripts/python.exe -B scripts/check_architecture.py` and `git diff --check`; inspect the diff and record exact scope/results/versions/limits. Windows avoids environment setup for routine fixture checks; actual Linux x86_64 local execution/Coder confinement runs directly under WSL2 with its verified environment, never Docker. Historical `uv`/Docker commands remain evidence, not current instructions. At final implementation integration run the applicable full suite; for this documentation-only reconciliation validate scope, links, preservation and traceability instead. DONE requires active-scope exit proof; unavailable scientific/provider/publisher prerequisites remain explicit. Cancelled Railway/PostgreSQL work supplies no blocker.
-
-For each integrated D batch, retain the trigger inputs, benchmark/labelled cases, decision basis, resource allowance, delivered path or unmet prerequisite, and acceptance result in its owning H phase. H13 results return to H4/H6/H7/H9/H10/H14 before final acceptance; evaluation is part of delivery, not a reason to move these commitments into a later plan. A completed qualification/no-change decision does not close an unmet scientific or capability gap. Unsupported automatic self-promotion, production self-modification and uncontrolled ingestion remain authority prohibitions, not scheduled features.
-
-Current contracts and explicit remaining limits (future acceptance below is not implied delivered):
-
-| Contract | Owner and authority | Required identity/limits |
-| --- | --- | --- |
-| `ActiveResearchContext` / run handle | `src/runtime/pydantic_ai/contracts.py`, composed by service/cycle lifecycle | Actual context/handle: mission/cycle/block/run IDs, start sequence, task/terminal state and output/dossier/delta ownership. Application/registry/history pins live in the linked `JevBlockStart`; independent usage/budgets live in `HarnessRuntime`, not copied into the handle. Never share mutable ResearchState with Director. |
-| Service work state / event | Python service lifecycle, block/cycle models and persistence | Implemented `ServiceResearchState`: ALLOCATING, RESEARCHER_ACTIVE, DIRECTOR_GLOBAL_WORK, WAITING_FOR_RESEARCH_EVENT, POST_BLOCK_REVIEW; active-run identity, event identity/deduplication. Operational only: never mission completion, semantic exhaustion or required human direction. Run outcome and objective attainment remain distinct. |
-| Single-worker resource policy / heavy-work lease | Existing runtime controls and service-owned reservations; H2 baseline, H3 telemetry, H6 acquisition, H10 execution | Per-operation/block/service ceilings and usage; independent Director allowance; one heavy-local-work lease; typed busy/rejection receipts and observed byte/wall-duration measurements. Coder and external scientific clone/bootstrap/install aggregate controls have native WSL2 proof below; in-process Science quotas and complete telemetry remain open. No scientific judgment or additional agent/service. |
-| `BlockDelta` | `src/dossier/delta.py`, derived from stored block-owned references | Actual start/end sequence and run/block IDs; explicit supported record/event categories with at most 20 references each and omission counts. Resource keys include `allocated_seconds`, `actual_elapsed_seconds`, `unused_allowance_seconds`, `reason_for_terminal_state`, Researcher/Director turn/idle wall time, metered download bytes and recorded execution/lease/limit-failure counts. `workspace_observed_bytes`, `workspace_peak_bytes` and `cpu_seconds` are currently unknown. Global relation records are not automatically copied into a block delta; only explicit matching block-owned events are included. No inferred negatives/resolutions or resource-derived scientific value. |
-| Global frontier / relations / review | Director domain with deterministic policy and memory references | `global-frontier-v2` pins mission and candidate identity. `current_basis` hashes latest sequence per material kind, Index snapshot, institutional registry/history/application pin, mission and version; it is not a raw whole-DB high-water or separately stored digest/active-block tuple. Read-only review/export/global measurement records do not invalidate selection themselves. Projections/native receipts retain question/policy versions, distributions, source references and limits. Portfolio/review observations cannot declare scientific resolution. |
-| OncoLab registry revision | `src/oncolab/` plus append-only persistence; Python governance | Parent revision, content hash, accepted state transition and governance version, reconstructable descriptors/contracts/routes/reusable status. Only governed capability-state changes create revisions; blocks pin immutable state, no agent CRUD. |
-| OncoLab institutional history / proposal | Append-only observations and proposals, separate from registry state | Usage/success/failure/suitability/demand/limitations/external inspection/reverification/proposal references and sequence. Block and history-consuming search/continuation receipts pin `oncolab_history_high_water`; ordinary observations never automatically increment registry revision. |
-| External capability / data asset | `src/oncolab/` discovery vs `src/sources/` asset contracts | Source/query/filter/cursor/retrieval time/candidate IDs/hash/omissions/failure. Preserve mutable-source truth; GDC files never become capabilities. |
-| Scientific execution/environment | `src/science/` | Exploratory: isolated backend-specific runtime, repo/resolved commit/package, declared dependency/install/test/execute identity, exact inputs/parameters/outputs, existing Science replay/validation and limitations. Promotion-grade: H10a fresh environment/recoverable locks/reinstall/independent replay. Local identity never fabricates Docker digest; exploratory validity never grants reusability. |
-| Export/publication receipt | Deterministic downstream application/exporter | Renderer reads under a pinned DB sequence ceiling; manifest `source_high_water` is the highest selected exportable sequence, with renderer version, revision list and generated content hashes. Institutional basis remains in source-record references; there is no separate manifest history-pin field. Export cause/event and publication commit/outcome are separate downstream records. No input route from notebook Markdown to scientific state. |
-
-## 4. Phase tracker and dependency order
-
-The H0–H15 numbering is retained, with H11 deployment/target proof CANCELLED and excluded from all active prerequisites. **H9 accepted executable promotion still requires H10a/D8 promotion-grade fresh reinstall/replay qualification, scoped scientific/reference validation, measured H13 utility, licence/access review and explicit governance with required local execution controls.** Proposal/rejection scaffolding can precede qualification; it does not prove accepted reuse. The delivered local baseline replaces the Railway gate with `local-verification-v1`; producing its complete passing current-application proof remains required. H13 cases start alongside delivered baselines; H14 retains comparative/calibration gates after its delivered caller reconciliation. No production cutover is scheduled.
-
-Integrated batches use two passes where necessary: build the concrete mechanism and evaluation cases in the owning phase, then return with H13 evidence to complete its qualified extension. D1 belongs to H9; D2 to H6; D3 and D4 to H4, with D3's shared-contract decision completed in H14; D5 to H14; D6 to H7; D7 and D8 to H10, using H6's source/input gates. H15 checks these phase results directly rather than reconciling a separate deferred list.
-
-| Phase | Priority/class | Build prerequisites / completion evidence | Status |
-| --- | --- | --- | --- |
-| H0 — baseline audit/reconciliation | P0, audit | Commit-linked caller audit and recording-time 96-test baseline below | DONE: audited `6e29289` on 2026-10-01; later findings reconciled below; H11 target proof cancelled |
-| H1 — Director harness/role/tools | P0, authority preservation | H0 | DONE: global role/resource read and historical local Linux confinement proof; H11 target proof cancelled |
-| H2 — non-blocking single-Researcher lifecycle | P0, lifecycle correctness | H1 | PARTIAL: owned async start/offload/atomic terminal proof plus H5 pins, H6 reservations and H3 representative API check delivered; local resource/integrated acceptance remains |
-| H3 — event-driven turns, BlockDelta and stale-basis revalidation | P0, lifecycle/provenance | H2, existing F3/F6 | PARTIAL: cancellation/event/scheduled turns, deltas, representative read coherence and H4/H5 basis mechanisms delivered; integrated refresh/telemetry acceptance remains |
-| H4 — global semantics, generators and hypothesis refinement (D3/D4) | P1, semantic method | Build: H3. Return: actual H6/H7 domain mechanisms and H13/H14 comparison. | PARTIAL: frontier/mission, follow-up continuations, observable portfolio/program review delivered; scientific portfolio/refinement/generator utility remains |
-| H5 — revisioned institutional OncoLab | P1, durable contracts | H3, existing catalogue/F2 | PARTIAL: immutable pins/history and scoped R1/R8/R9 memory-v4 integration delivered; broader operation/decision utility remains |
-| H6 — GDC files/assets, deeper representation/schema search (D2) | P1, source correctness + scoped method | Build: H5, existing F4c/F5. Return: H13 representation misses; supplies D7 inputs. | PARTIAL: discovery/reservations, owned-input gate and STAR selected-gene parser delivered; broader schemas/joins/generation/utility remain |
-| H7 — bio.tools, EDAM and measured search expansion (D6) | P1, capability retrieval | Build: H5/H4 baseline. Return: H13 method suitability and scale/coverage evidence. | PARTIAL: bounded discovery/live smoke and need-bound method generation delivered; R3/D6 scientific/scale acceptance remains |
-| H8 — ecosystem enrichment | P2, scoped adapters | H7 | PARTIAL: targeted metadata/live smokes; R4 operation-reference return work below |
-| H9 — governed capability promotion/review (D1) | P1, governance | Build: H5/H7/H8 as applicable. Acceptance: H10a/D8 qualification, scoped validation, H13 utility and governance/local controls; no H11 dependency. | PARTIAL: proposal/rejection path delivered; qualified accepted reuse unproved; versioned local-verification gate delivered; scientific qualification and current WSL2 enforcement remain unproved |
-| H10 — execution backend, scientific operations and dependency locking (D7/D8) | P0 for local controlled execution, scientific correctness | Build: H2/F5; H6 inputs for selected science. Return: qualification and scoped H13/local resource proof. | PARTIAL: Linux exploratory backend and same-method GDC paired follow-ups delivered; promotion-grade qualification/broader science/aggregate controls remain |
-| H11 — Railway deployment, cutover and target proof | CANCELLED scope | No active prerequisites or downstream completion gates | CANCELLED: historical observations preserved; no PostgreSQL migration/separate service, deployment, volume cutover or further target proof |
-| H12 — oncojevlab export/publication | P2, observability | Available H3/H4/H5 typed records; proposal/deployment history is optional input, not accepted-H9/H11 prerequisite | PARTIAL: renderer-v3, isolated publisher and tentative context/history delivered; context utility and external publication remain |
-| H13 — semantic/scientific evaluation corpus | P1, evaluation | Build alongside H4/H6–H10 baselines; return scoped proof to owners. Local full-system conditions after relevant baselines/H12 projection; no H11 dependency. | PARTIAL: generated input/selection comparisons delivered; independent scientific/semantic utility and return gates remain |
-| H14 — frontier audit, generator contract and bounded calibration/Autoresearch (D3/D5) | P1, policy correctness and measured semantic research | Build: H0 caller inventory and H4/H6/H7 baselines. Acceptance: H13 comparisons/instability evidence. | PARTIAL: explicit caller/policy ownership; generator and measured calibration gates remain |
-| H15 — final documentation/full verification | Integration | Active H1–H10 and H12–H14 acceptance/dispositions; cancelled H11 cannot block completion | PARTIAL: code/plan baseline reconciled; full local scientific/integration and implemented-documentation acceptance remains |
-
-**Baseline implementation commit:** [ffbb638](https://github.com/asimog/oncojev/commit/ffbb63899d0a2c9681fdb9d62e558024f07920bb), pushed and remote main verified.
-
-### Local baseline — DELIVERED (H2/H9/H10/H15, 2026-10-02)
-
-First dependency-ordered implementation batch from the goal objective; starting
-HEAD `3c456ab43edf1c3839a733320eb30eaad730b3d9`. The pre-existing plan reconciliation
-is preserved in this batch. Runtime and notebook export now open SQLite directly;
-PostgreSQL selector/store, migration and target-verifier tooling and direct/locked
-psycopg dependencies are removed. No database is migrated, merged or replaced.
-`SandboxConfig` defaults to local-venv; the historical Docker backend/receipts stay
-compatible, with no Docker testing scheduled. Current architecture/capability and
-science descriptions match these paths.
-
-`scoped-governance-v2-local` replaces Railway proof with one integrity-linked
-`LOCAL_VERIFICATION` receipt under `local-verification-v1`. Its exact application,
-backend and WSL2/Linux/x86_64/Python/executable basis must match the declared local
-contract, and all Coder filesystem/credentials/descendants, scientific
-filesystem/credentials/network/process/replay and resource
-process/CPU/memory/disk/download/lease/cancellation checks must be boolean true in
-that one receipt. Missing/partial/changed-version/application/backend/platform
-proof fails closed. Historical `DEPLOYMENT_VERIFICATION` records remain readable
-and exportable but cannot qualify. This batch defines the gate, not passing actual
-confinement: direct WSL2 resource proof and its real receipt producer belong to the
-next resource batch. All existing scientific qualification gates remain required.
-
-**Local data inspection (read-only):** the original `var/oncojev.sqlite3` is
-3,149,824 bytes; `PRAGMA quick_check` returned `ok`, with 1,216 records, sequence
-1–1,216, eight distinct block identities, eight cycle/dossier records and eleven
-evidence records; both append-only triggers exist. There are no retained
-acquisition/scientific-artifact records in this original file. Historical missing
-inputs remain missing. Local integrity/counts do not establish equality with
-preserved remote history. No active baseline operation required remote recovery;
-remote completeness/recovery remains an explicit unresolved question, with no
-remote access or fabricated records.
-
-**Proof:** the service-selector and missing-local-governance regressions first
-failed against the prior implementation (three failures). Owning Windows checks:
-`.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_persistence.py tests/invariants/test_live_mode.py -k 'governance or service_recovers_pending_work or block_registry or notebook or terminal_bundle or append_only or sandbox_configuration' -q` — **27 passed, 88 deselected in 28.21s**.
-`.venv/Scripts/python.exe -B scripts/check_architecture.py` and `git diff --check`
-passed; changed documentation file links and preserved SQLite integrity/sequence
-counts passed. `uv lock --check --offline` passed.
-`$env:USERPROFILE/.local/bin/uv.exe lock --offline` removed only psycopg
-3.3.6 and psycopg-binary 3.3.6. Current Ubuntu WSL2 reports kernel
-`6.6.114.1-microsoft-standard-WSL2`, Python 3.12.3; this inventory is not
-confinement certification. H2/H9/H10/H15 remain PARTIAL for their remaining gates.
-
-### Local resource prerequisites — DELIVERED sub-batch (H2/H10, 2026-10-02)
-
-Starting HEAD `ffbb63899d0a2c9681fdb9d62e558024f07920bb`. Coder's command PATH and
-read-only dependency policy now use the actual Python environment/base interpreter
-rather than `/app/.venv`. The verifier locates the actual application tree and
-retains real-file permission controls, native file/shell/descendant checks and
-CodeMode use. It no longer assumes credential files are absent from the host.
-Scientific `local-venv-v2` creates fresh package environments with read-only links
-to the exact hash-recorded base interpreter, avoiding three large managed-binary
-copies. No prior experiment packages or application site-packages are imported
-into the fresh scientific environment. The scientific application-write negative
-control now opens a real application file for write without changing it; only
-actual permission/read-only errors qualify, never a missing-file error.
-
-**Direct WSL2 observations:** the unchanged initial verifier failed its `/app`
-assumption. Managed Python 3.12.13 with copied executables exceeded the existing
-100 MB experiment ceiling; the available system Python 3.12.3 lacks venv bootstrap
-support. The repaired managed-Python path used about 11.15 MB and independently
-replayed the fixture in a second fresh environment. Kernel
-`6.6.114.1-microsoft-standard-WSL2`, x86_64, glibc 2.39; exact Python binary SHA-256
-`45a8c2736f55defe6b15a9b65196a60e4ac32e06338c563ff2d1d8f708693788`.
-Coder application reads under `/mnt/c` were denied; the same code/config on native
-Linux storage passed **21/21 checks per role**, including base-interpreter
-library write denial. Fresh scientific execution also confirmed that the
-application-only `httpx` package was not inherited. This is a required platform
-precondition, not an unconfined fallback. Only explicit public source/config/skill/
-script/manifest files were copied into the disposable native proof tree; no
-`.upstream`, credentials, Windows `.venv` or original database was copied.
-The production-code/config application identity matched the Windows checkout.
-
-**Commands/proof:** locked environment creation used
-`UV_PROJECT_ENVIRONMENT=/home/rahul_khatri/.cache/oncojev-wsl-venv uv sync --frozen --no-dev --project /mnt/c/dev/oncojev`.
-Direct native proof commands ran with that environment's Python and
-`LOGFIRE_SEND_TO_LOGFIRE=false`:
-`python -B -m scripts.verify_coder_container` and
-`python -B -m scripts.verify_local_science` — passed actual filesystem, secret,
-peer, application, scientific network/process denial and fresh replay controls.
-Windows `.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_boundaries.py tests/invariants/test_persistence.py -k 'code_mode or heavy_work or own_workspace or github or artifact' -q`
-— **7 passed, 117 deselected in 9.38s**. Architecture/diff, changed-document links
-and preserved original SQLite integrity/count checks passed. Native and Windows
-application identity: `application-v1:8250b622a7deb073e1743d77b039fc0f681b58bf7bb3769d0c866e5258d49a57`.
-
-**Remaining resource gate:** no aggregate Coder process/CPU/memory/disk enforcement
-or complete local-verification receipt is claimed. The installed Harness Shell
-supervises background commands that can outlive backend `run()`; the existing
-per-call lease alone cannot qualify that process lifetime. Scientific bootstrap/expanded
-clone/install disk guards, complete cancellation/reservation telemetry and current
-composed lifecycle remain open. A transient user systemd/cgroup unit with
-TasksMax/MemoryMax/CPUQuota/RuntimeMaxSec executed successfully on this WSL2 host;
-that feasibility probe is not production enforcement. H2/H10 stay PARTIAL. The
-next coherent resource batch must implement and adversarially verify those controls
-before extending science or claiming the complete local gate.
-
-### Coder aggregate enforcement — DELIVERED sub-batch (H2/H10, 2026-10-02)
-
-Starting HEAD `7989a77b7e98ef163da3c0c74d79e7810f3ddae9`. The public Harness
-capability replacement preserves Coder file tools, context and CodeMode while
-making scratch shell foreground-only. All file/shell commands use one Python-owned
-transient user-systemd cgroup and private user/mount/network namespace. Effective
-process, CPU-rate, memory/swap and wall settings are checked before execution;
-aggregate scratch bytes/inodes are bounded by tmpfs, and inherited Landlock/seccomp
-deny credentials, peer paths, host process/mount authority and unmetered network.
-The lease covers launch, cancellation draining, descendant cleanup and bounded
-scratch commit. Original scratch survives OOM/timeout before commit; trusted
-exclusive no-follow output creation and descriptor reads withstand pre-existing
-scratch symlinks and later stdout-path replacement. Unconfirmed stop/cgroup
-cleanup preserves recovery copies and rejects all subsequent heavy work. Native
-resource observations reach Coder receipts and resource inspection; missing counters
-remain unknown. Scratch results remain operational, never scientific evidence.
-
-**Regression and proof:** running the new owning native verifier against an
-immutable `git archive` of `7989a77` first failed on **detached child survived
-command/lease return**; that fixture's exact child was cleaned immediately. Current
-`LOGFIRE_SEND_TO_LOGFIRE=false /home/rahul_khatri/.cache/oncojev-wsl-venv/bin/python -B -m scripts.verify_coder_resources`
-on the native WSL2 source tree passed **11 checks / 11 executions**: pre-existing
-output-symlink rejection, new-session
-descendant draining, shell dollar-literal preservation, aggregate process count,
-aggregate disk exhaustion, native CPU throttling, cgroup OOM, wall timeout,
-cancellation/competing lease, denied network and stdout-path replacement. Quotas
-were 8 processes, 128 MiB memory, one CPU, 2 MB scratch and five seconds (one second
-for timeout). `scripts.verify_coder_container` passed **21/21 checks for each role**
-with native file tools and CodeMode. Kernel/Python/environment are the preceding
-sub-batch's recorded WSL2 basis; neither script invokes Docker, uses a model/provider
-or establishes scientific utility. Routine Windows command:
-`.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_boundaries.py tests/invariants/test_persistence.py tests/invariants/test_live_mode.py -k 'resource or heavy_work or code_mode or runtime_applies or launch_returns or shutdown' -q`
-— **18 passed, 137 deselected in 20.37s**. Architecture, diff and changed-document
-link checks passed. The pre-existing-output regression separately failed against
-the initial supervisor for its intended sentinel-truncation reason before the fix.
-Windows/native application identity:
-`application-v1:526a4dbca9e80e19e70b8bce5e9434535cea776feed14a70bfcec4ee98d594c4`.
-No command units remained after proof.
-
-**Remaining gates:** required user-systemd cgroup controllers, unprivileged
-namespaces, a service-owned native scratch directory/writable parent and bounded
-disk headroom are fail-closed prerequisites. Scientific clone/bootstrap/install
-must use the same aggregate governor, complete download/reservation failure
-telemetry remains required, and composed lifecycle/BlockDelta measurements and
-the complete current-application local-verification receipt are still open.
-H2/H10 remain PARTIAL. The original SQLite file was not opened for writing.
-
-### Trusted scientific entry point — DELIVERED sub-batch (H10, 2026-10-02)
-
-Starting HEAD `787d6f12eaf544e0bac181ac459e5d4387d25824`. Resource-path inspection
-found that installation's writable fresh venv also contains executable entry
-points. The previous command path launched the experiment's Python before
-applying confinement. A replaced entry point therefore bypassed the launcher.
-Now the application interpreter runs the trusted launcher first; only after
-filesystem/seccomp/resource restrictions are installed does it execute the
-experiment's Python/pytest entry point. Receipt identity is `local-venv-v3` with
-`landlock-seccomp-single-process-v2-trusted-launcher`; validation accepts this
-version pair while preserving historical v1 confinement receipts.
-
-**Regression/proof:** the existing native `scripts.verify_local_science` now
-replaces a fresh experiment interpreter with an executable that tries to write
-the private sentinel and emits a marker proving actual execution. It first
-failed against the previous path with **modified experiment interpreter executed
-before confinement**. With the fix, the marker is observed and the private file
-stays unchanged. The same direct WSL2 command/environment as above passed normal
-scientific secret/peer/application/interpreter-library/network/process denials,
-fresh package isolation, deterministic output validation and independent fresh
-replay. The archive is fixture transport, not public connectivity or scientific
-utility. Windows:
-`.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_boundaries.py tests/invariants/test_persistence.py tests/invariants/test_live_mode.py -k 'sandbox or github or artifact or heavy_work' -q`
-— **10 passed, 145 deselected, one existing event-loop deprecation warning in
-12.45s**. Architecture/diff and changed-document links passed; Windows/native
-application identity:
-`application-v1:5a5449a6356fe541e86b0fd92f18eb365446442a7b58d6caffb2bc343f546ff1`.
-No original SQLite writes occurred. This closes an entry-point control gap;
-aggregate scientific clone/bootstrap/install enforcement and the complete local
-receipt remain open. No scientific functionality was extended; H2/H10 stay PARTIAL.
-
-### External scientific aggregate controls — DELIVERED sub-batch (H2/H10, 2026-10-02)
-
-Starting HEAD `a314953cd996db93a365d42e92ef3b9d73f54606`. Archive expansion/bootstrap
-and offline install/test/execute/replay now share the owned cgroup/tmpfs governor.
-`local-venv-v4` retains five validated native resource/cleanup receipts and exact
-raw output hashes. Retained scratch reduces disk allowance; interpreter links are
-not traversed. Failed received body chunks remain charged and durably recorded,
-even when charging rejects an overage. Remaining wall allowance gates new phases;
-an in-flight public read retains its bounded socket timeout. Admission/reuse
-boundaries and historical receipts remain protected.
-
-Before-fix checks against `a314953` failed for bootstrap exceeding 8 MB, factory
-rejection of interpreter links, and missing failed-transfer receipts. Direct WSL2
-`LOGFIRE_SEND_TO_LOGFIRE=false /home/rahul_khatri/.cache/oncojev-wsl-venv/bin/python -B -m scripts.verify_science_resources`
-passed **9 checks** covering bootstrap/expansion/install/retained disk, cancellation,
-aggregate memory, timeout, actual failed HTTP usage and factory reservations.
-`verify_local_science` passed fresh replay/confinement; Coder resources passed 11
-checks. These are local controls and fixture transport, not scientific utility.
-
-Windows command:
-`.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_boundaries.py tests/invariants/test_persistence.py tests/invariants/test_live_mode.py -k 'resource or heavy_work or sandbox or github or artifact or shutdown or runtime_applies or failed_local_transfer' -q`
-— **20 passed, 136 deselected, one existing deprecation warning in 20.97s**.
-Architecture and diff checks passed. Original SQLite was
-not opened for writing. H2/H10 remain PARTIAL: in-process Science kernel quotas,
-complete local verification and composed telemetry/acceptance are not delivered.
-
-### H0 — DONE: baseline audit and reconciliation
-
-**Commit:** [b71d255](https://github.com/asimog/oncojev/commit/b71d2554e2c8bfaab4f0d254d7bb79198f6d4e81). Audited `6e292890698ebd58ca35c0ad7120f934d29ef551` on 2026-10-01.
-
-**Delivered:** traced real construction, launch/fallback, recovery, budget, memory, Index, Jev/frontier, Science, persistence and deployment callers; reconciled reusable F0-F6 foundations and next-stage gaps. At audited `6e29289`, both `FrontierPolicy.decide` and `interpret` had production callers; neither was dead. H14 later separates their policy owners without deleting historical receipts. Detailed audit/caller inventory and historical worktree findings remain in the commit.
-
-**Verification:** `.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_boundaries.py tests/invariants/test_persistence.py tests/invariants/test_live_mode.py tests/invariants/test_evaluation.py -q` — **96 passed, 1 warning, 89.26 s**; `.venv/Scripts/python.exe -B scripts/check_architecture.py` passed. Initial plain diff check exposed pre-existing CRLF whitespace; `git -c core.whitespace=cr-at-eol diff --check` passed. Traceability/links and archive/reference preservation passed; no runtime/dependency/database changes.
-
-**Recording-time findings and current disposition:** the H0 Docker probe was interrupted without daemon/confinement proof; later H1/H10 record scoped local Linux probes. Further Railway storage/confinement proof is cancelled under H11. Locked reinstall, selected adapters and utility remain their active owning phases. H2 implements the audited owner discipline below while retaining its stated transaction/resource limits.
-
-### H1 — DONE: Director global role and preserved Coder/CodeMode
-
-**Commit:** [cd476e9](https://github.com/asimog/oncojev/commit/cd476e99ef6bac4099d9fdee3244f5fcb8e13249), delivered 2026-10-01.
-
-**Delivered:** persistent Director global-role instructions; both roles retain Linux Coder and Monty CodeMode; bounded `/work/director` scratch authority; typed `inspect_director_resources` reads independent role/cycle/memory allowances and reported-cost completeness without changing active research. Researcher retains local scientific choices. Preserved existing tools, composition and authority boundaries rather than adding duplicate APIs.
-
-**Verification:** `.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_live_mode.py tests/invariants/test_boundaries.py tests/invariants/test_persistence.py -q` — **91 passed, 1 warning, 67.74 s**; architecture and diff checks passed. `docker build -t oncojev-h1:local .` and `docker run --rm -e LOGFIRE_SEND_TO_LOGFIRE=false oncojev-h1:local python -m scripts.verify_coder_container` passed: **20/20 checks per role**, native scratch write/read and CodeMode assertions. Image `sha256:7d6403d3fede9755b2c7a11caeab560c6ad97b5b9df4e238da2831aa2161f31a`; Python 3.12.12, Pydantic AI 2.52.0, Harness 0.52.0, WSL2 Linux `6.6.114.1-microsoft-standard-WSL2`, Landlock ABI 3. Source/prompt/question/policy/catalogue/deployment, peer, credential/process environment, database and publisher-sentinel denials passed; descendants remain confined.
-
-**Current disposition:** H11 Railway confinement/storage work is cancelled; historical local evidence above retains its original scope. Reported cost may remain incomplete. H2/H3 scheduling/event work, H4 observable portfolios and H5 institutional pins/revisions are delivered; H14 removes the obsolete scheduling/pause advice. Aggregate resource enforcement, scientific portfolio/utility and reusable qualification remain with their owners; H1 harness delivery stays DONE.
-
-### H2 — Python-owned non-blocking execution with one active Researcher
-
-**H2.1/H2.2 - PARTIAL, delivered local batches (2026-10-01):** `b69bbb4` implements one service-owned async Researcher task; launch returns a run handle promptly, nested/fallback starts share the same path and the CLI awaits its real block. Blocking Jev/installed Science execute over detached inputs while state, charging and persistence return to the loop owner. A shared heavy lease covers scientific work and Linux Coder commands; overlapping starts/allocations fail without launching another Researcher. GDC/Xena/literature responses stream under a 10,000,000-byte individual ceiling. Failures retain consumed usage. `ac46c9c` closes the terminal return task: completion/failure receipts, block outcome and dossier commit atomically immediately on Researcher finish; Director/cycle outcome does not rewrite a completed Researcher run. Shutdown drains owned work before store close.
-
-**Proof:** `.venv\Scripts\python.exe -m pytest tests/invariants/test_persistence.py tests/invariants/test_live_mode.py tests/invariants/test_boundaries.py` - 101 passed in H2.1; 103 passed in 77.45s in H2.2. The terminal-visibility regression failed on H2.1 for both success/failure, then passed after repair. Architecture/diff checks pass. Pydantic AI 2.52.0, Harness 0.52.0 and TypeSafe SDK 0.7.2; `uv` is unavailable on shell PATH. Proof is local fixtures, not provider connectivity, utility or target confinement.
-
-**Return acceptance:** H2 remains PARTIAL. H5 exact registry/history/application pins, H6 selected-file size/free-space/retention reservations with failed-transfer receipts, H3 representative API responsiveness and H10 local-venv reserved transfer metering are delivered; they are not fresh implementation tasks. Remaining acceptance covers complete local aggregate Coder/child process/CPU/memory/disk controls, clone/install expansion/disk failure cases and composed resource/basis/lifecycle behavior at the current HEAD. Per-command local restrictions and one representative HTTP check do not establish all resource enforcement. Further H11 target proof and Docker execution certification are cancelled. H3.1's 10 MB individual and 50 MB/500 MB cumulative allowances remain distinct. Atomic terminal persistence is completed.
-
-**Owner:** `src/autonomous.py`, `src/__main__.py`, `src/runtime/cycle.py`, `src/runtime/pydantic_ai/{contracts,agents,factory,controls}.py`, `src/block/{models,manager}.py`, persistence terminal/cycle records.
-
-1. Introduce the smallest service-owned active context/run handle. Create fresh block state, skills, budgets, Researcher agent and workspace; pin mission/cycle/block/run and starting record sequence. Allocation/start guards atomically permit at most one active Researcher and one launch per block. Persistence records start before externally visible work begins.
-2. Adapt the existing launch tool to schedule the Researcher and return its active-run identity promptly. Replace the synchronous fallback with the same owned start path; remove competing lifecycle implementations. Keep CLI one-cycle behavior as an awaitable compatibility boundary that waits for its one real block in Python, not inside the Director model tool. Independent Director turns are not completed allocation cycles; CLI/smoke/eval/read-model consumers must preserve truthful failed/incomplete handling when required allocation is absent and never invent a block or report empty allocation as success.
-3. Use one service-lifetime event loop/task owner or an equally minimal owned design. Offload blocking Jev/source/subprocess work so a task wrapper actually permits independent Director work. Do not share SQLite connections/mutable budget/state objects across unsafe threads; persist/charge through one authoritative owner with explicit ordering and bounded operations. Keep Pydantic integration confined to its adapter package.
-4. Persist completion/failure once; combine terminal dossier, outcome and run receipts atomically/idempotently. `complete_block` remains handoff, not successful return. Preserve failure precedence, failed partial results and recovery corrections. Director turn truncation must not silently cancel a healthy active Researcher; define service aggregate-stop and graceful shutdown explicitly. Respect reserve windows; do not discard in-flight work. On restart close interrupted work honestly, never silently resume/relaunch it.
-
-5. Extend existing RuntimeControls/budget ownership with the smallest deterministic single-worker resource policy. Reserve/check wall-clock block allowance, independent Director work and Researcher allowances, provider/model request concurrency, Jev concurrency, heavy scientific subprocess concurrency, process count, CPU/memory where enforceable, workspace disk, durable-artifact disk, per-file/per-block/service download totals, external repository clone/download totals, dependency-install downloads, experiment count and scientific execution count. Specify limit scope and release/charge semantics; attempted failures and transferred bytes consume applicable allowances, and creating a new block cannot reset service-wide consumption. Missing enforceability/measurements stay explicit; required confinement or resource guarantees fail closed rather than being claimed from configuration alone. This policy asks whether work can safely run here, never whether science is worthwhile.
-6. Use one service-owned `HEAVY_LOCAL_EXECUTION_LEASE = 1` or equivalent semaphore for large scientific subprocesses, dependency installation, large clone/file processing and expensive local analysis. Release it on success/failure/cancellation without deleting usage receipts. Lightweight bounded memory/DB/Index reads and model/Jev network waits need not hold the lease. Director retains small scratch comparisons/planning/metadata/prototypes; heavyweight scratch receives a typed resource-busy result when the lease is occupied, without killing or starving active Researcher science. Arbitrary Coder shell/process descendants must cross deterministic lease and process/CPU/memory/disk controls; agent descriptions cannot certify a command lightweight. Preserve the H1 harness and authority boundaries; implement this resource integration in H2/H10, not by reopening H1.
-
-**H2 scheduling and transaction decision (implemented owner discipline; remaining transaction limits):** the service event loop owns allocation/active context, manager/ledger/ResearchState, usage and reservations. `offload` accepts detached bounded inputs and returns results for owner-controlled persistence; `append_event` rejects foreign-thread runtime mutation. Terminal outcome/run/dossier and governed acceptance/revision transitions use explicit transactions. This does not make every repository check-then-append workflow universally atomic (`record_immutable` still relies on its caller/owner discipline). API coherent reads serialize through the store; bounded synchronous work and any additional workflow atomicity remain scoped acceptance concerns. Do not offload a whole Agent, mutable runtime or repository transaction. Independent Director turns are already enabled by H2/H3 proof, not waiting for this design decision.
-
-| Work that would stall the shared loop | Actual path and required handling |
-| --- | --- |
-| Jev transport, construction/decoding and projection/hash work | `TypeSafeJevClient.evaluate` remains synchronous; production async paths use `HarnessRuntime.evaluate_jev` with a client lock and detached `offload`. Owner code persists receipts/composes policy. Bounded projection/hash processing remains synchronous; elapsed allowance alone is not a hard cancellation timeout for an in-flight request. |
-| External scientific acquisition/install/test/replay | Current tools hold the heavy lease and offload detached requests to the selected backend; cancellation drains owned bounded work before releasing child/lease ownership. Local transfer reservations/metering and terminal owner persistence are delivered. Broader aggregate/expansion/disk enforcement remains H2/H10 acceptance, with no Docker run requirement. |
-| Installed Science and figures | Expensive installed/source Science and figure computations use detached offload/heavy-operation boundaries. Validation/admission/state and receipt updates stay on the owning runtime path. Remaining synchronous bounded processing is not a claim that arbitrary work is non-blocking. |
-| Source response processing | GDC/Xena/Crossref HTTP calls already use awaited `httpx.AsyncClient`; retain async transport. JSON decode, row combination, MD5/SHA/base64 and retained file serialization can still block at bounded large sizes. Preserve exact-byte identity, apply bounded processing and close clients on their owning loop. |
-| SQLite, memory/index and retention | Reads/scans/hashes/reference validation and retention I/O remain synchronous. SQLite uses `check_same_thread=False` with an RLock; API compound reads, terminal bundles and governed transitions have coherent transaction boundaries. Other check-then-write identities do not gain universal atomicity from a per-call lock. Keep runtime mutation owner-controlled, bound reads, run retention between active runs and drain owned work before store close. |
-
-**Exit proof:** through the real service/tool path, launch returns before a deliberately pending Researcher finishes, Director can do bounded independent work, second starts fail without effects, and completion/failure races/reopen/shutdown retain one honest outcome. Include a representative blocking operation to detect event-loop starvation; fixtures must not fabricate owner persistence. Resource cases prove one heavy lease, release on failure/cancellation, independent allowances, service totals across blocks, and busy Director scratch cannot starve or cancel healthy science. Primary owner `test_persistence.py`, distinct nested-tool/Coder failure/usage boundary `test_live_mode.py`/`test_boundaries.py`. Run those focused files and architecture/diff checks.
-
-### H3 — Event-driven turns, BlockDelta and stale-basis revalidation
-
-**H3.2 - locally verified scheduler/return work (2026-10-01):** terminal persistence now requests installed Pydantic AI `RunContext.cancel()` to hand off a pending supervisory Director turn; this records an operational interruption rather than service shutdown or scientific success. An already-observed model/budget failure retains precedence over a concurrent handoff. A bounded in-process queue wakes global turns for actual evidence admission, continuation requests and capability failures; durable ledger/event IDs deduplicate notifications. A configured program-review timer is separate from model polling. Event turns consume independent Director/model/aggregate allowances; exhaustion yields while healthy Researcher work continues. Scientific terminal failure still drives review and another allowed allocation without the legacy sleep. API overview/reconstruction use coherent serialized read boundaries.
-
-**Proof:** before repair, both pending-Director terminal regressions failed on `e8669f8` with timeout; after repair both pass. The focused persistence owner reported 55 passed in 55.94s. Additional focused commands for heavy work, terminal events, material/scheduled turns, shutdown and continuous success/failure reported 12 passed in 17.65s; model/cost/failure-ordering checks reported 20 passed in 21.26s. A real HTTP reconstruction request completes during a held heavy lease before the blocked operation is released. Architecture/diff checks pass. Local tests do not certify CPU/process/disk enforcement or Railway confinement.
-
-**Current return acceptance:** early handoff, material/scheduled turns and H2's representative API check are delivered by H3.2. H4 prepared-basis invalidation/revalidation and H5 registry/history/application pins are also delivered. H3 remains PARTIAL for a composed current-HEAD post-review memory/frontier-refresh trajectory and full local resource/telemetry acceptance through H6/H10; this is verification of landed mechanisms, not work awaiting their introduction. Memory is derived/retrieved on owning access paths; an automatic terminal-time refresh of every global view is not established. H11 target proof is cancelled. Operational waiting, scientific uncertainty and empty/failed allocation remain distinct.
-
-**H3.1 - PARTIAL, completion-driven service and delta (2026-10-01):** coordinator states are persisted separately from scientific/run outcomes. Terminal runs derive immutable bounded BlockDelta packets from actual stored sequences/hashes, retaining omissions and explicit uncertainty; absent negatives/resolutions stay absent. Wall-time/resource observations and unavailable CPU/workspace measurements remain distinct. Early Director return waits on the owned Researcher without model polling. The continuous service performs one deduplicated post-block review with Delta context and immediately starts the next allocation without waiting out the prior deadline or legacy interval. The CLI remains one actual cycle. Individual scientific downloads remain capped at 10,000,000 bytes; cumulative block/service allowances are independently configured at 50,000,000/500,000,000 bytes.
-
-**Proof:** `.venv\Scripts\python.exe -m pytest tests/invariants/test_persistence.py` - 50 passed in 51.07s; `.venv\Scripts\python.exe -m pytest tests/invariants/test_boundaries.py -k 'byte_ceiling or consumption_survives'` - 4 passed. Architecture/diff checks pass. The real service/factory/CodeMode path finishes two 900-second allocations, resolves every Delta reference/hash, reviews each once and continues without the configured 3,600-second sleep. Default allocation does not shrink after a fast block.
-
-**Superseded H3.1 return note:** pending-Director handoff and material/scheduled turns were closed by H3.2; prepared-frontier and exact institutional-pin mechanisms were delivered by H4/H5. Current remaining acceptance is the integrated refresh/local telemetry described above. Preserve the original scope of these local results; no H11 target gate remains. Prior art consulted: [Pydantic AI programmatic hand-off](https://pydantic.dev/docs/ai/guides/multi-agent-applications/), [cancellation](https://pydantic.dev/docs/ai/core-concepts/agent/) and installed 2.52.0 RunContext.cancel; no additional orchestration framework is needed.
-
-**Owner:** service/cycle/block lifecycle, `src/director/models.py`, `src/dossier/{models,builder}.py`, `src/memory/`, persistence records/reconstruction, application/API read models.
-
-1. Deliver bounded Director turns for Researcher started, explicitly useful material persisted events, completion/failure and configured scheduled program review. Use a bounded in-process event mechanism with durable identities/deduplication and reconstructable terminal events. Python owns service work state: ALLOCATING → RESEARCHER_ACTIVE → DIRECTOR_GLOBAL_WORK → WAITING_FOR_RESEARCH_EVENT → POST_BLOCK_REVIEW → ALLOCATING. These describe coordinator work while the independent Researcher task remains active where applicable, not mutually exclusive agent lifetimes. Material events may enable another bounded global turn. When useful independent work ends, Director yields and Python waits without model polling, filler turns or repeated Researcher inspection. For a ten-minute allocation and two-minute Director task, Researcher simply continues while the service/event wait stays active.
-2. Preserve `src/dossier/delta.py`'s explicit block-owned record/event groups with at most 20 references per category and omissions: evidence/measurements, method alternatives, parsed representations, attempts/context/follow-ups, state/semantic changes and matching hypothesis/negative/uncertainty/resolution/continuation/blocker/demand/gap/relation events. Missing explicit negatives/resolutions stay absent; global relation records are not automatically copied into a block delta. Feed delta and typed memory into post-block work without full raw payloads. Actual resource keys include `allocated_seconds`, `actual_elapsed_seconds`, `reason_for_terminal_state`, `unused_allowance_seconds`, `director_turn_seconds`, `director_idle_wait_seconds`, `researcher_active_seconds`, downloaded bytes and recorded execution/lease/limit-failure counts. Turn durations are wall time, not CPU; current workspace/peak/CPU fields remain unknown. Complete telemetry is remaining local acceptance, never proof of scientific value.
-3. On Researcher completion/failure, immediately persist terminal state/receipts/dossier, derive BlockDelta and refresh memory, invalidate/revalidate prepared frontier, supply a post-block Director turn and allocate the next strongest allowed investigation. A three-minute finish within a ten-minute allocation never waits for the original deadline: no artificial sleep or minimum duration, and ordinary successful service cycles continue research. The service loop repeats until one of section 1's operational stopping conditions; the one-cycle CLI still returns after its requested cycle. Local recoverable failures consume their budgets and retain operational reasons while allowed alternatives remain eligible.
-4. Preserve H4's current material-basis hash (latest sequence per material kind, Index snapshot, institutional registry/history/application pin, mission and version) and selection revalidation; it is not every appended DB record. Completion/failure/material changes invalidate changed dependencies while historical plans remain retained. Read-only review/export receipts do not invalidate selection themselves. H5 exact block pins are delivered; newly appended global history cannot silently change active-block search basis. Composed post-review refresh/next-selection acceptance remains explicit above, with no global mutation of active ResearchState/deadline.
-5. Separate allocated maximum duration from actual useful duration and record unused allowance. Early completion is not evidence for smaller future scientific budgets; one fast block cannot automatically shrink later deadlines or configured defaults. Program review may consider repeated measured resource needs, but versioned deterministic Python policy still owns bounded future allocations and preserves uncertainty about scientific value.
-
-**Exit proof:** Director finishing early enters event wait with no subsequent model polling while Researcher continues; Researcher finishing early immediately drives exactly-once terminal processing/delta/revalidation/post-block turn and enables the next allocation without waiting for its deadline. Ordinary successful cycles continue, no semantic stop or successful empty-allocation path exists, actual duration/unused allowance are recorded and one fast block leaves future allocation defaults unchanged. Deltas resolve actual source records, failures remain operational, and material evidence/registry/history changes invalidate relevant prepared bases. Primary owner `test_persistence.py`; resource accounting and truthful read-model outcomes use its existing coverage plus boundary tests. Retention still excludes active/unresolved contexts. Run focused file and architecture/diff checks.
-
-### H4 — Global Director semantic frontier, candidate generation and hypothesis refinement
-
-**Continuity repair (2026-10-02):** the service now persists a human-direction mission boundary and reuses its identity for successive cycles and after reopen. An exact direction change creates a linked new mission; historical cycles are never relabelled. Previously every cycle received a new mission while global frontier generation filtered by current mission, hiding prior hypotheses/failures. The real service/factory/CodeMode regression reproduced an empty global frontier before the repair; all four fresh/reopened, nested/fallback cases pass after it (14.40s). A changed-direction/recovery case passes (7.10s). Mission boundaries also appear in downstream exports.
-
-
-**H4 status: PARTIAL.**
-
-**H4.1 delivered locally:** Director-native `prepare_global_frontier` retrieves bounded typed history, generates reference-linked investigation candidates and preserves originals. NFKC/case/whitespace identity normalization merges only exact known test/scope duplicates; underspecified tests, independent replication and distinct populations retain separate candidates. Capability/hypothesis/shared-reference/lineage filters extend deterministic memory retrieval. At most two lexical neighbours per candidate feed independently versioned global relation questions; both original reference sets, native answers/call IDs, limits and material-basis hash remain durable. Independent global investigation dimensions reuse the existing projection/receipt adapter under Director semantic allowances and a separate `global-frontier-policy-v1`, retaining alternatives on operational failure. A categorical beam avoids a universal scalar reward. Optional frontier-bound allocation revalidates material records and Index snapshot after awaited memory retrieval and rejects stale or substituted questions. Reference-linked engineering proposals carry no mutation authority. Tool output is bounded to 32 KiB with explicit omissions.
-
-**Local proof:** the real Director CodeMode/tool route retains independent replication and population differences, merges an exact normalized duplicate, allocates an original beam question, rejects stale selection, keeps both relation sides and native global receipts, and survives SQLite reopen without creating evidence. Success and Jev timeout cases are deterministic contract checks, not live provider or scientific utility evidence. The initial normalization regression failed (four candidates instead of three); corrected identity policy passes. Baseline Director registration failed because `prepare_global_frontier` was unavailable. Focused verification: 21 passed, 60 deselected; architecture and diff checks passed; all 6 local links in the touched owning documents resolve.
-
-**H4.2 local continuation/portfolio review (2026-10-02):** source-backed scientific follow-ups generate future investigations with distinct purposes for contradiction/scope/sensitivity resolution, alternative explanation, independent replication or prerequisite/design repair. Source outcomes and original references remain intact; completed result summaries are not reused as block objectives. `global-frontier-v2` pins mission identity and invalidates old prepared selections while preserving historical receipts. Director-only `get_global_portfolio` reports latest semantic status separately from observed allocation lifecycle; completion never becomes scientific resolution. Legacy frontiers without mission identity stay unscoped. `review_program` retains deduplicated, prefix-pinned reviews of selected recent blocks: allocated/actual/unused durations, Director/Researcher times, downloads, execution/lease/resource-failure counts, missing CPU/disk metrics, declared entity/topic concentration and observed failure groups. Outputs are bounded to 32 KiB with omissions and exclude archived acquisition/artifact bytes from review reads. Cost/scientific value remain unestablished, and review has no deadline or program-stop authority. Reviews export downstream and remain independent of frontier selection authority.
-
-**Local proof:** real Director tools in normal/Jev-failure cases, the source-follow-up cycle and notebook publication boundary — four passed, 63 deselected in 10.59s. Checks cover allocation after a review without invalidating the prepared basis, foreign/legacy mission isolation, unknown metrics/resolution/value, dedup/reopen/export, actual recorded execution counts and outcome-driven continuation purposes. Extending actor-test error detection exposed its obsolete top-level block-objective assertion; corrected to the actual nested start contract. Architecture and diff checks passed. These are contract proofs, not held-out scientific or semantic utility.
-
-**Return tasks:** H5's delivered immutable application/registry/verification-history pins still need full exact-basis return acceptance across H2/H3/H4. H7.2 delivers need-bound method generation; H6a/H6.2 deliver an input gate and one parser, not a general representation generator. Representation/capability/newly-testable/deferred generation and regeneration still need actual domain paths and D3 recall comparison; H13 supplies held-out multi-domain utility, resource/latency and semantic-relation calibration evidence; H14 extracts a shared generator contract only if those comparisons justify it. D4 exact duplicate/replication/population labelled contract cases started here; paraphrase, conflicting-design/resolvability, blocked-to-actionable refinement and held-out before/after utility remain. Scientific portfolio resolution, blocked/newly-testable lifecycle, retained-relation/deferred candidate regeneration and concentration/utility acceptance remain H4 return work. No roadmap phase is marked done from fixture connectivity.
-
-
-**Owner:** `src/director/`, `src/memory/{models,service}.py`, `src/jev/{models,questions,frontier}.py`, `src/runtime/pydantic_ai/{semantic,contracts,search_tools}.py`, dossier/persistence relations, incremental eval cases.
-
-1. Extend F3/F4e retrieval first using entity/topic/capability/hypothesis identity/shared references/time/terms/block lineage. Normalize exact duplicates before bounded Jev comparison. Preserve relevance, duplication, contradiction, recurring/newly actionable uncertainty, repeated hypotheses/blockers/capability need and cross-block relation dimensions. Never perform whole-database all-pairs semantic search.
-2. Create a bounded global hypothesis portfolio with stable identities and distinctions: duplicate, paraphrase, related-but-distinct, independent replication, contradicted, blocked, newly testable, deferred and resolved. Preserve local F4d alignment/duplicates; no hypothesis relation or rejection becomes evidence/negative result.
-3. Persist cross-block relation candidates with source refs, relation type, call IDs/native distributions, basis sequence/memory revision, limitations and candidate-for-testing/possible-duplicate/contradiction/independent/uncertain status. Contradiction questions distinguish actual conflict from population/design/method/phrasing differences and whether a bounded block could resolve it. Preserve both original records; later scientific resolution requires admitted measurements, not Jev agreement.
-4. Generate future investigations from continuations, open uncertainties, retained hypotheses, contradictions, cross-block relations, replication opportunities, capability gaps, underexplored mission areas, new representations, new external capabilities, alternative tests and previously deferred candidates. Measure atomic mission relevance, uncertainty linkage, duplication, contradiction resolution, continuation coherence, dependency readiness, block fit, capability availability, hypothesis distinction and material global-state change. Python composes a small beam; Director selects the strongest allowed bounded investigation, retaining alternatives when the leading candidate is weak. Preserve explicit low expected information value/high uncertainty/capability-constrained/weak-continuation labels; weak semantics do not authorize ending the program or inventing confidence. No single "best" or universal quality/reward score.
-5. Separate global/local candidates, authority, scope, bounded operation stop conditions, policy identity and threshold interpretation while reusing projections/receipts/distribution decoding. These limits end individual work, not research through a semantic no-value decision. Preserve useful alternatives and deterministic fallback on Jev failure. Program review describes concentration/modality imbalance, rediscovered/rejected/deferred ideas, unresolved contradictions, recurring provider/capability failures and expensive blocks without actionable change. Consume H3 reference-linked actual/allocated durations, Director active/idle and Researcher active time, download/disk observations, experiment/execution/lease counts, resource failures and unused allowances; do not infer scientific value or automatically shrink deadlines from one early finish.
-6. Produce reference-linked EngineeringProposal records for retrieval misses, ambiguity, descriptor mismatch, local execution/resource or code/scope gaps or policy pathologies; scratch Coder may calculate/prototype. No Engineer agent, live source modification, auto-question rewrite or self-reward loop. Bind proposals to actual records and review state.
-
-**Exit proof:** real bounded retrieval→projection→receipt→policy→Director path; independent replication retained, both sides of conflict intact, alternative recall/failure fallback and global/local separation protected. Primary owners `test_boundaries.py` for semantics and `test_persistence.py` for durable relations/reopen. Start H13 labelled cases in the same slices; connectivity smoke is separate from utility evidence. Run focused tests, selection eval commands appropriate to the delivered cases, architecture/diff checks.
-
-#### H4a — Integrated D3: universal candidate generation through proven domain contracts
-
-**Trigger:** Multiple domain generators demonstrate useful shared contracts and improved recall.
-
-1. Inventory delivered global continuations/uncertainties/follow-up purposes in H4 and need-bound method candidates in H7.2. H6a/H6.2 input assessment/parsing does not itself generate representation alternatives; complete the needed representation/domain generator before claiming a multi-domain shared-contract comparison. Record each generator's real inputs, scope, identity, reference provenance, prerequisites, omissions, bounded output and existing policy consumer. Preserve distinct global/local types and decision authority.
-2. Add H13 paired multi-domain cases comparing the current generators with proposed shared retrieval/composition mechanics. Measure useful-candidate recall, missed alternatives, deterministic duplicates, context size, latency and resource use. A shared interface must handle multiple real domains and improve recall; a common-looking model alone does not meet the trigger.
-3. On a passing comparison, complete H14's extraction of the smallest production-used generator contract/dispatcher. Keep domain-specific scientific meaning, eligibility and stop policies in the existing owners; avoid a generic strategy/workflow engine or a single candidate type that erases scope. If comparison fails, retain the working domain generators and record the failed abstraction/recall evidence here and in H14.
-
-**Acceptance:** actual domain consumers execute through the demonstrated contract where adopted; deterministic recall/identity/provenance and scope guards survive abstraction. `test_boundaries.py` owns the consumer-visible behavior, H13 owns the multi-domain recall comparison. Both passing and rejected extraction decisions require recorded evidence; D3 is no longer an unassigned deferred item.
-
-#### H4b — Integrated D4: deeper hypothesis-frontier refinement
-
-**Trigger:** Labelled cases expose duplication or alignment failures beyond the delivered mechanism.
-
-1. Complete the remaining scientific hypothesis/cross-block/contradiction distinctions above on top of F4d and H4.2's delivered observable portfolio; lifecycle observation is not scientific resolution. Extend H13 labels with paraphrases, genuinely distinct hypotheses, alternative tests, population/design differences, independent replication and blocked/newly testable hypotheses.
-2. Replay labelled duplication/alignment failures through the actual proposal→identity→retrieval→Jev→frontier path. Repair the smallest responsible normalization, candidate-generation, test-alignment or retention contract and version the changed projection/question/policy. Do not treat related claims as duplicates merely to reduce the frontier.
-3. Demonstrate before/after retention and alignment on held-out cases with explicit unknowns/resource use. If initial mechanisms already pass the cases, record that result and the covered limits inside H4 rather than retaining a separate refinement backlog.
-
-**Acceptance:** useful alternative tests and independent replication remain retained; exact/semantic duplicates are distinguished; hypotheses, semantic rejection and relation candidates never become evidence or scientific negatives. Behavioral regressions belong to `test_boundaries.py`; durable portfolio identity/reopen belongs to `test_persistence.py`; utility/alignment labels belong to H13.
-
-### H5 — Dynamic, immutable OncoLab institutional knowledge
-
-**H5.1 — delivered local immutable-basis integration (2026-10-01):** every block search/describe/suitability path resolves its frozen registry and verification-history boundary; search/selection receipts include registry/history/application identities. New allocations refresh accepted state without restart. Runtime execution checks reject absent, unavailable, forbidden or unrouted capabilities against the pinned revision; ordinary usage/results/failures, verification and suitability append source-linked institutional history without creating revisions. Bundled verification identity includes capability ID to prevent seed collisions. H4 prepared-frontier revalidation includes current registry/history/application basis. Historical revisions remain reconstructible and unpinned legacy starts remain explicitly unknown.
-
-**Proof:** `.venv/Scripts/python.exe -m pytest tests/invariants/test_persistence.py tests/invariants/test_boundaries.py tests/invariants/test_live_mode.py` — 112 passed in 84.65s during integration. Final `.venv/Scripts/python.exe -m pytest tests/invariants/test_persistence.py tests/invariants/test_boundaries.py -k 'block_registry or director_global_frontier or semantic_method or researcher_can_use_sandbox'` — 5 passed, 77 deselected in 9.77s. The new real Researcher/CodeMode regression first exposed seed identity collision, then failed with the newer contract returned to the original block; after repair it protects old/new contract isolation, observation-only history, forbidden execution, cursor rejection and immutable reopen. Architecture and diff checks pass. Local proof only.
-
-**H5.2 — delivered source-paired scientific history (2026-10-02):** immutable ScientificAttempt starts pin owned acquisition, analysis/design/parameters and retained hypothesis lineage before execution. Terminal records distinguish deterministic invalid design, operational/interruption failure and measurement-backed outcome. Unplanned outputs stay unknown. H10's scoped directional contract supplies model-conditional supported/contradicted/inconclusive meanings; non-significance and replay never become absence/independent replication. Memory-v2 at this batch derived reference-validated latest attempts, method/population/design/uncertainty/evidence links and bounded start summaries. A regression exposed context trimming dropping the inconclusive attempt in favor of supported results; unfinished/invalid work is now preserved first. History appears in reconstruction, BlockDelta, global material basis and export without new admission authority. Subsequent H12/H10b batches extend current derivations through memory-v3 to memory-v4; the original version/result remains historical.
-
-**Proof:** full `.venv/Scripts/python.exe -m pytest -o addopts='' -q` — 147 passed, one PostgreSQL integration skip, one existing dependency warning in 133.60s. The real Director/Researcher/CodeMode fixture cycle produced positive/reversed/null, multiplicity-adjusted and OLS results, duplicate-entity invalidity and a busy-heavy-lease failure. Original evidence remained immutable; reopen resolved the history. These outcomes did not populate scientific-negative findings. Legacy unplanned analysis identity was compared with committed `bf461fe` and preserved. A separate PostgreSQL/paired/history owner run passed three tests in 8.29s after the sequence repair below. Architecture/diff checks pass. This is numeric/contract fixture proof, not cancer utility or prospective confirmation.
-
-**Remaining acceptance:** R1 history for other selected operations and independently reviewed H4/H13 retrieval/decision utility remain. H10b delivers scoped predeclared same-method GDC paired follow-up/comparison semantics, including model-conditional not-replication; H12 delivers eligible source-analysis literature-context links. These scoped R8/R9 mechanisms are no longer undelivered tasks; broader independent scientific utility/representations/methods stay open. H9/H10 govern qualified reuse and local execution. H11 deployment is cancelled. H5 remains PARTIAL.
-
-**Owner:** `src/oncolab/{models,registry,catalogue,execution}.py`, `src/persistence/{records,repository,reconstruct,store}.py`, allocation/start models, factory/search tools.
-
-1. Retain the curated catalogue/routes/schema/governance as seed knowledge with existing hashes/cards/continuations/verifications. Add typed append-only institutional observations for usage/successful execution/scope/failure/limitation/demand/suitability/gaps/external inspection/proposals/review/reverification. These history events do not automatically increment registry revision. Descriptor presence never implies installed, executable, appropriate, validated or reusable.
-2. Append immutable `OncoLabRegistryRevision` or equivalent only for governed capability-state changes: descriptors, execution routes, contracts, reusable status, accepted promotion/retirement or governed limitations changing planning/execution semantics. Retain parent/hash/governance/application identity and enough content/reference closure to reconstruct any historical registry. A successful execution, failure, suitability measurement, recurring demand, promotion proposal or reverification observation is history only; governance acceptance of a contract/status change creates a revision. Make initial seed identity explicit. Preserve existing immutable seed/revision/history records and read legacy context without inventing historical pins; no migration/backfill is scheduled under the current scope. Legacy registry/history identity stays unknown where not provable.
-3. Pin `oncolab_registry_revision`, `oncolab_history_high_water` and application/runtime version at block allocation/start; for example revision R18 and institutional observations through sequence 8412. Resolve frozen contracts/routes throughout local execution. If ranking/interpretation consumes institutional history, read only the block's pinned high-water and retain both identities in search receipts/cursors; reject continuations crossing either basis. Global history can accumulate without changing that block's authority or search interpretation. Refresh accepted registry state and newer history basis for the next block without worker restart. Couple governed acceptance/revision visibility atomically while keeping observation history independently append-only.
-4. Keep three layers: curated reusable capability state; on-demand external capability candidates; data-asset discovery. Persist actual-record-linked capability gaps and minimal proposal/review/update/reverification/retirement transitions, using H4 semantic grouping where useful. No unrestricted add/edit/delete agent tools. Python governance owns state transitions.
-
-**Scientific acceptance addition R1 (ADD_TO_PLAN):** **Scientific purpose:** make prior research reusable for choosing the next uncertainty, without transcript memory or new Director authority. **Required input/data:** resolved hypothesis/test lineage, analysis and evidence IDs, attempted method/parameters, representation, participant/cohort scope, capability failures and literature-search receipts. **Method/capability:** extend existing typed derived memory/institutional observations with attempted, invalid, inconclusive, supported, contradicted and not-replicated outcomes only when their originating contracts establish those meanings; retain alternative explanations, unresolved prerequisites and the evidence/event basis for reconsideration. A non-significant result is not proof of absence; equivalence/negative claims need their own declared effect bound and suitable analysis. Keep scientific outcomes separate from execution failure and semantic rejection. **Expected output:** bounded reference-linked research history and continuation context, including what was tested, what remains uncertain and why another test differs. **Validation:** original records remain immutable; status and population resolve to source records; missing interpretation stays unknown. **Effect on research decisions:** inform continue, replicate, alternative explanation, contradiction resolution, change representation/cohort, acquire capability, new block or Python-owned operational yield/wait under existing resource/shutdown rules. **Evaluation:** H13 measures relevant failed/negative/inconclusive attempt retrieval, duplicate-work avoidance, distinct alternatives and new-evidence reopening; H14 evaluates H4 behavior before any justified change.
-
-**USE_AS_REFERENCE during implementation:** [Biomni](https://github.com/snap-stanford/biomni) for resource/capability distinctions; [Robin](https://github.com/Future-House/robin) for evidence-driven follow-up trajectories. Adapt useful scientific context to existing typed memory.
-
-**Exit proof:** static catalogue still works and reopen reconstructs immutable past/current revisions and history boundaries. Ordinary usage, verification/reverification and suitability events leave registry revision unchanged; accepted capability-state changes create a revision. Blocks and history-consuming searches pin registry/high-water identities, old block contracts/searches remain reproducible after later observations/revisions, stale continuations fail honestly and the next block observes accepted state/new history without restart. Primary owner `test_persistence.py`; search transport/continuation contracts in `test_boundaries.py`. Promotion proof remains H9/H10a with scoped validation/H13 utility and required local controls; H11 is cancelled and the current governance-code mismatch stays explicit. Run focused files and architecture/diff checks.
-
-### H6 — Truthful GDC files and deeper representation/schema search
-
-**Local regression repair (2026-10-02):** preserve the caller's nonempty GDC filter DSL exactly and omit empty filters rather than sending an invalid empty `and` term. Discovery retains controlled/unknown alternatives; open access remains a byte-acquisition gate. The owning restart regression failed before this repair; five focused discovery/reopen/export checks passed after it.
-
-**H6.1 — delivered local acquisition baseline and bounded live smoke (2026-10-02):** file metadata discovery no longer silently hides controlled/unknown assets; anonymous byte acquisition still requires explicit open metadata. Retained asset cards carry query/content/acquisition identity, retrieval time, type/format/access/size/checksum and bounded case/project references with omissions. Endpoint-specific ID fields/order replace invalid `id:asc`; HTTP-200 embedded GDC query errors now fail operationally instead of becoming empty successful acquisitions. Before selected bytes, service-owned reservations check remaining block/service downloads, workspace/archive and durable-artifact allowances plus actual free disk with SQLite/base64 headroom. Unknown-size streams are bounded; reservations release on failure and failed bytes/metadata bytes remain metered and receipted.
-
-**Proof:** `.venv/Scripts/python.exe -m pytest tests/invariants/test_boundaries.py` — 29 passed, 1 dependency warning in 10.02s before final added disk/unknown-size cases. Final `.venv/Scripts/python.exe -m pytest tests/invariants/test_boundaries.py tests/invariants/test_persistence.py -k 'gdc or artifact or ordered_source or download_service or file_discovery or file_preflight'` — 13 passed, 78 deselected in 7.90s. Discovery/preflight/embedded-error regressions failed on their intended pre-repair behaviors. Architecture and diff checks pass. Verified current [GDC search contract](https://docs.gdc.cancer.gov/API/Users_Guide/Search_and_Retrieval/) and actual endpoint response: `/files`, Clinical Supplement, size 1, offset 0, `file_id:asc`, 560 response bytes, one row/16,463 reported total; `/data/0001e8c8-d4aa-41d0-bf4d-fda8db5de4f9` returned 72,779 bytes matching advertised size/MD5, SHA-256 `f8f301b70e45f436b05e6861e9fa06c6a3692a9dd6f8aae5f85f96a445b89b3b`. This smoke establishes selected-file connectivity/byte identity, not scientific utility or deployment confinement; no scientific evidence was admitted.
-
-**Remaining acceptance:** H6a's bounded need/schema/unit/uniqueness gate, H13's generated input comparison and H6.2's selected-gene parser are delivered. Broader modality schemas, sample/cohort matrices, validated joins/transforms, alternative generation and independently reviewed R2/D2 useful-representation recall remain open, alongside selected H10 operation gates. H6 stays PARTIAL; selected-file disk preflight does not certify external clone/install or complete local process/resource enforcement.
-
-**Owner:** `src/sources/{models,public,coverage}.py`, existing scientific artifact models/execution, OncoLab source descriptors, `scientific_tools.py`/`search_tools.py`, F4c semantic integration.
-
-1. Reuse existing `/files` pagination and acquisition. Verify current field/mapping contracts for selected needs at implementation time. Extend bounded asset cards with file ID/name/access/state/category/type/format/strategy/platform/workflow, size/MD5, case/project refs, release/version when available, filters/requested fields/sort/offset/page/total/query identity/retrieval time and omissions. Preserve coverage/overlap/endpoint-unit contracts. Missing metadata stays unknown.
-2. Separate discovery's truthful open/controlled/unknown visibility from anonymous open-only acquisition. Enforce scientific-data authentication domain independently from model-provider credentials; unsupported controlled access is explicit, never attempted silently. No individual UUID enters the capability catalogue; only search/describe/acquire/manifest methods can be capability entries.
-3. For selected open files use existing exact-byte `/data`→ScientificArtifact path; validate supplied MD5/size, internal SHA-256, request/source UUID/access and block ownership before inputs are exposed. Bound downloads/time/resources; manifest acquisition is optional for a concrete bounded need, never a bulk default. Extend no new analysis family just because bytes are available.
-
-   Before streaming a selected file/large scientific asset, Python preflights advertised size when present, per-file ceiling, remaining block and service download budgets, workspace free space/allowance, durable-artifact free space/configured allowance, retention/archive requirements and active experiment disk use. Reserve applicable capacity with H2's governor so competing work cannot spend it twice; reject a declared file that cannot fit before opening its data stream, with typed operational/resource reason. Missing advertised size remains unknown, never zero; bounded streaming checks cumulative actual bytes and remaining reserved capacity/free space, stopping safely before exceeding limits. Retain declared/estimated size where known, transferred bytes including failed attempts, allowances and rejection reasons. Resource rejection never becomes scientific negative evidence.
-4. Group available assets by data type/format/entity unit/strategy/coverage/transformation. Deterministically establish retrievability/input/design requirements before Jev measures sufficiency/assumption fit. Feed retained actual representations into existing F4c frontier and execute the D2 expansion batch below; do not invent an unavailable universal representation ladder.
-
-**Scientific acceptance addition R2 (ADD_TO_PLAN):** **Scientific purpose:** find representations that can answer a question, rather than equating located files with usable science. **Required input/data:** scientific need/estimand, actual accessible asset metadata and retained schemas, case/sample/aliquot relationships, assay/workflow/release/reference identity, measured coverage and missingness. **Method/capability:** extend existing representation selection with a bounded need-to-input assessment covering gene/cohort/subgroup, mutation, CNV, expression, clinical and survival needs; distinguish metadata/counts/events, individual files, sample matrices, gene summaries, paired data, pathway summaries and derived phenotypes. State necessary transformations, join keys/cardinality, entity unit, units/normalization, participant overlap, available variables and information loss. Separate directly available, derivable through a validated operation, controlled/inaccessible, unmeasured and absent-from-inspected-source states. Gene identifiers/build/annotation, expression counts versus TPM/FPKM, and CNV segments versus gene/copy-number summaries are not interchangeable. GDC internal graph models inform semantics, not public endpoint guarantees. **Expected output:** eligible representation alternatives with exact source basis, prerequisites and explicit coverage gaps. **Validation:** deterministic schema/unit/access/identity checks precede semantic sufficiency; derivability names a supported operation and never invents inputs. **Effect on research decisions:** choose a defensible representation, transform through Science, change cohort or retain a capability/input gap. **Evaluation:** H6a/H13 compare useful-representation recall and rejection of tempting incompatible units, incomplete pairing and unavailable transformations, including low lexical overlap; report omissions and budgets.
-
-**USE_AS_REFERENCE during implementation:** [GDC documentation](https://github.com/NCI-GDC/gdc-docs), [data model](https://github.com/NCI-GDC/gdcdatamodel2) and [workflow overview](https://github.com/NCI-GDC/gdc-workflow-overview) for selected entity, representation and harmonization semantics; [OntoJev](https://github.com/asimog/ontojev) for narrowly inspected source-handling code/invariants. These are references, not application dependencies or a replacement architecture.
-
-**Exit proof:** deterministic transport fixtures protect query/pagination/order/total/metadata/access, exact byte/hash/size/owner rejection and representation grouping; preserve existing F5 regressions. Prove declared oversize acquisition is rejected before data streaming, cumulative block/service bytes remain bounded, unknown size is preserved with streaming enforcement, and workspace/durable-disk preflight failures are operational without scientific negatives. Primary owner `test_boundaries.py`; artifact reopen/mount ownership and resource receipts in `test_persistence.py`. Bounded selected-file live smoke verifies current route/access only, with exact queries/results/limits recorded; no family-wide science/licence claim. Run focused files, artifact verification script where relevant and architecture/diff checks.
-
-#### H6a — Integrated D2: deeper representation and schema search
-
-**Delivered deterministic need/schema gate (2026-10-02):** `assess_representation` now checks an explicit bounded representation need against actually owned source rows before semantic sufficiency. It retains source/query/content/coverage identity, mapped scalar/numeric variables and complete-row counts; absent, null and invalid values stay distinct. Entity uniqueness, known source entity units, explicit source-returned normalization/build/release identities and complete-coverage requirements gate eligibility. GDC/Xena listings stay metadata; file names/data-type labels do not become acquired assay matrices. Controlled assay inputs, unsupported modality schemas/joins and unknown units/coverage remain reference-linked unmet requirements. No derivability is claimed without a validated operation. Bounded inspection reports omitted rows and defers complete eligibility when further validation is required.
-
-**Proof:** the actual Researcher/CodeMode regression failed on the previous tool because a counts-versus-TPM input remained eligible. Eight labelled retained-input alternatives now exercise wrong units, nested low-overlap field mapping, absent variables, unknown coverage/build, duplicate entities, controlled expression metadata and directly available file metadata. Two focused representation/semantic-owner tests passed in 6.74s with one dependency warning; no evidence was admitted. These cases prove deterministic contract behavior, not independently reviewed assay utility or semantic-model recall. H13 later supplies six generated input-contract comparison cases and H6.2 supplies one real owned-byte STAR parser. Independently reviewed assay utility, automatic discovery/live semantic recall, broader representation alternatives and selected analysis-operation gates remain required; neither later delivery completes R2/D2.
-
-**H6.2 parsed expression rung (2026-10-02):** reviewed Science `parse_gdc_star_counts` validates one owned, explicitly open GDC Gene Expression Quantification/STAR - Counts TSV. Exact file metadata, retained bytes, header and bounded whole-table validation precede selected-gene output (8 MiB, 100,000 gene rows, 20 requested exact Ensembl IDs). No gene-version stripping, identifier remapping, normalization conversion or implicit join occurs. Source count/TPM/FPKM/FPKM-UQ columns, gene-model declaration, zero values and absent requested genes remain distinct. Malformed/duplicate entities, unsupported schemas and nonfinite/negative values fail; no scientific measurement or evidence is manufactured. A separate immutable `representation_parse` receipt links the exact artifact and derived acquisition, units, coverage and limitations. Researcher execution uses the shared heavy-operation governor and pinned Index route; reopen, BlockDelta and export retain that receipt. The representation gate now recognizes this actual parsed `gene_summary`/`gene_in_file` rung, while a requested cohort/sample matrix or incompatible units remains deferred. Genome build, sample/aliquot/case linkage, population/participant coverage and scientific applicability are not inferred from workflow names or format success.
-
-**Local proof:** real acquisition→owned-byte parse→representation checks and existing artifact/representation/method owners — four passed, 103 deselected in 8.88s. The new owning case preserves exact requested versions, observed zeros and missing genes, defers count-as-TPM and matrix claims, records duplicate-row failure without a derived result, rejects negative/nonfinite normalization, and reconstructs/exports original source references. Architecture and diff checks passed. Separately, bounded public inspection selected open file `00000c20-b875-4821-8d4b-c50d7a7f9879`, 4,210,762 bytes matching advertised size, internal SHA-256 `943fc3eb497d68f78edbeecb25739791343bd4007f6e5fe75d937f07f7e79c4d`; local retained parsing validated 60,660 gene rows with source `GENCODE v36`, selected two exact genes and preserved one version mismatch as missing in 0.423s. Source/derived records and the detailed report remain in ignored local `var/h6-star-parse.sqlite3` and `var/h6-star-parse-report.json`. This inspection did not independently query an MD5 or establish scientific utility, release/build/sample identity, promotion qualification or deployed confinement. [Current GDC expression documentation](https://docs.gdc.cancer.gov/Data/Bioinformatics_Pipelines/Expression_mRNA_Pipeline/) supplied the source-format/normalization reference; actual downloaded columns and gene-model text were inspected. Other modality parsers, validated matrix/join/transformation requirements and H13 useful-representation recall remain H6 acceptance work.
-
-**Final bound verification:** the draft total-row allowance incorrectly permitted four extra genes when summary rows were absent. The owning 100,001-gene case failed before repair with no rejection, then passed after exact gene counting — one passed, 39 deselected in 6.14s. Final code re-parsed the retained public artifact in 0.417s with unchanged derived content SHA-256 `c429ee9784710e0a9a2bdf0259ad889be7ed3397a4fff166bae979ae84e106d2`; the local report retains the final parser source hash. No original receipt or source record was rewritten.
-
-**Trigger:** Evaluations show useful representations being missed despite available inputs.
-
-1. Build H13 cases where the same scientific need has multiple actually available formats, entity units, schema mappings, coverage levels or transformations, including useful low-lexical-overlap alternatives. Retain access/input identity and a labelled useful-representation set before semantic filtering.
-2. Diagnose misses as retrieval, schema-field/entity mapping, representation grouping or semantic sufficiency failures. Add only the executable/retrievable rungs and bounded schema mappings needed to recover those cases. Use the current source field/mapping contract, retained artifacts and deterministic availability checks; do not invent data or treat metadata as usable inputs.
-3. Re-evaluate retained useful-representation recall and assumption fit, with versions, omitted candidates and resource changes. The phase records either the implemented recovery plus proof or an explicit no-miss/unavailable-input result, instead of sending D2 to another plan.
-
-**Acceptance:** demonstrated available useful representations survive retrieval and frontier policy; wrong entity unit/access/schema/prerequisite remains rejected deterministically. `test_boundaries.py` protects those source-to-frontier behaviors; H13 measures missed/recovered alternatives. This batch supplies available-schema/input contracts to H10's D7 scientific operation batches without declaring those operations delivered.
-
-### H7 — bio.tools, EDAM and measured catalogue/search expansion
-
-**H7.1 — delivered bounded metadata discovery (2026-10-02):** shared source/need/filter/query-bound continuation search and single-ID describe use public bio.tools, preserving bounded EDAM operation/input/output/topic/format, software links, version/licence/publication metadata and omissions. Exact bounded raw responses, retrieval timestamps, hashes and requests persist separately from registry contracts; institutional inspections/failures append history only. Director has an independent ten-lookup ceiling; Researcher uses its source allowance, with service download metering. Agent tools return at most 32 KiB, never raw payloads. Unsupported filters, foreign cursors, changed query identity and missing executable catalogue identity fail explicitly; no listing grants installation, validation, evidence or reusable promotion. Selection evaluation now uses the actual pinned block index/routes.
-
-**Proof:** `.venv/Scripts/python.exe -m pytest tests/invariants/test_persistence.py tests/invariants/test_evaluation.py -k 'external_discovery or selection'` — 3 passed, 67 deselected in 7.42s before final response assertion. Architecture/diff checks pass. Live search `q=deseq2`, `name=DESeq2`, `per_page=2`, page 1 returned one candidate/3,986 bytes, response SHA-256 `940412ac6b512ff2bcf81d7704df355197390da3b9c3ae9ace16e1d2b3a7cb01`; describe returned 3,937 bytes/SHA-256 `724ab94fb2d6a2ce819e0a620e240a50dc65eec03abd86f7925fd23a127a103e`. Its returned count-matrix input, differential-expression operation and LGPL metadata are discovery facts, not scientific or R runtime qualification. Current [API reference](https://biotools.readthedocs.io/en/latest/api_reference.html) checked for supported filters/page/IDs.
-
-**D6 baseline/evaluation disposition:** `.venv/Scripts/python.exe -m scripts.evaluate_selection --output var/h7-selection.json` evaluated the recorded 108-descriptor snapshot: four nonempty labelled useful sets had 1.0 retrieval/retained recall under both fixture conditions; the unimplemented survival task had an unknown useful-set denominator, with zero operational failures; maximum per-task durations were 0.0311s deterministic and 0.1697s fixture-assisted. At audit HEAD the seed catalogue has 109 descriptors after H6.2 added `transform.gdc-star-counts`; these recorded selection artifacts cover 108, and no 109-descriptor rerun is claimed. Current-scale scan is retained; this corpus does not justify FTS, ontology ingestion or embeddings and does not establish held-out method suitability. R3 paired method/representation cases, growing-curated-catalogue comparisons and any earned vocabulary/FTS extensions remain current-phase return work through H13; H7 stays PARTIAL.
-
-**H7.2 need-bound method generation (2026-10-02):** Researcher `generate_method_candidates` validates a bounded `ScientificNeed` with question/estimand/population/design and a matching R2 representation need. It pages the block-pinned Index across method/software/transformation kinds without a zero-overlap veto; each alternative binds the exact descriptor hash, actual owned input identities, assumptions/limitations and declared operation/input/access routes. Each retained acquisition is checked independently, with no implicit joins or source merging; numerical route roles require actual finite numbers even if the caller omits numeric-role declarations. Missing covariates/fields and metadata-only or unsupported routes remain prerequisite gaps, not rejected science. `assess_method` consumes the same structured need and per-input checks before semantic suitability; the legacy small need dictionary remains readable. Design/population declarations and input readiness are not validated scientific applicability. Generated alternatives and omissions are bounded to 32 KiB, retained in state and append-only `method_candidates`, reconstructed after reopen, referenced in BlockDelta and exported downstream. Existing retrieval/candidate budgets and continuations apply; generation adds no model calls or acquisition/execution/admission authority.
-
-**Local proof:** real CodeMode need→method alternatives→structured assessment plus representation-boundary checks — two passed, 37 deselected, one existing event-loop warning in 7.05s. Cases retain an input-ready source operation and unmet alternatives, defer missing covariates, refuse to join complementary acquisitions, reject text as numerical route input, and preserve reopen/export/native lineage without evidence admission. Architecture and diff checks passed. The initial CodeMode check exposed that a Pydantic model parameter was not constructible as a plain dictionary in Monty; the tool now accepts JSON and validates it at the owning boundary. Independent scientific labels, operation/design applicability, competing-method utility, external candidate suitability and growing-catalogue D6 comparisons remain required; this generated contract case does not complete R3 or H7.
-
-**Owner:** one external discovery contract/adapter family in `src/oncolab/`, typed persistence/search receipts, `src/runtime/pydantic_ai/search_tools.py` and semantic adapter.
-
-1. Define one bounded `search(source, need, filters, continuation)`/`describe(source, external_id)` interface or smallest existing equivalent; GDC assets remain separate. Verify current bio.tools API/filter/pagination semantics before implementing. Support applicable free text/tool ID/name/domain/topic/operation/input-output data type/format filters without asserting unsupported filters work.
-2. Retain ExternalCapabilityCandidate cards: source/ID/name/description/homepage/tool types/EDAM inputs-outputs-topics-operations-formats/publication and download/package/repo links/licence/version where returned. Keep IDs/terms as controlled normalization; do not ingest the ontology. Store query/filter/page/cursor/IDs/time/response-content hash or retained payload identity/omissions/failure. Mutable lookup is not an immutable snapshot unless retained.
-3. Search current OncoLab→cards→contract expansion→deterministic route/input/access/runtime checks→Jev suitability→retained frontier first. When still inadequate, use external discovery/enrichment and the same staged bounded checks; Jev assesses estimand/operation/input/output/limitation fit, never grants missing execution authority. Director uses metadata for planning; Researcher chooses acquisition/prototype. Do not prefer external software automatically or restore an installed lexical veto.
-4. Benchmark catalogue size/recall/latency/continuations/context before changing search infrastructure. Keep scan retrieval where adequate; earned expansion order is FTS5/equivalent, controlled vocabulary, then embeddings only if measured added recall. No vector DB or uncontrolled bulk import.
-
-**Scientific acceptance addition R3 (ADD_TO_PLAN):** **Scientific purpose:** discover suitable scientific methods without a fixed analysis pipeline. **Required input/data:** ScientificNeed or existing equivalent, testable estimand/population/design, R2 representation assessment and scoped method/software descriptors. **Method/capability:** carry need -> candidate methods -> assumptions -> required inputs -> available representation -> executable implementation through existing staged search. Retain competing suitable methods and prerequisite gaps; distinguish a statistical family, package, callable operation and data resource. Use minimal bio.tools/EDAM topic/operation/data/format and publication/package/repository metadata where they improve matching; existing OncoLab assumptions/contracts remain the owner. **Expected output:** reference-linked method alternatives, suitability limits and concrete operation/source bindings or a justified unmet need. **Validation:** check supported design, input structure/units, access and runtime deterministically; semantic fit cannot override failed requirements. **Effect on research decisions:** choose a method, seek another representation, challenge assumptions or acquire a missing operation. **Evaluation:** H13 includes plausible-but-wrong methods, vocabulary mismatch, missing covariates, unsupported execution and multiple valid alternatives; measure method suitability separately from tool retrieval.
-
-**USE_AS_REFERENCE during implementation:** [Biomni](https://github.com/snap-stanford/biomni) for capability coverage; [bio.tools schema](https://github.com/bio-tools/biotoolsschema) and [EDAM](https://github.com/edamontology/edamontology) for selected operation/input/output terminology. Do not mirror their full schemas or ingest the ontology wholesale.
-
-**Exit proof:** fixtures protect filters/query/cursors/cards, mutable-source receipts, metadata-only execution denial, missing-route denial despite favorable Jev, validation requirement and outage as operational failure. Primary owner `test_boundaries.py`; persistence receipt/reopen owner `test_persistence.py`. Bounded live smoke independent of permanent unit availability; H13 recall cases compare retained useful candidates. Run focused tests and architecture/diff checks.
-
-#### H7a — Integrated D6: harvesting, SQLite/FTS, vocabulary/ontology and embeddings
-
-**Trigger:** Growing curated catalogues demonstrate recall, latency or coverage problems.
-
-1. Establish a versioned scan-retrieval benchmark with growing curated snapshots and H7/H8 on-demand external candidates. Measure useful recall, coverage gaps, latency, candidate/context size and continuation correctness under identical query/input limits. H5 durable revisions alone do not meet a measured retrieval-improvement gate; database/index migrations and extra databases are outside current scope.
-2. Compare the smallest deterministic retrieval/index alternative against scanning on the same existing SQLite records only when measured scale justifies it. A new SQLite FTS schema/index migration or separate index database is not scheduled under the no-migrations/no-extra-databases constraint. Preserve the original FTS5/equivalent assessment intent as a benchmark/disposition, not promised adoption; record unavailable compatibility explicitly. Any justified in-scope retrieval extension must retain query/algorithm/snapshot identity, stable ties and continuations and demonstrate recall/latency improvement without migrating storage.
-3. Diagnose residual vocabulary/coverage misses. Add bounded EDAM term expansion, a versioned approved vocabulary snapshot or a bounded ontology resolver only for those misses. Returned IDs/terms remain the default. Any larger curated import must have selected sources, query/family purpose, retained licence/access/retrieval/hash identity, explicit record/byte/time limits and deduplication; do not mass-import a registry or ontology without demonstrated need.
-4. Compare embedding-assisted retrieval only when FTS/vocabulary still misses labelled useful candidates. Retain deterministic high-recall candidate retrieval and versioned embedding/index identity; adopt only a measured recall improvement within resource limits. No vector database or uncontrolled bulk harvesting is a prerequisite. Reject or retain a measured no-change decision when the stage adds no useful value.
-
-**Acceptance:** H13 records the staged scan→FTS→vocabulary/ontology→embedding decisions and gains/limits; only justified stages compatible with the no-migrations/no-extra-databases constraint are implemented; migration-based FTS adoption is excluded and receives an explicit scope disposition. Continuation/query/revision determinism and rebuild/reopen belong to existing boundary/persistence test owners. Bounded curated ingestion yields candidates, not installation, validation or automatic promotion. Every D6 component has a phase-owned decision and execution/proof path; no separate deferred scale/ontology backlog remains.
-
-### H8 — GitHub, Bioconda and Bioconductor enrichment
-
-**H8.1 — delivered targeted source-specific enrichment (2026-10-02):** the H7 describe interface now accepts explicit GitHub owner/repository, Bioconda package and Bioconductor package identities. GitHub verifies public identity and resolves an exact commit before retaining bounded root/docs/dependency/test references; unknown licence stays unknown. Bioconda retains latest declared package version and selected build/checksum/platform/dependency metadata without installing Conda. One official Bioconductor package page supplies release/version/licence/BiocViews/dependencies and docs/source links; R execution remains explicitly unsupported. Exact response bundles and hashes persist through the existing role/history path; no bulk registry ingestion or extra execution authority.
-
-**Proof:** `.venv/Scripts/python.exe -m pytest tests/invariants/test_boundaries.py -k targeted_enrichment` — 3 passed, 33 deselected in 4.92s before final GitHub directory-reference expansion; architecture and diff checks pass. Distinct source fixtures protect public commit identity, dependency/build metadata and official package parsing/runtime limitations. Bounded live lookups succeeded for GitHub `thelovelab/DESeq2` (12,981 bytes, commit `c62c60c6ff83fd84ce115cacd1c49827533f85a7`, R, licence unknown), Bioconda `bioconductor-deseq2` (310,015 bytes, returned latest 1.50.2, scoped build/platform/dependency checksums), and Bioconductor `DESeq2` (30,163 bytes, release 3.23/package 1.52.0, licence metadata). Versions differ across sources and are not reconciled into invented executable identity.
-
-**Remaining acceptance:** R4 actual canonical-operation/tutorial/example and relevant Galaxy/nf-core/recipe inspection feeds H10/H13 reference validation; metadata and constructed uninspected recipe links are insufficient. H8 stays PARTIAL until that source-to-operation path is exercised.
-
-**Owner:** H7 external-discovery adapters/models and current public GitHub method request validation in `src/science/sandbox.py`; typed role tools.
-
-1. GitHub: preserve public compatible repository acquisition and pin resolved commit. Bounded metadata may include repo/default branch/release-tag/language/declared licence/README-docs/requirements-lockfiles/tests/package identity. Director reads metadata; scientific execution/admission stays Researcher/Science. Public does not establish permitted use.
-2. Bioconda: add optional targeted metadata enrichment for discovered/gap candidates with package/version/source/checksum/dependencies/build-runtime constraints/tests/licence/platforms. No automatic Conda install; a concrete method requiring Conda needs a later separately evaluated backend decision.
-3. Bioconductor: bounded need-driven package/purpose/BiocViews/version-release/dependencies/docs-vignettes/source/licence/build-status candidates remain metadata-only until a supported verified R environment exists. Do not advertise R execution from a listing.
-4. Keep extension seams for PyPI/BioContainers/other approved curated registries/data resources, without implementing them all. Add only a minimal measured-value source. Record partial/missing metadata and transport limits. No cBioPortal/Hugging Face addition under this stage.
-
-**Scientific acceptance addition R4 (ADD_TO_PLAN):** **Scientific purpose:** turn software discovery into a traceable candidate operation, following [Paper2Agent](https://github.com/MengDataAI/Paper2Agent)'s source-bound selection pattern. **Required input/data:** actual capability gap, pinned repository/package identity, canonical paper/docs/API or CLI, tutorials/examples/tests and traceable example inputs. **Method/capability:** inspect the smallest relevant implementation and its canonical demonstrations; identify the actual callable/command, necessary preprocessing, supported parameters/defaults, units, assumptions and expected outputs. Before inventing a wrapper, check targeted [Galaxy IUC](https://github.com/galaxyproject/tools-iuc) wrappers, [nf-core modules](https://github.com/nf-core/modules) metadata/tests and [Bioconda recipes](https://github.com/bioconda/bioconda-recipes) for invocation, package/dependency identity and reference fixtures; record missing/conflicting information. Prefer an existing public API or bounded CLI; extraction from tutorial-only code requires attribution and explicit preserved computation. Paper claims or an import do not establish an operation. **Expected output:** scoped operation candidate with source binding, runnable reference basis and blocked prerequisites; merge duplicated demonstrations instead of exposing every helper. **Validation:** H10 reproduces the reference before executable qualification; no defensible runnable reference leaves qualification unsupported, not silently replaced by invented expected results. **Effect on research decisions:** select a feasible acquisition candidate or keep the gap visible. **Evaluation:** H13 measures useful-operation coverage, wrong-source selection, unavailable examples and out-of-scope abstention. New wrapper/parser code remains reviewed engineering.
-
-**USE_AS_REFERENCE during implementation:** [Paper2Agent](https://github.com/MengDataAI/Paper2Agent), especially [operation selection and minimal wrappers](https://github.com/MengDataAI/Paper2Agent/blob/main/skills/paper2agent/paper2mcp/references/tool-selection-and-wrapping.md); [Galaxy IUC](https://github.com/galaxyproject/tools-iuc), [nf-core modules](https://github.com/nf-core/modules) and [Bioconda recipes](https://github.com/bioconda/bioconda-recipes) for concrete invocation, dependency and example/test contracts. Reuse scientific operations without importing their orchestration.
-
-**Exit proof:** distinct source fixtures prove candidate identity/filter/pagination/enrichment and truthful unsupported-runtime/access/licence status; source-specific failures do not create negatives or promote records. Reuse H7 test owner rather than duplicating interface assertions for every provider. Run owning `test_boundaries.py` cases and architecture/diff checks; bounded smokes only for adapters actually delivered.
-
-### H9 — Governed promotion, review and engineering proposals
-
-**H9.1 — delivered proposal/rejection governance (2026-10-02):** role tools retain typed source-linked promotion/update/retirement/reverification proposals without CRUD authority. Factory composition reviews pending proposals once before the next block. Versioned Python policy requires candidate-bound admitted use across distinct inputs/blocks, immutable operation/command identity, scoped canonical/changed-input/invalid-input/scientific validation, measured utility, licence binding, fresh recoverable locked reinstall/independent replay and current-application Railway proof before reusable acceptance. Generic routes bind candidate and scope; code-requiring proposals produce EngineeringProposal. Reverification stays history-only; retirement requires scoped failed reverification. Accepted state changes use H5's atomic governed revision path; proposals/rejections preserve registry/evidence. Historical revision hashes verify exact saved content, retaining compatibility as optional route fields evolve. This is the historical H9.1 policy; the local-baseline batch replaces its Railway gate with `scoped-governance-v2-local`/`local-verification-v1`, retaining the scientific checks.
-
-**Proof:** `.venv/Scripts/python.exe -m pytest tests/invariants/test_persistence.py -k 'governance or block_registry'` — 3 passed, 59 deselected in 7.64s before final factory/adverse-case gate additions. Architecture and diff checks pass. Actual source measurement/admission followed by proposed reuse is rejected for missing qualification/deployment/repeated-use proof; evidence and pinned revision stay unchanged, reviews deduplicate, and code requirements retain an engineering proposal.
-
-**Remaining acceptance/D1 disposition:** exploratory success remains ineligible for reusable promotion. H10/H13 must emit actual qualification/scoped-validation/utility proof and accepted reuse must execute through the generic path in a fresh block before H9 is DONE. Current policy requires versioned local verification, with direct WSL2 aggregate-control acceptance still open; no H11 deployment/target receipts are scheduled or required. No accepted reusable capability or complete local aggregate confinement is claimed by scaffolding/rejection fixtures.
-
-**Owner:** `src/oncolab/` governance/execution/registry models, persistence transitions, Director proposal tools, H10 execution identities.
-
-1. Persist proposals from repeated concrete needs and controlled validated use, with actual reference links. Include source/repo-commit/package-version/purpose/typed inputs-outputs/execution/dependency identity/replay/scopes/failures/limits/access/licence knowledge/measured utility/overlap. No execution count alone certifies validity or generalization; one successful run does not promote.
-2. Implement explicit versioned deterministic ACCEPT/REJECT governance with scope/generalization/contract/replay/utility checks. Proposals, failed/rejected qualification, usage, execution and reverification observations append institutional history only; registry remains unchanged until an accepted governed capability-state transition. Unknown reproducibility or licence/access information must remain explicit and cannot justify unsupported REUSABLE claims.
-3. Declarative methods usable through the already supported generic executor may create a new immutable revision without source changes. Code requiring a parser/wrapper/algorithm/route/source adapter/admission change produces EngineeringProposal and awaits ordinary reviewed development; Director Coder never patches live code. Minimal review/update/reverification/retirement proposals use governed append-only transitions, not unrestricted CRUD.
-4. Stage proposals/policy in phase order; do not accept new executable reusable capabilities until H10a/D8 promotion-grade fresh-environment qualification passes: recoverable locked dependencies, fresh reinstall, independent replay, scoped/generalization proof, failure history, licence/access review, measured H13 utility and explicit governance. Required local execution controls remain explicit; H11 deployment/target proof is cancelled. An exploratory execution receipt is insufficient. On accepted state change create the registry revision and refresh between blocks without restart; preserve old registry/history pins and receipts. Unsupported automatic Jev/local-question/self-promotion cannot pass this governance path.
-
-**Scientific acceptance addition R5 (ADD_TO_PLAN):** **Scientific purpose:** prevent reproducible software errors or tutorial-only success from qualifying as generally valid science. **Required input/data:** R4 source binding, H10 canonical-reference comparisons, changed-input/parameter and invalid-input results, scientific applicability/diagnostics, fresh-environment qualification and H13 utility. **Method/capability:** distinguish installation/execution, upstream behavioral fidelity, scoped scientific validity and reusable qualification in existing governance; qualify the particular operation/design/representation, never a whole package or statistics family. **Expected output:** accepted scoped contract or explicit qualification rejection with unsupported domains and failure history. **Validation:** numerical agreement/replay alone cannot satisfy scientific assumptions or generalization; promotion must consume the independent reference and adverse-case evidence as well as H10a qualification and required local execution controls. **Effect on research decisions:** reuse only within validated scope, seek an alternative or propose reviewed engineering. **Evaluation:** H13 includes faithfully reproduced but scientifically unsuitable operations, tutorial hard-coded inputs, ignored parameters and changed-scope reuse; existing H9 acceptance exercises rejection through the real path.
-
-**USE_AS_REFERENCE during implementation:** [Paper2Agent](https://github.com/MengDataAI/Paper2Agent) for source fidelity and changed-input validation; [GA4GH TRS](https://github.com/ga4gh/tool-registry-service-schemas) for minimal tool/version/descriptor identity. Neither a registry listing nor reference agreement establishes scientific generalization.
-
-**Exit proof:** one exploratory execution does not promote; proposals/usage/verification/rejected qualification cause no revision; accepted supported declarative method creates a reconstructable revision and is usable in the next block without restart while old registry/history pins remain reproducible. Promotion lacking fresh-environment qualification, including failed dependency reinstall, is rejected without invalidating the original truthful exploratory record. Code-requiring method yields proposal only; Jev cannot override governance. Primary owner `test_persistence.py` exercising proposal→policy→registry→factory→execution; independent admission guard in `test_boundaries.py`. Run those focused files and architecture/diff checks.
-
-#### H9a — Integrated D1: automatic capability promotion under explicit governance
-
-**Trigger:** Repeated validated use, measured utility and explicit governance. Execution receipts alone are insufficient.
-
-1. Connect H5 demand/usage/failure history and H13 measured utility to repeatable promotion proposals. Resolve exact scientific contracts, validated/generalized scopes, failures/limitations, access/licence knowledge, software/dependency identity and existing-capability overlap; reject missing, unsupported or stale prerequisites explicitly.
-2. Implement the deterministic versioned acceptance/rejection pipeline so a supported declarative reusable method can transition automatically only after all declared governance checks pass. H10a/D8 promotion-grade fresh reinstall/independent replay, scoped validation/utility and required local execution controls remain required before executable acceptance. H11 deployment proof is cancelled; current governance uses the versioned local verification gate delivered above. Neither a successful exploratory receipt nor an arbitrary minimum execution count proves scientific validity. Proposals and observations append history only; accepted capability-state changes alone create registry revisions.
-3. Verify an accepted revision is actually discoverable and usable by a subsequent fresh Researcher without process restart, while active/historical blocks retain their pins. Retain reject/reverification/update/retirement history and prevent registry changes from rejected proposals. Code-requiring reuse becomes an EngineeringProposal; unsupported automatic Jev/local-question/self-promotion cannot grant reusable status or alter live questions/policy.
-
-**Acceptance:** evidence-linked repeated use/utility and governed accept/reject behavior are exercised end-to-end, including missing reproducibility, changed scope, failure history, overlap and failed required local execution controls. A rejection/not-eligible outcome is recorded in H9 with the failed prerequisites; it is not a separate deferred item or a claim of reusable delivery. Existing persistence and admission boundaries remain the primary test owners.
-
-### H10 — Scientific execution, dependency locking and additional scientific operations
-
-**Scoped scientific-method addition (2026-10-02):** source-paired-test-v1 adds a retained-hypothesis exploratory directional effect-bound contract to existing Pearson/simple OLS. Confidence intervals use declared family-wise alpha divided by the explicitly named multiplicity family; results retain effect interval, adjusted p-value, uncertainty method, design and adaptive-exploration limits. Support/contradiction requires the entire signed interval beyond the effect bound; overlap stays inconclusive. Scientific invalidity has a distinct deterministic exception; busy resources stay operational attempts. No covariate adjustment, causality, equivalence/absence, preregistration, participant independence or clinical utility is established. Existing unplanned v1 outputs/identities remain unchanged. H5.2 covers both methods, null/reversed effects, multiplicity and rejection; H10b subsequently delivers same-method GDC paired R8 follow-ups/comparisons. Independently reviewed family utility and challenges requiring other methods/representations remain required; the scoped batch does not establish biological replication.
-
-**Delivered backend batch (2026-10-02):** configurable Docker/local-venv execution shares the existing candidate/replay/validation/admission contract. Local acquisition retains exact commit/archive and optional pre-acquired SHA-256 wheels; installation is offline. Fresh per-experiment Python environments run behind Landlock and x86_64 seccomp, scrubbed credentials, memory/CPU/file-output/wall limits, single-process execution and reserved owner-charged downloads. Tests/execution have no filesystem writes; subprocess/thread/source-build methods are explicitly unsupported, with no unconfined fallback. Coder roles retain their original boundary through a shared Landlock helper.
-
-**Proof:** `scripts/verify_local_science.py` passed in Linux 6.6.114.1 with actual secret/peer/app/network/process denial and fresh-environment replay (fixture transport). Both roles passed `scripts/verify_coder_container.py`. Live TheAlgorithms/Python commit `84b73d08f8bfa4e6bfae0243369c24f5a7539745`, canonical `maths/average_mean.py` doctests and independently documented seven-number mean reproduced 12.0; acquired 8,458,502 bytes, archive SHA-256 `91b2aaf320b55c894de95f853b5d6193b4cedf090d2a9ccd01d51530871de516`. This is exploratory computation/connectivity proof, not cancer utility, reusable qualification or Railway confinement. Historical Docker content identity is preserved. H10a recoverable qualification, R6 adverse/changed-input fidelity, D7 scientific gates, operational disk failure and local aggregate resource acceptance remain open. Further H11 target proof is cancelled.
-
-
-**Owner:** `src/science/{sandbox,local,models,execution,admission}.py`, artifact references, runtime factory/scientific tools, `src/config/{models,authentication}.py`, `config/runtime.yaml`, legacy backend compatibility and retention.
-
-**DEFER:** unsupported R/Conda/GPU methods, pathology expansion and wet-lab execution are outside this stage's supported scientific scope. [Bioconda recipes](https://github.com/bioconda/bioconda-recipes) can inform feasibility; [SPARK](https://github.com/cpath-ukk/SPARK) and [Robin](https://github.com/Future-House/robin) can inform transferable research practices. A concrete need and separately verified runtime/data/confinement or experimental support would be needed to reconsider these limits; this does not schedule additional backends or import those systems.
-
-1. Preserve the delivered factory-selected Docker/local-venv backend boundary, shared receipts/replay validators and one Science admission path. `config/runtime.yaml` selects `local_venv`; actual external local execution requires Linux x86_64/verified WSL2 confinement. Historical Docker receipts/implementation remain present, with no Docker test/deployment work scheduled. The local-baseline batch aligns `SandboxConfig` and catalogue descriptions with configured local-venv execution; the historical Docker path remains compatible.
-2. Each experiment owns `experiments/<experiment-id>/{repository,venv,inputs,outputs}` inside its block workspace. Never install into application `.venv` or inherit previous block dependencies. Initially support Python-compatible methods only; R/Conda/CUDA/Docker-required methods/daemons remain unsupported unless separately implemented and verified.
-3. A venv isolates dependencies, not filesystem/process authority. Reuse or strengthen actual POSIX confinement for scientific subprocesses/descendants, read-only exact inputs/application, own output writes, peer/DB/credential denial, scrubbed auth domains, bounded runtime/CPU/memory/downloads and appropriate controlled acquisition versus execution network behavior. Fail closed if the backend cannot enforce its declared contract; verify required local behavior directly under WSL2. H11 target proof is cancelled; no relaxation of the declared local sandbox contract is permitted.
-4. Distinguish exploratory execution from promotion-grade qualification. Canonical exploration retains exact repository/resolved commit/package-version/app/backend/Python/OS-base identity, declared dependency/install resolution identity, install-test-execute commands, exact owned input refs/hashes/parameters, output hashes, validator/first-run/replay receipts and truthful limitations in an isolated per-experiment environment. Require same-environment deterministic replay plus the strongest bounded independent validation/replay required by the existing Science admission contract; do not weaken that contract. Exploration need not perform the full reusable-method qualification for every brief experiment and cannot change reusable status. H10a/D8 adds recoverable locked dependencies, fresh-environment reinstall and independent replay for reusable qualification (or its original measured-drift/repeatability trigger); freeze alone does not prove recoverability. H9 separately requires scoped/generalization checks, failure history, licence/access, measured utility, governance and required local execution controls, with H11 deployment proof cancelled. Current governance uses the versioned local verification contract delivered above; its actual WSL2 control proof remains required.
-5. Preserve declared experiment→exact software/input→controlled deterministic execution→replay/validation→typed measurement→Science validation→explicit admission. Generic Coder/shell/prose/hypothesis/Jev/plot/notebook output cannot cross admission. Extend F6 archival to clones/venvs/scratch removal only after required artifacts, environment/dependency identities, receipts, revisions, memory and ledger are durable. `/work/director` remains outside block retention.
-
-6. Apply H2's resource governor and one heavy-local-work lease to scientific subprocesses, dependency installation, large repository clones/artifact processing and heavy Coder execution. Before clone/install/large artifact acquisition, preflight declared/estimated size where known, remaining operation/block/service download and repository/dependency allowances, experiment/execution/process limits, workspace/durable-artifact free space/allowance, retention needs and active disk use. Unknown size stays unknown; reserve bounded capacity and meter actual transfer/disk/process use including failed attempts, aborting safely before ceilings rather than trusting preflight alone. Persist size basis, actual bytes, resource allowance, lease acquisition/release and typed operational/busy/rejection reasons. Release reservations/lease on terminal paths while preserving consumed usage and receipts. No app-environment install, secret exposure, lease bypass or scientific negative from resource rejection.
-
-**Scientific acceptance addition R6 (ADD_TO_PLAN):** **Scientific purpose:** reproduce known behavior before trusting an acquired scientific operation. **Required input/data:** R4 canonical source/example identity and exact inputs, operation parameters, retained upstream outputs, software/environment identity and scientific contract. **Method/capability:** run the selected canonical example through controlled execution, then compare the extracted/adapted operation on the same inputs against independently obtained direct upstream results. Add changed-input/parameter cases and meaningful failure cases; preserve native computation/defaults and disclose adaptations. Record seeds only where supported, and declare justified numerical tolerances before comparison; exact identifiers/counts remain exact. Use existing [uv](https://github.com/astral-sh/uv) venv/install/compile/sync or project locking functionality appropriate to the selected dependency format, retaining installer/platform identities; do not invent a resolver. Minimal Boutiques/CWL/TRS descriptor ideas may inform command, typed I/O, requirements and version identity without adding an engine/service. **Expected output:** reference-reproduction and operation-fidelity receipts distinct from replay, scientific validation and reusable qualification. **Validation:** expectations must not come from the wrapper under test; successful import, exit, syntactically valid JSON or two identical wrong runs are insufficient. **Effect on research decisions:** execute a validated scoped operation, repair via ordinary engineering or retain failed acquisition. **Evaluation:** H13 compares canonical fidelity, changed-input correctness, invalid-input rejection and acquisition resources; H10a independently checks fresh reinstall without claiming biological replication.
-
-**USE_AS_REFERENCE during implementation:** [Paper2Agent](https://github.com/MengDataAI/Paper2Agent) for canonical reproduction and independent reference comparisons; [uv](https://github.com/astral-sh/uv) and its [locking/compile/sync documentation](https://docs.astral.sh/uv/pip/compile/) for environment/dependency work; [Boutiques](https://github.com/boutiques/boutiques), [CWL](https://github.com/common-workflow-language/common-workflow-language) and [GA4GH TRS](https://github.com/ga4gh/tool-registry-service-schemas) for selected execution-contract fields. No additional workflow engine or registry service.
-
-**Exit proof:** representative compatible exploratory method executes with isolated dependencies and existing replay/Science validation/admission without the full promotion qualification process or Docker daemon; app env unchanged and no reusable status granted. Dependency/input/output identity corruption and wrong ownership reject; Coder output remains ineligible; historical Docker receipt compatibility remains represented without new container runs. Prove preflight rejection before declared oversized clone/artifact transfer/install, metered unknown-size/cumulative limits, operational disk/resource failure, one lease and Director-heavy-scratch exclusion during healthy science. H10a proves fresh-environment reusable qualification separately. Primary owner `test_boundaries.py` for actual backend execution/admission and `test_persistence.py` for retained/reopened identity/resource receipts. Run focused tests, `scripts/verify_scientific_artifacts.py` as applicable, architecture/diff checks; actual local confinement/platform proof is separately recorded from direct WSL2 checks in H10; H11 target proof is cancelled.
-
-#### H10a — Integrated D8: stronger external dependency locking
-
-**Trigger:** Repeatable reinstall is required, or dependency drift breaks replay.
-
-1. For each method selected for reusable promotion qualification, or meeting the original repeatable-reinstall/dependency-drift trigger, retain the preferred repo lockfile, pinned requirements or reproducibly resolved package set, including transitive versions, hashes/available package identity, supported platform/Python constraints and installer/runtime version. This strong path is not mandatory for every exploratory GitHub experiment. Retain install commands and post-install freeze/hash as audit information, with explicit limits when packages cannot be recovered exactly.
-2. Reinstall independently into a fresh experiment environment and replay against exact owned inputs/parameters. Compare dependency/environment and output identity; exercise drift, unavailable packages, conflicting pins and corruption. A repo commit, image identity or freeze hash alone cannot establish repeatability.
-3. Route reusable-status acceptance through H9 only after these checks pass. Record unreproducible dependency state and the failed reinstall/replay gate here; block unsupported REUSABLE claims while preserving allowed exploratory results and honest execution receipts.
-
-**Acceptance:** real fresh reinstall/independent replay protects the qualified method's recoverable dependency contract; app `.venv` and other block environments remain unchanged. Missing qualification or failed reinstall blocks H9 reusable acceptance without invalidating a truthful exploratory record; exploratory eligibility still requires the existing Science validation/admission contract. Backend execution/admission tests own credible reinstall/drift failures, persistence owns exact retained identity/reopen, and H9 consumes their proof. D8 remains a required qualification/triggered execution batch, not a later packaging task.
-
-#### H10b — Integrated D7: operation-specific science and source expansion
-
-**R8 local source-paired follow-up batch (2026-10-02):** `declare_source_followup` freezes an original source/hypothesis/measurement basis, exact target request/analysis, directional meaningful-effect bound, non-relaxed explicit multiplicity family, expected discrimination and alternative explanations. Follow-up family/alpha/threshold/direction remain fixed for a retained hypothesis. `run_source_analysis(followup_id=...)` validates the declaration before controlled execution; confirmation records must follow it, and earlier retained case-value exposure cannot be hidden by changing query syntax. Canonical GDC case UUIDs, duplicate/overlap accounting and complete retained-query coverage distinguish observed disjointness, overlap and unknown independence. Original and target intervals drive model-conditional replicated, not-replicated, contradictory, sensitivity-dependent/consistent or inconclusive comparisons; non-significance alone is never non-replication. Invalid and resource/operational failures remain separate. Memory-v4, BlockDelta, Director material history, literature challenge context, restart and deterministic export retain both originals, declaration, comparison, limits and unresolved explanations without admission changes.
-
-**Local proof:** focused actual-cycle follow-up, scientific history, literature context, bounded handoff and downstream-publication checks — five passed, 62 deselected in 14.09s. The follow-up cycle covers an independent expected positive signal, reversed signal, zero-correlation narrow interval, low-information wide interval, overlapping case IDs, incomplete coverage, sensitivity dependence, invalid duplicate rows, post-result threshold changes and prior confirmation exposure under a different query. It checks source ordering, original evidence preservation, derived memory/deltas, literature challenge projection and reopen/export. Generated rows and mocked public transport prove contracts and the selected numerical comparison; they do not establish biological replication, current live data accessibility or scientific utility. Scope is same-method GDC case-paired Pearson/simple OLS follow-ups; alternative methods, other representations/operations and independently reviewed scientific utility remain required where selected. H10 remains PARTIAL; H11 deployment and target proof are cancelled.
-
-After final lineage/exposure guards, the follow-up and existing harness/Director delegation checks passed — two passed, 104 deselected in 7.79s. Architecture and diff checks passed. No live provider calls, Railway changes or new dependency installation.
-
-The completed comparison is returned alongside the measurement without changing its canonical payload; follow-up and ordinary source-analysis/admission checks passed — two passed, 65 deselected and one existing event-loop deprecation warning in 8.87s.
-
-**Trigger:** A concrete research need, available inputs, scientific contracts and operation-specific execution proof. This includes broader MAF/VCF/expression work, static GDC extraction/joins, TMB and survival.
-
-1. Derive candidate operations from actual Director/Researcher uncertainties, capability gaps and H6 input/representation contracts. Assess MAF/VCF, expression/count processing, static GDC extraction/joins, exposure/paired analyses, TMB, survival and other approved source families explicitly. Record need, supported access, available exact inputs and remaining prerequisites for each relevant family; catalogue growth alone is not a scientific need.
-2. Specify a selected operation before execution: input/schema/entity identity, population/design/estimand, denominators, transformations, missing/invalid accounting, diagnostics, output interpretation and validator. MAF/VCF requires reference/sample/somatic/filter semantics; expression requires gene/count/length/unit/normalization contracts; static joins require documented keys/cardinality/pairing and exclusions; TMB requires callable/capture denominator and variant eligibility; survival requires time origin, event/censoring, population and design/diagnostics. Missing prerequisites remain unknown, never invented zeros.
-3. Implement the smallest selected `src/science/` or approved `src/sources/` operation/adapter with a narrow OncoLab contract. Execute it on approved retained inputs through H10's controlled backend and existing Science validation/admission; prove first/replay and actual result interpretation. Apply H10a locking/qualification when its reuse or repeatability/drift trigger holds, not to every exploratory operation. Any new parser/wrapper/algorithm/source/admission code follows ordinary engineering, not dynamic declarative promotion or application imports from `.upstream/`.
-4. Add H13 operation-specific outcomes/resources and held-out valid/invalid/prerequisite cases. Report the exact operation and input scope delivered, not an entire capability family. When a family's concrete need or available inputs are absent, record that gate outcome and source-bound limitation in this phase; GDC file access alone does not complete an analysis or require every family to execute. cBioPortal/Hugging Face still require later explicit approval.
-
-**Scientific acceptance addition R7 (ADD_TO_PLAN):** **Scientific purpose:** make selected cancer-genomics and cross-modal operations answer defensible questions. **Required input/data:** R2 exact eligible representations, R3 method candidates, participant/sample identity, cohort design, available covariates and appropriate reference/annotation resources. **Method/capability:** assess general families under the existing concrete-need gate using the prerequisites below; select only those with useful demand, suitable supported implementations and bounded accessible inputs. Freeze the analysis contract before observing its result: estimand/comparison, inclusion/exclusion/aggregation, transformations, missingness, covariates, multiplicity family/correction, diagnostics, effect estimate/uncertainty and interpretive limits. Disclose adaptive hypothesis/method/threshold search and separate exploratory discovery from held-out confirmation. **Expected output:** source-bound estimates/diagnostics and explicit eligible/ineligible family decisions. **Validation:** reject or scope-limit invalid design/units, participant pseudoreplication, confounding/leakage, invalid denominator or incompatible harmonization; retain associative interpretation where causality is unsupported. **Effect on research decisions:** prioritize interpretable signals, repair design, change population/representation or challenge an apparent association. **Evaluation:** H13 includes planted signals and nulls, wrong-entity/normalization controls, multiplicity, confounded signals and invalid joins; scientific rejection is measured separately from transport failure.
-
-**EVALUATE_FIRST — H10b owns the capability decision; H13 owns its scientific comparison:** differential expression, signatures/pathways, CNV associations, co-mutation/exclusivity, survival, outliers and candidate prioritization are assessment candidates, not promises to build every family. Use the exact eligible inputs and prerequisites in the table below, then inspect a suitable existing operation and canonical reference through H8–H10 before proposing a wrapper. Compare against a simple appropriate baseline under declared resource limits, with independent expected outputs, changed-input/parameter checks, invalid-input/null controls and held-out or independent-cohort validation where applicable. Report effect/uncertainty, false positives, useful candidate recovery, sensitivity and resource use for the declared scope. Record a build decision only for a demonstrated unmet need and defensible improvement; otherwise record existing-capability adequacy, unavailable prerequisites or a no-build outcome. The result informs representation/method choice, capability acquisition, replication or continued uncertainty; it never grants reusable promotion. Broader multi-omics is evaluated only after simpler aligned analyses establish reliable identity/pairing and useful value; compare any broader method with those simpler analyses before adoption.
-
-| Family assessed when relevant | Minimum scientific prerequisites beyond successful execution | Bounded evaluation / reference |
-| --- | --- | --- |
-| Mutation prevalence/burden, variant filtering/annotation and subgroup contrasts | Eligible assayed participants and duplicate/sample rules; somatic/filter/caller/reference build, allele/transcript/database version; prevalence denominator distinct from variant count; TMB requires callable/capture territory and variant eligibility.  | Compare eligibility/participant counts and burden against a traceable canonical fixture; reject duplicate samples and invalid territory. [Galaxy IUC](https://github.com/galaxyproject/tools-iuc) and [Bioconda](https://github.com/bioconda/bioconda-recipes) are invocation/fixture references. |
-| Differential expression, signatures and pathway/gene-set analysis | Count versus normalized-expression contract, gene/annotation alignment, sample design/replicates and batch covariates; fixed signature weights/scaling or training split; versioned gene sets, tested-gene background, multiplicity and identifier loss.  | **EVALUATE_FIRST:** compare differential-expression effects/ranking and null false positives; signatures need held-out scoring; pathways need background/identifier-loss and gene-set sensitivity checks. Consult [Galaxy IUC](https://github.com/galaxyproject/tools-iuc), [nf-core modules](https://github.com/nf-core/modules) and [Bioconda](https://github.com/bioconda/bioconda-recipes) for selected implementations; [GDC expression semantics](https://docs.gdc.cancer.gov/Data/Bioinformatics_Pipelines/Expression_mRNA_Pipeline/) inform input interpretation. |
-| CNV, CNV-expression and mutation-expression associations | Segment/gene/allele-specific representation, build/overlap/aggregation and threshold rules; assay/sample matching; available purity/ploidy/subtype/batch controls or explicit unadjusted limitations.  | **EVALUATE_FIRST:** compare against simple matched-sample associations; test representation/threshold sensitivity and confounded/null examples. Consult [GDC CNV semantics](https://docs.gdc.cancer.gov/Data/Bioinformatics_Pipelines/CNV_Pipeline/) and selected [Galaxy IUC](https://github.com/galaxyproject/tools-iuc) operations. |
-| Co-mutation/mutual exclusivity, molecular subtype and clinical associations | Assayed gene/participant universe, subgroup definition, mutation burden and population confounding, sparse-table/design diagnostics, multiplicity and no outcome-driven subtype/cutoff selection.  | **EVALUATE_FIRST:** use planted and null gene-pair/subgroup relationships; assess useful recovery, false positives and burden/subtype confounding. Inspect selected operations via [Paper2Agent's source-selection pattern](https://github.com/MengDataAI/Paper2Agent/blob/main/skills/paper2agent/paper2mcp/references/tool-selection-and-wrapping.md). |
-| Survival | Time origin, event/censoring/endpoint definitions, eligible population and event counts, covariates, censoring/model diagnostics and declared handling of competing risks where applicable; no optimized cutpoint presented as confirmation.  | **EVALUATE_FIRST:** compare canonical estimates with censoring-aware reference results; include insufficient events, violated assumptions, leakage and external replication cases. [SPARK](https://github.com/cpath-ukk/SPARK) is a prognostic-workflow reference, not evidence that its pathology analyses transfer to this population. |
-| Cross-cohort replication and multi-omic relationships | Participant/cohort overlap audit, compatible endpoints/harmonization and representations; explicit join keys/cardinality, paired/unpaired units, shared-population coverage and excluded/unmatched cases; discover eligible modality combinations rather than impose a fixed relationship.  | Independent-cohort replication stays part of R8. **EVALUATE_FIRST** for broader multi-omics: require useful gains over simpler aligned analyses, participant-overlap controls and held-out relationship recovery. [Robin](https://github.com/Future-House/robin) informs evidence-driven follow-up; [CellVoyager](https://github.com/zou-group/CellVoyager) informs bounded biological exploration. |
-| Anomaly/outlier detection and candidate prioritization | Appropriate reference population, quality/batch checks, prespecified anomaly definition or held-out training, independent validation and transparent supporting/conflicting signals; priority is a research recommendation, not evidence of a driver or clinical benefit.  | **EVALUATE_FIRST:** recover masked/planted candidates and distinguish assay/batch artifacts from biological outliers; assess held-out ranking, null false positives and supporting/conflicting evidence. [Biomni](https://github.com/snap-stanford/biomni) and [CellVoyager](https://github.com/zou-group/CellVoyager) inform task/evaluation patterns, not cancer-validity claims. |
-
-**Scientific acceptance addition R8 (ADD_TO_PLAN):** **Scientific purpose:** challenge findings instead of accumulating confirmations. **Required input/data:** source-bound initial estimate/uncertainty, hypothesis and alternative explanations, independent-cohort identity/overlap information and available alternative representations/methods. **Method/capability:** declare a bounded follow-up contract before accessing confirmation results: independent replication where feasible, sensitivity analysis, alternative method/representation, appropriate negative/control test or falsification attempt. Name the expected discriminating outcome and failure-to-replicate criteria; report overlap or unknown independence and compatible endpoints explicitly. Hold preprocessing, signature fitting, feature selection and thresholds apart from held-out confirmation; alternative methods on the same participants are robustness checks, not independent cohorts. **Expected output:** replicated, not-replicated, contradictory, sensitivity-dependent or inconclusive outcome only when the declared comparison supports it, plus retained originals and unresolved explanations. **Validation:** compare effect direction/magnitude/uncertainty and design, not merely two significance flags; low power or missing inputs do not prove absence. Replay verifies execution, never independent biological corroboration. **Effect on research decisions:** strengthen a scoped observation, narrow/revise a hypothesis, resolve a contradiction, change cohort or preserve an unresolved alternative. **Evaluation:** H13 includes known overlapping cohorts, reversed/confounded effects, low-information non-replication, method-sensitive signals and successful falsification; R1 retains the outcome and its basis.
-
-**USE_AS_REFERENCE during implementation:** [Galaxy IUC](https://github.com/galaxyproject/tools-iuc), [nf-core modules](https://github.com/nf-core/modules) and [Bioconda recipes](https://github.com/bioconda/bioconda-recipes) for selected scientific operations; [Robin](https://github.com/Future-House/robin) for new-result-driven investigation and [SPARK](https://github.com/cpath-ukk/SPARK) for hypothesis-to-analysis verification. Covers R7/R8; assess transfer to computational genomics rather than importing pathology or wet-lab workflows. [OncoGen.AI](https://www.nature.com/articles/s41698-026-01578-9) remains a potential analysis/report-separation reference; its full methods were inaccessible during review, so inspect them before relying on a specific validation claim.
-
-**Acceptance:** each selected operation has real execution/replay/admission proof and protected design/denominator/missingness behavior; each assessed but ineligible family has explicit current-phase prerequisites. `test_boundaries.py` owns actual operation behavior, persistence covers novel retained/reference contracts, H13 reports source-bound outcomes without claiming clinical utility. H6/H10/H13 jointly deliver this work; no independent additional-science backlog remains.
-
-### H11 — CANCELLED: Railway deployment, cutover and target proof
-
-**Cancellation disposition (2026-10-02, supersedes recording-time instructions below):** no Railway deployment, target-confinement/restart proof, PostgreSQL migration/separate database service, dedicated worker-volume cutover or credential transition is active. H11 has no build/acceptance dependencies and cannot block any phase. Historical provisioning/deployment/local-container observations below are preserved exactly in their demonstrated scope; definitive Railway restart and complete aggregate target enforcement were not established and are not now scheduled. Preserve all original data. Active local resource controls belong to H2/H10, event/delta behavior to H3, and local reconstruction/integration to H15; their requirements are not removed by cancelling deployment.
-
-**Historical local sequence repair (2026-10-02):** Researcher start and BlockDelta end pin sequence high-water, including PostgreSQL rollback gaps; deltas include scientific attempt references. The actual PostgreSQL regression failed before repair with end sequence 3 versus retained sequence 4. After repair the migration/paired/history owner selection passed three tests. Railway was deferred at recording time; further deployment/target proof is now cancelled.
-
-**Historical user-directed local-first verification (2026-10-02):** Railway actions were deferred at recording time; unperformed migration/cutover requirements below are now cancelled. Existing production volume and data are preserved; actual PostgreSQL migration, separate worker volume and post-cutover proof remain unperformed. Local PostgreSQL 17 migration preserved every sequence/envelope/reference, duplicate migration was idempotent, failed batches rolled back, and the worker login could SELECT/INSERT while UPDATE/DELETE/TRUNCATE/DDL were denied (one focused integration test passed). A separate local worker container with a dedicated data volume runs UID/GID 1000 and remains healthy against PostgreSQL; a fixture record retained sequence 1 and its exact payload hash across a worker restart. Both Coder-role and scientific confinement probes passed locally, including denial of database/migration/writer credentials. These are local proofs and do not certify Railway cutover, complete aggregate resource enforcement or scientific utility.
-
-
-**Historical storage separation amendment (2026-10-02; superseded by SQLite-only scope):** user requested a separate database volume/service and selected PostgreSQL. Actual `/data` inspection found 306 MB legacy GDC data, 30 MB legacy runs and only 8.2 MB in new OncoJev; moving the new database alone cannot remove the legacy volume pressure. PostgreSQL service `e6d50d8c-9110-4671-ae84-9cd820568dcf` is provisioned. The adapter retains the same immutable record envelopes/sequence references, mutation-denial triggers and atomic terminal bundles; local SQLite remains supported. Migration compares complete snapshot hashes and preserves every sequence, timestamp, ID and payload before cutover. A real PostgreSQL 17 integration check passed migration identity/deduplication, UPDATE/DELETE/TRUNCATE denial, failed-bundle rollback and post-migration allocation; two existing SQLite atomic/append checks passed. Worker maintenance quiesces writes for migration. The worker uses a separate SELECT/INSERT-only PostgreSQL login: UPDATE, DELETE, TRUNCATE and schema DDL were denied in a real PostgreSQL check; owner migration credentials are temporary and removed before normal operation. Fresh-volume bootstrap prepares only its configured root and drops to UID/GID 1000 before serving. Actual migration, dedicated worker volume, credential separation and post-cutover proof were open at recording time and are now cancelled; the original volume/data remain preserved. These observations do not claim a current PostgreSQL cutover or authorize data deletion.
-
-
-**Historical scoped target observations (2026-10-02; further target proof cancelled):** deployment `1ab75f2f-347a-4a5c-86a5-1684d61758ad` of `ad96dad` succeeded on the authorized existing service. `/health` returns 200; PID 1 runs UID/GID 1000. Actual Railway Linux `6.18.15+deb13-cloud-amd64` passed local scientific secret/peer/app/network/process denial and fresh replay, and both Coder roles passed filesystem/env/descendant denial checks as UID 1000. The verifier now resolves actual durable roots and isolates fixture sentinels. No Docker daemon was required. The first live Researcher closed block `c15c80a9-c0e9-4f08-a16e-6a90e3a843b3` with explicit unresolved/operational limitations, nine retained acquisitions and an owned open MAF, zero measurements/evidence; it did not fabricate a mutation result. API block/dossier identities and acquisition IDs remain unchanged during restart observation; Railway restart API timed out, so definitive restart proof was not established; further Railway restart proof is cancelled. Source-call exhaustion/unsupported endpoint and a reported busy lease are actionable integration findings, not scientific negatives.
-
-**Incomplete target verification at recording time:** aggregate Coder process/disk controls, complete resource ceilings/API responsiveness under heavy science, confirmed target restart recovery and sequential useful live cycles remained unproved. Further target work is cancelled; local aggregate-control/reconstruction/scientific acceptance remains with H2/H3/H10/H13/H15. Scoped boundary observations are retained as PARTIAL deployment verification; the delivered governance code still requires explicit complete Railway service confinement for reusable promotion. That code/scope mismatch is an open question in H9, not an active H11 gate.
-
-
-**Historical predeployment cutover preparation (2026-10-02):** user authorized replacing `ontojev-api` in existing Railway project `9dfd938b-9b23-4077-b3ed-ec386131e17f`, service `7c1aeaa3-de6e-4ba4-a3d8-27fb2f1b13ae`, production environment. Existing 500 MB `/data` volume has about 83 MB free; previous files remain preserved. `ONCOJEV_DATA_ROOT=/data/oncojev` isolates new records and both workspaces on that volume, owned by the nonroot runtime user. Runtime selects confined local-venv science; Railway configuration declares one replica. Six focused role/factory/sandbox tests, architecture and diff checks passed. At preparation time deployment, target confinement, restart persistence and sequential live cycles required actual receipts; the later scoped `ad96dad` deployment observations are retained above. They did not establish definitive restart/full target acceptance. All further cutover/target work is now cancelled.
-
-
-**Historical owners (no active H11 task):** Dockerfile, railway.toml, service/env/config, read-only operational application/API, existing Coder verifier plus scientific backend proof.
-
-1. **Cancelled original deployment requirement:** Keep API and autonomous loop in one service with one Director and one active Researcher; redeploy only for application/software changes. Sequential blocks/dossiers/evidence/hypotheses/memory/verifications/registry revisions/promotions/reviews/exports must not restart normal research.
-2. **Cancelled original mounted-production-storage requirement:** Require/document `ONCOJEV_DB_PATH` on durable mounted storage for production; SQLite plus one worker/volume is the initial design. Verify writable ownership, mount/reconstruction and restart behavior. Expose DB location and configured/verified/unknown persistent-storage state without credentials; a path string alone does not prove persistence. No speculative Postgres migration.
-3. **Cancelled original target-verification requirement:** Run `scripts/verify_coder_container.py` in the actual deployed environment where possible; capture image/runtime/app identity, Landlock ABI≥3, both own workspace writes, app read-only, peer and credential denial, environment scrubbing and descendant confinement. Verify H2/H10 single-worker resource guarantees in that environment: one heavy lease including Coder descendants, process/concurrency ceilings, CPU/memory where enforceable, byte/disk reservations/limits, operational rejection and API/SQLite responsiveness during heavy science. Configuration/venv isolation alone does not prove enforcement; record unsupported controls and fail closed when a required guarantee cannot be enforced. Linux image/local Docker proof is not Railway kernel proof.
-4. **Cancelled original deployment/restart requirement:** Preserve failed-closed deployment on unavailable/failed confinement; record the exact external blocker without silently removing Coder or weakening controls. Reconstruct durable memory/revisions/program state on service restart; interrupted Researcher closes honestly without resumption. Test graceful shutdown and read API visibility while active.
-
-**Cancelled original exit proof (historical, non-operative):** several sequential real service blocks and a dynamic revision transition without restart, durable reopen after process/service reconstruction, honest interruption and credential-free logs/exports. Primary owner `test_persistence.py`; the original Linux/deployed verifier and exact Railway smoke/volume/kernel findings were mandatory target gates. They are cancelled and cannot block active-phase acceptance. Applicable local reconstruction/integration stays in H15 and local execution probes in H10. Historical evidence above is retained; no deployment, migration or database/volume changes follow from this reconciliation.
-
-### H12 — Deterministic oncojevlab exporter and isolated publisher
-
-**Delivered local projection baseline (2026-10-02):** the exporter reads allowed typed records under a pinned immutable DB sequence ceiling, generates only populated JSON/Markdown paths, retains original IDs/source hashes and explicit epistemic/unknown-attainment labels, and excludes private acquired bytes/environments/credentials. Manifest `source_high_water` records the highest selected exportable sequence, not every DB record. The original SQLite store supplies sequence high-water. Existing legacy PostgreSQL code also uses true high-water and serializes sequence assignment through commit so concurrent downstream receipts cannot invalidate a prefix; its recorded proof is preserved under H11 history, but PostgreSQL is excluded from the active storage baseline. Material frontier, terminal block/cycle, capability/engineering proposal and registry-review boundaries retain deduplicated downstream export identities. The separate publisher targets only `asimog/oncojevlab`, preserves dirty external edits, records failures without touching evidence/closure, verifies pushed SHA and caps attempts at three per exported identity. It runs outside all agent/scientific environments; service hooks retain identities without Git credentials or publication.
-
-**Local proof:** `.venv/Scripts/python.exe -m pytest -o addopts='' -q` — 144 passed, one PostgreSQL integration skip, one existing event-loop deprecation warning in 127.66s. The skipped integration was separately run against isolated PostgreSQL 17 — one passed in 6.80s. Focused discovery/reopen/export checks — five passed in 7.79s. Real local Git commits with mocked push/remote transport prove failed-publication preservation, retry/deduplication, secret omission, deterministic pinned bytes and external-edit isolation; this is not live GitHub publication proof. `python -m scripts.export_notebook --database var/local-notebook-proof.sqlite3 --out var/local-notebook-proof` produced a labelled fixture dry-run with manifest hash `c54d116488f75a213c66a79c2d0070479c145150dd33f996589cefff12e868b7`. Architecture and diff checks passed.
-
-**R9 acquisition prerequisite — local batch (2026-10-02):** the existing Researcher literature path now retains actual retrieval time, the reported query total, coverage limitations and deposited abstracts where present. Raw source text/markup is capped at 2048 UTF-8 bytes per work and 8192 per query with explicit truncation; absent material remains absent. Complete literature coverage is never inferred, including empty searches or when every reported hit fits. Historical title-only hashes remain stable and historical retrieval times remain unknown. Focused source/restart checks: six passed, 98 deselected in 7.55s, covering UTF-8 and aggregate bounds, empty searches, retained source material after reopen and legacy identities. No live provider calls or Railway changes were made for this batch. Architecture and diff checks passed.
-
-**R9 derived context — local implementation (2026-10-02):** Researcher-only `assess_literature_context` resolves an owned completed source-paired analysis, its exact measurement/input, declared hypothesis lineage where present, admitted-evidence links and selected retained searches. Related hypothesis attempts remain reference-linked across blocks with explicit projection omissions. Three native questions separate category, claim support and population/assay/endpoint comparability; the versioned annotation policy grants no action or admission authority. Missing complete abstracts and uncertain dimensions remain unknown. Failed/partial native calls preserve unknown and exact operational receipts; incomplete/failed query coverage cannot support tentative potential novelty. Derived memory-v3 at this batch (now extended through H10b to memory-v4), bounded start context, material Director history, BlockDelta and deterministic export retain categories, references, limits and unresolved issues. Export includes native call records. The real local cycle regression exercises all five classified outcomes plus `unknown`, ambiguous/scope-unknown judgments, missing/empty/incomplete searches, provider and acquisition failures, missing-analysis rejection, restart and preserved evidence. Scripted native judgments prove plumbing and abstention only, not literature classification truth.
-
-**Verification:** full local suite — 150 passed, one optional PostgreSQL integration skip and one existing event-loop deprecation warning in 135.71s. After the final handoff-bound/export-summary changes, focused context, large-memory handoff and publication checks — three passed, 63 deselected in 9.70s. The handoff regression was reproduced before repair as a four-second non-termination when context summaries alone exceeded 16 KiB; context summaries now participate in trimming. The batch's historical renderer `oncojevlab-v2` displays tentative category counts and preserves exact JSON basis/native receipts. The subsequent repair below advances the current renderer to `oncojevlab-v3`. Architecture and diff checks passed. No Railway changes or live provider calls; scientific context utility remains unestablished.
-
-**Global receipt export repair (2026-10-02):** renderer `oncojevlab-v3` also writes retained block-free native Jev calls to `program/native-calls.json`, including global frontier/relation and failure receipts. Previously selected global calls advanced the manifest prefix but had no rendered path; block calls remain in their owning block records. Real Director normal/failure regressions both failed before repair on the absent receipt path; after repair, Director and publication boundary checks passed — three passed, 64 deselected in 8.01s. Existing prefix determinism and credential/private-byte redaction remain covered. This is local projection proof, not live notebook publication or semantic utility.
-
-**Remaining acceptance:** independently labelled R9 context/classification evaluation, scientific utility and complete challenge/replication trajectory remain required; the current assessment accepts completed source-paired analyses, not every future operation or untested hypothesis. Export does not establish novelty. Separate publisher setup/live publication remains external proof; H11 production cutover is cancelled and supplies no exporter/publication dependency. H12 stays PARTIAL, and H13/H14 return-pass mechanisms remain required before H15 completion.
-
-**Owner:** deterministic application/export module and `scripts/` entrypoint, persistence export/publication records, service event hooks; external repo `asimog/oncojevlab`.
-
-1. Read only authoritative persisted records at a pinned high-water/revision and render compact populated Markdown/JSON. Director never edits notebook files. Suggested structure: README; program/current-direction, frontier, open-uncertainties, contradictions; blocks/<id>/summary + dossier JSON; hypotheses/current; capabilities/current, gaps, revisions, proposals; program-reviews; engineering/proposals. Generate useful populated paths only.
-2. Render BlockDelta, relation/contradiction context, capability gaps/revisions/proposals, program reviews and engineering proposals with authoritative IDs, basis/version/limitations. Label evidence, measurement, hypothesis, semantic judgment, Director decision and operational failure distinctly; keep objective attainment unknown where unestablished. Stable ordering/formatting and record-derived timestamps make identical DB snapshots produce identical bytes.
-3. Publication is a downstream operation using separate configured Git credentials outside all Coder/scientific environments. Commit at block completion, material global-frontier update/new contradiction, accepted revision/capability proposal/program review/engineering proposal/mission change, with templated messages; skip no-op content, never commit every model turn. Persist deterministic export and publication identities independently of scientific finalization.
-4. GitHub/setup/credential failure records a publication failure, retains export/DB state and cannot roll back evidence or fail block closure. Absent setup is an external requirement: finish/review exporter and report it. Notebook edits are never ingested as scientific truth. Bound retry attempts and deduplicate by exported state/event boundary.
-
-**Scientific acceptance addition R9 (ADD_TO_PLAN):** **Scientific purpose:** contextualize findings without laundering literature into evidence or claiming novelty from an empty search. **Required input/data:** source-bound observation/hypothesis and R1 research history, bounded retained literature queries/results with source/time/coverage, exact population/assay/endpoint and contrary reports. **Method/capability:** derive a qualified context assessment distinguishing known result, rediscovery, known mechanism in a new context, contradictory finding and potentially novel computational observation; unresolved classification remains unknown. Perform context retrieval inside the existing Researcher acquisition path and persist its basis for derived memory/export; Director reads bounded context without new acquisition authority. **Expected output:** claim/context/evidence links, replication/challenge history, literature coverage limits and open uncertainties in the deterministic H12 projection. **Validation:** original measurements/admission never change because of literature or semantic agreement; context novelty is tentative, not proof of novelty, causality or clinical actionability. **Effect on research decisions:** favor replication, contextual extension, contradiction resolution or further novelty search with explicit uncertainty. **Evaluation:** H13 uses masked rediscovery, new-context and contrary-literature cases, including failed/incomplete literature searches; H12 checks faithful category/ref rendering rather than novelty truth.
-
-**USE_AS_REFERENCE during implementation:** [Robin](https://github.com/Future-House/robin) for linking findings to subsequent investigations; [OncoJevLab](https://github.com/asimog/oncojevlab) for the separate human-readable research projection already planned in H12. Literature/context assessments retain their own status and coverage limits.
-
-**Exit proof:** same persisted snapshot yields identical bytes, all claims trace to typed IDs, secrets absent, external edits cannot change scientific records, failed publish leaves closure/evidence unchanged and defined boundaries deduplicate commits. Primary owner `test_persistence.py` at exporter/publication service boundary; add a distinct owning export test file only if needed for that new public contract. Run focused tests, local exporter dry-run, architecture/diff checks; external publication proof separately recorded when configured.
-
-### H13 — Labelled semantic/scientific utility evaluations
-
-**Delivered retained-representation comparison (2026-10-02):** `src/evals/representation.py` compares the production source-input checks, versioned projection/native Jev receipt and frontier policy on the same owned alternatives. Label/case/split/basis data stay outside provider payloads and runtime admission. Reports retain dataset/input hashes, tuning/held-out split, per-candidate checks/actions, retrieval/input-gate/retained recall, missed/usefully deferred alternatives, unresolved inputs, failures and actual resource use; scientific utility and cost remain unknown. Provider or budget failures fall back through the deterministic input gate, so absent/incompatible inputs cannot become retained execution candidates.
-
-**Local result:** `python -m scripts.evaluate_representation --output evals/representation/results/input-contracts-local-v1.json` compared six generated contract cases (two tuning, four held-out) under deterministic and fixture Jev-assisted conditions. All labelled useful inputs were retained in both conditions; no invalid input was retained. Thirteen fixture semantic receipts retain requested/resolved model, projection/question/policy identity and distributions; there were no operational failures in this run. The separate failed-provider/unresolved-input regression passed (one test in 5.82s), preserving eligible alternatives, deferring missing units and proving label isolation and no evidence admission. The corpus and captured output are evaluation artifacts, not scientific records. This supplies H6 input-contract evidence only; supplied nested field mappings do not prove automatic schema discovery or live semantic recall.
-
-**Selection entrypoint proof:** `uv run --frozen python scripts/evaluate_selection.py --output evals/selection/results/selection-local-v1.json` also passed locally. All four nonempty useful-label sets had retrieval/retained recall 1.0 in both deterministic/fixture-assisted conditions; unimplemented survival retains an unknown denominator, and no scientific utility is claimed. The recorded artifact covers the earlier 108-descriptor snapshot, not the audit HEAD's 109-descriptor seed catalogue. This is catalogue selection proof, not operation execution or promotion utility; no rerun over the new descriptor or scientific usefulness is claimed.
-
-**Remaining acceptance:** independently reviewed scientific labels, masked findings/controls/replication and actual validated operations; Reasoner/full-system matched-budget comparisons; live repeated semantic measurements and H4/H7/H9/H10/H14 return gates. No model winner, scientific validity or clinical effectiveness is inferred from this tiny generated corpus. H13 remains PARTIAL.
-
-**Owner:** `src/evals/{models,corpus,selection,representation,harness}.py`, `scripts/{evaluate_selection,evaluate_representation}.py`, existing `evals/jev/` guidance and eval receipts.
-
-1. Start cases as each phase ships: static OncoLab and bio.tools selection, semantic mismatch, representation sufficiency/GDC assets, hypothesis duplicates vs independent replication/test alignment, contradiction vs population differences, cross-block relations, memory relevance/actionable uncertainty and capability-gap grouping. Labels are evaluation data and never runtime evidence.
-2. Retain dataset/case identity, retrieval/projection/question/policy versions, requested/resolved models, native distributions, deterministic inputs/retained frontier, failures and resource use. Compare deterministic retrieval/policy; deterministic+Reasoner where appropriate; deterministic+Jev; current full Director/Researcher system with comparable input/allowance accounting and explicit resource differences.
-3. Report retrieval/external discovery/representation recall, suitability retention, duplicate suppression, replication preservation, hypothesis alignment, relationship recovery, contradiction detection, memory relevance, important-alternative retention, global diversity/duplicate-block suppression, explicitly recorded uncertainty resolution, unique source-bound outcomes, operational failures, elapsed/resource use and Jev failure fallback. No universal research-quality score or unsupported winner from one tiny live run.
-4. Benchmark search scale before FTS/ontology/embeddings; measure semantic instability before calibration/self-consistency/Autoresearch. Distinguish labelled semantic metrics from scientific validity and clinical effectiveness. Record cases missed before/after, retained alternatives and limits, not just aggregate means. Continue other conditions after failure with partial results and honest receipts.
-
-5. Supply and record gate evidence for every integrated batch: multi-domain generator contracts/recall (H4a/H14), hypothesis duplication/alignment failures (H4b), available-but-missed representations/schema mappings (H6a), scan/FTS/vocabulary/embedding scale/coverage comparisons (H7a), repeated validated promotion utility (H9a), locked reinstall/replay and operation-specific outcomes (H10a/H10b), and repeated fixed-input semantic instability with budgeted calibration comparisons (H14a). Return results to those phases for their implementation/acceptance decisions before H15; an evaluation report alone does not deliver the dependent mechanism.
-
-**Scientific acceptance addition R10 (ADD_TO_PLAN):** **Scientific purpose:** measure research quality and Jev's added value beyond metadata routing. **Required input/data:** versioned held-out case sets with independent labels/reference results, exact data/software identities, masked known findings, planted signals/nulls, replication cohort overlap records and fixed comparable resource allowances. **Method/capability:** extend existing evaluations with R1-R9 behavior and bounded end-to-end hypothesis -> representation -> method -> acquired/installed operation -> validated result -> challenge -> next decision cases. Include masked rediscovery with answer-bearing documents/labels withheld from runtime, cross-cohort replication and failure, novel planted-candidate recovery, contradictory evidence, invalid analysis and capability acquisition from canonical examples. Distinguish new-to-the-system/recovered injected signals from real-world novelty; record pretrained-model/literature leakage limits. Predeclare useful-candidate sets, validity labels, primary metrics, resource limits and acceptable tradeoffs before running; keep tuning and held-out cases separate. **Expected output:** per-case retrieval/retention and valid source-bound outcome records, duplicate suppression with distinct-alternative retention, method/representation/capability suitability, invalid-analysis rejection, control false positives, replication/contradiction recovery, novelty overstatement and meaningful subsequent decisions. **Validation:** deterministic fixtures prove contracts only; independent expected values and suitably reviewed scientific labels establish benchmark truth, not LLM self-scores. Repeat stochastic conditions/seeds where applicable, report sample sizes and uncertainty, and preserve provider failures/unknown cost separately. **Effect on research decisions:** identify whether a scientific capability or semantic policy is worth adoption; a test pass or one anecdotal hit is insufficient. **Evaluation:** compare deterministic, Reasoner-assisted, Jev-assisted and full-system conditions already specified, using the same available inputs/candidate and wall/resource budgets where possible and disclosing differences; report marginal Jev benefit and cost, useful recall, validity and challenge outcomes without a universal reward score.
-
-**EVALUATE_FIRST reporting:** consume H10b's family-specific comparisons through the existing evaluation harness. Preserve per-family inputs/prerequisites, baseline and candidate operation identity, reference outputs, validity/recall/false-positive/resource results, uncertainty and the build/no-build decision. [CellVoyager](https://github.com/zou-group/CellVoyager), [Paper2Agent](https://github.com/MengDataAI/Paper2Agent) and [Biomni](https://github.com/snap-stanford/biomni) provide evaluation patterns. These reports support the existing phase exit proofs; they do not add a second requirement checklist or establish clinical utility.
-
-**USE_AS_REFERENCE during implementation:** [CellVoyager](https://github.com/zou-group/CellVoyager) for bounded exploration and agent/baseline evaluation; [Biomni](https://github.com/snap-stanford/biomni) for capability-oriented benchmarks; [Paper2Agent](https://github.com/MengDataAI/Paper2Agent) for operation fidelity; [SPARK](https://github.com/cpath-ukk/SPARK) and [Robin](https://github.com/Future-House/robin) for idea-to-analysis and follow-up cases. Use scientific outcomes and independent labels, not another system's success claims.
-
-**Exit proof:** labelled cases reproducibly execute real retrieval→projection→policy and end-to-end fresh conditions, report versioned/resources/failure-aware outcomes and never contaminate admission. Primary owner `test_evaluation.py`; exact live/fixture evaluation outputs retained as evaluation artifacts. Run owning tests and `uv run python scripts/evaluate_selection.py` with documented available cases/arguments; full-system evaluation entrypoint follows actual harness, not an invented command. Utility conclusions require adequate data and limitations, not test pass counts.
-
-### H14 — Frontier policy audit, shared generator contract and bounded calibration
-
-**Owner:** `src/jev/frontier.py` and every production caller in runtime semantic/contracts; versioned policy config/receipts and H13 cases.
-
-**Caller reconciliation (2026-10-02):** the sole production `decide()` caller is Researcher `evaluate_candidate` in `runtime/pydantic_ai/contracts.py`. It retains the necessary relevance/action Choice-aware contract under explicit `CandidateFrontierPolicy`, version `candidate-frontier-v1`, now supplied explicitly to every started/prepared/terminal receipt. The sole production `interpret()` dispatcher is `semantic.measure_async`: its default remains multidimensional `FrontierPolicy`, version `semantic-frontier-v2`; Director global tools inject `GlobalFrontierPolicy`, version `global-frontier-policy-v1`, and literature context injects its annotation policy. The two local contracts no longer share an ambiguously versioned class. Existing cutoffs, distributions, alternatives and historical receipts are unchanged; this cleanup is not calibration or a scientific-method experiment. Director instructions now distinguish allocation from supervision/post-block review, yield to Python event waiting and omit obsolete future-pause advice.
-
-**Local proof:** existing conservative Choice, real Researcher/Director CodeMode delegation and multidimensional method/representation/hypothesis lineage cases — three passed, 36 deselected in 6.01s. Architecture and diff checks passed. H14 remains PARTIAL: H4/H7 delivered-generator and H6 remaining representation-generation multi-domain acceptance and H13 repeated fixed-input scientific/semantic labels, instability/resource measurements and conditional calibration/Autoresearch disposition remain required. No utility or measured no-change conclusion is inferred from preserved behavior.
-
-1. Preserve the delivered caller reconciliation above: sole candidate `evaluate_candidate` caller uses `CandidateFrontierPolicy.decide` with explicit `candidate-frontier-v1`; multidimensional `semantic.measure_async` dispatches the default `FrontierPolicy.interpret` or injected global/literature policies. Historical H0 inventory remains true at its audited revision. Caller migration/splitting is no longer an open implementation task; independent comparative/utility acceptance remains below. Do not collapse local/global policy owners.
-2. Treat historical .2/.25/.4–.6/.5 cutoffs as context-specific software policy, not scientific constants. Retain distribution/uncertainty/alternatives/failure fallback and historical receipt versions. Remove dead competing paths only after real callers are migrated and independent regression/eval proof passes.
-3. Complete H4a's D3 multi-domain generator comparison using H4 global and H7.2 method generators, after the needed H6 representation generator and H13 comparison cases actually exist. H6a/H6.2 assessment/parsing is not itself that generator. When its shared-contract/recall trigger passes, extract and use the smallest tested production generator interface; otherwise retain the domain contracts and record the measured rejection. Global/local scientific scope, authority, policy and stop semantics remain distinct.
-4. Execute the D5 experiment batch below using H13 instability/recall/resource evidence. Preserve scientific-method experiments separately from cleanup commits; no automatic live question/policy rewrites or autonomous self-promotion.
-
-**Scientific acceptance addition R11 (ADD_TO_PLAN):** **Scientific purpose:** test prior-art hypothesis/reflection/diversity and bounded-search ideas without reopening delivered H4 baseline batches for non-defects; H4's remaining acceptance stays PARTIAL. **Required input/data:** H13 labelled paraphrase/overlap, genuinely different explanations/tests/populations, new-evidence reopening, contradiction and replication cases with fixed budgets. **Method/capability:** compare the current H4 baseline with offline variants for reflection, proximity/diversity and explicit limits on alternatives, analysis/debug attempts and per-branch resources, using existing policy/evaluation owners. Preserve discarded alternatives and rationale; exhaustion of one investigation/branch ends bounded local work or yields a continuation, never semantically ends the research program. **Expected output:** measured no-change decision or scoped evaluation-supported engineering proposal/policy variant. **Validation:** assess useful-hypothesis recall, false duplicate merges, alternative retention, next-test alignment and failure fallback; self-rated novelty/Elo or longer reasoning is not scientific truth. **Effect on research decisions:** adopt only a demonstrated improvement under existing governance; Director authority and global/local scope remain unchanged. **Evaluation:** H13/H14 compare matched-budget baseline/variants and resources, including whether extra reflection/branching harms recall; calibration continues to require H14a's measured-instability gate.
-
-**USE_AS_REFERENCE during implementation:** [SPARK](https://github.com/cpath-ukk/SPARK) for idea identity/refinement; [Google AI co-scientist](https://research.google/blog/accelerating-scientific-breakthroughs-with-an-ai-co-scientist/) for reflection/proximity/diversity; [AI Scientist v2](https://github.com/SakanaAI/AI-Scientist-v2) for bounded alternatives and search/debug budgets. Compare these patterns offline against H4 before adopting a justified change; do not copy their agent architectures.
-
-**Exit proof:** exact caller ownership documented, old receipt interpretation remains reconstructable, relevant local/global behaviors survive migration and labelled retention/fallback/calibration results support policy changes. Primary owner existing `test_boundaries.py` semantic cases, evaluation owner `test_evaluation.py`; do not add source-inventory tests. Run focused files/evals and architecture/diff checks.
-
-#### H14a — Integrated D5: semantic calibration, self-consistency and Autoresearch
-
-**Trigger:** Measured instability justifies the additional budget.
-
-1. H13 repeats fixed-input, versioned semantic cases and measures distribution/retention disagreement, calibration on labelled outcomes, useful-alternative loss and elapsed/token/question/cost use. Separate operational provider failures from semantic variation, keep unknown reported cost unknown, and define the extra experiment allowance explicitly before running it.
-2. Where instability meets that documented gate, run bounded offline calibration or self-consistency comparisons against the deterministic/single-measurement baseline. Preserve native distributions and fallback; measure whether the change reduces instability or useful-candidate loss within its allowance rather than averaging uncertainty away or selecting a winner from one tiny run.
-3. Under the same measured-instability and explicit resource-allowance gate as step 2, implement a bounded Autoresearch-style evaluation loop only for approved experiment variants such as projection/question/policy candidates on the labelled corpus. Persist variant/version/model/receipt/resource/result identity and produce an EngineeringProposal for any adopted production change. No self-reward score, automatic production-source/question/policy rewrite, evidence admission or Jev self-promotion is permitted.
-4. Adopt only a versioned, behavior-tested, evaluation-supported change through ordinary reviewed engineering. If instability is absent or extra calls do not justify their cost, record the measured no-change decision here with the covered cases and limits. The experiment/gate result is required in H14, not a separate future Autoresearch program.
-
-**Acceptance:** repeated-case evaluation and budget accounting are reproducible; candidate recall, alternatives, operational fallback and global/local policy boundaries remain protected. `test_evaluation.py` owns experiment/resource/failure reporting; existing boundary tests own any adopted policy behavior. No test pass or calibration score establishes scientific or clinical effectiveness.
-
-### H15 — Reconcile implemented documentation and verify the full system
-
-**Owner:** existing AGENTS/README/architecture/constitution/Jev/capability/frontend and module READMEs, this tracker; full integration paths.
-
-1. As implementation lands, replace target labels only where runtime proof exists. Reconcile instructions/roles/tool names/config/backends/deployment with real behavior, preserve historical F0–F6 evidence. No duplicate architecture or second live status tracker. Verify each active integrated D1–D8 batch's phase-owned implementation and gate outcome; H11 deployment/target proof and migration-based storage changes are cancelled, excluded from completion and never converted into missing-proof blockers; change completion only on actual evidence, never restore a standalone deferred-work list.
-2. At final implementation integration run the full applicable suite with Windows `.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts=''`, architecture checker and `git diff --check` after minimal focused batches. Linux-only execution/confinement runs directly in verified WSL2, with no Docker testing. This documentation-only audit uses link/scope/evidence/traceability checks instead of rerunning the historical suite. For any UI changes run its existing type/build/tests and real read-only browser flow; render operational work state/run outcome/revision/history/export/confinement honestly without moving orchestration/admission into `web/`.
-3. Exercise service start→global frontier→allocate one block/start Researcher→bounded independent Director work→event wait when useful work ends→Researcher terminal event→terminal persistence/BlockDelta/new memory→global frontier revalidation/post-block review→next allocation→repeat continuously. No model polling, artificial minimum duration or semantic program termination; operational inability remains separate. Exercise early Director/Researcher completion, unchanged future defaults after one fast block, resource lease/preflight/telemetry, history observation→same registry revision, governed registry update→next pinned revision/history basis, GDC selected bytes→exploratory experiment→existing replay/Science admission, separate promotion-grade qualification→H9 acceptance, export→publication success/failure and shutdown/reconstruction→honest interruption. Capture local contract checks, live smokes, evaluations and direct WSL2 confinement checks separately; preserve historical deployed observations. Flag unavailable active-scope external proof, with no H11 deployment or cutover dependency.
-4. Report the implemented system: starting/ending HEAD, commits/batches/files, preserved F contracts, Director before/after and harness/async behavior, global Jev/memory/relations, complete OncoLab layer/revision/discovery/promotion account, D1–D8 changes, execution/backend/environment identity, original SQLite/local confinement status and H11 cancellation/historical observations, exporter/publication failure semantics, exact tests/smokes/evals/results/utility limits, remaining active science/capability/local-control gaps and known code/scope mismatches, deferrals and prompt-vs-current discrepancies. Never claim completion from document/type/fixture existence.
-
-**Scientific acceptance addition R12 (ADD_TO_PLAN):** **Scientific purpose:** ensure the amended scientific contracts compose into useful research rather than remaining isolated descriptors. **Required input/data:** delivered R1-R11 records and H13/H14 outcomes, exact retained data/software/registry/history bases and applicable local H2/H3/H10 operational proof. **Method/capability:** exercise at least one eligible computational-cancer question through scientific need -> representation alternatives -> method selection -> controlled validated analysis -> explicit challenge/replication or documented unavailable prerequisite -> structured memory -> Director continuation -> H12 export. Include a misleading/invalid alternative and a contradiction or inconclusive outcome; no fixed source/modality pipeline is mandated. **Expected output:** complete source-linked scientific trajectory and exact acceptance disposition for each addition. **Validation:** verify decisions depend on actual scientific outputs and unresolved limitations, not labels, prose, execution success or export presence; all existing authority/admission boundaries remain protected. **Effect on research decisions:** demonstrate defensible continuation and accumulated usable knowledge. **Evaluation:** report local contract proof, live connectivity, measured scientific utility and current WSL2 local confinement separately, preserving historical target observations; unmet data/utility/required-local-control gates remain explicit and prevent unsupported completion claims.
-
-**Exit proof:** the phase exit proofs establish delivered behavior and remaining limits. External blockers are explicit and not reported as passing; the final stage stays incomplete when required active-scope scientific/local/integration acceptance is missing. Cancelled H11 deployment/target proof and PostgreSQL cutover cannot prevent completion. Documentation checks establish document quality, not implementation.
-
-## 5. Remaining external setup
-
-External setup to verify during implementation: current direct WSL2 Python/Landlock/runtime support for Linux-only execution and required local controls; supported scientific package/network resources; current bio.tools/GDC/metadata API behavior and selected access/licence facts; `asimog/oncojevlab` repository and separate publisher credentials; live model/data connectivity and sufficient labelled evaluation cases. Railway/volume/target setup and PostgreSQL cutover are cancelled, with no active dependency. Record unavailable active-scope setup as an external blocker in the relevant phase exit proof; continue independent local work.
-
-**Open questions at audit HEAD `3c456ab…`, with current local-baseline dispositions:**
-
-1. **H9 local governance contract — resolved definition:** `scoped-governance-v2-local` now requires `local-verification-v1` instead of Railway proof. Actual complete local-control proof and qualified accepted reuse remain open; the contract alone does not establish either.
-2. **SQLite-only runtime compliance — resolved:** service/export use `SqliteResearchStore` directly; PostgreSQL selection, migration tooling and dependencies are removed. Original path and records remain intact; the obsolete selector cannot redirect startup.
-3. **Original data completeness:** does the existing local original SQLite file contain every historical record needed for the baseline, or is required history only on the preserved worker/PostgreSQL? File/default identity and read-only local integrity/counts are verified in the baseline batch above; equality with preserved remote history is unknown. No remote access, migration or merge occurred; recovery remains an explicit question unless needed.
-4. **Composed current-HEAD acceptance:** no single recorded result proves pins, STAR parsing, need-bound methods, declared follow-up/comparison, continuation, next selection and export together. Existing owning regressions prove their stated slices; full scientific/decision utility and exact composed basis remain active phase acceptance.
-5. **Current WSL2 enforcement — Coder slice verified:** the native WSL2 environment, Coder filesystem/credential/descendant controls and aggregate process/CPU/memory/disk/cancellation controls have direct proof above. Scientific clone/bootstrap/install aggregate integration and the complete local-verification receipt remain open. Historical probes retain their exact basis; Windows fixtures cannot certify Linux controls. No Docker or target proof is required.
-6. **Known code descriptions:** local-baseline delivery corrects `SandboxConfig` and `software.github-scientific`. BlockDelta's stale exact-pins limitation remains for the composed lifecycle batch; actual pin behavior stays protected.
-
-Historical planning verification and the complete H0 audit remain in Git history
-([planning](https://github.com/asimog/oncojev/commit/6e292890698ebd58ca35c0ad7120f934d29ef551),
-[H0](https://github.com/asimog/oncojev/commit/b71d2554e2c8bfaab4f0d254d7bb79198f6d4e81)).
-Completed phases retain compact recording-time delivery evidence; cancelled
-requirements remain explicitly historical/non-operative. Only active-scope upcoming acceptance is a current work order.
+# Implementation Plan
+
+## Task 1 — Bound installed Science and account for resources
+
+Goal: Enforce resource limits on installed scientific computations and report their
+actual consumption through the service and BlockDelta.
+
+Scope: Installed Science, parsing and figures currently run through detached thread
+work under a heavy-work lease, without a process-family quota. Put expensive work
+behind enforceable CPU, memory, process, disk and cancellation controls while keeping
+state, charging and persistence with the service owner. Populate observed workspace,
+peak workspace and CPU accounting from measurements; retain unknowns where unavailable.
+Reuse the existing governor, service-wide budgets and external-execution controls.
+
+Owning code: `src/runtime/pydantic_ai/contracts.py`,
+`src/runtime/pydantic_ai/scientific_tools.py`, `src/runtime/resources.py`,
+`src/runtime/process.py`, `src/science/execution.py`, `src/dossier/delta.py`,
+`src/config/models.py`, `config/runtime.yaml`;
+`tests/invariants/test_persistence.py`, `tests/invariants/test_live_mode.py`.
+
+Done when: Real installed computations obey their declared limits; success, failure,
+cancellation and shutdown drain work before releasing ownership. Composed receipts
+and Delta resolve measured usage, preserve consumed allowances across blocks and
+show that busy Director scratch cannot interrupt healthy scientific work.
+
+## Task 2 — Qualify local execution on WSL2
+
+Goal: Produce one complete, current-basis local execution qualification record that
+governance can consume.
+
+Scope: Exercise both Coder roles, external scientific preparation/install/test/
+execution/replay and installed Science directly on native WSL2 storage. Assemble
+`local-verification-v1` from actual observations of filesystem, credential, network,
+descendant, resource, download, lease and cancellation controls. Installed Science
+must first have enforceable resource limits. Keep exact application, code/worktree,
+configuration and environment identities; setup-helper caches are not qualification.
+Extend receipt production and consumption together: the current gate checks the
+application content identity and declared WSL2/control fields, but does not compare
+an exact current environment identity. Bind and check the measured interpreter,
+dependencies and effective control configuration so environment drift invalidates proof.
+
+Owning code: `src/runtime/verification.py`, `src/runtime/process.py`,
+`src/science/local.py`, `scripts/verify_coder_container.py`,
+`scripts/verify_coder_resources.py`, `scripts/verify_local_science.py`,
+`scripts/verify_science_resources.py`, `scripts/verify_native.py`,
+`src/persistence/records.py`; `tests/invariants/test_persistence.py`.
+
+Done when: A production writer retains one complete record and supporting native
+observations on the same basis. Missing controls, stale identity, expansion/disk
+failure and unconfirmed cleanup fail honestly; partial or historical records cannot
+satisfy the gate, including a changed environment with unchanged application content.
+Windows fixtures and provider connectivity are reported separately.
+
+## Task 3 — Build independent scientific and semantic evaluations
+
+Goal: Measure scientific validity and the marginal benefit and cost of semantic
+assistance beyond the existing generated contract cases.
+
+Scope: Extend the corpus and fresh-condition harness with independently reviewed
+labels/reference outputs for representation and method fit, relation distinctions,
+failed/inconclusive memory retrieval, duplicate-work avoidance, new-evidence
+reopening, literature rediscovery/new-context/contrary reports, acquisition fidelity,
+invalid designs, planted signals/nulls and challenge outcomes. Compare deterministic,
+Reasoner-assisted, Jev-assisted and full-system conditions on matched inputs and
+budgets. Withhold answer-bearing labels/documents; separate tuning and held-out
+cases, repeat stochastic measurements and disclose leakage and unavailable costs.
+Add source-bound validity, false-positive, alternative-recall, uncertainty-resolution
+and verified replication metrics; replication IDs alone are not corroboration.
+Produce candidate/scope-bound `utility_evaluation` records for measured reusable
+candidates, without admitting benchmark labels as scientific evidence. Own the shared
+corpus, comparison harness and metrics; capability-specific evaluations retain their
+own scientific scope and completion proof. Reuse suitable cases/results while keeping
+ability-level acceptance distinct from complete-lab utility.
+
+Owning code: `src/evals/`, `evals/`, `scripts/evaluate_selection.py`,
+`scripts/evaluate_representation.py`, `src/persistence/records.py`;
+`tests/invariants/test_evaluation.py`.
+
+Done when: A bounded, versioned scientific corpus runs through the actual consumers
+and fresh conditions, with per-case results, independent label basis, native model/
+policy identity, resource accounting, failures and uncertainty. Reports distinguish
+contract correctness, scientific utility and connectivity; scoped utility records
+resolve their measured candidate and retained comparison. No improvement is a valid
+measured result, not a reason to manufacture a winner.
+
+## Task 4 — Complete investigation lifecycle and regeneration
+
+Goal: Make retained hypotheses, relations and prerequisite gaps usable for selecting
+scientifically distinct future investigations.
+
+Scope: Extend the observable portfolio with source-linked blocked, newly testable,
+deferred and scientifically resolved transitions. Generate or regenerate candidates
+from retained relations, capability changes, new representations, underexplored
+mission areas and previously deferred work. Preserve stable identities and both
+sides of contradictions, distinguishing population/design differences from actual
+conflicts and identifying a test that could discriminate them. Scientific resolution
+requires supporting admitted results; allocation completion and semantic agreement
+are insufficient. Existing frontier preparation, mission continuity and revalidation
+remain the foundation.
+
+Owning code: `src/director/frontier.py`, `src/director/review.py`,
+`src/runtime/pydantic_ai/global_tools.py`, `src/memory/models.py`,
+`src/memory/service.py`, `src/jev/questions.py`, `src/persistence/records.py`;
+`tests/invariants/test_persistence.py`, `tests/invariants/test_boundaries.py`.
+
+Done when: Real tools recover a deferred/blocked investigation after a relevant
+basis change, retain distinct tests and independent replication, and reconstruct
+lifecycle/relation lineage after reopen. Independent cases assess resolvable conflict,
+useful next-test selection and missed alternatives; unknown resolution stays unknown.
+
+## Task 5 — Generate usable representation alternatives
+
+Goal: Generate source-backed input alternatives beyond the existing owned-input gate
+and single-file STAR gene parser.
+
+Scope: For concrete scientific needs, discover bounded alternatives across available
+mutation, CNV, expression, clinical and survival assets. Describe actual schemas,
+entity units, identifiers/builds, normalization, sample/case relationships, coverage
+and missingness. Add only needed parsers, sample/cohort matrices, joins or transforms
+with validated keys/cardinality and explicit information loss. Mark alternatives as
+directly available, derivable by a supported operation, inaccessible or unmeasured.
+When labelled cases expose available-but-missed inputs, repair the responsible
+retrieval/grouping/schema mapping and measure recovery, including low lexical overlap.
+
+Owning code: `src/sources/representation.py`, `src/sources/public.py`,
+`src/science/representation.py`, `src/runtime/pydantic_ai/search_tools.py`,
+`src/runtime/pydantic_ai/scientific_tools.py`, `src/oncolab/methods.py`,
+`src/evals/representation.py`; `tests/invariants/test_boundaries.py`,
+`tests/invariants/test_persistence.py`.
+
+Done when: The Researcher generates actual owned/retrievable alternatives for the
+selected needs, with exact source and transform lineage. Independent comparisons
+show useful retention and honest omissions; incompatible units, incomplete pairing,
+unsupported derivation and metadata masquerading as assay data cannot pass readiness.
+
+## Task 6 — Bind scientific operations to canonical references
+
+Goal: Turn discovered software into a scoped operation with independently established
+behavior and scientific applicability.
+
+Scope: Inspect the smallest relevant pinned implementation, callable/CLI, documentation
+and canonical examples for a concrete capability gap. Inspect targeted Galaxy,
+nf-core or Bioconda invocation/fixture material when relevant. Retain exact inputs,
+preprocessing, parameters/defaults, units, assumptions, licence/source binding and
+expected outputs. Build the missing reference-validation producer: compare controlled
+execution with independently obtained upstream results on canonical, changed-input/
+parameter and invalid-input cases, using predeclared tolerances and scope diagnostics.
+Unavailable runnable references leave qualification unsupported.
+
+Owning code: `src/oncolab/enrichment.py`, `src/oncolab/discovery.py`,
+`src/science/local.py`, `src/science/sandbox.py`, `src/science/models.py`,
+`src/runtime/pydantic_ai/scientific_tools.py`, `src/persistence/records.py`;
+`tests/invariants/test_boundaries.py`, `tests/invariants/test_persistence.py`.
+
+Done when: A real candidate has a durable, candidate/scope-bound `reference_validation`
+record resolving its reference material and comparisons, with adverse-case failures
+retained. Wrapper-derived expectations, ignored parameters and faithfully reproduced
+but scientifically unsuitable behavior cannot qualify. Replay alone is insufficient.
+
+## Task 7 — Qualify recoverable dependency environments
+
+Goal: Establish recoverable fresh installation and independent replay for reusable
+scientific operations.
+
+Scope: Trigger this work when a method is selected for reusable promotion or measured
+repeatability/dependency drift requires it. Retain a supported lockfile or resolved
+transitive package set, exact recoverable bytes/hashes, platform/Python constraints
+and installer/runtime identity. Use existing packaging tools and isolated experiment
+environments. Build the environment-qualification producer and exercise drift,
+conflicting pins, unavailable packages and corruption; a freeze hash alone is not a lock.
+
+Owning code: `src/science/local.py`, `src/science/sandbox.py`,
+`src/science/models.py`, `src/oncolab/governance.py`, `src/persistence/records.py`;
+`tests/invariants/test_boundaries.py`, `tests/invariants/test_persistence.py`.
+
+Done when: A triggered candidate reinstalls independently and replays exact owned
+inputs/parameters with matching declared environment/output identity. Durable
+`environment_qualification` records bind candidate and scope to the actual proof.
+Failed recovery blocks reusable status while retaining truthful exploratory results.
+
+## Task 8 — Add justified oncology operations
+
+Goal: Add a bounded set of scientific tools that answer demonstrated research needs
+with defensible inputs and comparisons.
+
+Scope: Trigger selection from a recorded uncertainty/capability gap and accessible
+eligible representations. Before implementation, freeze a finite list of named tools
+and supported operations in this feature spec, with the originating need, exact
+inputs, expected outputs, upstream implementation and build/no-build reason for each.
+Only those tool contracts and their required parsers/transforms are in scope; do not
+assess or implement whole oncology operation families. Candidate operations may cover
+mutation/annotation/burden/TMB, expression/signature/pathway, CNV association,
+co-mutation/subtype/clinical, survival, aligned cross-cohort/multi-omic or prioritization
+needs. Freeze estimand, design, participants, denominators, transformations,
+covariates, missingness, multiplicity, diagnostics and interpretation before inspecting
+results. TMB needs callable territory; survival needs time/event/censoring definitions;
+aligned assays need audited joins; multi-omic tools need comparison with a simpler
+aligned analysis. Select supported implementations and independent canonical baselines;
+evaluate need and scientific benefit before adding a wrapper. Carry each tool's
+outcomes into existing attempt, memory and literature-context
+consumers where applicable.
+
+Owning code: `src/science/`, `src/sources/`, `src/oncolab/catalogue.py`,
+`src/oncolab/execution.py`, `src/runtime/pydantic_ai/scientific_tools.py`,
+`src/runtime/pydantic_ai/context_tools.py`, `src/memory/`, `src/evals/`;
+`tests/invariants/test_boundaries.py`, `tests/invariants/test_persistence.py`.
+
+Done when: Every named tool in the frozen selection has its scoped build/no-build
+result. Each built tool has a declared route/input/output contract, controlled
+execution, replay, validator/admission and independently reviewed valid/invalid/null/
+changed-input proof. A no-build result identifies the unavailable prerequisite or
+adequate existing tool. Completion covers only the frozen selection and demonstrated
+scientific scope; it does not establish whole-family validity.
+
+## Task 9 — Extend scientific challenges and follow-up
+
+Goal: Challenge findings using independent cohorts, alternative methods/representations
+and discriminating controls beyond same-method paired follow-ups.
+
+Scope: For a selected source-bound finding, declare the follow-up before observing
+confirmation results, including expected discrimination, effect/uncertainty comparison,
+multiplicity and failure criteria. Extend the supported challenge operations only as
+needed. Audit cohort/participant overlap, endpoint compatibility and preprocessing/
+training leakage; same-participant robustness is distinct from independent replication.
+Retain failed, contradictory, sensitivity-dependent and inconclusive outcomes with
+originals, alternative explanations and unresolved prerequisites in memory and context.
+
+Owning code: `src/science/followup.py`, `src/runtime/pydantic_ai/followup_tools.py`,
+`src/runtime/pydantic_ai/context_tools.py`, `src/science/execution.py`,
+`src/memory/service.py`, `src/evals/`; `tests/invariants/test_persistence.py`,
+`tests/invariants/test_boundaries.py`.
+
+Done when: Independently reviewed real-data challenge cases execute through the
+selected operation and affect the next investigation using retained source references.
+Overlap, reversed/confounded effects, low information and unavailable prerequisites
+receive defensible interpretations; replay and non-significance cannot certify
+replication or absence. New challenge operations have their own validated contracts.
+
+## Task 10 — Deliver qualified reusable methods
+
+Goal: Execute an accepted scoped reusable method in a subsequent fresh Researcher
+block through the governed registry path.
+
+Scope: Implement the missing `run_reusable_method` dispatcher over supported declarative
+operations, resolving pinned route, candidate, software, owned inputs and qualified
+scope. Exercise proposal/review/acceptance with actual repeated admitted use across
+distinct inputs and blocks, independent reference/scientific validation, recoverable
+fresh-environment replay, measured utility, licence binding and complete current local
+qualification. Those proof producers and a supported operation are genuine prerequisites;
+hand-authored passing booleans cannot replace them. Connect demand/use to promotion
+and qualify changed-scope updates, reverification and retirement. Code-requiring
+changes continue through reviewed engineering proposals.
+
+Owning code: `src/oncolab/governance.py`, `src/oncolab/execution.py`,
+`src/oncolab/institution.py`, `src/runtime/pydantic_ai/contracts.py`,
+`src/runtime/pydantic_ai/factory.py`, `src/runtime/pydantic_ai/discovery_tools.py`,
+`src/science/admission.py`; `tests/invariants/test_persistence.py`.
+
+Done when: A qualified candidate is accepted into a reconstructible revision and
+actually discovered/executed by the next fresh block without restart. Active and
+historical pins remain reproducible. Missing/stale/changed-scope proof rejects;
+rejection and reverification remain history-only; governed updates and retirement
+change only their scoped contracts. The real admission path remains authoritative.
+
+## Task 11 — Automate isolated notebook publication
+
+Goal: Connect retained export events to the existing separate publisher and establish
+actual publication to `asimog/oncojevlab`.
+
+Scope: Add an event-consumption/handoff path in a separate credential-owning process
+for completed blocks, material frontier/contradiction changes, mission changes,
+capability proposals/reviews/revisions, program reviews and engineering proposals.
+Publish the pinned export identity, deduplicate/no-op unchanged content and reuse the
+existing bounded retries and dirty-checkout safeguards. Service event hooks currently
+retain identities only. Configure the approved remote/credentials outside agent and
+scientific environments; missing connectivity is an explicit publication blocker.
+
+Owning code: `src/application/export.py`, `src/application/publication.py`,
+`scripts/export_notebook.py`, `src/autonomous.py`,
+`src/runtime/pydantic_ai/contracts.py`, `src/persistence/records.py`;
+`tests/invariants/test_persistence.py`.
+
+Done when: Defined events reach the isolated publisher, survive restart/deduplication
+and produce a remotely verified commit SHA for the exact generated snapshot. Failed
+publication and exhausted retries retain durable outcomes without changing scientific
+closure/evidence or overwriting external edits. Local Git simulations and live remote
+proof remain distinguishable.
+
+## Task 12 — Improve catalogue retrieval when scale requires it
+
+Goal: Resolve measured catalogue-scale or vocabulary recall problems with the smallest
+compatible retrieval change.
+
+Scope: Benchmark growing curated snapshots and on-demand external candidates for
+useful recall, coverage, latency, context size and continuation correctness. Trigger
+implementation only on demonstrated misses or unacceptable resource use. Compare a
+deterministic retrieval alternative first, then bounded vocabulary/EDAM expansion,
+then embeddings only for residual useful-candidate misses. Retain selected-source,
+licence, snapshot and algorithm identity and bounded ingestion. Migration-based FTS,
+additional databases and uncontrolled harvesting are outside the existing storage scope.
+
+Owning code: `src/oncolab/registry.py`, `src/oncolab/discovery.py`,
+`src/oncolab/enrichment.py`, `src/evals/selection.py`,
+`scripts/evaluate_selection.py`; `tests/invariants/test_evaluation.py`,
+`tests/invariants/test_boundaries.py`.
+
+Done when: Growing-scale comparisons establish the applicable staged decisions,
+including compatibility limits or measured no-change. Any adopted extension improves
+the declared recall/latency objective while preserving query/snapshot identity,
+stable ordering, bounded resources and continuations. Small-catalogue success alone
+cannot close the growing-scale assessment.
+
+## Task 13 — Share candidate generation only when useful
+
+Goal: Determine whether common retrieval/composition mechanics improve multiple real
+domain generators without erasing their scientific meaning.
+
+Scope: Compare delivered global and method generators with a real representation
+alternative generator once that missing domain path exists. Specify each generator's
+inputs, identity, source references, prerequisites, omissions and consumer; measure
+multi-domain useful recall, duplicates, context, latency and resources. Extract the
+smallest production-used interface/dispatcher only when the comparison demonstrates
+a useful shared contract and improved recall. Preserve global/local authority,
+scientific eligibility and domain-specific policies.
+
+Owning code: `src/director/frontier.py`, `src/oncolab/methods.py`,
+`src/runtime/pydantic_ai/global_tools.py`, `src/runtime/pydantic_ai/search_tools.py`,
+`src/evals/`; `tests/invariants/test_boundaries.py`,
+`tests/invariants/test_evaluation.py`.
+
+Done when: The paired multi-domain comparison supports adoption or a measured
+rejection. An adopted contract is used by actual domain consumers with retained
+identity/provenance and useful-alternative recall. Similar-looking models or the
+existing representation assessor/parser alone do not establish the trigger.
+
+## Task 14 — Evaluate frontier refinement and semantic calibration
+
+Goal: Evaluate the complete lab's investigation selection, scientific continuation
+and semantic decisions, adopting refinements only where measured failures justify them.
+
+Scope: Compare the current composed lab with bounded offline reflection,
+proximity/diversity and branch/analysis/debug-budget variants on matched needs, inputs
+and budgets. Follow actual Director allocation/review, Researcher tool choices,
+retained measurements, memory and subsequent selections across blocks. Evaluate
+scientific coverage/concentration and whether review leads to a useful next test or
+an actionable capability/engineering proposal. The current program review counts
+declared entity/topic tags and leaves scientific value unknown; those observations
+alone are not measured scientific coverage or decision utility.
+
+Replay independently labelled paraphrase, alternative-test, population/design,
+replication and blocked-to-actionable cases through actual consumers. Repair
+normalization/alignment/retention failures only when demonstrated, including retrieval
+that drops useful zero-overlap memory before semantic comparison. Measure repeated
+fixed-input semantic instability before spending an explicit extra allowance on
+calibration, self-consistency or a bounded Autoresearch-style variant loop. Preserve
+native distributions, alternatives, failure fallback and separate local/global
+policies; adoption uses reviewed engineering. Use capability-specific results as
+scoped inputs, without treating their separate successes as complete-lab benefit.
+
+Owning code: `src/autonomous.py`, `src/director/frontier.py`,
+`src/director/review.py`, `src/jev/frontier.py`, `src/jev/questions.py`,
+`src/runtime/pydantic_ai/global_tools.py`, `src/runtime/pydantic_ai/semantic.py`,
+`src/runtime/pydantic_ai/search_tools.py`, `src/memory/service.py`, `src/evals/`;
+`tests/invariants/test_persistence.py`, `tests/invariants/test_boundaries.py`,
+`tests/invariants/test_evaluation.py`.
+
+Done when: Repeated matched-budget held-out comparisons through the composed lab
+support scoped versioned changes or measured no-change, with false merges, useful
+recall, next-test alignment, coverage/concentration, instability, scientific outcomes
+and resources reported. Retain the case basis and actual review-to-next-selection
+lineage; report unavailable capabilities and unmeasured utility explicitly.
+Extra variants run only when their measured trigger and allowance hold. Conditional
+dispositions state covered limits; no automatic live question/policy rewrite or
+semantic termination of the research program is introduced.
+
+## Task 15 — Verify a composed oncology research trajectory
+
+Goal: Establish one exact-basis scientific and operational trajectory through the
+real service rather than infer composition from separate slice checks.
+
+Scope: Use an eligible computational-cancer question and exact retained source,
+software, registry/history and application identities. Trace need, representation
+alternatives, method choice, controlled validated analysis, challenge or explicit
+unavailable prerequisite, literature context, memory-driven next selection and
+export. Include a misleading/invalid alternative and contradiction or inconclusive
+outcome. Exercise bounded independent Director work/event wait, early completion,
+post-block revalidation, another allocation, shutdown and reconstruction. Include
+qualified reuse and isolated publication once their missing paths are available.
+If required original history is unavailable locally, first establish the exact
+missing record/input identity and provenance through read-only inspection; recovery
+must preserve original stores without assuming remote completeness or merging data.
+
+Owning code: `src/autonomous.py`, `src/runtime/cycle.py`,
+`src/runtime/pydantic_ai/`, `src/persistence/`, `src/dossier/delta.py`,
+`src/memory/`, `src/application/`; `tests/invariants/test_persistence.py`,
+`tests/invariants/test_live_mode.py`.
+
+Done when: A retained execution resolves the entire trajectory and demonstrates
+that scientific outcomes/limitations determine continuation on the pinned basis.
+Exactly-once closure, honest interruption, unchanged future defaults after one fast
+block and refreshed next-block pins compose correctly. Local contracts, live source/
+model connectivity, scientific utility, WSL2 qualification and remote publication
+have separate supported conclusions; absent required external proof stays explicit.
+Correct the stale Delta pin limitation only where composed behavior establishes it.
