@@ -1,0 +1,172 @@
+# Reviewed projection. Existing documents remain canonical; runtime does not read this.
+schema_version: 1
+authority: projection
+canonical_sources:
+  - path: docs/ARCHITECTURE.md
+    sha256: 16649e4f2e566fc2b39cdff18287cce7989d527fdcefd36c2690616f7d4cb57f
+  - path: AGENTS.md
+    sha256: 7006de39a81402eff244d71162ffcb4a865d994ecd0cb414dcfdc4f93c1463e1
+review_basis:
+  head: f1376d6035c78da4f3a52f5e58f246e6daef77aa
+  scope: Current working tree; see docs/REPOSITORY_TRUTH_REPORT.md for dirty paths and proof limits.
+  directions: Authority and data flow, not an enforced acyclic Python import graph.
+  ownership_and_direction_classification: REVIEWED
+classification:
+  ENFORCED: Named executable guard enforces only its stated scope.
+  TESTED: Named behavior test proves its exercised local contract.
+  REVIEWED: Source inspection establishes ownership or structure; no automatic enforcement claim.
+owners:
+  service:
+    paths: [src/autonomous.py, src/__main__.py, src/runtime, src/block, src/ledger]
+    responsibility: Python-owned lifecycle, allocation, budgets, tasks, resource leases and terminal outcomes.
+    forbidden: [semantic mission-success authority, rewriting admitted evidence]
+  framework:
+    paths: [src/runtime/pydantic_ai]
+    responsibility: Framework composition, tools, role dependencies and bounded agent execution.
+    forbidden: [scientific meaning from execution success, policy authority from framework defaults]
+    exception: LiveReasoner constructs an Agent in src/reasoner/agent.py outside the designated integration owner.
+  director:
+    paths: [src/director]
+    responsibility: Global allocation, reference-linked portfolio review and continuation proposals.
+    forbidden: [local scientific acquisition, analysis or admission, mutating active ResearchState, extending its deadline]
+  researcher:
+    paths: [src/researcher]
+    responsibility: Block-local investigation, deterministic state and local frontier decisions.
+    forbidden: [global block allocation, deadline extension, unvalidated evidence admission]
+  jev:
+    paths: [src/jev]
+    responsibility: Bounded typed semantic measurements, projections, native receipts and deterministic interpretation.
+    forbidden: [scientific evidence admission, autonomous lifecycle authority, uncertainty as negative evidence]
+  reasoner:
+    paths: [src/reasoner]
+    responsibility: Block-local hypotheses, interpretations and possible tests.
+    forbidden: [scientific evidence admission, global allocation]
+  oncolab:
+    paths: [src/oncolab]
+    responsibility: Shared Index, descriptors, contracts, immutable governed revisions and separate verification/history.
+    forbidden: [automatic reusable promotion, treating metadata or procedural guidance as executable qualification]
+  sources:
+    paths: [src/sources]
+    responsibility: Bounded acquisition, access checks, source coverage and exact input identity.
+    forbidden: [metadata as measured assay data, missing inputs as zeros, provider credentials as data-access authority]
+  science:
+    paths: [src/science, src/evidence]
+    responsibility: Controlled deterministic execution, validation, measurement and explicit evidence admission.
+    forbidden: [global allocation, semantic judgment as scientific proof, raw scratch output as evidence]
+  memory:
+    paths: [src/memory]
+    responsibility: Typed reference-linked derived research context.
+    forbidden: [evidence admission, rewriting source records, unsupported negative or resolved conclusions]
+  records_views:
+    paths: [src/persistence, src/application, src/api, src/dossier]
+    responsibility: Append-only records, reference-resolved reconstruction, dossier/delta and read-only views.
+    forbidden: [evidence admission, operational success as objective attainment]
+  evaluations:
+    paths: [src/evals]
+    responsibility: Scoped outcome comparisons and utility measurements.
+    forbidden: [mission-success authority, evaluation scores as scientific evidence]
+  presentation:
+    paths: [web, src/visualization]
+    responsibility: Observable read models and scientific result presentation.
+    forbidden: [orchestration, evidence admission, synthetic rows as live findings]
+  support:
+    paths: [src/config, src/provenance.py, src/__init__.py, config, skills, scripts, tests, docs, README.md, AGENTS.md]
+    responsibility: Configuration, identity, procedural guidance, development verification and documentation.
+    forbidden: [skills executing capabilities, generated projections superseding canonical documents]
+authority_boundaries:
+  - owner: service
+    classification: TESTED
+    statement: One owned active Researcher; terminal outcome/run/dossier persisted before ownership is released.
+    evidence: [tests/invariants/test_persistence.py::test_owned_launch_keeps_director_responsive_during_blocking_jev, tests/invariants/test_persistence.py::test_terminal_bundle_rollback_and_cycle_recovery]
+  - owner: science
+    classification: ENFORCED
+    statement: Admission requires deterministic source/sandbox origin, provenance, source references and finite top-level numeric values.
+    evidence: [src/science/admission.py::admit_scientific_evidence]
+    limit: Caller validates owned inputs/replay. This gate alone does not resolve all references, validate nested numbers or prove scientific truth.
+  - owner: records_views
+    classification: ENFORCED
+    statement: SQLite records reject UPDATE and DELETE through append-only triggers.
+    evidence: [src/persistence/store.py]
+    limit: Not protection against arbitrary host filesystem or privileged database replacement.
+  - owner: oncolab
+    classification: TESTED
+    statement: Missing qualification rejects reusable acceptance without creating a registry revision or mutating evidence.
+    evidence: [tests/invariants/test_persistence.py::test_governance_rejects_unqualified_use_without_revision_or_evidence_mutation]
+    limit: No accepted qualified reusable execution is established; the required reusable dispatcher is absent.
+dependency_directions:
+  - from: director
+    to: service
+    purpose: Allocation and supervision through deterministic lifecycle tools.
+  - from: director
+    to: [oncolab, memory]
+    purpose: Read bounded capability and global reference-linked context.
+  - from: service
+    to: [framework, researcher]
+    purpose: Compose and own bounded role execution and block-local state.
+  - from: researcher
+    to: [oncolab, sources, science, jev, reasoner]
+    purpose: Discover and investigate through scoped tools; deterministic owners retain authority.
+  - from: sources
+    to: science
+    purpose: Exact owned inputs precede validation and measurement.
+  - from: science
+    to: records_views
+    purpose: Persist already validated/admitted records, never delegate admission to storage.
+  - from: records_views
+    to: [memory, evaluations, presentation]
+    purpose: Reference-resolved derived context, evaluation and downstream observation.
+high_consequence_invariants:
+  - id: semantics_is_not_evidence
+    owner: science
+    classification: TESTED
+    statement: Jev, Reasoner, hypotheses and scratch outputs do not qualify as scientific evidence.
+    evidence: [tests/invariants/test_boundaries.py::test_non_science_outputs_cannot_be_evidence, tests/invariants/test_boundaries.py::test_synthetic_measurement_cannot_be_admitted_as_evidence]
+  - id: framework_integration_boundary
+    owner: framework
+    classification: REVIEWED
+    statement: Integration belongs under src/runtime/pydantic_ai; factory.py is the live/deterministic composition point.
+    evidence: [src/runtime/pydantic_ai/factory.py::build_system, src/reasoner/agent.py]
+    limit: Current Reasoner Agent construction is an exception; existing architecture checks do not enforce exclusivity.
+  - id: pinned_registry_and_history
+    owner: oncolab
+    classification: TESTED
+    statement: Active block searches retain frozen registry/history/application basis; later observations do not revise block contracts.
+    evidence: [tests/invariants/test_persistence.py::test_block_registry_search_remains_pinned_after_governed_change]
+  - id: soft_handoff
+    owner: service
+    classification: TESTED
+    statement: Handoff blocks new expensive work while retaining in-flight results.
+    evidence: [tests/invariants/test_live_mode.py::test_handoff_preserves_in_flight_source_result_and_blocks_next_request]
+  - id: fail_closed_credentials
+    owner: framework
+    classification: TESTED
+    statement: Live composition without required provider credentials fails; explicit fixtures remain independent.
+    evidence: [tests/invariants/test_live_mode.py::test_deterministic_fixture_needs_no_credentials_and_live_fails_closed_without_them]
+  - id: read_only_observation
+    owner: records_views
+    classification: TESTED
+    statement: API exposes read-only application views; rendered live/fallback UI preserves provenance and failure.
+    evidence: [tests/invariants/test_persistence.py::test_api_is_read_only_and_serves_application_read_models, tests/invariants/test_frontend.py::test_rendered_live_and_fallback_views_preserve_provenance_and_failure]
+  - id: command_family_controls
+    owner: service
+    classification: REVIEWED
+    statement: Owned Linux command execution checks required cgroup/namespace controls, drains descendants and rejects unconfirmed cleanup.
+    evidence: [src/runtime/process.py::run_owned_command, scripts/verify_coder_resources.py, scripts/verify_science_resources.py]
+    limit: Current native confinement was not executed in this audit. In-process Science is thread-offloaded without this kernel command-family governor.
+  - id: bounded_admission_identity
+    owner: science
+    classification: TESTED
+    statement: Repeated source-resolved paired analysis/admission preserves identity and references after reopen.
+    evidence: [tests/invariants/test_persistence.py::test_source_resolved_paired_analysis_and_repeat_admission_survive_reopen]
+  - id: state_snapshot_scope
+    owner: researcher
+    classification: REVIEWED
+    statement: ResearchState models are frozen; durable serialization preserves recorded snapshots.
+    evidence: [src/researcher/state.py, src/persistence/store.py]
+    limit: Model freezing is shallow; nested mappings are not deeply immutable Python objects.
+  - id: local_proof_scope
+    owner: oncolab
+    classification: REVIEWED
+    statement: Local qualification consumption checks declared application/backend/platform/versioned boolean controls.
+    evidence: [src/runtime/verification.py::local_verification_passed]
+    limit: No canonical passing receipt in the three inspected databases; no production receipt writer. Gate does not compare current HEAD or exact current environment.
