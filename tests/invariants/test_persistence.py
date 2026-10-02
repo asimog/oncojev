@@ -107,63 +107,6 @@ def test_notebook_export_and_publication_are_deterministic_downstream_only(tmp_p
     source.close()
 
 
-def test_postgres_migration_preserves_reference_sequences_and_atomic_append(tmp_path):
-    """Actual PostgreSQL boundary: migration identity, rollback and mutation denial."""
-    import os
-    import psycopg
-    from src.persistence.postgres import PostgresResearchStore
-    from scripts.migrate_records import migrate, configure_writer
-    from src.provenance import content_hash
-    url = os.environ.get('ONCOJEV_TEST_POSTGRES_URL')
-    if not url:
-        pytest.skip('requires isolated PostgreSQL integration database')
-    source = SqliteResearchStore(tmp_path / 'source.sqlite3')
-    first = source.append(StoredRecord(kind=RecordKind.MEASUREMENT, record_id='original',
-        block_id='owned', payload={'values': {'effect': 2.5}, 'provenance': ['exact input']}))
-    source.append(StoredRecord(kind=RecordKind.EVIDENCE, record_id='admitted-reference',
-        block_id='owned', payload={'measurement_ref': {'seq': first.seq, 'record_id': first.record_id,
-            'sha256': content_hash(first.payload)}, 'claim': 'retained source-bound observation'}))
-    target = PostgresResearchStore(url, initialize=True)
-    try:
-        before = source.records()
-        assert migrate(source, target)['status'] == 'migrated'
-        assert target.records() == before
-        assert migrate(source, target)['status'] == 'already_migrated'
-        for sql in ('UPDATE records SET payload=payload', 'DELETE FROM records', 'TRUNCATE records'):
-            with pytest.raises(psycopg.Error, match='append-only'):
-                target._connection.execute(sql)
-        circular = {}; circular['self'] = circular
-        invalid = StoredRecord(kind=RecordKind.STATE_REVISION, record_id='invalid', payload=circular)
-        with pytest.raises(ValueError, match='Circular'):
-            target.append_many((StoredRecord(kind=RecordKind.STATE_REVISION, record_id='rolled-back', payload={}), invalid))
-        assert target.records() == before
-        saved = target.append(StoredRecord(kind=RecordKind.STATE_REVISION, record_id='next', payload={}))
-        assert saved.seq > max(r.seq for r in before)
-        assert target.high_water() == saved.seq and target.high_water() > target.count()
-        from src.dossier.delta import build_delta
-        block = BlockManager().create("migration fixture", "test", ResourceAllocation(seconds=60)).model_copy(update={"block_id":"owned"})
-        delta = build_delta(target, block, "postgres-gap", 0, datetime.now(UTC))
-        assert delta.end_sequence == saved.seq, "BlockDelta must pin a sequence, not a record count"
-        assert target.record_at(first.seq) == first
-        assert source.records() == before
-        configure_writer(target, 'fixture-only-password-for-isolated-postgres-test')
-        from urllib.parse import urlsplit, urlunsplit
-        parsed = urlsplit(url)
-        writer_url = urlunsplit(parsed._replace(netloc='oncojev_writer:fixture-only-password-for-isolated-postgres-test@' + parsed.netloc.rsplit('@', 1)[-1]))
-        writer = PostgresResearchStore(writer_url)
-        try:
-            writer.append(StoredRecord(kind=RecordKind.STATE_REVISION, record_id='writer', payload={}))
-            assert writer.count() == target.count()
-            for sql in ('UPDATE records SET payload=payload', 'DELETE FROM records', 'TRUNCATE records',
-                        'ALTER TABLE records ADD COLUMN forbidden TEXT'):
-                with pytest.raises(psycopg.errors.InsufficientPrivilege):
-                    writer._connection.execute(sql)
-        finally:
-            writer.close()
-    finally:
-        source.close(); target.close()
-
-
 @pytest.mark.parametrize("failure", [False, True])
 def test_director_global_frontier_retains_replication_relations_and_rejects_stale_basis(tmp_path, failure):
     """H4: real Director tool route, native receipts, immutable originals and reopen."""
@@ -642,7 +585,14 @@ def test_legacy_failure_correction_preserves_original_records():
 def test_service_recovers_pending_work_before_each_cycle(tmp_path, monkeypatch):
     from src.autonomous import AutonomousService
 
+    monkeypatch.setenv("ONCOJEV_DATABASE_URL", "postgresql://removed-selector.invalid/research")
+    original = SqliteResearchStore(tmp_path / "service.sqlite3")
+    historical = original.append(StoredRecord(kind=RecordKind.DEPLOYMENT_VERIFICATION,
+        record_id="historical-target-proof", payload={"target": "railway", "status": "partial"}))
+    original.close()
     service = AutonomousService(ROOT, tmp_path / "service.sqlite3")
+    assert service.store.path == (tmp_path / "service.sqlite3").resolve()
+    assert service.store.record_at(historical.seq) == historical
     pending = BlockManager().create("pending after service startup", "test", ResourceAllocation(seconds=60), mission_id="interrupted")
     service.repository.record_cycle_start("interrupted", "deterministic", "old direction")
     service.repository.record_block(pending)
@@ -2161,7 +2111,8 @@ def test_external_discovery_tool_retains_query_identity_and_has_no_execution_aut
 
 
 @pytest.mark.parametrize('requires_code', [False, True])
-def test_governance_rejects_unqualified_use_without_revision_or_evidence_mutation(tmp_path, requires_code):
+@pytest.mark.parametrize('local_proof', ['missing', 'valid', 'historical', 'changed_app', 'partial', 'missing_control', 'unsupported_version', 'non_boolean', 'wrong_backend', 'wrong_platform'])
+def test_governance_rejects_unqualified_use_without_revision_or_evidence_mutation(tmp_path, requires_code, local_proof):
     from src.oncolab.governance import CapabilityProposal, propose, review_pending
     from src.oncolab.models import OncoLabAvailability, OncoLabValidationState
     from src.oncolab.execution import ExecutionRoute
@@ -2182,15 +2133,39 @@ def test_governance_rejects_unqualified_use_without_revision_or_evidence_mutatio
         'capability_id':'proposed.method','availability':OncoLabAvailability.REUSABLE,
         'validation_state':OncoLabValidationState.REUSABLE,'version':'a'*40})
     parent=runtime.institution.pin().oncolab_registry_revision
+    # Policy inputs only: these fixtures do not certify real confinement.
+    refs = [reference(measured), reference(evidence)]
+    if local_proof != 'missing':
+        proof = {'contract_version': 'local-verification-v1', 'status': 'passed',
+            'application_identity': runtime.institution.application, 'backend': 'local_venv',
+            'execution_environment': {'system': 'Linux', 'release': '6.6.114.1-microsoft-standard-WSL2',
+                'machine': 'x86_64', 'python': '3.12.12', 'executable': '/usr/bin/python3'},
+            'checks': {'director_coder': {'filesystem': True, 'credentials': True, 'descendants': True},
+                'researcher_coder': {'filesystem': True, 'credentials': True, 'descendants': True},
+                'scientific_execution': {'filesystem': True, 'credentials': True, 'network': True, 'process': True, 'replay': True},
+                'resource_enforcement': {'process': True, 'cpu': True, 'memory': True, 'disk': True,
+                    'downloads': True, 'heavy_lease': True, 'cancellation': True}}}
+        if local_proof == 'changed_app': proof['application_identity'] = 'old-application'
+        if local_proof == 'partial': proof['status'] = 'partial'
+        if local_proof == 'missing_control': del proof['checks']['resource_enforcement']['disk']
+        if local_proof == 'unsupported_version': proof['contract_version'] = 'local-verification-v0'
+        if local_proof == 'non_boolean': proof['checks']['scientific_execution']['network'] = 'true'
+        if local_proof == 'wrong_backend': proof['backend'] = 'docker'
+        if local_proof == 'wrong_platform': proof['execution_environment']['system'] = 'Windows'
+        kind = RecordKind.DEPLOYMENT_VERIFICATION if local_proof == 'historical' else RecordKind.LOCAL_VERIFICATION
+        refs.append(reference(store.append(StoredRecord(kind=kind, record_id='local-proof', payload=proof))))
     proposal=CapabilityProposal(capability_id=descriptor.capability_id,transition='promotion',parent=parent,
         descriptor=descriptor,routes=(ExecutionRoute(tool='run_reusable_method',candidate_id='unknown',scope_sha256=content_hash(scope)),),
-        scope=scope,references=(reference(measured),reference(evidence)),requires_code_change=requires_code,rationale='one observed analysis')
+        scope=scope,references=tuple(refs),requires_code_change=requires_code,rationale='one observed analysis')
     propose(runtime.institution,proposal)
     assert runtime.institution.pin().oncolab_registry_revision==parent
     decisions=review_pending(runtime.institution)
     assert len(decisions)==1 and decisions[0]['status']=='rejected'
     assert 'missing:environment_qualification' in decisions[0]['reasons']
-    assert 'missing:deployment_verification' in decisions[0]['reasons']
+    assert ('missing:local_verification' in decisions[0]['reasons']) == (local_proof in {'missing', 'historical'})
+    assert ('local_execution_not_verified_for_application' in decisions[0]['reasons']) == (local_proof not in {'missing', 'historical', 'valid'})
+    assert decisions[0]['policy_version'] == 'scoped-governance-v2-local'
+    assert 'missing:deployment_verification' not in decisions[0]['reasons']
     assert 'missing_repeated_validated_use_history' in decisions[0]['reasons']
     assert not review_pending(runtime.institution)
     assert runtime.institution.pin().oncolab_registry_revision==parent

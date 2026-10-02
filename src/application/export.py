@@ -21,7 +21,8 @@ GROUPS = {
     "capabilities/proposals": (RecordKind.CAPABILITY_PROPOSAL,),
     "engineering/proposals": (RecordKind.ENGINEERING_PROPOSAL,),
     "verification": (RecordKind.VERIFICATION, RecordKind.REFERENCE_VALIDATION,
-                     RecordKind.ENVIRONMENT_QUALIFICATION, RecordKind.DEPLOYMENT_VERIFICATION),
+                     RecordKind.ENVIRONMENT_QUALIFICATION, RecordKind.DEPLOYMENT_VERIFICATION,
+                     RecordKind.LOCAL_VERIFICATION),
 }
 BLOCK_KINDS = (RecordKind.BLOCK, RecordKind.BLOCK_DELTA, RecordKind.DOSSIER, RecordKind.METHOD_CANDIDATES, RecordKind.REPRESENTATION_PARSE,
                RecordKind.MEASUREMENT, RecordKind.EVIDENCE, RecordKind.SCIENTIFIC_ATTEMPT, RecordKind.LITERATURE, RecordKind.LITERATURE_CONTEXT, RecordKind.JEV_CALL, RecordKind.FOLLOWUP_PLAN, RecordKind.FOLLOWUP_RESULT)

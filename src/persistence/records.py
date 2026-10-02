@@ -23,6 +23,7 @@ class RecordKind(StrEnum):
     ENVIRONMENT_QUALIFICATION = "environment_qualification"
     REFERENCE_VALIDATION = "reference_validation"
     DEPLOYMENT_VERIFICATION = "deployment_verification"
+    LOCAL_VERIFICATION = "local_verification"
     UTILITY_EVALUATION = "utility_evaluation"
     EXTERNAL_LOOKUP = "external_lookup"
     REGISTRY_REVISION = "registry_revision"

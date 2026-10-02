@@ -11,6 +11,7 @@ from src.oncolab.institution import InstitutionalObservation
 from src.oncolab.models import OncoLabDescriptor, OncoLabValidationState, OncoLabAvailability
 from src.persistence.records import RecordKind, StoredRecord
 from src.provenance import content_hash
+from src.runtime.verification import local_verification_passed
 
 
 class CapabilityProposal(BaseModel, frozen=True):
@@ -60,7 +61,7 @@ def review(institution, proposal_id):
             kinds={r.kind for r in linked}
             required={RecordKind.SANDBOX_CANDIDATE,RecordKind.MEASUREMENT,RecordKind.EVIDENCE,
                 RecordKind.REFERENCE_VALIDATION,RecordKind.ENVIRONMENT_QUALIFICATION,
-                RecordKind.UTILITY_EVALUATION,RecordKind.DEPLOYMENT_VERIFICATION}
+                RecordKind.UTILITY_EVALUATION,RecordKind.LOCAL_VERIFICATION}
             reasons.extend('missing:'+kind.value for kind in sorted(required-kinds,key=str))
             candidates=[r for r in linked if r.kind==RecordKind.SANDBOX_CANDIDATE]
             candidate_ids={r.record_id for r in candidates}
@@ -82,9 +83,9 @@ def review(institution, proposal_id):
             if qualifications and not any(r.payload.get('fresh_environment') is True and r.payload.get('recoverable_lock') is True
                 and r.payload.get('independent_replay') is True for r in qualifications):
                 reasons.append('missing_fresh_locked_reinstall_replay')
-            deployed=[r for r in linked if r.kind==RecordKind.DEPLOYMENT_VERIFICATION]
-            if deployed and not any(r.payload.get('status')=='passed' and r.payload.get('application_identity')==institution.application
-                and r.payload.get('target')=='railway' and r.payload.get('service_confinement_complete') is True for r in deployed):reasons.append('deployment_not_verified_for_application')
+            local=[r for r in linked if r.kind==RecordKind.LOCAL_VERIFICATION]
+            if local and not any(local_verification_passed(r.payload, institution.application) for r in local):
+                reasons.append('local_execution_not_verified_for_application')
             if not proposal.descriptor.version or any(r.payload.get('receipt',{}).get('commit_sha')!=proposal.descriptor.version for r in candidates):reasons.append('missing_or_conflicting_immutable_operation_version')
             if not proposal.routes or any(r.tool!='run_reusable_method' or r.candidate_id not in candidate_ids or r.scope_sha256!=scope_hash for r in proposal.routes):
                 reasons.append('unsupported_declarative_execution_route')
@@ -118,7 +119,7 @@ def review(institution, proposal_id):
         else:routes.pop(proposal.capability_id,None)
         change_hash=content_hash({'descriptors':[d.model_dump(mode='json') for d in descriptors],
                                  'routes':{k:[r.model_dump(mode='json') for r in v] for k,v in routes.items()}})
-        payload={'review_id':str(uuid4()),'proposal_id':proposal_id,'parent':parent,'policy_version':'scoped-governance-v1',
+        payload={'review_id':str(uuid4()),'proposal_id':proposal_id,'parent':parent,'policy_version':'scoped-governance-v2-local',
             'status':'rejected' if reasons else 'accepted','reasons':reasons,'scope_sha256':scope_hash,'change_sha256':change_hash}
         review_record=institution.store.append(StoredRecord(kind=RecordKind.REGISTRY_REVIEW,record_id=payload['review_id'],payload=payload))
         institution.observe(InstitutionalObservation(observation_id='review:'+payload['review_id'],capability_id=proposal.capability_id,

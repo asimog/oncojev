@@ -19,3 +19,18 @@ and selective reasoning improve useful discovery while preserving candidate reca
 The completed F0-F6 archive and `docs/references/` preserve history and source
 inputs. Read them only for a concrete historical/provenance question; they are not
 normal working context or active instructions.
+
+## Local development
+
+Use the existing Windows environment for routine checks:
+
+```powershell
+.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' <owning-test-file>
+.venv/Scripts/python.exe -B scripts/check_architecture.py
+git diff --check
+```
+
+The service uses the original SQLite database, default `var/oncojev.sqlite3`.
+Linux-only scientific execution and confinement checks run directly in WSL2;
+local-venv is the default scientific backend. Deployment is outside the current
+scope. The [active plan](docs/IMPLEMENTATION_PLAN.md) owns acceptance and limits.

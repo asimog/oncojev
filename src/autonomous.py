@@ -23,7 +23,7 @@ from src.persistence.records import RecordKind, StoredRecord
 from src.persistence.reconstruct import reconstruct_block
 from src.researcher.state import ResearchState
 from src.persistence.repository import ResearchRepository
-from src.persistence.postgres import open_store
+from src.persistence.store import SqliteResearchStore
 from src.runtime.cycle import CycleResult, run_cycle_async
 from src.runtime.pydantic_ai.factory import build_system
 from src.memory.service import ResearchMemory
@@ -106,7 +106,7 @@ class AutonomousService:
         load_local_environment(root)
         database_path.parent.mkdir(parents=True, exist_ok=True)
         self.root = root
-        self.store = open_store(database_path)
+        self.store = SqliteResearchStore(database_path)
         self.repository = ResearchRepository(self.store)
         self.application = ResearchApplication(self.store)
         self.models = load_models_config(root / "config" / "models.yaml")

@@ -1,8 +1,8 @@
 # Scientific execution
 
 `ScienceExecutor` executes typed deterministic analyses; `admit_scientific_evidence`
-is the admission boundary. External execution supports Docker and a fail-closed
-Linux x86_64 local-venv backend selected by configuration. Both retain immutable
+is the admission boundary. External execution defaults to the fail-closed Linux x86_64 local-venv backend.
+The historical Docker backend and its receipts remain compatible. Both retain immutable
 public GitHub commits, exact inputs, command/output identities and replay receipts;
 typed candidates require explicit validation before admission. Local experiments
 use fresh Python environments, offline retained wheels, Landlock read-only inputs,
@@ -75,4 +75,4 @@ legacy or sandbox interpretation is unclassified. GDC source-paired analyses
 require top-level endpoint entity IDs and compatible units. File/project rows
 cannot be relabelled as patient denominators; joins require a separate contract.
 
-Backend portability, scientific expansion and reusable dependency qualification belong to the [active plan](../../docs/IMPLEMENTATION_PLAN.md) (H10/H11).
+Backend portability, scientific expansion and reusable dependency qualification belong to the [active plan](../../docs/IMPLEMENTATION_PLAN.md) (H10).

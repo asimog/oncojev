@@ -27,7 +27,7 @@ class ModelsConfig(StrictModel):
     reasoner: ModelRoleConfig
     jev: ModelRoleConfig
 class SandboxConfig(StrictModel):
-    provider: Literal["docker", "local_venv"] = "docker"
+    provider: Literal["docker", "local_venv"] = "local_venv"
     image: str = "python:3.12-slim"
     cpu: int = Field(default=2, ge=1, le=8)
     memory_mb: int = Field(default=4096, ge=512, le=32768)

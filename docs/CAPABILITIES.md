@@ -12,7 +12,7 @@ The initial catalogue contains over 100 descriptors. It includes GDC endpoint, r
 
 Phase 3 makes a deliberately small subset executable through typed Researcher tools: anonymous GDC metadata retrieval (with truthful access metadata in file discovery and explicitly open-only byte acquisition), anonymous UCSC Xena catalogue lookup, public literature metadata retrieval, NumPy/pandas/SciPy/statsmodels measurements, and matplotlib SVG `FigureArtifact` production. Each source wrapper accepts no credentials and enforces the configured response-byte budget. Source records are retained by acquisition ID so Science can deterministically measure the exact stored acquisition. Agent-provided numeric arrays are exploratory measurements and cannot be admitted; only source-bound or replay-validated measurements cross evidence admission.
 
-When no adequate installed method exists, a Researcher may use the `software.github-scientific` capability. It accepts only an HTTPS GitHub repository, resolves an exact commit, and runs installation with a credential-free Docker sandbox. Tests and two identical command replays run without network; strict JSON parsing plus replay comparison produces a `SandboxMeasurementCandidate`. Only a separate deterministic validator can turn that candidate into a `MeasuredResult`, followed by ordinary Science admission. The method is not promoted merely because it ran.
+When no adequate installed method exists, a Researcher may use the `software.github-scientific` capability. It accepts only an HTTPS GitHub repository, resolves an exact commit, and runs installation with the configured credential-free scientific backend; the default is confined Linux x86_64 local-venv execution. Tests and two identical command replays run without network; strict JSON parsing plus replay comparison produces a `SandboxMeasurementCandidate`. Only a separate deterministic validator can turn that candidate into a `MeasuredResult`, followed by ordinary Science admission. The method is not promoted merely because it ran.
 
 Capability maturity remains explicit:
 
@@ -52,13 +52,12 @@ SVG rendering records carry `artifact_created` and an exploratory label, never
 scientific validation.
 
 Sandbox requests are retained before execution. Candidates retain the full request,
-policy, immutable commit and resolved Docker image ID, exact JSON output, invocation
+policy, immutable commit and backend-specific environment identity, exact JSON output, invocation
 receipts, content identity and validator version. Validation checks input/environment/
-output hashes, commands, successful exits and replay agreement. An explicit
-`DockerScientificSandbox.replay(candidate)` can independently run the stored request
-at its resolved commit/image; recovery and Index loading never invoke it. Installation
-dependencies remain unlocked, so independent reinstall is an attempt whose output
-must be compared; identical historical environments are not claimed.
+output hashes, commands, successful exits and replay agreement. An explicit backend `replay(candidate)` can independently run the stored request
+at its resolved commit/environment; recovery and Index loading never invoke it. Historical Docker installation dependencies remain unlocked. Local execution retains
+exact archive and declared wheel bytes/hashes; fresh reusable qualification remains
+separate, and identical historical environments are not claimed.
 
 Selected procedural guidance lives in `src/oncolab/labskills/` and is loaded only
 for an active Researcher block. It remains separate from the index and from
@@ -95,3 +94,11 @@ Targeted external describe also supports public GitHub repositories and Bioconda
 and Bioconductor packages. Repository commits and package build/reference
 metadata remain source-bound candidates. Conda and R execution are unsupported;
 source listings do not claim otherwise.
+
+Reusable promotion requires one current-application `local-verification-v1` receipt
+under `scoped-governance-v2-local`, retaining the direct WSL2 environment identity
+and complete Coder, scientific execution and resource-control checks. Missing,
+partial, changed-application or unsupported-version proof cannot qualify.
+Historical deployment receipts remain readable/exportable but cannot satisfy this
+local gate. Scientific scope/reference validation, fresh locked reinstall/replay,
+measured utility, repeated admitted use and licence checks remain separate requirements.

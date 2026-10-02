@@ -101,15 +101,20 @@ def test_build_system_is_live_fail_closed_and_roles_stay_independent():
     assert system.runtime.researcher_factory is not None
 
 
-def test_runtime_applies_sandbox_configuration():
+@pytest.mark.parametrize("provider", [None, "docker"])
+def test_runtime_applies_sandbox_configuration(provider):
+    from src.science.local import LocalVenvScientificBackend
+    from src.science.sandbox import DockerScientificSandbox
     models = load_models_config(ROOT / "config/models.yaml")
+    options = {"provider": provider} if provider else {}
     policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(
         update={
             "mode": RuntimeMode.DETERMINISTIC,
-            "sandbox": SandboxConfig(image="custom/science:locked", cpu=3, memory_mb=2048, timeout_seconds=77),
+            "sandbox": SandboxConfig(**options, image="custom/science:locked", cpu=3, memory_mb=2048, timeout_seconds=77),
         }
     )
     runtime = build_harness_runtime(models, policy, environment={})
+    assert isinstance(runtime.sandbox, DockerScientificSandbox if provider else LocalVenvScientificBackend)
     assert runtime.sandbox.policy.image == "custom/science:locked"
     assert runtime.sandbox.policy.cpu == 3
     assert runtime.sandbox.policy.timeout_seconds == 77

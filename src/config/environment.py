@@ -9,7 +9,7 @@ __all__ = ("load_local_environment", "provider_credentials_present")
 
 
 def load_local_environment(root: Path | None = None) -> None:
-    """Load ignored `.env.local` for local runs; Railway injects runtime variables."""
+    """Load ignored `.env.local` without overriding existing process variables."""
     path = (root or Path.cwd()) / ".env.local"
     if not path.exists():
         return

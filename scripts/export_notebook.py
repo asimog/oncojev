@@ -5,7 +5,7 @@ from pathlib import Path
 
 from src.application.export import render_snapshot, write_snapshot
 from src.application.publication import publish_snapshot
-from src.persistence.postgres import open_store
+from src.persistence.store import SqliteResearchStore
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
     parser.add_argument("--high-water", type=int)
     parser.add_argument("--publish-checkout")
     args = parser.parse_args()
-    store = open_store(Path(args.database))
+    store = SqliteResearchStore(Path(args.database))
     try:
         files = render_snapshot(store, high_water=args.high_water)
         write_snapshot(files, args.out)
