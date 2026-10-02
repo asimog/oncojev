@@ -93,9 +93,10 @@ def test_testing_store_cycles_paths_and_identity_remain_frozen(tmp_path, monkeyp
     monkeypatch.setenv("TYPESAFE_API_KEY", "fixture")
     captured_workspaces = []
     from src.runtime.pydantic_ai.agents import _runtime_capabilities
-    def capabilities(workspace, *args):
+    def capabilities(workspace, *args, **kwargs):
         captured_workspaces.append(workspace)
-        return _runtime_capabilities(workspace, *args)
+        kwargs["enable_coder"] = False
+        return _runtime_capabilities(workspace, *args, **kwargs)
     monkeypatch.setattr("src.runtime.pydantic_ai.agents._runtime_capabilities",
         capabilities)
     async def director(messages, info):
@@ -123,20 +124,20 @@ def test_testing_store_cycles_paths_and_identity_remain_frozen(tmp_path, monkeyp
     try:
         assert service.store.path == paths.data / "oncojev.sqlite3"
         assert paths.data.parent.name == "testing" and len(paths.data.name) == 32
-        assert service.policy.block.default_seconds == 90
+        assert service.policy.block.default_seconds == 240
         # Mutating settings after startup must not redirect the next cycle.
         monkeypatch.setenv("ONCOJEV_TESTING", "0")
         monkeypatch.setenv("ONCOJEV_DATA_ROOT", str(tmp_path / "elsewhere"))
         import yaml
         edited = yaml.safe_load((application / "config/runtime.yaml").read_text())
-        edited['testing']['block']['default_seconds'] = 80
+        edited['testing']['block']['default_seconds'] = 210
         (application / "config/runtime.yaml").write_text(yaml.safe_dump(edited))
         results = [service.run_once("same direction") for _ in range(2)]
         assert all(r.status.value == "complete" for r in results)
         assert len(service.store.records(kind=RecordKind.CYCLE)) == 2
         blocks = service.store.records(kind=RecordKind.BLOCK)
         assert {r.payload["start"]["application_identity"] for r in blocks} == {identity}
-        assert all(r.payload["start"]["allocation"]["seconds"] == 90 for r in blocks)
+        assert all(r.payload["start"]["allocation"]["seconds"] == 240 for r in blocks)
         assert len({r.record_id for r in blocks}) == 2
         assert service._last_system.runtime.sandbox.root == paths.workspaces
         assert captured_workspaces and all(p.is_relative_to(paths.data) for p in captured_workspaces)
@@ -149,7 +150,7 @@ def test_testing_store_cycles_paths_and_identity_remain_frozen(tmp_path, monkeyp
         normal = application_identity(load_runtime_config(application / "config/runtime.yaml", testing=False))
         assert not local_verification_passed(proof, normal)
         proof["application_identity"] = normal
-        assert local_verification_passed(proof, normal)
+        assert not local_verification_passed(proof, normal)  # Historical unbound controls cannot qualify.
         logs = capsys.readouterr().out
         assert '"testing": true' in logs and '"elapsed_seconds"' in logs
         assert "fixture" not in logs
@@ -160,7 +161,7 @@ def test_testing_store_cycles_paths_and_identity_remain_frozen(tmp_path, monkeyp
     monkeypatch.setenv("ONCOJEV_DATA_ROOT", str(tmp_path / "normal"))
     normal_service = service_from_environment(application)
     try:
-        assert normal_service.policy.block.default_seconds == 900
+        assert normal_service.policy.block.default_seconds == 240
         assert normal_service.store.path == tmp_path / "normal" / "oncojev.sqlite3"
     finally:
         normal_service.close()
@@ -334,7 +335,7 @@ def test_director_global_frontier_retains_replication_relations_and_rejects_stal
                 'review = await review_program()\n'
                 'assert review["selected_blocks"] == 1\n'
                 'assert review["resources"]["actual_elapsed_seconds"]["recorded_sum"] is None\n'
-                'assert review["resources"]["allocated_seconds"]["recorded_sum"] == 900\n'
+                'assert review["resources"]["allocated_seconds"]["recorded_sum"] == 240\n'
                 'assert review["scientific_value"] == "unknown"\nfrontier["frontier_id"]'}, tool_call_id='frontier')])
         responses.extend(str(p.content) for m in messages for p in m.parts if hasattr(p, 'content'))
         return ModelResponse(parts=[TextPart('planned')])
@@ -463,7 +464,7 @@ def cycle_system():
     runtime = HarnessRuntime(manager=BlockManager(), jev=DeterministicJevClient(),
                              science=ScienceExecutor(), reasoner=DeterministicReasoner(),
                              max_jev_calls=4, max_reasoner_calls=2)
-    agents = create_agents("test", "test")
+    agents = create_agents("test", "test", enable_coder=False)
     runtime.researcher = agents.researcher
     return ConfiguredSystem(agents=agents, runtime=runtime, mode=RuntimeMode.DETERMINISTIC)
 
@@ -1032,7 +1033,7 @@ def test_deterministic_cycle_persists_blocks_dossiers_and_memory():
     )
     acquisition = AcquisitionRecord(source="gdc", request={"test": True}, records=({"file_id": "a"},), provenance=("test",))
     runtime.acquisitions[acquisition.acquisition_id] = acquisition
-    agents = create_agents("test", "test")
+    agents = create_agents("test", "test", enable_coder=False)
     runtime.researcher = agents.researcher
     system = ConfiguredSystem(agents=agents, runtime=runtime, mode=RuntimeMode.DETERMINISTIC)
     director_calls = 0
@@ -2120,8 +2121,8 @@ def test_service_completion_reviews_delta_and_allocates_again_without_deadline_s
         for system in systems:
             active = system.runtime.active_research
             delta = active.delta
-            assert delta.resources["allocated_seconds"] == 900
-            assert delta.resources["unused_allowance_seconds"] > 890
+            assert delta.resources["allocated_seconds"] == 240
+            assert delta.resources["unused_allowance_seconds"] > 230
             assert delta.resources["workspace_peak_bytes"] is None
             assert not delta.references.get("scientific_negatives")
             assert not delta.references.get("resolutions")
@@ -2152,7 +2153,7 @@ def test_research_event_turn_is_bounded_and_never_cancels_the_researcher(notific
 
     system = cycle_system()
     runtime = system.runtime
-    runtime.director_review_interval_seconds = 0.03
+    runtime.director_review_interval_seconds = 0.03 if notification == "scheduled" else 60
     runtime.director_event_turn_limit = 1
     repo = ResearchRepository(SqliteResearchStore())
     yielded = asyncio.Event()
@@ -2193,7 +2194,17 @@ def test_research_event_turn_is_bounded_and_never_cancels_the_researcher(notific
 
     async def run():
         with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
-            return await asyncio.wait_for(run_cycle_async(system, "direction", repository=repo), 2)
+            task = asyncio.create_task(run_cycle_async(system, "direction", repository=repo))
+            done, _ = await asyncio.wait((task,), timeout=5)
+            if not done:
+                # Release this fixture before requesting production's draining
+                # cancellation; otherwise a failing assertion can deadlock pytest.
+                release.set()
+                yielded.set()
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+                raise AssertionError("event supervision fixture did not complete")
+            return task.result()
 
     try:
         result = asyncio.run(run())
@@ -2306,6 +2317,8 @@ def test_governance_rejects_unqualified_use_without_revision_or_evidence_mutatio
         'capability_id':'proposed.method','availability':OncoLabAvailability.REUSABLE,
         'validation_state':OncoLabValidationState.REUSABLE,'version':'a'*40})
     parent=runtime.institution.pin().oncolab_registry_revision
+    basis, bound_proof = native_policy_fixture(store, runtime.institution.application)
+    runtime.institution.environment_provider = lambda: basis
     # Policy inputs only: these fixtures do not certify real confinement.
     refs = [reference(measured), reference(evidence)]
     if local_proof != 'missing':
@@ -2318,6 +2331,8 @@ def test_governance_rejects_unqualified_use_without_revision_or_evidence_mutatio
                 'scientific_execution': {'filesystem': True, 'credentials': True, 'network': True, 'process': True, 'replay': True},
                 'resource_enforcement': {'process': True, 'cpu': True, 'memory': True, 'disk': True,
                     'downloads': True, 'heavy_lease': True, 'cancellation': True}}}
+        proof.update({key: bound_proof[key] for key in ('execution_environment', 'environment_identity', 'observation_references')})
+        proof['checks']['installed_science'] = bound_proof['checks']['installed_science']
         if local_proof == 'changed_app': proof['application_identity'] = 'old-application'
         if local_proof == 'partial': proof['status'] = 'partial'
         if local_proof == 'missing_control': del proof['checks']['resource_enforcement']['disk']
@@ -2337,7 +2352,7 @@ def test_governance_rejects_unqualified_use_without_revision_or_evidence_mutatio
     assert 'missing:environment_qualification' in decisions[0]['reasons']
     assert ('missing:local_verification' in decisions[0]['reasons']) == (local_proof in {'missing', 'historical'})
     assert ('local_execution_not_verified_for_application' in decisions[0]['reasons']) == (local_proof not in {'missing', 'historical', 'valid'})
-    assert decisions[0]['policy_version'] == 'scoped-governance-v2-local'
+    assert decisions[0]['policy_version'] == 'scoped-governance-v3-resolved'
     assert 'missing:deployment_verification' not in decisions[0]['reasons']
     assert 'missing_repeated_validated_use_history' in decisions[0]['reasons']
     assert not review_pending(runtime.institution)
@@ -2345,3 +2360,239 @@ def test_governance_rejects_unqualified_use_without_revision_or_evidence_mutatio
     assert store.records(kind=RecordKind.EVIDENCE)==(evidence,)
     assert bool(store.records(kind=RecordKind.ENGINEERING_PROPOSAL))==requires_code
     store.close()
+
+
+@pytest.mark.parametrize("cancel", [False, True])
+def test_installed_science_transport_retains_service_lease_receipts_and_delta(tmp_path, cancel):
+    """Offline transport fixture: service writes, draining and measured accounting."""
+    import asyncio
+    from src.runtime.paths import RuntimePaths
+    from src.runtime.resources import ResourceBusy
+    from src.dossier.delta import build_delta
+    started, release = threading.Event(), threading.Event()
+    service_thread = threading.get_ident()
+    store = SqliteResearchStore(tmp_path / "owned.sqlite3")
+    runtime = HarnessRuntime(BlockManager(), DeterministicJevClient(), ScienceExecutor(),
+                             DeterministicReasoner(), 1, 1)
+    runtime.repository = ResearchRepository(store)
+    runtime.runtime_paths = RuntimePaths(tmp_path, tmp_path / "workspaces", tmp_path / "director")
+    block = runtime.manager.allocate("installed computation", "test", 300)
+    runtime.repository.record_block(block)
+    class Runner:
+        executions = []
+        def run(self, workspace, operation, *inputs):
+            assert threading.get_ident() != service_thread
+            started.set()
+            assert release.wait(3)
+            self.executions.append({"operation": "execute", "cleanup_confirmed": True,
+                "cpu_stat": "usage_usec 1250000\n", "workspace_peak_allocated_bytes": 4096,
+                "block_workspace_before_bytes": 128, "block_workspace_after_bytes": 512})
+            return operation(*inputs)
+    runtime.installed_science_runner = Runner()
+    spec = AnalysisSpec(analysis_id="fixture", question="summary", population="provided", estimand="mean",
+                        method="descriptive_summary", variables=("values",), inputs={"values": [1., 2., 3.]})
+    async def run():
+        pending = asyncio.create_task(runtime.heavy_operation(block.block_id, runtime.science.execute, spec))
+        assert await asyncio.to_thread(started.wait, 2)
+        if cancel:
+            pending.cancel()
+            await asyncio.sleep(.02)
+            assert not pending.done()
+        with pytest.raises(ResourceBusy):
+            async with runtime.service_resources.heavy("director"):
+                pass
+        assert runtime.service_resources.heavy_owner == block.block_id
+        release.set()
+        assert (await pending).values["mean"] == 2.
+        assert runtime.service_resources.heavy_owner is None
+    asyncio.run(run())
+    receipts = store.records(kind=RecordKind.LEDGER_EVENT, block_id=block.block_id)
+    observed = [r for r in receipts if r.payload["event_type"] == "InstalledScienceResourceReceipt"]
+    assert len(observed) == 1 and len(runtime.service_resources.execution_receipts) == 1
+    delta = build_delta(store, block, "fixture", 0, datetime.now(UTC))
+    assert delta.resources["cpu_seconds"] == 1.25
+    assert runtime.service_resources.snapshot()["installed_science_usage"]["cpu_seconds"] == 1.25
+    assert delta.resources["workspace_observed_bytes"] == 512
+    assert delta.resources["workspace_peak_bytes"] == 4224
+    next_runtime = HarnessRuntime(BlockManager(), DeterministicJevClient(), ScienceExecutor(),
+                                  DeterministicReasoner(), 1, 1, service_resources=runtime.service_resources)
+    assert next_runtime.service_resources.execution_receipts[0]["owner"] == block.block_id
+    # An unavailable counter must not turn unknown usage into a zero.
+    runtime.append_event(block.block_id, "InstalledScienceResourceReceipt", {"operation": "execute"})
+    delta = build_delta(store, block, "fixture", 0, datetime.now(UTC))
+    assert delta.resources["cpu_seconds"] is None and delta.resources["cpu_observed_seconds"] == 1.25
+    assert delta.resources["measured_process_families"] == 1 and delta.resources["process_families"] == 2
+    store.close()
+
+
+def test_installed_science_unconfirmed_cleanup_quarantines_owner(tmp_path):
+    import asyncio
+    from src.runtime.paths import RuntimePaths
+    from src.runtime.process import ProcessCleanupFailed
+    from src.runtime.resources import ResourceRejected
+    runtime = HarnessRuntime(BlockManager(), DeterministicJevClient(), ScienceExecutor(), DeterministicReasoner(), 1, 1)
+    runtime.runtime_paths = RuntimePaths(tmp_path, tmp_path / "workspaces", tmp_path / "director")
+    block = runtime.manager.allocate("cleanup failure", "test", 300)
+    class Runner:
+        executions = []
+        def run(self, *args):
+            raise ProcessCleanupFailed("fixture has an unconfirmed child")
+    runtime.installed_science_runner = Runner()
+    async def run():
+        with pytest.raises(ResourceRejected, match="owned_command_stop_unconfirmed"):
+            await runtime.heavy_operation(block.block_id, runtime.science.execute, None)
+        assert runtime.service_resources.heavy_owner == block.block_id
+        with pytest.raises(ResourceRejected):
+            async with runtime.service_resources.heavy("director"):
+                pass
+    asyncio.run(run())
+    assert runtime.service_resources.receipts[-1]["status"] == "quarantined"
+
+
+def native_policy_fixture(store, application):
+    """Policy input fixture, never a native observation or qualification writer."""
+    from src.runtime.verification import LOCAL_CHECKS
+    from src.provenance import content_hash
+    basis = {'system': 'Linux', 'release': 'fixture-microsoft-standard-WSL2', 'machine': 'x86_64',
+        'python': 'fixture', 'executable': '/fixture/python', 'package_bytes_sha256': 'fixture',
+        'owned_paths': {'testing': False}, 'effective_config': {'cpu': 2}}
+    identity = content_hash(basis)
+    refs = []
+    for probe in ('verify_coder_container', 'verify_coder_resources', 'verify_local_science',
+                  'verify_science_resources', 'verify_installed_science', 'verify_profile_paths'):
+        record = store.append(StoredRecord(kind=RecordKind.SERVICE_EVENT, record_id='fixture:' + probe,
+            payload={'probe': probe, 'status': 'passed', 'environment_identity': identity}))
+        refs.append({'probe': probe, 'seq': record.seq, 'record_id': record.record_id, 'sha256': content_hash(record.payload)})
+    return basis, {'contract_version': 'local-verification-v1', 'status': 'passed', 'backend': 'local_venv',
+        'application_identity': application, 'execution_environment': basis, 'environment_identity': identity,
+        'checks': {group: {name: True for name in names} for group, names in LOCAL_CHECKS.items()},
+        'observation_references': refs}
+
+
+@pytest.mark.parametrize('drift', ['none', 'packages', 'config', 'interpreter', 'missing_observation', 'tampered_reference', 'missing_installed', 'testing'])
+def test_local_qualification_environment_drift_and_observations_fail_closed(tmp_path, drift):
+    from copy import deepcopy
+    from src.runtime.verification import local_verification_passed
+    store = SqliteResearchStore(tmp_path / 'native-policy.sqlite3')
+    basis, proof = native_policy_fixture(store, 'application-v1:fixture')
+    current = deepcopy(basis)
+    if drift == 'packages': current['package_bytes_sha256'] = 'changed'
+    if drift == 'config': current['effective_config']['cpu'] = 3
+    if drift == 'interpreter': current['executable'] = '/changed/python'
+    if drift == 'missing_observation': proof['observation_references'].pop()
+    if drift == 'tampered_reference': proof['observation_references'][0]['sha256'] = '0' * 64
+    if drift == 'missing_installed': del proof['checks']['installed_science']
+    application = 'application-testing-v1:fixture' if drift == 'testing' else 'application-v1:fixture'
+    assert local_verification_passed(proof, application, store=store, environment_provider=lambda: current) == (drift == 'none')
+    assert not store.records(kind=RecordKind.EVIDENCE)
+    store.close()
+
+
+def test_lung_mission_authored_frontier_works_without_prior_hypothesis_and_retains_selection(tmp_path):
+    import asyncio
+    from src.memory.service import reference
+    from src.runtime.pydantic_ai.contracts import DirectorDeps
+    system = cycle_system(); runtime = system.runtime
+    store = SqliteResearchStore(tmp_path / 'lung-frontier.sqlite3')
+    runtime.repository = ResearchRepository(store)
+    runtime.mission_id = 'lung-mission'
+    mission = store.append(StoredRecord(kind=RecordKind.MISSION, record_id='lung-mission', payload={'direction': 'Investigate lung cancer'}))
+    runtime.initialize_institution()
+    context = reference(store.latest(RecordKind.REGISTRY_REVISION)).model_dump(mode='json')
+    responses = []
+    async def model(messages, info):
+        if not any(isinstance(m, ModelResponse) for m in messages):
+            code = ('p={"objective":"Investigate a public lung cancer association", "proposed_test":"Compare paired source measurements", '
+                '"population":"public lung cancer cohort", "design":"exploratory paired association", "capability_ids":["stat.scipy"],'
+                '"context_refs":[' + repr(context) + ']}\n'
+                'f=await prepare_global_frontier(objective="lung cancer", proposals=[p])\n'
+                'c=f["candidates"][0]\n'
+                'b=await allocate_block(objective=c["objective"],why_now="source-grounded lung mission proposal",frontier_id=f["frontier_id"],candidate_id=c["candidate_id"])\n'
+                'assert c["origin"] == "director_authored"\n'
+                'assert b["start"]["objective"] == c["objective"]')
+            return ModelResponse(parts=[ToolCallPart('run_code', {'code': code}, tool_call_id='lung-proposal')])
+        responses.extend(str(p.content) for m in messages for p in m.parts if hasattr(p, 'content'))
+        return ModelResponse(parts=[TextPart('lung proposal retained')])
+    with system.agents.director.override(model=scripted(model)):
+        asyncio.run(system.agents.director.run('prepare a new lung cancer question', deps=DirectorDeps(runtime)))
+    assert not any('error' in response.casefold() for response in responses), responses
+    candidate = store.latest(RecordKind.GLOBAL_FRONTIER).payload['candidates'][0]
+    assert candidate['source_refs'][0]['record_id'] == mission.record_id
+    allocation = next(r for r in store.records(kind=RecordKind.LEDGER_EVENT) if r.payload['event_type'] == 'DirectorBlockAllocated')
+    assert allocation.payload['payload']['experience_refs'] == candidate['source_refs']
+    assert allocation.payload['payload']['selection_basis']['grounding_role'].startswith('authored proposal')
+    assert not store.records(kind=RecordKind.EVIDENCE)
+    store.close()
+    reopened = SqliteResearchStore(tmp_path / 'lung-frontier.sqlite3')
+    from src.director.frontier import authored_investigations
+    runtime.repository = ResearchRepository(reopened)
+    runtime.institution = None
+    runtime.initialize_institution()
+    reconstructed = authored_investigations(runtime, [{'objective': candidate['objective'], 'proposed_test': candidate['scope']['proposed_test'],
+        'population': candidate['scope']['population'], 'design': candidate['scope']['design'], 'capability_ids': ['stat.scipy'], 'context_refs': [context]}])
+    assert reconstructed[0].candidate_id == candidate['candidate_id']
+    reopened.close()
+
+
+def test_memory_recovers_zero_overlap_lung_alternative_with_bounded_receipt(tmp_path):
+    from src.memory.models import CycleDigest, MemoryItem
+    from src.memory.service import ResearchMemory, reference
+    store = SqliteResearchStore(tmp_path / 'lung-alternative.sqlite3')
+    basis = store.append(StoredRecord(kind=RecordKind.FOLLOWUP_RESULT, record_id='source-followup', payload={'outcome': 'inconclusive', 'scope': 'pulmonary adenocarcinoma', 'fixture': True}))
+    digest = CycleDigest(digest_id='pulmonary-followup', cycle_id='previous', mission_id='lung-mission',
+        direction='pulmonary adenocarcinoma', recorded_at=datetime.now(UTC), cycle_status='complete', director_outcome='returned',
+        references=(reference(basis),), scientific_followups=(MemoryItem(item_id='source-followup', summary='Uncertain pulmonary adenocarcinoma cohort requires independent cases',
+        epistemic_status='scientific_followup', references=(reference(basis),), details={'outcome': 'inconclusive', 'unresolved': ['independent cases']}),))
+    store.append(StoredRecord(kind=RecordKind.MEMORY_DIGEST, record_id=digest.digest_id, payload=digest.model_dump(mode='json')))
+    memory = ResearchMemory(store)
+    assert not memory.search('lung cancer', mission_id='lung-mission', alternative_limit=0)
+    retrieved = memory.context('lung cancer', mission_id='lung-mission', limit=5)
+    assert retrieved.digests[0]['digest_id'] == digest.digest_id
+    assert retrieved.retrieval['alternative_digest_ids'] == [digest.digest_id]
+    assert not memory.search('lung cancer', mission_id='other')
+    assert memory.start_context('lung cancer', context=retrieved.model_dump(mode='json')).prior_followups
+    store.close()
+    reopened = SqliteResearchStore(tmp_path / 'lung-alternative.sqlite3')
+    assert ResearchMemory(reopened).search('lung cancer', mission_id='lung-mission')[0].digest_id == digest.digest_id
+    assert not reopened.records(kind=RecordKind.EVIDENCE)
+    reopened.close()
+
+
+def test_frontier_reopens_deferred_lung_question_on_observed_prerequisite_change(tmp_path):
+    import asyncio
+    from src.memory.service import reference
+    from src.runtime.pydantic_ai.global_tools import prepare_frontier, validate_selection
+    from src.director.review import portfolio
+    system = cycle_system(); runtime = system.runtime
+    store = SqliteResearchStore(tmp_path / 'lung-reopening.sqlite3')
+    runtime.repository = ResearchRepository(store); runtime.mission_id = 'lung-mission'
+    store.append(StoredRecord(kind=RecordKind.MISSION, record_id='lung-mission', payload={'direction': 'Investigate lung cancer'}))
+    runtime.initialize_institution()
+    context = reference(store.latest(RecordKind.REGISTRY_REVISION))
+    ready = False
+    class ReadinessFixture(DeterministicJevClient):
+        def evaluate(self, state, questions):
+            result = super().evaluate(state, questions)
+            return tuple(decision.model_copy(update={'p_true': .01 if not ready and question.semantic_purpose.endswith('dependency_readiness') else .99})
+                if hasattr(decision, 'p_true') else decision for decision, question in zip(result, questions))
+    runtime.jev = ReadinessFixture()
+    proposal = {'objective': 'Evaluate a lung cancer association', 'proposed_test': 'Inspect paired measurements', 'population': 'lung cases',
+        'design': 'exploratory', 'capability_ids': ['stat.scipy'], 'context_refs': [context]}
+    first = asyncio.run(prepare_frontier(runtime, 'lung cancer', proposals=[proposal]))
+    assert first.candidates[0].status == 'defer' and not first.beam
+    source = AcquisitionRecord(source='fixture', origin='synthetic', request={}, records=({'id': 'case', 'x': 1, 'y': 2},), provenance=('controlled prerequisite fixture',))
+    retained = runtime.repository.record_acquisition('future', source)
+    ready = True
+    proposal['prerequisite_refs'] = [reference(retained)]
+    with pytest.raises(ValueError, match='stale'):
+        validate_selection(runtime, first.frontier_id, first.candidates[0].candidate_id, proposal['objective'])
+    second = asyncio.run(prepare_frontier(runtime, 'lung cancer', proposals=[proposal]))
+    assert second.candidates[0].candidate_id == first.candidates[0].candidate_id and second.beam
+    node = portfolio(runtime)['candidates'][0]
+    assert [transition['state'] for transition in node['readiness_history']] == ['deferred', 'newly_testable']
+    assert node['scientific_resolution'] == 'unknown' and not store.records(kind=RecordKind.EVIDENCE)
+    store.close()
+    reopened = SqliteResearchStore(tmp_path / 'lung-reopening.sqlite3')
+    runtime.repository = ResearchRepository(reopened)
+    assert portfolio(runtime)['candidates'][0]['readiness_history'] == node['readiness_history']
+    reopened.close()

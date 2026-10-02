@@ -21,7 +21,7 @@ def register_search_page(agent):
         runtime=ctx.deps.runtime
         block_id=getattr(ctx.deps,"block_id",None)
         key=f"{block_id or 'director'}:index_candidates"
-        effective=min(limit,runtime.oncolab_search_k,runtime.oncolab_candidate_k-runtime._counts.get(key,0))
+        effective=min(limit,runtime.oncolab_search_k) if runtime.unbounded_work else min(limit,runtime.oncolab_search_k,runtime.oncolab_candidate_k-runtime._counts.get(key,0))
         if effective<1:
             return {"cards":[],"exhausted":False,"status":"retrieval_budget_exhausted","retryable":False}
         kinds=tuple(OncoLabKind(k) for k in kinds)
@@ -63,7 +63,7 @@ def register_local_semantic_tools(agent):
         records = [runtime.resolve_acquisition(block_id, identity) for identity in acquisition_ids]
         representations = method_inputs(records, need)
         key = f"{block_id}:index_candidates"
-        effective = min(limit, runtime.oncolab_search_k, runtime.oncolab_candidate_k-runtime._counts.get(key, 0))
+        effective = min(limit, runtime.oncolab_search_k) if runtime.unbounded_work else min(limit, runtime.oncolab_search_k, runtime.oncolab_candidate_k-runtime._counts.get(key, 0))
         if effective < 1:
             return {"candidates": [], "exhausted": False, "status": "retrieval_budget_exhausted", "retryable": False}
         index = runtime.index_for(block_id)
@@ -211,6 +211,7 @@ async def semantic_memory_context_async(runtime,query,*,limit=5,block_id=None,**
         receipt=MemoryRetrievalReceipt(receipt_id=context["retrieval_receipt_id"],query=query[:1000],mission_id=runtime.mission_id,cycle_id=runtime.cycle_id,block_id=block_id,
             digest_ids=tuple(d["digest_id"] for d in context["digests"]),status=context["semantic_status"],failure_type=context.get("semantic_failure"),
             semantic_call_ids=tuple(m["call_id"] for m in context.get("measurements",[])),
+            retrieval=context.get("retrieval", {}),
             resources={"calls":runtime._counts.get("memory_jev",0),"questions":runtime._counts.get("memory_questions",0),
                        "bytes":runtime._counts.get("memory_bytes",0),"elapsed_seconds":runtime.memory_elapsed},duration_ms=(perf_counter()-started)*1000)
         if runtime.repository is not None:runtime.repository.record_immutable(RecordKind.MEMORY_RETRIEVAL,receipt.receipt_id,receipt,block_id)

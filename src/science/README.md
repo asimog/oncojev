@@ -2,6 +2,15 @@
 
 `ScienceExecutor` executes typed deterministic analyses; `admit_scientific_evidence`
 is the admission boundary. External execution defaults to the fail-closed Linux x86_64 local-venv backend.
+Live installed statistics, source summaries, parsing and figures also use the
+owned Linux governor through a fixed-operation JSON worker. Sandbox CPU/memory/time
+settings, Science process limits and remaining block workspace capacity apply.
+Workers cannot access provider credentials, stores or network; the service retains
+results and actual resource receipts after cleanup. Cancellation and aggregate
+shutdown drain the worker before lease release. Missing cleanup quarantines the
+owner. Explicit deterministic test fixtures use the in-process executor; they do
+not qualify native execution.
+
 The historical Docker backend and its receipts remain compatible. Both retain immutable
 public GitHub commits, exact inputs, command/output identities and replay receipts;
 typed candidates require explicit validation before admission. Local experiments

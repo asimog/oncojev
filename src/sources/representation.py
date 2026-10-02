@@ -39,11 +39,13 @@ def assess_retained_representation(record: AcquisitionRecord, need: Representati
     endpoint = record.coverage.endpoint if record.coverage else None
     unit = {"files": "file", "cases": "case", "projects": "project", "annotations": "annotation"}.get(endpoint) if record.source == "gdc" else None
     parsed_star = record.source == "gdc-star-counts" and record.request.get("parser_version") == "gdc-star-gene-selection-v1"
+    parsed_table = record.source == "gdc-derived" and record.request.get("transform_version") in {"gdc-tabular-transform-v1", "gdc-tabular-transform-v2"}
     if parsed_star: unit = "gene_in_file"
+    if parsed_table: unit = record.request.get("entity_unit")
     metadata = record.source in {"gdc", "xena"}
     profile = {"acquisition_id": record.acquisition_id, "source": record.source,
         "content_sha256": record.content_sha256, "request": record.request,
-        "observed_representation": "gene_summary" if parsed_star else "metadata" if metadata else "structured_rows",
+        "observed_representation": record.request["representation"] if parsed_table else "gene_summary" if parsed_star else "metadata" if metadata else "structured_rows",
         "entity_unit": unit, "inspected_rows": len(rows), "omitted_rows": max(0, len(record.records)-len(rows)),
         "coverage": record.coverage.model_dump(mode="json") if record.coverage else None}
     if parsed_star:
@@ -56,10 +58,15 @@ def assess_retained_representation(record: AcquisitionRecord, need: Representati
         gap("unspecified_representation", "declare the representation required by the estimand")
     elif metadata and need.representation != "metadata":
         gap("metadata_only", need.representation, "metadata does not contain acquired assay bytes or a validated parsed matrix")
+    elif parsed_table and need.representation not in {record.request["representation"], "paired_data"}:
+        gap("incompatible_derived_representation", need.representation, record.request["representation"])
     elif parsed_star and need.representation not in {"gene_summary", "paired_data"}:
         gap("unsupported_derived_representation", need.representation, "one parsed file cannot establish a sample/cohort matrix or another assay")
-    elif not parsed_star and not metadata and need.representation not in {"metadata", "paired_data"}:
+    elif not parsed_table and not parsed_star and not metadata and need.representation not in {"metadata", "paired_data"}:
         gap("unmeasured_assay_schema", need.representation, "structured rows alone do not establish a modality contract")
+    if parsed_table:
+        profile.update(transform_version=record.request["transform_version"], operation=record.request["operation"],
+            input_references=record.request["input_references"], omitted_entities=record.request["omitted_entities"])
     if not rows:
         gap("empty_inspected_response", "nonempty retained inputs")
     if need.entity_unit and need.entity_unit != unit:
@@ -125,3 +132,55 @@ def assess_retained_representation(record: AcquisitionRecord, need: Representati
             "limitations": ["Eligibility is input sufficiency for the declared need, never scientific validity or execution authority.",
                             "Absent fields refer only to inspected source rows; missing inputs are not biological negatives.",
                             "Participant independence, joins, assay semantics and population representativeness are not inferred."]}
+
+
+def representation_alternatives(records, artifacts, need: RepresentationNeed, *, limit=20):
+    """Inspect bounded retained assets by schema/modality, independent of query wording."""
+    from src.provenance import content_hash
+    if not 1 <= limit <= 20 or len(records) > 20 or len(artifacts) > 20:
+        raise ValueError('bounded owned asset alternatives required')
+    alternatives = []
+    supported = {'Masked Somatic Mutation': ('mutation_events', 'parse_gdc_table'),
+        'Copy Number Segment': ('cnv_segments', 'parse_gdc_table'),
+        'Gene Expression Quantification': ('gene_summary', 'parse_gdc_star_counts')}
+    for record in records:
+        checks = assess_retained_representation(record, need)
+        alternatives.append({'candidate_id': record.acquisition_id, 'acquisition_id': record.acquisition_id,
+            'content_sha256': record.content_sha256, 'availability': checks['availability'],
+            'input_ready': checks['eligible'], 'checks': checks, 'operation': None})
+        if record.source == 'gdc' and record.coverage and record.coverage.endpoint == 'cases' and need.representation in {'clinical', 'survival'}:
+            alternatives.append({'candidate_id': content_hash({'source': record.content_sha256, 'operation': 'derive_gdc_clinical', 'need': need.model_dump(mode='json')}),
+                'acquisition_id': record.acquisition_id, 'availability': 'derivable', 'input_ready': False,
+                'operation': 'derive_gdc_clinical', 'representation': need.representation, 'entity_unit': 'case',
+                'limitations': ['Validate source keys and clinical/time fields before readiness; missing cases remain missing.']})
+        if record.source == 'gdc' and record.coverage and record.coverage.endpoint == 'files':
+            for file in record.records:
+                contract = supported.get(file.get('data_type'))
+                if not contract: continue
+                modality, operation = contract
+                if need.representation and modality != need.representation and not (need.representation == 'expression_matrix' and modality == 'gene_summary'):
+                    continue
+                access = file.get('access')
+                required = ('file_id', 'data_format', 'data_type', 'access')
+                schema = file.get('data_format') in {'MAF', 'TXT', 'TSV'}
+                if modality == 'gene_summary': schema = schema and file.get('analysis', {}).get('workflow_type') == 'STAR - Counts'
+                alternatives.append({'candidate_id': content_hash({'acquisition': record.acquisition_id, 'file': file.get('file_id')}),
+                    'acquisition_id': record.acquisition_id, 'file_id': file.get('file_id'), 'source_content_sha256': record.content_sha256,
+                    'availability': 'controlled_inaccessible' if access == 'controlled' else 'derivable' if access == 'open' and schema and all(file.get(k) is not None for k in required) else 'unmeasured',
+                    'input_ready': False, 'representation': modality, 'operation': operation,
+                    'schema': {k: file.get(k) for k in required},
+                    'limitations': ['Acquire exact file bytes, validate parser, then link explicit samples/cases; file metadata is not assay data.',
+                                   'Compression, genome build, missingness and cohort coverage require actual bytes and source linkage.']})
+    for artifact in artifacts:
+        metadata = artifact.request.get('metadata', {})
+        contract = supported.get(metadata.get('data_type')) if artifact.source == 'gdc' else None
+        if not contract: continue
+        modality, operation = contract
+        if need.representation and modality != need.representation and not (need.representation == 'expression_matrix' and modality == 'gene_summary'): continue
+        alternatives.append({'candidate_id': artifact.artifact_id, 'artifact_id': artifact.artifact_id,
+            'byte_sha256': artifact.byte_sha256, 'representation': modality, 'operation': operation,
+            'availability': 'derivable' if artifact.access == 'open' else 'controlled_inaccessible',
+            'input_ready': False, 'limitations': ['Owned bytes still require the supported parser and declared entity/unit/build checks.']})
+    return {'version': 'representation-alternatives-v1', 'need': need.model_dump(mode='json'), 'candidates': alternatives[:limit],
+        'omitted_candidates': max(0, len(alternatives)-limit), 'inspected_acquisitions': len(records), 'inspected_artifacts': len(artifacts),
+        'retrieval': 'bounded owned schema/modality scan; lexical terms do not exclude alternatives', 'authority': 'planning_only'}

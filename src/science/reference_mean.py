@@ -8,6 +8,8 @@ import sys
 
 def main():
     request = json.loads(Path(sys.argv[1]).read_text())
+    if set(request) != {"values"}:
+        raise ValueError("undeclared mean parameter")
     values = request["values"]
     if not isinstance(values, list) or not values or any(
         isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values

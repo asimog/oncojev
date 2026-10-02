@@ -4,14 +4,14 @@ from uuid import uuid4
 
 from pydantic_ai import RunContext
 
-from src.director.frontier import GlobalFrontierPolicy, PreparedFrontier, beam, current_basis, generate
+from src.director.frontier import DirectorProposal, GlobalFrontierPolicy, PreparedFrontier, beam, current_basis, generate
 from src.memory.service import terms
 from src.persistence.records import RecordKind, StoredRecord
 from src.provenance import canonical_bytes
 from src.runtime.pydantic_ai.semantic import measure_async
 
 
-async def prepare_frontier(runtime, objective, *, limit=10):
+async def prepare_frontier(runtime, objective, *, limit=10, proposals=()):
     if not 1 <= limit <= 20 or not objective.strip() or len(objective) > 1000:
         raise ValueError("bounded nonempty objective and limit 1..20 required")
     memory = runtime.memory_service()
@@ -20,13 +20,20 @@ async def prepare_frontier(runtime, objective, *, limit=10):
     memory.backfill()
     basis = current_basis(runtime)
     index = runtime.index_for()
+    from src.director.frontier import authored_investigations
+    authored = authored_investigations(runtime, proposals)
     candidates, omitted = generate(memory.search(objective, mission_id=runtime.mission_id, limit=20), limit=limit)
+    unique = {candidate.candidate_id: candidate for candidate in (*authored, *candidates)}
+    omitted += max(0, len(unique) - limit)
+    candidates = tuple(unique.values())[:limit]
     measured, relations = [], []
     seen_pairs = set()
     stopped = None
     async def measure(context, identity, payload):
         nonlocal stopped
         from src.runtime.pydantic_ai.contracts import WorkStopped
+        if not runtime.enable_jev:
+            return None, "disabled_condition"
         if stopped:
             return None, stopped
         try:
@@ -44,7 +51,7 @@ async def prepare_frontier(runtime, objective, *, limit=10):
                             key=lambda c: -len(terms(candidate.objective) & terms(c.objective)))[:2]
         for other in neighbours:
             pair = tuple(sorted((candidate.candidate_id, other.candidate_id)))
-            if pair in seen_pairs or not (terms(candidate.objective) & terms(other.objective)):
+            if pair in seen_pairs:
                 continue
             seen_pairs.add(pair)
             relation = {"relation_id": str(uuid4()), "left": candidate.model_dump(mode="json"),
@@ -62,7 +69,7 @@ async def prepare_frontier(runtime, objective, *, limit=10):
         payload = {"mission": objective, "candidate": candidate.model_dump(mode="json"),
                    "comparison": [c.model_dump(mode="json") for c in neighbours],
                    "capabilities": [index.card(c).model_dump(mode="json") for c in cards],
-                   "block_seconds": runtime.manager.policy.default_seconds if runtime.manager.policy else 900,
+                   "block_seconds": runtime.manager.policy.default_seconds if runtime.manager.policy else 240,
                    "relations": [{"relation_id": r["relation_id"], "status": r["status"]} for r in relations[-2:]]}
         result, failure = await measure("global_investigation", candidate.candidate_id, payload)
         if result:
@@ -108,9 +115,9 @@ def register_global_tools(agent):
         return review(ctx.deps.runtime,limit=limit)
 
     @agent.tool
-    async def prepare_global_frontier(ctx: RunContext[Any], objective: str, limit: int = 10) -> dict[str, Any]:
+    async def prepare_global_frontier(ctx: RunContext[Any], objective: str, limit: int = 10, proposals: list[dict[str, Any]] = []) -> dict[str, Any]:
         """Generate and compare referenced questions; retain alternatives and failed semantic fallbacks."""
-        frontier = await prepare_frontier(ctx.deps.runtime, objective, limit=limit)
+        frontier = await prepare_frontier(ctx.deps.runtime, objective, limit=limit, proposals=proposals)
         view = frontier.model_dump(mode="json")
         view["relations"] = [{"relation_id": r["relation_id"], "status": r["status"],
                               "left_id": r["left"]["candidate_id"], "right_id": r["right"]["candidate_id"]}

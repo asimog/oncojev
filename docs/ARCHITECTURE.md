@@ -94,6 +94,25 @@ resume a Researcher run. Each block permits one Researcher launch.
   work. Required command controls fail closed and ownership remains held until
   work drains.
 
+The formal frontier accepts up to five Director-authored proposals grounded in a
+retained mission and inspected source/capability context. Proposal references stay
+separate from scientific support; allocation preserves experience and basis lineage.
+Portfolio history records prerequisite-driven readiness changes without resolving
+scientific uncertainty. Memory reserves bounded zero-overlap alternatives only from
+retained scientific context, keeping empty operational cycles out of this fallback.
+
+Source-backed representation alternatives retain availability and unmet prerequisites.
+Fixed GDC transforms support bounded open MAF/CNV, case clinical/survival fields,
+exactly linked selected-gene cohorts and one-to-one case joins. Their governed
+execution retains exact inputs, output identity, units, missingness and information
+loss; representation readiness never grants evidence admission.
+
+The existing evaluation owner compares four fresh semantic conditions. Published
+numerical references and independent SciFact lung/pulmonary annotations remain
+separate from generated adverse contracts and research evidence. Per-case receipts
+retain native distributions, observed usage, failures and unknown scientific utility.
+Published held-out splits cannot establish independence from model pretraining.
+
 ## Composition and execution
 
 [factory.py](../src/runtime/pydantic_ai/factory.py) composes the live runtime from
@@ -104,14 +123,32 @@ The Linux Coder adapter replaces only Shell and retains installed result clearin
 near-limit warnings, output truncation and argument repair. Their composition is
 present; live effectiveness and native qualification require separate proof.
 Coder commands and the default local-venv scientific backend use the owned Linux
-command-family controls. Installed Science currently runs in worker threads under
-the shared heavy-work lease, rather than that process-family governor.
+command-family controls. Live installed Science, source parsing and figures use a
+typed JSON worker under the same Linux process-family governor, with sandbox CPU,
+memory and time settings, Science process limits and remaining block workspace
+capacity. Workers receive detached input values and read-only application/packages;
+network, provider credentials and authoritative state are unavailable. State, result
+validation, persistence and measured receipts stay on the service owner. Explicit
+deterministic fixtures retain the in-process executor for offline contract checks.
+Cancellation drains governed work before releasing the heavy lease; unconfirmed
+cleanup quarantines its owner and prevents further heavy execution. Delta derives
+CPU and workspace accounting from retained process receipts, with sampled disk-peak
+lower bounds and unknowns for absent counters. The adopted decision is recorded in
+`docs/Archive/ADR/ADR_INSTALLED_SCIENCE_PROCESS.md`.
 
 The service loads local environment and validates literal `ONCOJEV_TESTING=0/1`
 before storage/recovery. Config validates ordinary settings, applies only downward
 block-time and public-data caps from typed `testing` YAML, then revalidates. Live
-providers, role/cycle/tool budgets, scientific phases and native confinement stay
-unchanged. The service freezes policy, application identity and owned paths at startup;
+providers, scientific phases and native confinement stay unchanged. The separate
+explicit `unbounded_work` policy is enabled for the requested Tasks 1-11 assessment:
+model, tool, domain-call, retry and cost budgets are ignored
+while usage remains counted. Block timing remains bounded at 180-300 s with a
+240 s default and 30 s handoff reserve. Terminal/handoff closes new work admission.
+Download ceilings, scientific validity/admission, configured candidate-recall
+baselines and command-family resource/isolation controls remain enforced. Disabling
+the flag restores bounded policy. Code Mode uses the pinned SDK's unrestricted
+time/heap settings, no dispatch/retry ceiling and the engine's maximum suspension
+capacity; this does not claim infinite hardware or remove provider-side limits. The service freezes policy, application identity and owned paths at startup;
 edits take effect on restart.
 
 Testing uses `<configured-data-root or var>/testing/<process-uuid>/` for SQLite,
@@ -128,6 +165,38 @@ uses an ordinary software reservation; literature/catalogue limits stay ordinary
 Docker acquisition accounting remains its existing backend behavior; this change
 does not establish Docker native/resource qualification.
 
+Scoped reusable qualification resolves retained canonical declarations, pinned
+upstream/license bytes, actual candidate/independent executions and resource receipts.
+Fresh recovery resolves an exact retained archive and declared Python/stdlib/platform/
+installer constraints; the supported stdlib-only mean has an explicit empty dependency
+set and forbids network fallback. Reference and environment consumers recompute proof
+instead of trusting passing flags. Utility qualification resolves candidate/scope,
+current application, measured comparison and an independent review record bound to
+its observations. Numerical examples and published corpus labels cannot stand in for
+review of new clinical decision utility.
+
+The Researcher `run_reusable_method` tool dispatches only the supported fixed finite
+mean through block-pinned accepted governance history, with exact software/scope,
+current local qualification and owned complete numeric inputs with declared units.
+Changed parameters, synthetic inputs, missing units/proof, runtime drift and retired
+routes reject. Existing shared execution, validation, state/persistence and explicit
+evidence admission remain authoritative. No reviewed clinical utility or accepted
+native reusable promotion has been established by the current assessment.
+
+Task 11's explicit reviewed search metadata migration changes only the existing
+SciPy purpose/tags to describe its Pearson/Welch routes. It preserves other descriptors,
+execution contracts, governed history and old block pins; changed snapshots invalidate
+pagination cursors. Controlled multi-block adapters reuse the fresh-condition reference
+owner and actual Director review/frontier/allocation and Researcher tools. Their
+scripted choices qualify composition/lineage, not autonomous clinical usefulness.
+
+Ordinary local qualification resolves six retained operational observations and
+checks current source/worktree, interpreter, package/stdlib bytes, control binaries
+and shared libraries, kernel settings, effective policy and native owned-path
+filesystems. Drift invalidates historical proof even with unchanged application
+content. The production writer checks one basis before and after native probes;
+fixture transport qualifies only exercised controls, never scientific utility.
+
 Testing identity binds source/configuration content and effective runtime profile
 with `application-testing-v1:`, without the random storage UUID. Existing registry
 revisions, pins and receipts carry it. The local-verification consumer rejects even
@@ -140,7 +209,7 @@ Disposable workspaces are separate from retained inputs and canonical records.
 The [implementation plan](IMPLEMENTATION_PLAN.md) owns unfinished work; the
 [current testing ADR](PROPOSED_ADR_FAST_LOCAL_TESTING.md) is accepted; its testing
 profile is implemented through those owners with scoped local behavioral proof.
-The default testing block is 90 s with handoff at 75 s; the 120 s observation target
+The default testing block is 240 s with handoff at 210 s; the 120 s observation target
 is logged for `run_once` (excluding post-block review) and never cancels draining or
 required science. Live wall time, usefulness and WSL2 qualification remain separate
 explicit checks in the plan, rather than implicit blockers of ordinary code iteration.

@@ -60,6 +60,7 @@ class MemoryContext(BaseModel, frozen=True):
     digests: tuple[dict[str, Any], ...] = ()
     omitted_digests: int = 0
     max_bytes: int = 32768
+    retrieval: dict[str, Any] = Field(default_factory=dict)
 
 
 class StartMemory(BaseModel, frozen=True):
@@ -102,4 +103,5 @@ class MemoryRetrievalReceipt(BaseModel, frozen=True):
     semantic_call_ids: tuple[str, ...] = ()
     resources: dict[str, Any]
     duration_ms: float = Field(ge=0)
-    retrieval_version: str = "memory-retrieval-v2"
+    retrieval_version: str = "memory-retrieval-v3-bounded-alternatives"
+    retrieval: dict[str, Any] = Field(default_factory=dict)

@@ -31,7 +31,7 @@ from src.runtime.pydantic_ai.factory import build_system
 from src.memory.service import ResearchMemory
 
 
-DEFAULT_DIRECTION = "Investigate a public oncology signal and admit only source-bound reproducible evidence."
+DEFAULT_DIRECTION = "Investigate lung cancer using public source-bound data, preserve uncertainty and admit only reproducible evidence."
 
 
 def recover_interrupted_blocks(repository: ResearchRepository) -> tuple[str, ...]:
@@ -123,7 +123,7 @@ class AutonomousService:
         recover_interrupted_blocks(self.repository)
         ResearchMemory(self.store).backfill()
         self.resources = ServiceResources.from_policy(self.policy)
-        print("SERVICE PROFILE " + json.dumps({"testing": self.settings.testing,
+        print("SERVICE PROFILE " + json.dumps({"testing": self.settings.testing, "unbounded_work": self.policy.unbounded_work,
             "block": {key: getattr(self.policy.block, key) for key in
                 ("default_seconds", "min_seconds", "max_seconds", "handoff_reserve_seconds")},
             "public_data": self.resources.snapshot()["public_data"],

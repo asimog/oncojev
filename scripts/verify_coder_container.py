@@ -48,7 +48,7 @@ def _as_stream(respond):
     return stream
 
 
-def _model(role: str, peer: Path, secret: Path, proof_root: Path):
+def _model(role: str, peer: Path, secret: Path, proof_root: Path, block_peer: Path):
     calls = 0
 
     async def respond(_messages, info):
@@ -102,7 +102,7 @@ checks = {{
     "database_read_denied": denied(lambda: p("/app/var/authoritative-db-sentinel").read_bytes()),
     "database_write_denied": denied(lambda: open_write("/app/var/authoritative-db-sentinel")),
     "peer_write_denied": denied(lambda: (p({str(peer)!r}) / "shell-write-denied.txt").write_text("denied")),
-    "other_block_write_denied": denied(lambda: p("/app/var/workspaces/peer/other-block-write-denied.txt").write_text("denied")),
+    "other_block_write_denied": denied(lambda: (p({str(block_peer)!r}) / "other-block-write-denied.txt").write_text("denied")),
     "peer_read_denied": denied(lambda: (p({str(peer)!r}) / "peer-private.txt").read_text()),
     "credential_file_denied": denied(lambda: p({str(secret)!r}).read_text()),
     "proc_environment_denied": denied(lambda: p("/proc/1/environ").read_bytes()),
@@ -148,6 +148,9 @@ def main() -> None:
         max_jev_calls=2,
         max_reasoner_calls=1,
     )
+    from src.config.loader import load_runtime_config
+    from src.runtime.resources import ServiceResources
+    runtime.service_resources = ServiceResources.from_policy(load_runtime_config(APPLICATION / "config/runtime.yaml"))
     block = runtime.manager.create("Coder smoke block", "verify harness composition", ResourceAllocation(seconds=3600))
     runtime.research_state.start(block.block_id, block.objective)
     runtime.skills.start(block.block_id)
@@ -169,10 +172,10 @@ def main() -> None:
     for name in ("OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "LOGFIRE_TOKEN", "AWS_SECRET_ACCESS_KEY", "GH_TOKEN", "GITHUB_TOKEN", "ONCOJEV_DB_PATH", "ONCOJEV_DATABASE_URL", "ONCOJEV_MIGRATION_DATABASE_URL", "ONCOJEV_WRITER_PASSWORD"):
         os.environ[name] = "fake-verifier-sentinel"
 
-    with agents.director.override(model=_model("director", peer, secret, proof_root)):
+    with agents.director.override(model=_model("director", peer, secret, proof_root, peer)):
         director = agents.director.run_sync("Inspect the workspace and OncoLab Index.", deps=DirectorDeps(runtime))
     researcher_agent = agents.fresh_researcher(block.block_id)
-    with researcher_agent.override(model=_model("researcher", director_root, secret, proof_root)):
+    with researcher_agent.override(model=_model("researcher", director_root, secret, proof_root, peer)):
         researcher = researcher_agent.run_sync(
             "Inspect the workspace and OncoLab Index.", deps=ResearcherDeps(runtime, block.block_id)
         )

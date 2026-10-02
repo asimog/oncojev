@@ -49,9 +49,10 @@ class RegistryPin(BaseModel, frozen=True):
 
 
 class OncoLabInstitution:
-    def __init__(self, store, seed, application):
+    def __init__(self, store, seed, application, environment_provider=None):
         self.store = store
         self.application = application
+        self.environment_provider = environment_provider
         with store.transaction():
             if store.latest(RecordKind.REGISTRY_REVISION) is None:
                 self._append_revision(None, seed.descriptors(), seed.routes, None, 'curated_seed')
@@ -137,3 +138,33 @@ class OncoLabInstitution:
         revision = revision.model_copy(update={'revision_id': content_hash(revision.model_dump(mode='json', exclude={'revision_id'}))})
         self.store.append(StoredRecord(kind=RecordKind.REGISTRY_REVISION, record_id=revision.revision_id, payload=revision.model_dump(mode='json')))
         return revision
+
+
+def refresh_reviewed_search_metadata(institution, seed, *, capability_id="stat.scipy"):
+    """Explicit reviewed engineering migration; preserves all routes and old pins.
+
+    Only Task 11 stat.scipy purpose/tags and source.gdc limitations are supported.
+    Scientific promotion remains governed separately.
+    """
+    with institution.store.transaction():
+        parent = institution.pin().oncolab_registry_revision
+        index = institution.index()
+        fields = {'stat.scipy': ('purpose', 'tags'), 'source.gdc': ('limitations',)}.get(capability_id)
+        if fields is None: raise ValueError('unsupported reviewed metadata correction')
+        existing = index.describe(capability_id)
+        canonical = seed.describe(capability_id)
+        if existing is None or canonical is None: raise ValueError('canonical descriptor missing')
+        updated = existing.model_copy(update={name: getattr(canonical, name) for name in fields})
+        if updated == existing: return None
+        descriptors = [updated if d.capability_id == existing.capability_id else d for d in index.descriptors()]
+        routes = dict(index.routes)
+        change_hash = content_hash({'descriptors': [d.model_dump(mode='json') for d in descriptors],
+            'routes': {k: [r.model_dump(mode='json') for r in v] for k, v in routes.items()}})
+        payload = {'review_id': content_hash({'parent': parent, 'change': change_hash}), 'parent': parent,
+            'status': 'accepted', 'policy_version': 'reviewed-search-metadata-v1', 'change_sha256': change_hash,
+            'application_identity': institution.application, 'capability_id': existing.capability_id,
+            'before': existing.model_dump(mode='json', include=set(fields)),
+            'after': updated.model_dump(mode='json', include=set(fields)),
+            'scope': 'Reviewed Task 11 canonical metadata correction; no authority, route or scientific-validation change.'}
+        saved = institution.store.append(StoredRecord(kind=RecordKind.REGISTRY_REVIEW, record_id=payload['review_id'], payload=payload))
+        return institution.accept(descriptors, routes, expected_parent=parent, governance_reference=saved.seq)

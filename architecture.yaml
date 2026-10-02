@@ -3,7 +3,7 @@ schema_version: 1
 authority: projection
 canonical_sources:
   - path: docs/ARCHITECTURE.md
-    sha256: c0655f22e8a636f1f57681ab3acb8004d834da8125fb7d404a05e58239e057ee
+    sha256: bf525fc434d3553310d046e88d08949e80f6708bda19effa211d8741f2e3f0a2
   - path: AGENTS.md
     sha256: d1bd27bd5ad58cd36b4c8d7c420fe20ec1b0d4e71d645e56b3057e8ca50ed285
 # Owners/directions are REVIEWED authority/data flow, not an import DAG.
@@ -151,8 +151,8 @@ high_consequence_invariants:
     owner: service
     classification: REVIEWED
     statement: Owned Linux command execution checks required cgroup/namespace controls, drains descendants and rejects unconfirmed cleanup.
-    evidence: [src/runtime/process.py::run_owned_command, scripts/verify_coder_resources.py, scripts/verify_science_resources.py]
-    limit: Source inspection is not current native confinement proof. In-process Science is thread-offloaded without this kernel command-family governor.
+    evidence: [src/runtime/process.py::run_owned_command, src/science/installed.py::InstalledScienceRunner.run, scripts/verify_coder_resources.py, scripts/verify_science_resources.py, scripts/verify_installed_science.py]
+    limit: Source inspection is not qualification. Live installed Science uses the same governor; deterministic fixtures remain in process. Native evidence and exact environment qualification have separate owners.
   - id: bounded_admission_identity
     owner: science
     classification: TESTED

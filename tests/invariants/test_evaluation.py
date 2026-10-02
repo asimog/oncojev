@@ -64,9 +64,9 @@ def _runner(system, direction, repository: ResearchRepository, condition: Evalua
                 f'await measure_acquisition(acquisition_id="{acquisition.acquisition_id}", analysis_id="replicate")',
                 'await admit_measurement(analysis_id="replicate")',
             ]
-            if condition is not EvaluationCondition.SCIENCE_ONLY:
+            if condition in {EvaluationCondition.SCIENCE_REASONER, EvaluationCondition.SCIENCE_JEV_REASONER}:
                 lines.append('await generate_hypotheses(finding="measured association")')
-            if condition is EvaluationCondition.SCIENCE_JEV_REASONER:
+            if condition in {EvaluationCondition.SCIENCE_JEV, EvaluationCondition.SCIENCE_JEV_REASONER}:
                 lines.append('await evaluate_candidate(candidate_id="candidate", candidate_summary="synthetic subgroup")')
             if not fail_researcher:
                 lines.append('await complete_block(reason="done")')
@@ -85,7 +85,7 @@ def _evaluate(direction: str) -> EvaluationReport:
         direction,
         models=load_models_config(ROOT / "config/models.yaml"),
         policy=load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC}),
-        agents_factory=lambda: create_agents("test", "test"),
+        agents_factory=lambda: create_agents("test", "test", enable_coder=False),
         environment={},
         runner=_runner,
     )
@@ -118,7 +118,7 @@ def test_report_does_not_hardcode_a_winner_and_path_is_dynamic():
     report = _evaluate(DIRECTIONS[1])
     assert "best" not in EvaluationReport.model_fields
     assert "winner" not in EvaluationReport.model_fields
-    assert len(report.conditions) == 3
+    assert len(report.conditions) == 4
     assert all(metrics.blocks == 1 for metrics in report.conditions)
 
 
@@ -137,12 +137,12 @@ def test_evaluation_corpus_runs_reproducibly_in_deterministic_mode():
         DIRECTIONS,
         models=load_models_config(ROOT / "config/models.yaml"),
         policy=load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC}),
-        agents_factory=lambda: create_agents("test", "test"),
+        agents_factory=lambda: create_agents("test", "test", enable_coder=False),
         environment={},
         runner=_runner,
     )
     assert len(reports) == len(DIRECTIONS)
-    assert all(len(report.conditions) == 3 for report in reports)
+    assert all(len(report.conditions) == 4 for report in reports)
 
 
 @pytest.mark.parametrize("failure", ["researcher", "custom_before_cycle", "custom_after_cycle", "setup_failure", "custom_no_receipt"])
@@ -155,7 +155,7 @@ def test_failed_condition_preserves_partial_results_and_continues(failure):
         builds += 1
         if failure == "setup_failure" and builds == 1:
             raise ValueError("agent construction failed")
-        return create_agents("test", "test")
+        return create_agents("test", "test", enable_coder=False)
 
     def runner(system, direction, repository, condition):
         visited.append(condition)
@@ -250,3 +250,78 @@ def test_representation_evaluation_isolates_labels_and_keeps_failure_fallback_ga
         assert all(r.payload['outcome'] in {'started','failed'} for r in store.records(kind=RecordKind.JEV_CALL))
     finally:
         store.close()
+
+
+def test_reference_comparison_withholds_labels_and_matches_fresh_conditions():
+    from src.evals.reference import ReferenceCase, evaluate_reference_cases
+    case = ReferenceCase(case_id='held-out-secret', split='held_out', domain='contract', public_inputs={'direction': 'lung cancer', 'values': [1, 2]},
+        expected={'result': 3}, reference_url='https://example.invalid/reference', label_basis='independent review pending')
+    stores, gates = [], []
+    def adapter(system, repository, condition, inputs, *, alternative_limit):
+        assert set(inputs) == {'direction', 'values'}
+        stores.append(repository.store)
+        gates.append((condition, system.runtime.enable_jev, system.runtime.enable_reasoner))
+        return {'result': sum(inputs['values'])}
+    report = evaluate_reference_cases((case,), adapter, models=load_models_config(ROOT / 'config/models.yaml'),
+        policy=load_runtime_config(ROOT / 'config/runtime.yaml').model_copy(update={'mode': RuntimeMode.DETERMINISTIC}),
+        agents_factory=lambda: create_agents('test', 'test', enable_coder=False), environment={}, memory_alternatives=(0, 3))
+    assert len(report['rows']) == 8 and all(row['agreement'] for row in report['rows'])
+    assert len({id(store) for store in stores}) == 8
+    assert {gate for gate in gates if gate[0] == EvaluationCondition.SCIENCE_JEV} == {(EvaluationCondition.SCIENCE_JEV, True, False)}
+    assert report['scientific_utility'] is None and all(row['independent_review'] == 'pending' for row in report['rows'])
+
+
+def test_utility_producer_binds_candidate_scope_comparison_without_fabricating_qualification():
+    from src.evals.reference import retain_utility_evaluation
+    from src.persistence.store import SqliteResearchStore
+    from src.persistence.records import RecordKind, StoredRecord
+    from src.provenance import content_hash
+    store = SqliteResearchStore()
+    candidate = store.append(StoredRecord(kind=RecordKind.SANDBOX_CANDIDATE, record_id='fixture-candidate', payload={'fixture': True}))
+    scope = {'population': 'reference fixture'}
+    report = {'rows': [{'case_id': 'reference', 'agreement': True, 'independent_review': 'pending',
+        'observations': {'candidate_id': candidate.record_id, 'scope_sha256': content_hash(scope)}}],
+        'mode': 'deterministic', 'repeats': 1, 'scientific_utility': None}
+    proof = retain_utility_evaluation(store, candidate.record_id, scope, report, application_identity='fixture')
+    assert proof.payload['status'] == 'unsupported' and proof.payload['candidate_sha256'] == content_hash(candidate.payload)
+    comparison = store.record_at(proof.payload['comparison_reference']['seq'])
+    assert content_hash(comparison.payload) == proof.payload['comparison_reference']['sha256']
+    with pytest.raises(ValueError, match='scope'):
+        retain_utility_evaluation(store, candidate.record_id, {'population': 'changed'}, report, application_identity='fixture')
+    assert not store.records(kind=RecordKind.EVIDENCE)
+    store.close()
+
+
+def test_whole_lab_memory_and_open_proposal_variants_keep_actual_choice_lineage():
+    from src.evals.reference import evaluate_reference_cases, load_reference_corpus, reference_consumer_adapter
+    cases = load_reference_corpus(ROOT / 'evals/reference/scientific-v1.json')
+    case = cases[0].model_copy(update={'public_inputs': {**cases[0].public_inputs, 'operation': 'whole_lab', 'search_mode': 'retained_only'}})
+    report = evaluate_reference_cases((case,), reference_consumer_adapter, models=load_models_config(ROOT / 'config/models.yaml'),
+        policy=load_runtime_config(ROOT / 'config/runtime.yaml').model_copy(update={'mode': RuntimeMode.DETERMINISTIC}),
+        agents_factory=lambda: create_agents('test', 'test', enable_coder=False), environment={}, memory_alternatives=(0, 3),
+        conditions=(EvaluationCondition.SCIENCE_ONLY,))
+    withheld, retained = (row['observations'] for row in report['rows'])
+    assert all(row['agreement'] is True for row in report['rows'])
+    assert withheld['blocks_observed'] == 1 and not withheld['next_block_allocated']
+    assert retained['blocks_observed'] == 2 and retained['next_block_allocated'] and retained['review_to_choice']
+    assert retained['allocation_lineage'][0]['payload']['experience_refs']
+    assert retained['program_reviews'] and all(review['scientific_value'] == 'unknown' for review in retained['program_reviews'])
+    assert withheld['scientific_utility'] is None and retained['scientific_utility'] is None
+    assert not any(row['observations']['native_semantic_receipts'] for row in report['rows'])
+
+
+def test_reference_adapter_exception_is_not_masked_by_an_earlier_incomplete_cycle():
+    from src.evals.reference import evaluate_reference_cases, ReferenceCase
+    from src.block.models import CycleStatus
+    case = ReferenceCase(case_id='failure', split='held_out', domain='operational', public_inputs={'direction': 'lung cancer'},
+        expected={'result': 1}, reference_url='https://example.test/fixture', label_basis='Operational failure fixture')
+    def failing(system, repository, condition, inputs, *, alternative_limit):
+        repository.record_cycle('prior', 'deterministic', 'lung cancer', (), status=CycleStatus.INCOMPLETE, error_type='PriorIncomplete')
+        raise ValueError('actual adapter failure')
+    report = evaluate_reference_cases((case,), failing, models=load_models_config(ROOT / 'config/models.yaml'),
+        policy=load_runtime_config(ROOT / 'config/runtime.yaml').model_copy(update={'mode': RuntimeMode.DETERMINISTIC}),
+        agents_factory=lambda: create_agents('test', 'test', enable_coder=False), environment={}, memory_alternatives=(0,),
+        conditions=(EvaluationCondition.SCIENCE_ONLY,))
+    row = report['rows'][0]
+    assert row['agreement'] is None and row['observations']['adapter_error_type'] == 'ValueError'
+    assert row['metrics']['error_type'] == 'ValueError'

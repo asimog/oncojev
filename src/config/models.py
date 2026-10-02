@@ -33,10 +33,10 @@ class SandboxConfig(StrictModel):
     memory_mb: int = Field(default=4096, ge=512, le=32768)
     timeout_seconds: int = Field(default=300, ge=10, le=1800)
 class BlockConfig(StrictModel):
-    default_seconds: int = Field(default=900, gt=0)
-    min_seconds: int = Field(default=300, gt=0)
-    max_seconds: int = Field(default=3600, gt=0)
-    handoff_reserve_seconds: int = Field(default=90, ge=0)
+    default_seconds: int = Field(default=240, gt=0)
+    min_seconds: int = Field(default=180, gt=0)
+    max_seconds: int = Field(default=300, gt=0)
+    handoff_reserve_seconds: int = Field(default=30, ge=0)
     max_tool_calls: int = Field(default=100, ge=0)
     max_model_requests: int = Field(default=200, ge=0)
     max_provider_tool_calls: int = Field(default=500, ge=0)
@@ -75,7 +75,7 @@ class RetrievalConfig(StrictModel):
     max_memory_jev_bytes: int = Field(default=131072, ge=0)
     max_memory_jev_seconds: float = Field(default=20, ge=0)
     max_event_turns: int = Field(default=8, ge=0)
-    program_review_interval_seconds: float = Field(default=300, gt=0)
+    program_review_interval_seconds: float = Field(default=180, gt=0)
 
 
 class CycleBudgetConfig(StrictModel):
@@ -117,10 +117,10 @@ class ServiceResourceConfig(StrictModel):
 
 
 class TestingBlockConfig(StrictModel):
-    default_seconds: int = Field(default=90, gt=0)
-    min_seconds: int = Field(default=60, gt=0)
-    max_seconds: int = Field(default=90, gt=0)
-    handoff_reserve_seconds: int = Field(default=15, gt=0)
+    default_seconds: int = Field(default=240, gt=0)
+    min_seconds: int = Field(default=180, gt=0)
+    max_seconds: int = Field(default=300, gt=0)
+    handoff_reserve_seconds: int = Field(default=30, gt=0)
 
     @model_validator(mode="after")
     def allocation_bounds(self):
@@ -144,6 +144,7 @@ class TestingConfig(StrictModel):
 
 
 class RuntimeConfig(StrictModel):
+    unbounded_work: bool = False
     _testing_enabled: bool = PrivateAttr(default=False)
     testing: TestingConfig = Field(default_factory=TestingConfig)
 

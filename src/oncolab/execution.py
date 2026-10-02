@@ -18,6 +18,12 @@ class ExecutionRoute(BaseModel, frozen=True):
 
 
 ROUTES = {
+    "transform.gdc-tabular": (
+        ExecutionRoute(tool="transform_gdc_representation", operation="parse_gdc_table", required_inputs=("artifact",)),
+        ExecutionRoute(tool="transform_gdc_representation", operation="derive_gdc_clinical", required_inputs=("acquisition",)),
+        ExecutionRoute(tool="transform_gdc_representation", operation="assemble_gdc_expression", required_inputs=("acquisition",)),
+        ExecutionRoute(tool="transform_gdc_representation", operation="join_gdc_case_inputs", required_inputs=("acquisition",)),
+    ),
     "transform.gdc-star-counts": (ExecutionRoute(tool="parse_gdc_star_counts", required_inputs=("artifact",)),),
     "source.gdc-file": (ExecutionRoute(tool="acquire_gdc_file",required_inputs=("open_file_id",)),),
     "science.source-paired": (

@@ -17,7 +17,7 @@ async def wait_for_research(runtime, director, direction, *, allow_global_work=T
         while not active.task.done():
             runtime.set_service_state(ServiceResearchState.WAITING_FOR_RESEARCH_EVENT, cause=active.run_id)
             used = runtime._counts.get("director:event_turns", 0)
-            if not global_enabled or used >= runtime.director_event_turn_limit:
+            if not global_enabled or (not runtime.unbounded_work and used >= runtime.director_event_turn_limit):
                 await asyncio.shield(active.task)
                 break
             notification = asyncio.create_task(runtime.research_events.get())

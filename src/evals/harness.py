@@ -27,6 +27,7 @@ from src.runtime.pydantic_ai.factory import ConfiguredSystem, build_harness_runt
 CONDITIONS: tuple[EvaluationCondition, ...] = (
     EvaluationCondition.SCIENCE_ONLY,
     EvaluationCondition.SCIENCE_REASONER,
+    EvaluationCondition.SCIENCE_JEV,
     EvaluationCondition.SCIENCE_JEV_REASONER,
 )
 
@@ -36,8 +37,8 @@ AgentsFactory = Callable[[], OncoJevAgents]
 
 def apply_condition(runtime: HarnessRuntime, condition: EvaluationCondition) -> HarnessRuntime:
     """Gate semantic capabilities for one condition; science always stays available."""
-    runtime.enable_jev = condition is EvaluationCondition.SCIENCE_JEV_REASONER
-    runtime.enable_reasoner = condition is not EvaluationCondition.SCIENCE_ONLY
+    runtime.enable_jev = condition in {EvaluationCondition.SCIENCE_JEV, EvaluationCondition.SCIENCE_JEV_REASONER}
+    runtime.enable_reasoner = condition in {EvaluationCondition.SCIENCE_REASONER, EvaluationCondition.SCIENCE_JEV_REASONER}
     return runtime
 
 
@@ -68,6 +69,10 @@ def _metrics(condition: EvaluationCondition, store: SqliteResearchStore, elapsed
         records=store.count(),
         source_bound_evidence=sum(1 for record in evidence if record.payload.get("measurement", {}).get("origin") in {"source", "sandbox"}),
         jev_failures=len(store.records(kind=RecordKind.JEV_FAILURE)),
+        verified_replications=sum(r.payload.get('outcome') == 'replicated' and r.payload.get('independence') == 'observed_disjoint_complete_case_queries'
+            and r.payload.get('confirmation_access') == 'fresh_local_query' for r in store.records(kind=RecordKind.FOLLOWUP_RESULT)),
+        invalid_designs=sum(r.payload.get('stage') == 'invalid' for r in store.records(kind=RecordKind.SCIENTIFIC_ATTEMPT)),
+        memory_retrievals=len(store.records(kind=RecordKind.MEMORY_RETRIEVAL)),
         completed_blocks=sum(reconstruct_block(store, block_id).complete for block_id in store.block_ids()),
         status=CycleStatus.FAILED if failed else CycleStatus.INCOMPLETE if incomplete else CycleStatus.COMPLETE,
         error_type=(failed or incomplete or [{}])[-1].get("error_type"),
@@ -127,7 +132,7 @@ def evaluate_condition(
                                         cycle_id=pending.record_id if pending else None)
                 recover_interrupted_blocks(repository)
             metrics = _metrics(condition, store, perf_counter() - started)
-            return metrics.model_copy(update={"status": CycleStatus.FAILED, "error_type": metrics.error_type or type(error).__name__})
+            return metrics.model_copy(update={"status": CycleStatus.FAILED, "error_type": type(error).__name__})
         return _metrics(condition, store, perf_counter() - started)
     finally:
         store.close()

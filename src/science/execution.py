@@ -63,6 +63,9 @@ class ScienceExecutor:
             units={"cases":{"case","patient"},"files":{"file"},"projects":{"project"},"annotations":{"annotation"}}
             if endpoint not in units or spec.entity_unit not in units[endpoint] or spec.entity_field!="id":
                 raise InvalidAnalysis("GDC entity unit/key must match endpoint; joined rows require a separate contract")
+        if record.source == "gdc-derived" and (record.request.get("transform_version") != "gdc-tabular-transform-v1"
+                or record.request.get("entity_unit") != spec.entity_unit or spec.entity_field not in {"entity_id", "case_id"}):
+            raise InvalidAnalysis("derived source entity unit/key must match its validated transform")
         if spec.covariates or set(spec.transformations)-{"x","y"}:
             raise InvalidAnalysis("this operation does not implement covariates or undeclared transformations")
         pairs={"x":[],"y":[]};entities=[];seen=set();excluded={};counts={"total_rows":len(record.records),"complete_pairs":0,"excluded_rows":0}
@@ -89,12 +92,23 @@ class ScienceExecutor:
         minimum=3 if spec.method=="ordinary_least_squares" else 2
         if len(entities)<minimum or len(set(pairs["x"]))<2 or len(set(pairs["y"]))<2:
             raise InvalidAnalysis("paired analysis requires enough complete nonconstant observations")
+        standardization = {}
+        for axis in ("x", "y"):
+            if spec.transformations.get(axis) == "zscore":
+                values = np.asarray(pairs[axis], dtype=float)
+                mean, deviation = float(values.mean()), float(values.std(ddof=1))
+                if not math.isfinite(deviation) or deviation <= 0:
+                    raise InvalidAnalysis("zscore requires finite nonzero complete-pair sample SD")
+                pairs[axis] = ((values - mean) / deviation).tolist()
+                standardization[axis] = {"mean": mean, "sample_sd": deviation, "ddof": 1, "n": len(values)}
         exploratory=self.execute(spec.model_copy(update={"inputs":pairs}))
         exclusions = {"analysis_id", "source_refs", "inputs", "replication_id"}
         if spec.test_plan is None:
             exclusions.add("test_plan")  # preserve historical v1 analysis identity
         contract=spec.model_dump(mode="json",exclude=exclusions)
         version = "source-paired-test-v1" if spec.test_plan else "source-paired-v1"
+        if standardization:
+            version = "source-paired-standardized-test-v1" if spec.test_plan else "source-paired-standardized-v1"
         key=self._hash({"content":record.content_sha256,"contract":contract,"version":version})
         test = self._test_association(pairs, spec) if spec.test_plan else None
         if test:
@@ -105,7 +119,7 @@ class ScienceExecutor:
             "provenance":(*exploratory.provenance,"source-paired-v1",version,key) if spec.test_plan else (*exploratory.provenance,"source-paired-v1",key),
             "diagnostics":{"counts":counts,"excluded_fields":excluded,"paired_entities":entities,"fields":spec.fields,
                            "design":spec.design,"entity_unit":spec.entity_unit,"population":spec.population,"estimand":spec.estimand,
-                           "transformations":spec.transformations,"coverage":record.coverage.model_dump(mode="json") if record.coverage else None,
+                           "transformations":spec.transformations,"standardization":standardization,"coverage":record.coverage.model_dump(mode="json") if record.coverage else None,
                            **({"hypothesis_test": test["diagnostics"]} if test else {})},
             "limitations":("Association over complete stored rows; no causal interpretation.",
                             "Inference requires independent observations and method-specific assumptions; these are declared, not empirically guaranteed.",

@@ -10,7 +10,7 @@ from collections.abc import Callable
 from contextlib import nullcontext
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Literal
 from decimal import Decimal
 from uuid import uuid4
 from time import perf_counter
@@ -157,6 +157,8 @@ class HarnessRuntime:
     memory_elapsed: float = 0
     method_assessments: dict[str, dict[str, Any]] = field(default_factory=dict)
     service_resources: ServiceResources = field(default_factory=ServiceResources)
+    installed_science_runner: Any = None
+    unbounded_work: bool = False
     _jev_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     active_research: ActiveResearchContext | None = None
     service_state: ServiceResearchState = ServiceResearchState.ALLOCATING
@@ -173,6 +175,7 @@ class HarnessRuntime:
     _counts: dict[str, int] = field(default_factory=dict)
     external_discovery: Any = None
     application_content_identity: str | None = None
+    verification_environment_provider: Any = None
     runtime_paths: Any = None
     reserve_software: Any = None
     institution: Any = None
@@ -182,7 +185,7 @@ class HarnessRuntime:
         if self.repository is not None and self.institution is None:
             from src.oncolab.institution import OncoLabInstitution, application_identity
             self.institution = OncoLabInstitution(self.repository.store, self.oncolab,
-                self.application_content_identity or application_identity())
+                self.application_content_identity or application_identity(), self.verification_environment_provider)
             self.manager.registry_pin_provider = lambda: self.institution.pin().model_dump()
 
     def index_for(self, block_id=None):
@@ -209,7 +212,7 @@ class HarnessRuntime:
     def claim_memory_measurement(self, questions, payload_bytes):
         limits={"memory_jev":(1,self.memory_jev_calls),"memory_questions":(questions,self.memory_jev_questions),
                 "memory_bytes":(payload_bytes,self.memory_jev_bytes)}
-        if self.memory_elapsed>=self.memory_jev_seconds or any(self._counts.get(k,0)+v>limit for k,(v,limit) in limits.items()):
+        if not self.unbounded_work and (self.memory_elapsed>=self.memory_jev_seconds or any(self._counts.get(k,0)+v>limit for k,(v,limit) in limits.items())):
             raise WorkStopped("memory_retrieval_budget_exhausted")
         for k,(v,limit) in limits.items():self._counts[k]=self._counts.get(k,0)+v
 
@@ -224,11 +227,12 @@ class HarnessRuntime:
         key = f"{block_id}:{resource}"
         count = self._counts.get(key, 0) + 1
         self._counts[key] = count
-        self.append_event(block_id, "ResourceAttempt", {"resource": resource, "attempt": count, "limit": limit})
+        self.append_event(block_id, "ResourceAttempt", {"resource": resource, "attempt": count,
+                          "limit": None if self.unbounded_work else limit})
 
     def check_work(self, block_id: str, resources: dict[str, tuple[int, int]] | None = None) -> None:
         reason = "soft_deadline_handoff" if self.manager.status(self.manager.block(block_id)) is not BlockStatus.ACTIVE else None
-        exhausted = next((name for name, (amount, limit) in (resources or {}).items()
+        exhausted = None if self.unbounded_work else next((name for name, (amount, limit) in (resources or {}).items()
                           if self._counts.get(f"{block_id}:{name}", 0) + amount > limit), None)
         if reason or exhausted:
             stopped = WorkStopped(reason or "budget_exhausted", exhausted)
@@ -241,7 +245,8 @@ class HarnessRuntime:
                   "tool": self.max_tool_calls, "jev": self.max_jev_calls,
                   "jev_questions": self.max_jev_questions, "reasoner": self.max_reasoner_calls}
         return {name: {"attempted": self._counts.get(f"{block_id}:{name}", 0),
-                       "remaining": max(0, limit - self._counts.get(f"{block_id}:{name}", 0)), "limit": limit}
+                       "remaining": None if self.unbounded_work else max(0, limit - self._counts.get(f"{block_id}:{name}", 0)),
+                       "limit": None if self.unbounded_work else limit}
                 for name, limit in limits.items()}
 
     def total_usage(self) -> RunUsage:
@@ -257,7 +262,8 @@ class HarnessRuntime:
                     "reported_cost": str(usage.cost) if usage.cost is not None else None}
         total = self.total_usage()
         def budget(used, limit):
-            return {"attempted": used, "remaining": max(0, limit - used), "limit": limit}
+            return {"attempted": used, "remaining": None if self.unbounded_work else max(0, limit - used),
+                    "limit": None if self.unbounded_work else limit}
         def role_budget(key, requests, request_limit, tool_limit, code_limit):
             return {"model_requests": budget(requests, request_limit),
                     "provider_tools": budget(self._counts.get(f"{key}:provider_tools", 0), tool_limit),
@@ -276,6 +282,8 @@ class HarnessRuntime:
                 "provider_tool_attempts": self._counts.get("cycle:provider_tools", 0), "budgets": budgets}
 
     def usage_limits(self, role: str) -> UsageLimits:
+        if self.unbounded_work:
+            return UsageLimits(request_limit=None, tool_calls_limit=None, cost_limit=None)
         cost = self.director_cost_limit if role == "director" else self.max_cost
         return UsageLimits(request_limit=self.director_request_limit if role == "director" else self.max_model_requests,
                            tool_calls_limit=self.director_tool_limit if role == "director" else self.max_provider_tool_calls,
@@ -391,10 +399,61 @@ class HarnessRuntime:
                 payload={"state": value.value, "mission_id": self.mission_id, "cycle_id": self.cycle_id,
                          "cause": cause, "operational_only": True}))
 
+    async def execute_external(self, owner, request, *, recovery_inputs=None):
+        """One governed external pipeline owner shared by qualification and tools."""
+        from src.science.local import LocalVenvScientificBackend
+        if isinstance(self.sandbox, LocalVenvScientificBackend):
+            if self.runtime_paths is not None:
+                self.runtime_paths.require_owned(self.sandbox.root / owner / "experiments")
+            backend = LocalVenvScientificBackend(self.sandbox.root / owner / "experiments", self.sandbox.policy,
+                workspace_limit=self.service_resources.max_workspace_bytes,workspace_base=self.sandbox.root / owner,
+                max_processes=self.service_resources.max_science_processes,
+                minimum_free_disk_bytes=self.service_resources.minimum_free_disk_bytes, recovery_inputs=recovery_inputs)
+            with self.reserve_software(owner, None) as reservation:
+                backend.download_limit = reservation.capacity
+                try:
+                    candidate = await self.heavy_operation(owner, backend.acquire_and_execute, request.model_copy(deep=True))
+                finally:
+                    try:
+                        reservation.consume(backend.downloaded)
+                    finally:
+                        try:
+                            self.service_resources.charge_download(owner, backend.downloaded, category="software")
+                        finally:
+                            try:
+                                self.append_event(owner, "ScientificResourceReceipt", {'executions':backend.process_resources,'operational_only':True})
+                            finally:
+                                self.append_event(owner, "ScientificTransferReceipt", {"consumed_bytes": backend.downloaded,
+                                    "reserved_bytes": reservation.capacity, "backend": "local_venv"})
+        else:
+            backend = self.sandbox
+            if self.runtime_paths is not None:
+                parent = self.runtime_paths.workspaces / owner / "experiments"
+                self.runtime_paths.require_owned(parent)
+                backend = DockerScientificSandbox(self.sandbox.policy, self.sandbox._runner, owned_parent=parent)
+            candidate = await self.heavy_operation(owner, backend.acquire_and_execute, request.model_copy(deep=True))
+        if self.repository is not None:
+            self.repository.record_immutable(RecordKind.SANDBOX_CANDIDATE, candidate.candidate_id, candidate, owner)
+        self.sandbox_candidates[candidate.candidate_id] = candidate.model_copy(deep=True)
+        self.sandbox_owners[candidate.candidate_id] = owner
+        return candidate
+
     async def heavy_operation(self, block_id, operation, *inputs):
         async with self.service_resources.heavy(block_id) as receipt:
             self.append_event(block_id, "HeavyExecutionLease", dict(receipt))
             try:
+                from src.science.installed import operation_name
+                if self.installed_science_runner is not None and operation_name(operation):
+                    if self.runtime_paths is None:
+                        raise RuntimeError("installed Science requires frozen service paths")
+                    workspace = self.runtime_paths.require_owned(self.runtime_paths.workspaces / block_id)
+                    first = len(self.installed_science_runner.executions)
+                    try:
+                        return await self.offload(self.installed_science_runner.run, workspace, operation, *inputs)
+                    finally:
+                        for observation in self.installed_science_runner.executions[first:]:
+                            self.service_resources.record_execution(block_id, observation)
+                            self.append_event(block_id, "InstalledScienceResourceReceipt", observation)
                 return await self.offload(operation, *inputs)
             except ProcessCleanupFailed as error:
                 from src.runtime.resources import ResourceRejected
@@ -402,7 +461,8 @@ class HarnessRuntime:
                 receipt['operational_error'] = self.service_resources.execution_failure
                 raise ResourceRejected(self.service_resources.execution_failure, 0) from error
             finally:
-                self.append_event(block_id, "HeavyExecutionReleased", {"owner": block_id})
+                self.append_event(block_id, "HeavyExecutionUnconfirmed" if self.service_resources.execution_failure
+                                  else "HeavyExecutionReleased", {"owner": block_id})
 
     def retain_export(self, cause):
         if self.repository is None:
@@ -425,7 +485,11 @@ class HarnessRuntime:
         Cancellation drains bounded work rather than releasing child ownership
         while it is still executing. Shutdown may take its operation timeout.
         """
-        task = asyncio.create_task(asyncio.to_thread(operation, *inputs))
+        # Runner.close cancels every Task. An executor Future is not in that
+        # set, so aggregate shutdown cannot cancel our handle before the actual
+        # thread/process family drains. Preserve to_thread's context propagation.
+        from contextvars import copy_context
+        task = asyncio.get_running_loop().run_in_executor(None, copy_context().run, operation, *inputs)
         while True:
             try:
                 return await asyncio.shield(task)
@@ -650,11 +714,12 @@ def register_director_tools(
         runtime.initialize_institution()
         memory = runtime.memory_service()
         start_memory = memory.start_context(objective, context=await semantic_memory_context_async(runtime,objective)) if memory else None
+        selected_candidate = None
         if frontier_id is not None or candidate_id is not None:
             if frontier_id is None or candidate_id is None or runtime.repository is None:
                 raise ValueError("frontier and candidate identities require durable memory")
             from src.runtime.pydantic_ai.global_tools import validate_selection
-            validate_selection(runtime, frontier_id, candidate_id, objective)
+            selected_candidate = validate_selection(runtime, frontier_id, candidate_id, objective)
         block = runtime.manager.allocate(
             objective, why_now, seconds, mission_id=runtime.mission_id, cycle_id=runtime.cycle_id,
             memory=start_memory,
@@ -665,7 +730,10 @@ def register_director_tools(
         if runtime.repository is not None:
             runtime.repository.record_block(block)
             runtime.repository.record_state_revision(state)
-        runtime.append_event(block.block_id, "DirectorBlockAllocated", {"objective": objective, "deadline": block.deadline.isoformat(), "handoff_at": block.handoff_at.isoformat(), "mission_id": runtime.mission_id, "cycle_id": runtime.cycle_id, "frontier_id": frontier_id, "candidate_id": candidate_id})
+        runtime.append_event(block.block_id, "DirectorBlockAllocated", {"objective": objective, "deadline": block.deadline.isoformat(), "handoff_at": block.handoff_at.isoformat(), "mission_id": runtime.mission_id, "cycle_id": runtime.cycle_id, "frontier_id": frontier_id, "candidate_id": candidate_id,
+            "experience_refs": [r.model_dump(mode="json") for r in selected_candidate.source_refs] if selected_candidate else [],
+            "selection_basis": selected_candidate.scope if selected_candidate else None,
+            "memory_digest_ids": list(start_memory.digest_ids) if start_memory else []})
         return block.model_dump(mode="json")
 
     @agent.tool
@@ -786,7 +854,7 @@ def register_researcher_tools(
 
     @agent.tool
     async def acquire_gdc(
-        ctx: RunContext[ResearcherDeps], endpoint: str, filters: dict[str, Any], fields: list[str], size: int = 10, offset: int = 0, sort: str = "id:asc"
+        ctx: RunContext[ResearcherDeps], endpoint: Literal["projects", "cases", "files", "annotations"], filters: dict[str, Any], fields: list[str], size: int = 10, offset: int = 0, sort: str = "id:asc"
     ) -> dict[str, Any]:
         """Acquire bounded anonymous GDC metadata. Tokens and controlled access are impossible here."""
         runtime = ctx.deps.runtime
@@ -877,38 +945,7 @@ def register_researcher_tools(
         call_id = invocation(ctx, "software.github-scientific", request_id=request_id)
         append(ctx, "GithubAcquisitionStarted", {"invocation_id": call_id, "request_id": request_id, "request_sha256": content_hash(request.model_dump(mode="json")), "repository_url": request.repository_url, "requested_ref": request.requested_ref, "capability_need": capability_need})
         try:
-            from src.science.local import LocalVenvScientificBackend
-            if isinstance(runtime.sandbox, LocalVenvScientificBackend):
-                owner = ctx.deps.block_id
-                if runtime.runtime_paths is not None:
-                    runtime.runtime_paths.require_owned(runtime.sandbox.root / owner / "experiments")
-                backend = LocalVenvScientificBackend(runtime.sandbox.root / owner / "experiments", runtime.sandbox.policy,
-                    workspace_limit=runtime.service_resources.max_workspace_bytes,workspace_base=runtime.sandbox.root / owner,
-                    max_processes=runtime.service_resources.max_science_processes,
-                    minimum_free_disk_bytes=runtime.service_resources.minimum_free_disk_bytes)
-                with runtime.reserve_software(owner, None) as reservation:
-                    backend.download_limit = reservation.capacity
-                    try:
-                        candidate = await runtime.heavy_operation(owner, backend.acquire_and_execute, request.model_copy(deep=True))
-                    finally:
-                        try:
-                            reservation.consume(backend.downloaded)
-                        finally:
-                            try:
-                                runtime.service_resources.charge_download(owner, backend.downloaded, category="software")
-                            finally:
-                                try:
-                                    append(ctx, "ScientificResourceReceipt", {'executions':backend.process_resources,'operational_only':True})
-                                finally:
-                                    append(ctx, "ScientificTransferReceipt", {"consumed_bytes": backend.downloaded,
-                                        "reserved_bytes": reservation.capacity, "backend": "local_venv"})
-            else:
-                backend = runtime.sandbox
-                if runtime.runtime_paths is not None:
-                    parent = runtime.runtime_paths.workspaces / ctx.deps.block_id / "experiments"
-                    runtime.runtime_paths.require_owned(parent)
-                    backend = DockerScientificSandbox(runtime.sandbox.policy, runtime.sandbox._runner, owned_parent=parent)
-                candidate = await runtime.heavy_operation(ctx.deps.block_id, backend.acquire_and_execute, request.model_copy(deep=True))
+            candidate = await runtime.execute_external(ctx.deps.block_id, request)
             if runtime.repository is not None:
                 runtime.repository.record_immutable(RecordKind.SANDBOX_CANDIDATE, candidate.candidate_id, candidate, ctx.deps.block_id)
         except Exception as error:
@@ -1165,7 +1202,7 @@ def register_researcher_tools(
         remaining = min(runtime.max_reasoner_model_requests,
                         runtime.max_model_requests - researcher_usage.requests - usage.requests,
                         runtime.cycle_request_limit - runtime.total_usage().requests)
-        if isinstance(runtime.reasoner, BudgetedLiveReasoner) and remaining <= 0:
+        if isinstance(runtime.reasoner, BudgetedLiveReasoner) and remaining <= 0 and not runtime.unbounded_work:
             raise WorkStopped("reasoner_model_budget_exhausted", "reasoner")
         runtime.claim(ctx.deps.block_id, "reasoner", runtime.max_reasoner_calls)
         try:
@@ -1177,8 +1214,9 @@ def register_researcher_tools(
                     budgets.append(float(usage.cost or 0) + runtime.cycle_cost_limit - float(runtime.total_usage().cost or 0))
                 cost_limit = min(budgets) if budgets else None
                 output = await runtime.reasoner.generate(block_for(ctx).objective, finding, usage=usage, deps=ctx.deps,
-                    usage_limits=UsageLimits(request_limit=usage.requests + remaining, tool_calls_limit=0,
-                                             cost_limit=Decimal(str(cost_limit)) if cost_limit is not None else None))
+                    usage_limits=runtime.usage_limits("reasoner") if runtime.unbounded_work else
+                    UsageLimits(request_limit=usage.requests + remaining, tool_calls_limit=0,
+                                cost_limit=Decimal(str(cost_limit)) if cost_limit is not None else None))
             else:
                 output = await runtime.reasoner.generate(block_for(ctx).objective, finding)
         except Exception as error:

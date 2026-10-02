@@ -28,7 +28,7 @@ class AnalysisSpec(BaseModel, frozen=True):
     fields: dict[str,str] = Field(default_factory=dict)
     design: str = "descriptive response slice"
     entity_unit: str = "record"
-    transformations: dict[str,Literal["identity","log1p"]] = Field(default_factory=dict)
+    transformations: dict[str,Literal["identity","log1p","zscore"]] = Field(default_factory=dict)
     covariates: tuple[str,...] = ()
     missingness_policy: Literal["complete_pair"] = "complete_pair"
     replication_id: str | None = None

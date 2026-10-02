@@ -45,7 +45,12 @@ print(json.dumps({{"values": {{"value": 4.0}}}}))
             member.size = len(data)
             tar.addfile(member, io.BytesIO(data))
         data = archive.getvalue()
-        backend = LocalVenvScientificBackend(root / "owned", SandboxPolicy(memory_mb=512, timeout_seconds=30))
+        from src.config.loader import load_runtime_config
+        policy = load_runtime_config(application_config)
+        backend = LocalVenvScientificBackend(root / "owned", SandboxPolicy(cpu=policy.sandbox.cpu,
+            memory_mb=policy.sandbox.memory_mb, timeout_seconds=policy.sandbox.timeout_seconds),
+            workspace_limit=policy.resources.max_workspace_bytes, max_processes=policy.resources.max_science_processes,
+            minimum_free_disk_bytes=policy.resources.minimum_free_disk_bytes)
         # Transport fixture isolates authority checks from public connectivity.
         def fetch(_url):
             backend.downloaded += len(data)

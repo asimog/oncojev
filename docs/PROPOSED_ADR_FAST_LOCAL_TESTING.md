@@ -1,5 +1,29 @@
 # ADR: Isolated fast local testing through existing owners
 
+## Current amendment — 2026-10-02 Tasks 1-5 execution request
+
+Decision: ACCEPTED as the user's revised execution settings. Configured ordinary
+and testing block allocations now target 3-5 minutes: default/min/max 240/180/300 s,
+with a 30 s reserve (default handoff at 210 s). `unbounded_work: true` separately
+ignores application model/tool/domain-call, retry and cost budgets; it does not
+bypass elapsed-block handoff, data ceilings, scientific validity, ownership or
+command-family CPU/memory/process/disk controls. Usage and Delta remain retained.
+The Code Mode engine keeps its intrinsic maximum suspension capacity and external
+providers keep their own limits; this is not a claim of infinite resources.
+
+Live installed Science/parsing/figures now run in a typed JSON worker under the
+existing native governor, with service-owned receipts and persistence. Direct and
+aggregate shutdown drain work before releasing its lease; unconfirmed cleanup
+quarantines the owner. Explicit deterministic fixtures keep offline execution.
+[Architecture](ARCHITECTURE.md) is the current boundary authority; unfinished
+qualification/evaluation work remains in [the plan](IMPLEMENTATION_PLAN.md).
+
+The earlier 90/60/90/15 implementation and Windows verification report below is
+retained as historical proof of the initial decision. Its timing and budget claims
+are superseded by this amendment. The 120 s scenario observation remains a reporting
+target and may be exceeded; it does not shorten the revised block or required work.
+
+
 Date: 2026-10-02.
 Decision status: **ACCEPTED**, by explicit user instruction on 2026-10-02.
 Implementation: delivered through existing owners; local behavioral proof retained in

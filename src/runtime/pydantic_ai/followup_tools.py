@@ -67,7 +67,7 @@ def prepare_followup(runtime,block_id,identity,source,spec):
         raise ValueError("confirmation input was accessed before the follow-up declaration")
     baseline=MeasuredResult.model_validate(resolve_reference(store,plan.baseline_measurement))
     baseline_input=AcquisitionRecord.model_validate(resolve_reference(store,plan.baseline_input))
-    access="not_applicable" if plan.kind=="sensitivity" else "fresh_local_query"
+    access="not_applicable" if plan.kind!="independent_replication" else "fresh_local_query"
     identities=canonical_case_ids(source)
     if plan.kind=="independent_replication":
         if identities is None: access="unknown"

@@ -14,6 +14,7 @@ from src.block.models import CycleStatus
 class EvaluationCondition(StrEnum):
     SCIENCE_ONLY = "science_only"
     SCIENCE_REASONER = "science_reasoner"
+    SCIENCE_JEV = "science_jev"
     SCIENCE_JEV_REASONER = "science_jev_reasoner"
 
 
@@ -31,6 +32,12 @@ class ConditionMetrics(BaseModel, frozen=True):
     has_preferred_continuation: bool = False
     records: int = 0
     source_bound_evidence: int = 0
+    verified_replications: int = 0
+    invalid_designs: int = 0
+    memory_retrievals: int = 0
+    uncertainty_resolutions: int | None = None
+    provider_cost: float | None = None
+    downloaded_bytes: int | None = None
     unique_analysis_outcomes: int | None = None
     declared_replication_outcomes: int = 0
     jev_failures: int = 0

@@ -52,7 +52,7 @@ def test_testing_overlay_preserves_shorter_bounds_and_other_allowances(tmp_path,
     expected['testing']['public_data'].update(max_response_bytes=5,
         max_block_download_bytes=7, max_service_download_bytes=11)
     if default == 900:
-        expected["block"].update(min_seconds=60, default_seconds=90, max_seconds=90, handoff_reserve_seconds=15)
+        expected["block"].update(min_seconds=180, default_seconds=240, max_seconds=300, handoff_reserve_seconds=30)
     assert tested.model_dump() == expected
     assert normal.model_dump() == RuntimeConfig.model_validate(values).model_dump()
     assert normal.mode == tested.mode == RuntimeMode.LIVE
@@ -72,8 +72,8 @@ def test_testing_overlay_preserves_shorter_bounds_and_other_allowances(tmp_path,
 
 
 @pytest.mark.parametrize("change", [
-    {"min_seconds": 91}, {"default_seconds": 0}, {"max_seconds": 50},
-    {"handoff_reserve_seconds": 60},
+    {"min_seconds": 301}, {"default_seconds": 0}, {"max_seconds": 50},
+    {"handoff_reserve_seconds": 180},
 ])
 def test_testing_profile_revalidates_invalid_bounds_even_when_disabled(tmp_path, change):
     import yaml
@@ -116,7 +116,7 @@ def scripted(function):
 
 def test_model_configuration_is_centralized_and_repo_owned():
     models = load_models_config(ROOT / "config/models.yaml")
-    policy = load_runtime_config(ROOT / "config/runtime.yaml")
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"unbounded_work": False})
     assert policy.mode is RuntimeMode.LIVE
     assert all(role.provider for role in (models.director, models.researcher, models.reasoner, models.jev))
 
@@ -144,12 +144,13 @@ def test_authentication_domains_are_separate_and_disjoint():
     assert AuthenticationDomain.MODEL_PROVIDER != AuthenticationDomain.SCIENTIFIC_DATA
 
 
-def test_build_system_is_live_fail_closed_and_roles_stay_independent():
+def test_build_system_is_live_fail_closed_and_roles_stay_independent(tmp_path):
     models = load_models_config(ROOT / "config/models.yaml")
-    policy = load_runtime_config(ROOT / "config/runtime.yaml")
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"unbounded_work": False})
     with pytest.raises(RuntimeError, match="requires OPENROUTER_API_KEY"):
         build_system(models, policy, environment={})
-    system = build_system(models, policy, environment=LIVE_ENV)
+    system = build_system(models, policy, environment={**LIVE_ENV, "ONCOJEV_DATA_ROOT": str(tmp_path)})
+    assert system.runtime.installed_science_runner is not None
     assert system.mode is RuntimeMode.LIVE
     assert isinstance(system.runtime.jev, TypeSafeJevClient)
     assert isinstance(system.runtime.reasoner, LiveReasoner)
@@ -163,7 +164,7 @@ def test_runtime_applies_sandbox_configuration(provider):
     from src.science.sandbox import DockerScientificSandbox
     models = load_models_config(ROOT / "config/models.yaml")
     options = {"provider": provider} if provider else {}
-    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"unbounded_work": False}).model_copy(
         update={
             "mode": RuntimeMode.DETERMINISTIC,
             "sandbox": SandboxConfig(**options, image="custom/science:locked", cpu=3, memory_mb=2048, timeout_seconds=77),
@@ -253,7 +254,7 @@ def test_jev_failure_is_recorded_operationally_and_yields_no_frontier_or_evidenc
 ])
 def test_zero_resource_budgets_stop_before_side_effects_and_allow_handoff(resource, code, monkeypatch):
     models = load_models_config(ROOT / "config/models.yaml")
-    policy = load_runtime_config(ROOT / "config/runtime.yaml")
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"unbounded_work": False})
     field = "max_jev_questions" if resource == "jev_questions" else f"max_{resource}_calls"
     policy = policy.model_copy(update={"mode": RuntimeMode.DETERMINISTIC,
                                       "block": policy.block.model_copy(update={field: 0})})
@@ -295,7 +296,7 @@ def test_zero_resource_budgets_stop_before_side_effects_and_allow_handoff(resour
 def test_factory_allocation_defaults_and_bounds_are_enforced_through_tools():
     from src.runtime.pydantic_ai.contracts import DirectorDeps
 
-    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"unbounded_work": False}).model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
     runtime = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, environment={})
     calls = 0
 
@@ -316,8 +317,8 @@ def test_factory_allocation_defaults_and_bounds_are_enforced_through_tools():
         agent.run_sync("allocate", deps=DirectorDeps(runtime))
     blocks = runtime.manager.blocks()
     assert len(blocks) == 1
-    assert blocks[0].start.allocation.seconds == 900
-    assert blocks[0].start.allocation.handoff_reserve_seconds == 90
+    assert blocks[0].start.allocation.seconds == 240
+    assert blocks[0].start.allocation.handoff_reserve_seconds == 30
 
 
 @pytest.mark.parametrize("active_block", [False, True])
@@ -332,7 +333,7 @@ def test_director_can_inspect_independent_resources_without_mutating_active_rese
     from pydantic_ai.usage import RunUsage
     from src.runtime.pydantic_ai.contracts import DirectorDeps
 
-    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"unbounded_work": False}).model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
     runtime = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, environment={})
     runtime.director_cost_limit = 0.25
     runtime.cycle_cost_limit = 0.75
@@ -382,7 +383,7 @@ def test_zero_director_coding_allowance_denies_allocation_before_effects(limit):
     from pydantic_ai.messages import ToolReturnPart
     from src.runtime.pydantic_ai.contracts import DirectorDeps
 
-    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"unbounded_work": False}).model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
     runtime = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, environment={})
     if limit != "snippet_tools":
         setattr(runtime, limit, 0)
@@ -411,7 +412,7 @@ def test_zero_director_coding_allowance_denies_allocation_before_effects(limit):
 def test_zero_framework_budgets_deny_code_before_source_execution(limit, monkeypatch):
     from pydantic_ai.messages import ToolReturnPart
 
-    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"unbounded_work": False}).model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
     runtime = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, environment={})
     if limit != "max_code_mode_tool_calls":
         setattr(runtime, limit, 0)
@@ -446,7 +447,7 @@ def test_live_reasoner_requests_consume_researcher_allocation():
     from pydantic_ai.models.test import TestModel
     from src.runtime.pydantic_ai.reasoner import BudgetedLiveReasoner
 
-    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"unbounded_work": False}).model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
     runtime = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, environment={})
     runtime.max_model_requests = 2
     runtime.reasoner = BudgetedLiveReasoner(TestModel(custom_output_args={
@@ -488,7 +489,7 @@ def test_handoff_preserves_in_flight_source_result_and_blocks_next_request():
 
     clock = [datetime(2026, 10, 1, tzinfo=UTC)]
     manager = BlockManager(now=lambda: clock[0])
-    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
+    policy = load_runtime_config(ROOT / "config/runtime.yaml").model_copy(update={"unbounded_work": False}).model_copy(update={"mode": RuntimeMode.DETERMINISTIC})
     runtime = build_harness_runtime(load_models_config(ROOT / "config/models.yaml"), policy, manager=manager, environment={})
     block = manager.allocate("in-flight work", "test")
     requests = []
@@ -607,3 +608,50 @@ def test_jev_call_receipt_preserves_sdk_failures_and_native_semantic_history(out
         assert all(f["category"] == "validation" for f in receipt["failures"])
         assert len(requests) == (0 if outcome == "construction" else 1)
     repository.store.close()
+
+
+def test_unbounded_work_dispatches_past_call_budgets_but_respects_time_and_download_limits(tmp_path):
+    import asyncio
+    from datetime import UTC, datetime, timedelta
+    from src.block.models import BlockStatus
+    from src.runtime.resources import ResourceRejected, ServiceResources
+    from src.sources.models import AcquisitionRecord
+    now = datetime(2026, 10, 2, tzinfo=UTC)
+    manager = BlockManager(lambda: now)
+    block = manager.allocate("unbounded fixture", "test", 1)
+    assert manager.status(block) is BlockStatus.ACTIVE
+    runtime = HarnessRuntime(manager, DeterministicJevClient(), ScienceExecutor(), DeterministicReasoner(), 0, 0,
+        unbounded_work=True, max_tool_calls=0, max_model_requests=0, max_provider_tool_calls=0,
+        max_code_mode_executions=0, cycle_request_limit=0, cycle_tool_limit=0, max_cost=.001, cycle_cost_limit=.001)
+    acquisition = AcquisitionRecord(source="fixture", origin="synthetic", request={}, records=({"id": "1"},), provenance=("fixture",))
+    runtime.retain_acquisition(block.block_id, acquisition)
+    calls = 0
+    async def respond(messages, info):
+        nonlocal calls
+        calls += 1
+        # The fourth retry previously exhausted Code Mode's three-retry ceiling.
+        if calls <= 4:
+            code = "raise ValueError('intentional retry fixture')"
+        elif calls == 5:
+            code = '\n'.join(f'await measure_acquisition(acquisition_id="{acquisition.acquisition_id}", analysis_id="count{i}")' for i in range(3))
+        else:
+            return ModelResponse(parts=[TextPart("completed after retries and exhausted counters")])
+        return ModelResponse(parts=[ToolCallPart("run_code", {"code": code}, tool_call_id=f"step{calls}")])
+    agent = create_agents("test", "test", max_tool_calls=0, enable_coder=False, unbounded_work=True).researcher
+    with agent.override(model=scripted(respond)):
+        response = agent.run_sync("exercise unrestricted calls", deps=ResearcherDeps(runtime, block.block_id), usage_limits=runtime.usage_limits("researcher"))
+    assert response.output.startswith("completed") and calls == 6
+    assert len(runtime.measurements) == 3
+    assert runtime._counts[f"{block.block_id}:tool"] == 3
+    assert runtime._counts["cycle:provider_tools"] == 8  # five snippets plus three nested tools
+    assert runtime.usage_limits("researcher").request_limit is None
+    assert runtime.resources(block.block_id)["tool"]["limit"] is None
+    runtime.service_resources = ServiceResources(max_file_bytes=10, max_block_download_bytes=10, max_service_download_bytes=10)
+    with pytest.raises(ResourceRejected):
+        with runtime.service_resources.reserve_download(block.block_id, 11, category="public_data"):
+            pass
+    now += timedelta(hours=1)
+    from src.runtime.pydantic_ai.contracts import WorkStopped
+    with pytest.raises(WorkStopped) as stopped:
+        runtime.claim(block.block_id, "tool", 0)
+    assert stopped.value.directive["reason"] == "soft_deadline_handoff"

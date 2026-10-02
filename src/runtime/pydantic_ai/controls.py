@@ -40,6 +40,8 @@ class RuntimeControls(AbstractCapability):
             runtime.reasoner_usage[ctx.deps.block_id] = ctx.usage
         else:
             runtime.researcher_usage[ctx.deps.block_id] = ctx.usage
+        if runtime.unbounded_work:
+            return request_context
         try:
             total = runtime.total_usage()
             limits = runtime.usage_limits(self.role)
@@ -79,20 +81,20 @@ class RuntimeControls(AbstractCapability):
         role_key = "director" if self.role == "director" else ctx.deps.block_id
         role_attempts = f"{role_key}:provider_tools"
         role_limit = runtime.director_tool_limit if self.role == "director" else runtime.max_provider_tool_calls
-        if runtime._counts.get(role_attempts, 0) >= role_limit:
+        if not runtime.unbounded_work and runtime._counts.get(role_attempts, 0) >= role_limit:
             return self.stopped(ctx, "role_tool_budget_exhausted")
         attempts = runtime._counts.get("cycle:provider_tools", 0)
-        if attempts >= runtime.cycle_tool_limit:
+        if not runtime.unbounded_work and attempts >= runtime.cycle_tool_limit:
             return self.stopped(ctx, "aggregate_tool_budget_exhausted")
         runtime._counts["cycle:provider_tools"] = attempts + 1
         runtime._counts[role_attempts] = runtime._counts.get(role_attempts, 0) + 1
         if call.tool_name == "run_code":
-            if self.code_mode_tool_limit == 0:
+            if not runtime.unbounded_work and self.code_mode_tool_limit == 0:
                 return self.stopped(ctx, "code_mode_tool_budget_exhausted")
             key = f"{role_key}:code_mode_executions"
             used = runtime._counts.get(key, 0)
             limit = runtime.director_code_limit if self.role == "director" else runtime.max_code_mode_executions
-            if used >= limit:
+            if not runtime.unbounded_work and used >= limit:
                 return self.stopped(ctx, "code_mode_execution_budget_exhausted")
             runtime._counts[key] = used + 1
         try:
@@ -117,7 +119,7 @@ class RuntimeControls(AbstractCapability):
             reasoner = runtime.reasoner_usage.get(ctx.deps.block_id)
             spent = float(researcher.cost or 0) + (float(reasoner.cost or 0) if reasoner else 0)
             over_role = spent + float(reported) > runtime.max_cost
-        if over_cycle or over_role:
+        if not runtime.unbounded_work and (over_cycle or over_role):
             # The framework records response usage after this hook. Preserve
             # the charge before raising, since it will not reach that step.
             ctx.usage.incr(response.usage)

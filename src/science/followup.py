@@ -13,7 +13,7 @@ class FollowupPlan(BaseModel, frozen=True):
     followup_id: str
     block_id: str
     comparison_id: str = Field(min_length=1, max_length=200)
-    kind: Literal["independent_replication", "sensitivity"]
+    kind: Literal["independent_replication", "sensitivity", "method_robustness"]
     baseline_attempt_id: str
     baseline_measurement: ExecutionReference
     baseline_input: ExecutionReference
@@ -39,7 +39,14 @@ class FollowupPlan(BaseModel, frozen=True):
             raise ValueError("follow-up requires exact baseline measurement/input references")
         if target.inputs or target.source_refs or not baseline.test_plan or not target.test_plan:
             raise ValueError("declare an unexecuted target contract with a retained hypothesis test")
-        if baseline.method != target.method or baseline.estimand != target.estimand or baseline.fields != target.fields or baseline.entity_unit != target.entity_unit or baseline.entity_field != target.entity_field:
+        methods_comparable = baseline.method == target.method
+        if self.kind == "method_robustness":
+            methods_comparable = (baseline.method == "pearson_correlation" and target.method == "ordinary_least_squares"
+                and target.transformations == {"x": "zscore", "y": "zscore"}
+                and all(baseline.transformations.get(axis, "identity") == "identity" for axis in ("x", "y")))
+            if baseline.population != target.population or baseline.design != target.design:
+                raise ValueError("method robustness holds population and design fixed")
+        if not methods_comparable or baseline.estimand != target.estimand or baseline.fields != target.fields or baseline.entity_unit != target.entity_unit or baseline.entity_field != target.entity_field:
             raise ValueError("effect scales, fields, methods and entity contracts must be comparable")
         if self.kind == "independent_replication" and any(baseline.transformations.get(axis,"identity")!=target.transformations.get(axis,"identity") for axis in ("x","y")):
             raise ValueError("independent replication holds preprocessing fixed")
@@ -128,6 +135,9 @@ def compare_followup(plan: FollowupPlan, baseline: MeasuredResult, target: Measu
         limitations=(*plan.limitations, *baseline.limitations, *target.limitations))
     if baseline.origin != "source" or target.origin != "source":
         raise InvalidAnalysis("provided/synthetic inputs cannot establish source follow-up outcomes")
+    if plan.kind == "method_robustness" and (baseline_input.content_sha256 != target_input.content_sha256
+            or baseline.diagnostics.get("paired_entities") != target.diagnostics.get("paired_entities")):
+        return result.model_copy(update={"unresolved": ("Method robustness requires identical retained inputs and complete-case participants; changed data confounds the method comparison.",)})
     original = baseline.diagnostics.get("hypothesis_test", {})
     check = target.diagnostics.get("hypothesis_test", {})
     if original.get("outcome") != "supported" or not check:
@@ -139,7 +149,7 @@ def compare_followup(plan: FollowupPlan, baseline: MeasuredResult, target: Measu
         return result.model_copy(update={"unresolved":("Confirmation values were previously accessed or local exposure history is unresolved; no held-out replication claim.",)})
     if plan.kind == "independent_replication" and independence != "observed_disjoint_complete_case_queries":
         return result.model_copy(update={"unresolved": ("Independent replication is unresolved: retained case IDs overlap or coverage/identity is unknown.",)})
-    if plan.kind == "sensitivity" and independence != "overlap":
+    if plan.kind != "independent_replication" and independence != "overlap":
         return result.model_copy(update={"unresolved": ("Same-participant sensitivity requires observed retained case overlap.",)})
     low, high = intervals["target_low"], intervals["target_high"]
     protocol = plan.target_analysis.test_plan
@@ -153,6 +163,8 @@ def compare_followup(plan: FollowupPlan, baseline: MeasuredResult, target: Measu
         outcome = "not_replicated" if plan.kind == "independent_replication" else "sensitivity_dependent"
     else:
         outcome = "inconclusive"
+    if plan.kind == "method_robustness":
+        result = result.model_copy(update={"limitations": (*result.limitations, "Same-input alternative-model robustness is not independent replication; Fisher and OLS intervals retain different assumptions.")})
     reason = ("Target uncertainty does not discriminate the predeclared meaningful-effect bounds; non-significance is not absence.",) if outcome == "inconclusive" else ()
     return result.model_copy(update={"outcome": outcome, "unresolved": reason,
         "limitations": (*result.limitations, "Not-replicated means the target interval lies strictly inside the declared negligible-effect bounds; no zero-effect or population-wide absence claim.")})

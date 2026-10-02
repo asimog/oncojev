@@ -28,6 +28,12 @@ def initial_oncolab_index() -> OncoLabIndex:
             availability=OncoLabAvailability.INSTALLED, execution_mode=OncoLabExecutionMode.LOCAL_PYTHON,
             access_policy=OncoLabAccessPolicy.LOCAL_ONLY,
             limitations=("No sample/cohort matrix, case join, identifier remapping or normalization conversion.",)),
+        _oncolab_descriptor("transform.gdc-tabular", "GDC governed tabular representations", OncoLabKind.TRANSFORMATION,
+            "Parse open MAF/CNV, derive case clinical/survival inputs, assemble exactly linked selected-gene cohorts or join unique case inputs.",
+            ("gdc", "clinical", "survival", "mutation", "copy-number", "expression", "cohort", "join", "representation"),
+            "src/science/representation.py", availability=OncoLabAvailability.INSTALLED,
+            execution_mode=OncoLabExecutionMode.LOCAL_PYTHON, access_policy=OncoLabAccessPolicy.LOCAL_ONLY,
+            limitations=("Uncompressed MAF/CNV at most 100 rows; explicit single-aliquot links; no imputation or survival inference.",)),
         _oncolab_descriptor("science.source-paired","Source-resolved paired association",OncoLabKind.STATISTICAL_METHOD,
             "Pearson correlation or simple OLS over complete paired rows with unique entity keys from one owned acquisition.",
             ("paired","association","correlation","regression"),"src/science/execution.py",availability=OncoLabAvailability.INSTALLED,
@@ -45,14 +51,14 @@ def initial_oncolab_index() -> OncoLabIndex:
             limitations=("Population coverage remains unknown; a slice count is not a population total.",)),
         _oncolab_descriptor("stat.numpy", "NumPy", OncoLabKind.SCIENTIFIC_METHOD, "Deterministic numerical array kernels.", ("array", "numerical", "statistics"), "https://numpy.org/", availability=OncoLabAvailability.INSTALLED, execution_mode=OncoLabExecutionMode.LOCAL_PYTHON),
         _oncolab_descriptor("stat.pandas", "pandas", OncoLabKind.TRANSFORMATION, "Deterministic tabular ingestion, joins, and reshaping.", ("table", "transformation", "statistics"), "https://github.com/pandas-dev/pandas", availability=OncoLabAvailability.INSTALLED, execution_mode=OncoLabExecutionMode.LOCAL_PYTHON),
-        _oncolab_descriptor("stat.scipy", "SciPy", OncoLabKind.STATISTICAL_METHOD, "Numerical algorithms, distributions, and statistical tests.", ("statistics", "distribution", "hypothesis-test"), "https://github.com/scipy/scipy", availability=OncoLabAvailability.INSTALLED, execution_mode=OncoLabExecutionMode.LOCAL_PYTHON),
+        _oncolab_descriptor("stat.scipy", "SciPy", OncoLabKind.STATISTICAL_METHOD, "Pearson correlation for paired linear association and Welch independent group comparison.", ("statistics", "association", "linear", "correlation", "pearson", "welch", "hypothesis-test"), "https://github.com/scipy/scipy", availability=OncoLabAvailability.INSTALLED, execution_mode=OncoLabExecutionMode.LOCAL_PYTHON),
         _oncolab_descriptor("stat.statsmodels", "statsmodels", OncoLabKind.STATISTICAL_METHOD, "Regression, diagnostics, and statistical inference.", ("statistics", "regression", "inference"), "https://github.com/statsmodels/statsmodels", availability=OncoLabAvailability.INSTALLED, execution_mode=OncoLabExecutionMode.LOCAL_PYTHON),
         _oncolab_descriptor("bio.scikit-bio", "scikit-bio", OncoLabKind.SCIENTIFIC_METHOD, "Bioinformatics data structures and analysis methods.", ("bioinformatics", "sequence"), "https://github.com/scikit-bio/scikit-bio"),
         _oncolab_descriptor("bio.biopython", "Biopython", OncoLabKind.SOFTWARE, "Biological sequence and record utilities.", ("bioinformatics", "sequence", "annotation"), "https://github.com/biopython/biopython"),
         _oncolab_descriptor("bio.pyensembl", "PyEnsembl", OncoLabKind.SOURCE, "Ensembl annotation and identifier lookup.", ("annotation", "ensembl", "gene"), "https://github.com/openvax/pyensembl"),
         _oncolab_descriptor("bio.ete", "ETE", OncoLabKind.SOFTWARE, "Phylogenetic and tree analysis tooling.", ("phylogeny", "tree", "bioinformatics"), "https://github.com/etetoolkit/ete"),
         _oncolab_descriptor("bio.xarray", "xarray", OncoLabKind.TRANSFORMATION, "Labelled multidimensional scientific data handling.", ("array", "multidimensional", "transformation"), "https://github.com/pydata/xarray"),
-        _oncolab_descriptor("source.gdc", "NCI GDC public API", OncoLabKind.SOURCE, "Filtered public cancer metadata search and data retrieval.", ("cancer", "gdc", "metadata", "search"), "https://api.gdc.cancer.gov", availability=OncoLabAvailability.AVAILABLE, execution_mode=OncoLabExecutionMode.REMOTE_API, access_policy=OncoLabAccessPolicy.PUBLIC, resource_class=OncoLabResourceClass.MEDIUM, limitations=("One source family, not a pipeline.", "No GDC wrapper is implemented in this phase.")),
+        _oncolab_descriptor("source.gdc", "NCI GDC public API", OncoLabKind.SOURCE, "Filtered public cancer metadata search and data retrieval.", ("cancer", "gdc", "metadata", "search"), "https://api.gdc.cancer.gov", availability=OncoLabAvailability.AVAILABLE, execution_mode=OncoLabExecutionMode.REMOTE_API, access_policy=OncoLabAccessPolicy.PUBLIC, resource_class=OncoLabResourceClass.MEDIUM, limitations=("One source family, not a pipeline.", "Anonymous acquire_gdc supports projects, cases, files and annotations; endpoint cards are metadata, not separate execution routes.", "Selected open file bytes use acquire_gdc_file; controlled access, mutation JSON endpoints and clinical validity are not provided.")),
         _oncolab_descriptor("source.gdan", "GDAN public methods", OncoLabKind.SOURCE, "Public GDAN methods and data-reference discovery.", ("cancer", "gdan", "methods"), "https://www.cancer.gov/ccg/research/computational-genomics/genomic-data-analysis-network"),
         _oncolab_descriptor("source.ucsc-xena", "UCSC Xena", OncoLabKind.SOURCE, "Public cancer cohort and genomics data access.", ("cancer", "xena", "cohort"), ".upstream/external/xenaPython", availability=OncoLabAvailability.AVAILABLE, execution_mode=OncoLabExecutionMode.REMOTE_API, access_policy=OncoLabAccessPolicy.PUBLIC),
         _oncolab_descriptor("source.md-anderson-dataapi", "MD Anderson DataAPI", OncoLabKind.SOURCE, "Public cancer data API reference.", ("cancer", "data-api", "cohort"), ".upstream/external/dataapi", availability=OncoLabAvailability.AVAILABLE, execution_mode=OncoLabExecutionMode.REMOTE_API, access_policy=OncoLabAccessPolicy.PUBLIC),
@@ -121,7 +127,7 @@ def initial_oncolab_index() -> OncoLabIndex:
     def actual_contract(d):
         routes=ROUTES.get(d.capability_id)
         if not routes:return d
-        local=d.capability_id in {"science.acquisition-summary","science.source-paired","stat.scipy","stat.pandas","stat.statsmodels","visualization.scientific"}
+        local=d.capability_id.startswith("transform.gdc-") or d.capability_id in {"science.acquisition-summary","science.source-paired","stat.scipy","stat.pandas","stat.statsmodels","visualization.scientific"}
         operations=", ".join(r.operation or r.tool for r in routes)
         limitations=tuple(x for x in d.limitations if "future" not in x and "no executable" not in x.lower() and "No GDC wrapper" not in x)
         return d.model_copy(update={"input_contract":"Typed tool inputs: "+"; ".join(f"{r.operation or r.tool}: {', '.join(r.required_inputs) or 'bounded request'}" for r in routes),

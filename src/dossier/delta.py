@@ -41,6 +41,22 @@ def build_delta(store, block, run_id, start_sequence, finished_at: datetime, *, 
             if record.kind is RecordKind.LEDGER_EVENT and record.payload["event_type"] == "ReasonerOutput" and record.payload["payload"].get("uncertainty"):
                 groups.setdefault("uncertainties", []).append(reference)
     events = [r.payload for r in records if r.kind is RecordKind.LEDGER_EVENT]
+    execution_events = [e for e in events if e["event_type"] in
+                        {"InstalledScienceResourceReceipt", "CoderExecutionReceipt", "ScientificResourceReceipt"}]
+    executions = []
+    for event in execution_events:
+        detail = event["payload"]
+        executions.extend(detail.get("executions", [detail]))
+    cpu_observed = []
+    for detail in executions:
+        stats = dict(line.split() for line in detail.get("cpu_stat", "").splitlines() if len(line.split()) == 2)
+        if "usage_usec" in stats:
+            cpu_observed.append(int(stats["usage_usec"]) / 1_000_000)
+        elif detail.get("unit_observation", {}).get("CPUUsageNSec", "").isdigit():
+            cpu_observed.append(int(detail["unit_observation"]["CPUUsageNSec"]) / 1_000_000_000)
+    workspace_observed = [d["block_workspace_after_bytes"] for d in executions if "block_workspace_after_bytes" in d]
+    workspace_peaks = [d["block_workspace_before_bytes"] + d["workspace_peak_allocated_bytes"]
+                       for d in executions if "block_workspace_before_bytes" in d and "workspace_peak_allocated_bytes" in d]
     elapsed = max(0, (finished_at - block.started_at).total_seconds())
     allowance = block.start.allocation.seconds
     return BlockDelta(block_id=block.block_id, run_id=run_id, start_sequence=start_sequence,
@@ -54,7 +70,11 @@ def build_delta(store, block, run_id, start_sequence, finished_at: datetime, *, 
             "heavy_lease_acquisitions": sum(e["event_type"] == "HeavyExecutionLease" for e in events),
             "scientific_executions": sum(e["event_type"] == "ScienceMeasurement" for e in events),
             "resource_limit_failures": sum(e["event_type"] in {"WorkNotStarted", "ResourceRejected"} for e in events),
-            "workspace_observed_bytes": None, "workspace_peak_bytes": None, "cpu_seconds": None},
+            "workspace_observed_bytes": workspace_observed[-1] if workspace_observed else None,
+            "workspace_peak_bytes": max(workspace_peaks) if workspace_peaks else None,
+            "cpu_seconds": sum(cpu_observed) if executions and len(cpu_observed) == len(executions) else None,
+            "cpu_observed_seconds": sum(cpu_observed) if cpu_observed else None,
+            "measured_process_families": len(cpu_observed), "process_families": len(executions)},
         limitations=("Turn and transport durations are wall time, not CPU measurements.",
                      "Only explicit negative/resolution events appear; missing entries are not negatives or resolutions.",
-                     "Workspace and CPU measurements are unavailable; exact registry/history pins follow H5."))
+                     "Workspace peaks are sampled allocated-byte lower bounds; missing CPU counters remain unknown. Exact registry/history pins follow H5."))

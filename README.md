@@ -25,12 +25,27 @@ and `TYPESAFE_API_KEY` in the process environment or ignored `.env.local`.
 Linux command execution requires native Linux storage and the controls described
 in [Architecture](docs/ARCHITECTURE.md#composition-and-execution).
 
-From the repository root in Linux/WSL2:
+From the repository root on native Linux/WSL2 storage, install the locked Linux
+Python dependencies (including focused-test tools) and the web dependencies:
 
 ```sh
-.venv/bin/python -B -m src serve --direction "Investigate a public oncology signal"
-.venv/bin/python -B -m src cycle --direction "Investigate a public oncology signal"
+uv sync --frozen
+npm ci --prefix web
 ```
+
+Use an explicit user-owned data root for local runs. Without one, ordinary Linux
+Coder defaults to the container path `/work/director`, which may be unwritable:
+
+```sh
+ONCOJEV_DATA_ROOT="$PWD/var" .venv/bin/python -B -m src serve --direction "Investigate a public oncology signal"
+ONCOJEV_DATA_ROOT="$PWD/var" .venv/bin/python -B -m src cycle --direction "Investigate a public oncology signal"
+```
+
+The requested assessment currently enables `unbounded_work: true` in runtime YAML.
+This ignores application call/retry/cost budgets while
+retaining usage records. Set it to `false` for ordinary bounded investigations.
+Blocks target 3-5 minutes: 240 s default, 180-300 s bounds and 30 s handoff reserve.
+Data-download ceilings and scientific process/isolation/validity controls remain.
 
 `serve` runs research continuously and exposes the read-only API; `cycle` runs
 one cycle. The service defaults to SQLite at `var/oncojev.sqlite3`. An absolute
@@ -38,8 +53,8 @@ one cycle. The service defaults to SQLite at `var/oncojev.sqlite3`. An absolute
 file. `HOST` and `PORT` configure the API bind address and port (default 8080).
 
 Set `ONCOJEV_TESTING=1` in ignored `.env.local` for isolated application runs.
-Edit the `testing` section in runtime YAML: defaults are 90/60/90 s allocation,
-15 s reserve, 10 MB data response, 20 MB data per block and 50 MB data per service.
+Edit the `testing` section in runtime YAML: defaults are 240/180/300 s allocation,
+30 s reserve, 10 MB data response, 20 MB data per block and 50 MB data per service.
 Lower ordinary ceilings win. Each process retains a new `testing/<uuid>/` history
 and owned workspaces; `serve` preserves continuity across cycles. A normal database
 override fails explicitly in testing. Process `ONCOJEV_TESTING=0` overrides local `1`.
@@ -71,6 +86,13 @@ For the short isolated-profile check, use the same environment and:
 These checks use scripted models, mock transport and clocks, with no WSL/provider
 launch. Run native/live or long scientific trajectories explicitly for their task;
 record outstanding proof without turning every implementation iteration into one.
+
+For the same short offline profile check on Linux/WSL2, explicitly give ordinary
+fixtures a writable data root:
+
+```sh
+ONCOJEV_TESTING=0 ONCOJEV_DATA_ROOT="$PWD/var/contract-checks" LOGFIRE_SEND_TO_LOGFIRE=false .venv/bin/python -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_live_mode.py tests/invariants/test_boundaries.py tests/invariants/test_persistence.py -k testing -q --durations=5
+```
 
 Native probes are separate from local contract tests. The explicit WSL2 setup
 helper is [scripts/verify_native.py](scripts/verify_native.py); its cache is

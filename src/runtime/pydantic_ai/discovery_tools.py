@@ -1,5 +1,5 @@
 """Role-bounded public metadata tools; never source acquisition or execution."""
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
 from pydantic_ai import RunContext
@@ -44,13 +44,13 @@ def register_discovery_tools(agent):
         return view
 
     @agent.tool
-    async def search_external_capabilities(ctx:RunContext[Any],source:str,need:str,filters:dict[str,str]={},
+    async def search_external_capabilities(ctx:RunContext[Any],source:Literal["bio.tools"],need:str,filters:dict[str,str]={},
                                             continuation:str|None=None,limit:int=10)->dict[str,Any]:
         """After local contract search, discover public method metadata without executing it."""
         return await lookup(ctx,'search',source,need=need,filters=filters,continuation=continuation,limit=limit)
 
     @agent.tool
-    async def describe_external_capability(ctx:RunContext[Any],source:str,external_id:str)->dict[str,Any]:
+    async def describe_external_capability(ctx:RunContext[Any],source:Literal["bio.tools", "github", "bioconda", "bioconductor"],external_id:str)->dict[str,Any]:
         """Expand one external ID, preserving EDAM/links/licence and blocked execution authority."""
         return await lookup(ctx,'describe',source,external_id=external_id)
 

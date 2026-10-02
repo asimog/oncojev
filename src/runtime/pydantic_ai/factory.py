@@ -140,7 +140,18 @@ def build_harness_runtime(
     else:
         from src.runtime.resources import ServiceResources
         runtime.service_resources = ServiceResources.from_policy(policy)
+    runtime.unbounded_work = policy.unbounded_work
     runtime.runtime_paths = paths
+    from src.runtime.verification import environment_basis
+    runtime.verification_environment_provider = lambda: environment_basis(policy, paths)
+    if mode is RuntimeMode.LIVE:
+        from src.science.installed import InstalledScienceRunner
+        from src.runtime.process import ProcessLimits
+        runtime.installed_science_runner = InstalledScienceRunner(root, ProcessLimits(
+            processes=policy.resources.max_science_processes, memory_mb=policy.sandbox.memory_mb,
+            cpu=policy.sandbox.cpu, wall_seconds=policy.sandbox.timeout_seconds,
+            workspace_bytes=policy.resources.max_workspace_bytes,
+            minimum_free_disk_bytes=policy.resources.minimum_free_disk_bytes))
     from src.oncolab.institution import application_identity
     runtime.application_content_identity = application_content_identity or application_identity(policy)
     def meter_download(byte_count, category):
@@ -218,7 +229,7 @@ def build_system(
     paths = paths or select_paths(root, process_settings(root, environment))
     if paths.testing != policy.testing_enabled:
         raise ValueError("runtime paths and testing policy must agree")
-    agents = create_configured_agents(models, director_code, researcher_code, director=director, paths=paths)
+    agents = create_configured_agents(models, director_code, researcher_code, director=director, paths=paths, unbounded_work=policy.unbounded_work)
     runtime = build_harness_runtime(models, policy, manager=manager, environment=environment, repository=repository,
         resources=resources, paths=paths, application_content_identity=application_content_identity)
     runtime.researcher_factory = agents.fresh_researcher

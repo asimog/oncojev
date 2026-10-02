@@ -58,8 +58,17 @@ def main():
         child = subprocess.Popen(settings["argv"], cwd=workspace, env=settings["environment"],
             stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr, close_fds=True)
         timed_out = False
+        peak_allocated = 0
         try:
-            exit_code = child.wait(timeout=settings["wall_seconds"])
+            while True:
+                disk = os.statvfs(mount)
+                peak_allocated = max(peak_allocated, (disk.f_blocks - disk.f_bfree) * disk.f_frsize)
+                try:
+                    exit_code = child.wait(timeout=min(.02, max(.001, settings["wall_seconds"] - (time.monotonic() - started))))
+                    break
+                except subprocess.TimeoutExpired:
+                    if time.monotonic() - started >= settings["wall_seconds"]:
+                        raise
         except subprocess.TimeoutExpired:
             timed_out = True
             exit_code = 124
@@ -98,7 +107,9 @@ def main():
         wall_seconds=time.monotonic() - started, workspace_after_bytes=directory_bytes(mount),
         cpu_stat=(cgroup / "cpu.stat").read_text(), memory_peak=int((cgroup / "memory.peak").read_text()),
         pids_peak=int((cgroup / "pids.peak").read_text()) if (cgroup / "pids.peak").exists() else None,
-        disk_quota_bytes=settings["workspace_bytes"], inode_quota=20000)
+        disk_quota_bytes=settings["workspace_bytes"], inode_quota=20000,
+        workspace_peak_allocated_bytes=peak_allocated,
+        workspace_peak_measurement="20ms tmpfs allocated-byte samples; lower bound")
     stdout_path.unlink(); stderr_path.unlink()
     if timed_out:
         observed["workspace_committed"] = False

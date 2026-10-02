@@ -1,63 +1,5 @@
 # Implementation Plan
 
-## Task 1 — Bound installed Science and account for resources
-
-Goal: Enforce resource limits on installed scientific computations and report their
-actual consumption through the service and BlockDelta.
-
-Scope: Installed Science, parsing and figures currently run through detached thread
-work under a heavy-work lease, without a process-family quota. Put expensive work
-behind enforceable CPU, memory, process, disk and cancellation controls while keeping
-state, charging and persistence with the service owner. Populate observed workspace,
-peak workspace and CPU accounting from measurements; retain unknowns where unavailable.
-Reuse the existing governor, service-wide budgets and external-execution controls.
-
-Owning code: `src/runtime/pydantic_ai/contracts.py`,
-`src/runtime/pydantic_ai/scientific_tools.py`, `src/runtime/resources.py`,
-`src/runtime/process.py`, `src/science/execution.py`, `src/dossier/delta.py`,
-`src/config/models.py`, `config/runtime.yaml`;
-`tests/invariants/test_persistence.py`, `tests/invariants/test_live_mode.py`.
-
-Done when: Real installed computations obey their declared limits; success, failure,
-cancellation and shutdown drain work before releasing ownership. Composed receipts
-and Delta resolve measured usage, preserve consumed allowances across blocks and
-show that busy Director scratch cannot interrupt healthy scientific work.
-
-## Task 2 — Qualify local execution on WSL2
-
-Goal: Produce one complete, current-basis local execution qualification record that
-governance can consume.
-
-Scope: Exercise both Coder roles, external scientific preparation/install/test/
-execution/replay and installed Science directly on native WSL2 storage. Assemble
-`local-verification-v1` from actual observations of filesystem, credential, network,
-descendant, resource, download, lease and cancellation controls. Installed Science
-must first have enforceable resource limits. Keep exact application, code/worktree,
-configuration and environment identities; setup-helper caches are not qualification.
-Extend receipt production and consumption together: the current gate checks the
-application content identity and declared WSL2/control fields, but does not compare
-an exact current environment identity. Bind and check the measured interpreter,
-dependencies and effective control configuration so environment drift invalidates proof.
-
-Isolated-testing native assessment: explicitly exercise the frozen testing root,
-both role workspaces and local-venv experiment/command-family paths on WSL2 native
-storage, including linked-path denial and retention scope. Keep testing receipts
-non-qualifying; qualification is produced only for the ordinary `ONCOJEV_TESTING=0`
-application identity. Windows local profile contracts are already verified and
-do not block code iteration while these kernel observations remain outstanding.
-
-Owning code: `src/runtime/verification.py`, `src/runtime/process.py`,
-`src/science/local.py`, `scripts/verify_coder_container.py`,
-`scripts/verify_coder_resources.py`, `scripts/verify_local_science.py`,
-`scripts/verify_science_resources.py`, `scripts/verify_native.py`,
-`src/persistence/records.py`; `tests/invariants/test_persistence.py`.
-
-Done when: A production writer retains one complete record and supporting native
-observations on the same basis. Missing controls, stale identity, expansion/disk
-failure and unconfirmed cleanup fail honestly; partial or historical records cannot
-satisfy the gate, including a changed environment with unchanged application content.
-Windows fixtures and provider connectivity are reported separately.
-
 ## Task 3 — Extend the neutral evaluation substrate and independent corpus
 
 Goal: Provide reusable, independent measurement of scientific validity and research
@@ -93,11 +35,21 @@ Owning code: `src/evals/`, `evals/`, `scripts/evaluate_selection.py`,
 `scripts/evaluate_representation.py`, `src/persistence/records.py`;
 `tests/invariants/test_evaluation.py`.
 
-Actual blockers: Current selection labels are embedded contract examples, the
-representation corpus lacks broader independent scientific labels, and the
-fresh-condition harness has three fixed semantic conditions and mostly operational
-counts. It does not yet provide matched multi-block experience/search comparisons
-or the candidate-bound utility producer required by reusable governance.
+Current implementation/proof (2026-10-02): the existing fresh-condition owner now
+has all four conditions, published Anscombe reference outputs, twelve independently
+expert-annotated lung/pulmonary SciFact claim-document pairs, and separately labelled
+generated adverse/memory/relation contracts. Offline comparison retains 192 rows,
+native semantic receipts, measured usage and explicit unavailable costs. A one-case
+live assessment completed 24 comparisons, with twelve Jev-enabled annotation matches;
+the full twelve-case, three-repeat live assessment is running. Configured 80-candidate
+recall still misses the fixed lexical-mismatch query; 200-candidate diagnostics are
+separate. Reports are retained under `var/task3-proof/`.
+
+Retained blockers: independent scientific review for broader representation,
+relation/next-test/challenge labels remains pending, as requested. Published SciFact
+annotations close only claim-document support labels. Matched multi-block comparisons
+and actual candidate-bound measured utility remain outstanding; a producer now
+retains candidate/scope/comparison identity and rejects unsupported qualification.
 The current 109-item catalogue misses labelled `stat.scipy` for
 `co movement linear association` at candidate budget 80; the evaluation override
 of 200 retrieves it by exhausting the catalogue and hides the configured-budget miss.
@@ -148,10 +100,14 @@ Owning code: `src/director/frontier.py`, `src/director/review.py`,
 `src/runtime/pydantic_ai/contracts.py`, `src/runtime/pydantic_ai/search_tools.py`;
 `tests/invariants/test_persistence.py`, `tests/invariants/test_boundaries.py`.
 
-Actual blockers: The formal generator consumes only retrieved digest items, and
-ResearchMemory excludes zero-lexical-overlap items before Jev can compare them.
-Free-form allocation need not name a frontier; retained retrieval and follow-up
-lineage alone does not establish that an autonomous next choice used it.
+Current implementation/proof (2026-10-02): formal frontier tools accept bounded
+Director-authored mission/context-grounded proposals without prior hypotheses;
+allocation retains the selected experience and basis. Portfolio history reconstructs
+blocked/deferred-to-newly-testable changes through exact prerequisites. Bounded
+zero-overlap scientific-context retrieval exposes route/omission receipts. Focused
+five-check tool/lineage assessment passed; broader independent scientific next-test
+labels remain pending. Full owner checks exposed an unrelated empty failed-cycle
+fallback; repair and revalidation are in progress.
 
 Done when: Real tools compare a new mission-grounded question with no prior hypothesis
 and retain its provenance without admitting it as evidence. They recover a
@@ -184,89 +140,43 @@ Owning code: `src/sources/representation.py`, `src/sources/public.py`,
 `src/evals/representation.py`; `tests/invariants/test_boundaries.py`,
 `tests/invariants/test_persistence.py`.
 
+Continuation feature specification (2026-10-02): close the demonstrated gzip/
+row-count parser gap for actual retained open lung MAFs without increasing download,
+process or decompressed-byte ceilings. Extend the existing `parse_gdc_table` owner
+with explicitly declared gzip (matching source filename), bounded 8 MiB decoded
+UTF-8, whole-file validation, at most 100000 source rows and an optional predeclared
+1–20 exact gene-symbol panel. Retain at most 100 selected mutation events, reject
+oversized selection, and disclose excluded source rows and absent selected genes.
+Unselected or absent events do not imply mutation-free samples or TMB. Preserve
+old transform identities; the extended path gets a v2 receipt and source checks.
+Use existing installed workers, typed tool, owned acquisition/persistence and source
+candidate flow. Prove corrupt/truncated/oversized gzip rejection, malformed excluded
+rows, incompatible builds/duplicate events and selected-vs-source coverage, then
+run an explicit ordinary real lung file acquisition/transform/readiness assessment.
+Independent clinical usefulness review remains pending as requested.
+
+Current implementation/proof (2026-10-02): owned schema/modality alternatives,
+fixed open MAF/CNV parsing, case clinical/survival derivation, selected-gene cohort
+assembly and unique case joins are installed with source/transform receipts and
+registered application routes. Native transforms passed under real process controls.
+Native compressed lung MAF qualification now validates the entire bounded table before exact gene-panel selection: 43 source events, one selected KRAS event, 18,509 compressed and 84,970 decoded bytes. Retained proof: `var/task5-proof/lung-maf-panel.json`; the initial annotation-width rejection remains retained. The existing owner accepts declared gzip with an 8 MiB decoded ceiling, at most 100,000 inspected rows and 100 selected events; missing panel genes are never mutation absence. Larger inputs beyond these bounds and independent clinical usefulness remain unqualified. Endpoint/coverage/censoring validity is not
+inferred. Independent broader scientific usefulness review remains pending.
+
 Done when: The Researcher generates actual owned/retrievable alternatives for the
 selected needs, with exact source and transform lineage. Independent comparisons
 show useful retention and honest omissions; incompatible units, incomplete pairing,
 unsupported derivation and metadata masquerading as assay data cannot pass readiness.
 
-## Task 6 — Bind scientific operations to canonical references
-
-Goal: Turn discovered software into a scoped operation with independently established
-behavior and scientific applicability.
-
-Scope: Inspect the smallest relevant pinned implementation, callable/CLI, documentation
-and canonical examples for a concrete capability gap. Inspect targeted Galaxy,
-nf-core or Bioconda invocation/fixture material when relevant. Retain exact inputs,
-preprocessing, parameters/defaults, units, assumptions, licence/source binding and
-expected outputs. Build the missing reference-validation producer: compare controlled
-execution with independently obtained upstream results on canonical, changed-input/
-parameter and invalid-input cases, using predeclared tolerances and scope diagnostics.
-Unavailable runnable references leave qualification unsupported.
-
-Owning code: `src/oncolab/enrichment.py`, `src/oncolab/discovery.py`,
-`src/science/local.py`, `src/science/sandbox.py`, `src/science/models.py`,
-`src/runtime/pydantic_ai/scientific_tools.py`, `src/persistence/records.py`;
-`tests/invariants/test_boundaries.py`, `tests/invariants/test_persistence.py`.
-
-Done when: A real candidate has a durable, candidate/scope-bound `reference_validation`
-record resolving its reference material and comparisons, with adverse-case failures
-retained. Wrapper-derived expectations, ignored parameters and faithfully reproduced
-but scientifically unsuitable behavior cannot qualify. Replay alone is insufficient.
-
-## Task 7 — Qualify recoverable dependency environments
-
-Goal: Establish recoverable fresh installation and independent replay for reusable
-scientific operations.
-
-Scope: Trigger this work when a method is selected for reusable promotion or measured
-repeatability/dependency drift requires it. Retain a supported lockfile or resolved
-transitive package set, exact recoverable bytes/hashes, platform/Python constraints
-and installer/runtime identity. Use existing packaging tools and isolated experiment
-environments. Build the environment-qualification producer and exercise drift,
-conflicting pins, unavailable packages and corruption; a freeze hash alone is not a lock.
-
-Owning code: `src/science/local.py`, `src/science/sandbox.py`,
-`src/science/models.py`, `src/oncolab/governance.py`, `src/persistence/records.py`;
-`tests/invariants/test_boundaries.py`, `tests/invariants/test_persistence.py`.
-
-Done when: A triggered candidate reinstalls independently and replays exact owned
-inputs/parameters with matching declared environment/output identity. Durable
-`environment_qualification` records bind candidate and scope to the actual proof.
-Failed recovery blocks reusable status while retaining truthful exploratory results.
-
-## Task 8 — Add justified oncology operations
-
-Goal: Add a bounded set of scientific tools that answer demonstrated research needs
-with defensible inputs and comparisons.
-
-Scope: Trigger selection from a recorded uncertainty/capability gap and accessible
-eligible representations. Before implementation, freeze a finite list of named tools
-and supported operations in this feature spec, with the originating need, exact
-inputs, expected outputs, upstream implementation and build/no-build reason for each.
-Only those tool contracts and their required parsers/transforms are in scope; do not
-assess or implement whole oncology operation families. Candidate operations may cover
-mutation/annotation/burden/TMB, expression/signature/pathway, CNV association,
-co-mutation/subtype/clinical, survival, aligned cross-cohort/multi-omic or prioritization
-needs. Freeze estimand, design, participants, denominators, transformations,
-covariates, missingness, multiplicity, diagnostics and interpretation before inspecting
-results. TMB needs callable territory; survival needs time/event/censoring definitions;
-aligned assays need audited joins; multi-omic tools need comparison with a simpler
-aligned analysis. Select supported implementations and independent canonical baselines;
-evaluate need and scientific benefit before adding a wrapper. Carry each tool's
-outcomes into existing attempt, memory and literature-context
-consumers where applicable.
-
-Owning code: `src/science/`, `src/sources/`, `src/oncolab/catalogue.py`,
-`src/oncolab/execution.py`, `src/runtime/pydantic_ai/scientific_tools.py`,
-`src/runtime/pydantic_ai/context_tools.py`, `src/memory/`, `src/evals/`;
-`tests/invariants/test_boundaries.py`, `tests/invariants/test_persistence.py`.
-
-Done when: Every named tool in the frozen selection has its scoped build/no-build
-result. Each built tool has a declared route/input/output contract, controlled
-execution, replay, validator/admission and independently reviewed valid/invalid/null/
-changed-input proof. A no-build result identifies the unavailable prerequisite or
-adequate existing tool. Completion covers only the frozen selection and demonstrated
-scientific scope; it does not establish whole-family validity.
+Tasks 3–5 blocker assessment after the representation implementation (2026-10-02):
+Published SciFact labels supply independent lung/pulmonary claim-document support;
+broader scientific label review remains explicitly retained. The real GDC lung slice
+retains 100/1089 cases in 25,618 bytes; 95 age observations and 72 time/event rows
+are usable, with five missing ages and 28 missing time/event pairs. This establishes
+bounded acquisition/transform utility for the inspected slice, not population or
+survival validity. Owned proof is in `var/task5-proof/`. Compression/large-table
+MAF/CNV support and independently reviewed challenge/representation decisions remain
+unsupported. Actual scoped utility qualification depends on Task 6/7's candidate
+proof; carry these limitations forward without manufacturing review or admission.
 
 ## Task 9 — Extend scientific challenges and follow-up
 
@@ -281,10 +191,43 @@ training leakage; same-participant robustness is distinct from independent repli
 Retain failed, contradictory, sensitivity-dependent and inconclusive outcomes with
 originals, alternative explanations and unresolved prerequisites in memory and context.
 
+Feature specification before implementation (2026-10-02): extend one supported
+challenge, `method_robustness`, from Pearson association to simple OLS with both
+complete-pair variables explicitly standardized using sample SD. Both point effects
+have the standardized bivariate association scale; OLS t and Fisher intervals retain
+their own conditional assumptions and are not interchangeable evidence. Reject raw
+slope/correlation comparison, changed variables/participants/estimands, undeclared
+preprocessing, relaxed families and constant/insufficient inputs. Keep same-case
+robustness distinct from independent replication; all original freshness, overlap,
+coverage and leakage limits remain. Declare the challenge before its target result.
+
+Use the independently published Anscombe vectors for numerical reference behavior
+and invalid/changed contracts. Execute a real GDC lung age/death-duration exploratory
+slice as a scoped data/method check, with source omissions and endpoint limitations;
+if the baseline is unsupported, report inconclusive rather than invent a finding.
+Retain attempts, original/target references, model-specific uncertainty and memory
+context leading to a new prerequisite/next-test proposal. Broader independent expert
+review of clinical challenge interpretations remains pending, as already authorized;
+these reference checks cannot certify clinical validity, absence or replication.
+
 Owning code: `src/science/followup.py`, `src/runtime/pydantic_ai/followup_tools.py`,
 `src/runtime/pydantic_ai/context_tools.py`, `src/science/execution.py`,
 `src/memory/service.py`, `src/evals/`; `tests/invariants/test_persistence.py`,
 `tests/invariants/test_boundaries.py`.
+
+Current implementation/proof (2026-10-02): a fixed same-input `method_robustness`
+contract compares Pearson with complete-pair standardized OLS. Published Anscombe
+points agree; raw-slope comparisons, changed data/participants and insufficient or
+constant inputs reject. Real GDC lung data supplied 41 complete age/death-duration
+pairs; both point effects were -0.348283236572435 (rounded), with baseline and
+follow-up inconclusive. Exact source/attempt/plan/measurement/follow-up refs and
+conditional intervals are retained under `var/task9-proof/` and ordinary history.
+After reopening, actual scripted Director SDK/tools selected an endpoint/selection
+prerequisite assessment using the retained follow-up reference (seq 169 → allocation
+seq 191). No clinical evidence was admitted and no replication/absence was inferred.
+Focused combined checks passed 19 in 11.93 s; source/flow selection passed 5 in
+6.66 s. Broader independent real-data clinical challenge labels remain pending;
+mechanism/lineage proof does not close that scientific-review requirement.
 
 Done when: Independently reviewed real-data challenge cases execute through the
 selected operation and affect the next investigation using retained source references.
@@ -307,10 +250,39 @@ hand-authored passing booleans cannot replace them. Connect demand/use to promot
 and qualify changed-scope updates, reverification and retirement. Code-requiring
 changes continue through reviewed engineering proposals.
 
+Feature specification before implementation (2026-10-02): dispatch only the
+reference-qualified fixed finite-mean operation through an immutable block-pinned
+`run_reusable_method` route. Resolve route candidate, exact scope hash, licence,
+current local qualification and independently resolvable reference/environment/
+utility proof; retain acquisition/field extraction, complete finite rows, exclusions,
+units and unique case keys. Reuse the existing pipeline, validator, state/measurement
+persistence and explicit admission. Reject changed parameters, unknown/synthetic
+source inputs, missing proof and stale/current-basis mismatch before execution.
+Source vectors must come from owned acquisitions, never benchmark labels.
+
+Exercise real distinct-input/block source use and governance decisions. Reference
+and environment proof exist for the narrow operation; reviewed scientific utility
+remains unsupported until its independent comparison basis is sufficient. Preserve
+that gap, reject promotion truthfully and still verify dispatcher rejection, pins,
+proposal/review history and engineering/retirement boundaries. Do not fabricate
+passing utility or accepted native promotion to satisfy the done criterion.
+
 Owning code: `src/oncolab/governance.py`, `src/oncolab/execution.py`,
 `src/oncolab/institution.py`, `src/runtime/pydantic_ai/contracts.py`,
 `src/runtime/pydantic_ai/factory.py`, `src/runtime/pydantic_ai/discovery_tools.py`,
 `src/science/admission.py`; `tests/invariants/test_persistence.py`.
+
+Current implementation/proof (2026-10-02): the fixed mean dispatcher and strict
+reference/environment/utility proof consumers are implemented. Missing/stale proof,
+undeclared units, synthetic or missing/duplicate source rows and changed parameters
+reject before execution. Two actual fresh GDC source blocks retained LUAD/LUSC age
+means (18/19 complete rows), validated pipeline replay and explicit admission, with
+owned source/vector identities and missingness limitations. Promotion review was
+truthfully rejected; `var/task10-proof/reusable-mean.json` retains source use and the
+review. Independent scientific utility remains unsupported. Fresh ordinary local proof (seq 1158) resolves the compressed-assay/composed-verification source/environment, and
+pinned licence binding resolves the exact inspected source/commit. Final re-review
+rejects only unsupported utility; raw outcome is `var/task10-proof/review-current.json`. Acceptance, subsequent accepted-route native
+execution, qualified updates and retirement cannot be claimed without utility review.
 
 Done when: A qualified candidate is accepted into a reconstructible revision and
 actually discovered/executed by the next fresh block without restart. Active and
@@ -392,6 +364,42 @@ Owning code: `src/autonomous.py`, `src/director/frontier.py`,
 `tests/invariants/test_persistence.py`, `tests/invariants/test_boundaries.py`,
 `tests/invariants/test_evaluation.py`.
 
+Feature specification (2026-10-02): repair the retained `stat.scipy` lexical miss
+by correcting only canonical purpose/tags to match existing Pearson/Welch routes,
+with an explicit reviewed migration preserving routes and historical pins. Measure
+before/after on the retained registry at candidate/search budgets 80/8; exercise
+stable-query continuation and changed-snapshot rejection. Extend the existing Task 3
+reference adapter with controlled multi-block SDK Researcher work, typed memory,
+Director program review/frontier/allocation and a fresh Researcher selection, crossed
+with memory present/withheld and retained-only/open-proposal conditions. Scripted
+choices are composition proof; autonomous next-test/clinical utility stays unknown.
+Reuse numerical references and live semantic providers separately; no answer labels
+enter adapter prompts and no synthetic/reference measurement becomes evidence.
+
+Current implementation/proof (2026-10-02): final verification passed 284 invariants
+in 89.81 s, architecture/whitespace checks, and six native probes per profile. The
+dated report is `evals/reference/results/lung-lab-assessment-20261002.md` with its
+JSON/raw retained comparisons. Unchanged-budget retained-registry recall
+improved 0 to 1 for the original lexical case and a held-out linear query; tested
+literature, summary, missing-input and Welch retrieval were unchanged, survival
+execution remains unavailable. Native current-registry migration changes only
+purpose/tags; routes and old pins remain identical and changed cursors reject.
+Four numerical references across four conditions, memory variants, two search modes
+and three repetitions produced 192/192 numerical agreements. Actual SDK review-to-
+next-selection and source references are retained per row, with all scientific value
+unknown. Live held-out semantic composition returned 24/24 numerical agreements across
+four conditions, memory variants and three repetitions; 156 retained native semantic
+receipts remain operational observations, with no independently labelled clinical
+choice utility. Retained-only memory-withheld variants allocate no next block, while
+memory-present variants retain referenced continuations; open proposals allocate in
+both variants. All compared SDK tool snippets returned without runtime errors. Tool failures and
+partial adapter errors remain explicit; an earlier incomplete cycle no longer masks
+the actual adapter exception. Scientific coverage, false merges, clinical next-test
+alignment and autonomous decision utility remain unmeasured, and independent broader
+clinical review remains pending. No measured instability/context failure justifies a
+new calibration/reflection/SDK replacement mechanism. Conditional variants remain
+conditional, rather than being declared qualified by fixture agreement.
+
 Actual blockers: Current program review leaves scientific value unknown and
 reports declared tag concentration. Existing fixtures do not measure autonomous
 experience-to-choice benefit. Task 3 supplies independent held-out cases and
@@ -413,6 +421,22 @@ The current labelled OncoLab miss is recovered at configured limits through the
 actual consumer, with held-out recall, continuation and resource regressions checked
 and retained. A measured remaining limit stays explicit rather than being hidden by
 increasing the evaluation budget.
+
+Task 12 exposed a source metadata correction owned here: reconcile the stale
+`source.gdc` limitation with the actual anonymous `acquire_gdc` four-endpoint
+wrapper and selected-open-file retrieval. Scope is canonical limitations plus an
+explicit reviewed metadata-only migration preserving all routes, authority and
+historical pins. Also expose the four supported endpoint names in SDK validation
+so unsupported guesses fail before retrieval. Owning code: `src/oncolab/catalogue.py`,
+`src/oncolab/institution.py`, `src/runtime/pydantic_ai/contracts.py`; proof needs
+actual SDK invalid/valid-call behavior and immutable old-pin/migration invariants.
+This correction does not add a source-owned Welch operation or qualify clinical
+utility. Correction and explicit ordinary-history migration passed actual SDK
+invalid/valid-call and immutable-pin/no-op checks; routes and authority were
+preserved (`var/task11-proof/gdc-metadata-correction.json`). Final source passed
+ordinary native qualification seq 1158 and six isolated native probes. Earlier live
+trajectories retain their exact archived seq-347 basis; the correction does not
+retroactively qualify their missing scientific composition.
 
 ## Task 12 — Verify a composed oncology research trajectory
 
@@ -440,6 +464,42 @@ target as observation only, including overruns and exhausted data ceilings. Use 
 explicit longer scenario for the unchanged 300 s scheduled Director review. Scripted
 Windows profile checks establish contracts, not live timing or scientific benefit;
 these trajectories remain separate from routine implementation checks.
+
+Current verification (2026-10-02): eight provider-backed observation scenarios
+finished with closed-store reconstruction and retained public exports; see
+`evals/reference/results/lung-lab-assessment-20261002.md` and
+`var/task12-proof/completed-assessments.json`. The stock isolated `serve` completed
+two cycles/reviews, exactly-once dossier/Delta closure and memory-informed next
+allocation with refreshed history pins; its scientific inputs were unavailable.
+A separate controlled historical-input block ran owned Pearson/OLS on 41 complete
+lung case rows, with unknown literature context and no admitted clinical evidence.
+Historical raw public acquisition seq 123 and its full original payload/reference
+were retained; no expected outcomes or qualification records were imported. These
+separate scenarios do not establish a single composed scientific trajectory.
+
+The attempted historical-input two-cycle composition reached handoff before
+scientific work in cycle one (410.25 s plus 580.48 s review); cycle two raised
+ModelHTTPError after 197.02 s. Stock serve caught and retained this per-cycle failure;
+its top-level null error field must not be interpreted as scientific success. The
+unchanged 300 s scheduled-review probe started review at 300.09 s without cancelling
+its pending task; interruption recovery closed once and repeated recovery was a
+no-op. Initial unsupported-discovery failures, all source/provider errors and later
+observations remain preserved. Valid fresh GDC diagnostics returned HTTP 503 for
+the observed request; bounded slices do not prove general data-limit usefulness.
+
+Remaining completion proof: one retained eligible analysis-to-review-to-next-choice
+trajectory on its pinned basis, including justified challenge or explicit missing
+prerequisite and literature context. Qualified reuse remains conditional on Task
+10's scientific-utility prerequisite. Independent scientific review/clinical utility
+remain explicitly unsupported as requested. Source-owned Welch is unavailable; the
+provided-array route does not confer source lineage. Publication was not triggered.
+No timers or scientific phases were shortened to manufacture a successful result.
+The stale GDC limitation and unsupported endpoint SDK surface were corrected under
+Task 11, with final ordinary WSL proof seq 1158; earlier live observations resolve
+against `var/task12-proof/qualified-source-basis-347.zip`, not the corrected source.
+Current native source bytes are archived in `qualified-source-basis-1158.zip`.
+API/UI services are active with HTTP 200 in testing maintenance mode, which proves
+startup/transport and keeps automatic research paused. Task 12 stays active.
 
 Owning code: `src/autonomous.py`, `src/runtime/cycle.py`,
 `src/runtime/pydantic_ai/`, `src/persistence/`, `src/dossier/delta.py`,

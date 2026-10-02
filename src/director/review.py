@@ -17,14 +17,29 @@ def _snapshot(runtime,limit):
 
 
 def _portfolio(runtime,limit,ceiling,records):
-    latest={}; legacy=0; frontier_refs={}
+    latest={}; legacy=0; frontier_refs={}; history={}
     for record in records:
         if record.kind!=RecordKind.GLOBAL_FRONTIER: continue
         if "mission_id" not in record.payload:
             legacy+=1; continue  # Historical scope is unknown, never relabelled.
         if record.payload["mission_id"]!=runtime.mission_id: continue
         for candidate in record.payload.get("candidates",()):
-            latest[candidate["candidate_id"]]=(candidate,record)
+            identity = candidate["candidate_id"]
+            scope = candidate.get("scope", {})
+            previous = history.get(identity, [])
+            state = "deferred" if candidate.get("status") == "defer" else "blocked" if scope.get("unresolved") else "proposed"
+            prerequisites = scope.get("prerequisite_refs", [])
+            new_refs = [ref for ref in prerequisites if ref not in (previous[-1].get("prerequisite_refs", []) if previous else [])]
+            if previous and previous[-1]["state"] in {"blocked", "deferred"} and record.payload.get("basis") != previous[-1]["basis"] and new_refs:
+                from src.memory.models import MemoryReference
+                from src.memory.service import ResearchMemory
+                supported = [ref for ref in new_refs if ref.get("kind") in {RecordKind.ACQUISITION.value, RecordKind.REPRESENTATION_PARSE.value, RecordKind.VERIFICATION.value}]
+                for ref in supported: ResearchMemory(runtime.repository.store).resolve(MemoryReference.model_validate(ref))
+                if supported: state = "newly_testable"
+            history.setdefault(identity, []).append({"state": state, "basis": record.payload.get("basis"),
+                "frontier_ref": reference(record).model_dump(mode="json"), "prerequisite_refs": prerequisites,
+                "readiness_scope": "new source/capability prerequisite observed; scientific suitability remains unmeasured"})
+            latest[identity]=(candidate,record)
             frontier_refs[candidate["candidate_id"]]=reference(record).model_dump(mode="json")
     allocations={}; blocks={}
     for record in records:
@@ -38,7 +53,7 @@ def _portfolio(runtime,limit,ceiling,records):
         allocation=allocations.get(identity); block=blocks.get(allocation.block_id) if allocation else None
         lifecycle=block.payload.get("status","unknown") if block else "allocation_unresolved" if allocation else "deferred" if candidate.get("status")=="defer" else "proposed"
         nodes.append({"candidate_id":identity,"objective":candidate["objective"],"origin":candidate["origin"],
-            "semantic_status":candidate.get("status","pending"),"observed_lifecycle":lifecycle,
+            "semantic_status":candidate.get("status","pending"),"observed_lifecycle":lifecycle,"readiness_history":history[identity][-5:],"omitted_readiness_transitions":max(0,len(history[identity])-5),
             "objective_attainment":"unknown","scientific_resolution":"unknown",
             "semantic_call_id":candidate.get("semantic_call_id"),"failure_type":candidate.get("failure_type"),
             "source_refs":candidate["source_refs"][:2],"omitted_refs":max(0,len(candidate["source_refs"])-2),

@@ -306,10 +306,12 @@ class ResearchMemory:
 
     def search(self, query="", *, mission_id=None, entity=None, topic=None, since: datetime | None = None,
                until: datetime | None = None, limit=10, capability=None, hypothesis=None,
-               shared_reference=None, lineage=None):
+               shared_reference=None, lineage=None, alternative_limit=3):
         if not 1 <= limit <= self.max_results:
             raise ValueError("memory search limit must be between 1 and 20")
-        ranked = []
+        if not 0 <= alternative_limit <= 3:
+            raise ValueError("alternative limit must be 0..3")
+        ranked, alternatives = [], []
         for d in self.digests():
             if mission_id is not None and d.mission_id != mission_id or entity is not None and entity not in d.entities or topic is not None and topic not in d.topics:
                 continue
@@ -330,10 +332,23 @@ class ResearchMemory:
                              *(i.summary for field in (d.hypotheses, d.candidates, d.scientific_attempts, d.literature_contexts, d.scientific_followups, d.operational_blockers, d.uncertainties, d.continuation_proposals) for i in field)))
             score = len(terms(query) & terms(text))
             if query and score == 0:
+                # Empty/operational-only cycles provide no scientific alternative.
+                # Keep failed attempts and unresolved scientific context, not an
+                # unrelated no-allocation event merely because it has a receipt.
+                scientific_items = (*d.hypotheses, *d.candidates, *d.scientific_attempts,
+                    *d.literature_contexts, *d.scientific_followups, *d.uncertainties, *d.continuation_proposals)
+                if scientific_items:
+                    alternatives.append(d)
                 continue
             ranked.append((score, d))
         ranked.sort(key=lambda pair: (-pair[0], pair[1].cycle_id, pair[1].digest_id))
-        return tuple(d for _, d in ranked[:limit])
+        alternatives.sort(key=lambda d: (-d.recorded_at.timestamp(), d.cycle_id, d.digest_id))
+        reserve = min(alternative_limit, len(alternatives), limit // 4 if ranked else limit) if query else 0
+        selected = [d for _, d in ranked[:max(0, limit - reserve)]]
+        selected.extend(alternatives[:min(reserve, limit - len(selected))])
+        if len(selected) < limit:
+            selected.extend(d for _, d in ranked if d not in selected)
+        return tuple(selected[:limit])
 
     def context(self, query, *, limit=5, **filters):
         digests = self.search(query, limit=limit, **filters)
@@ -362,7 +377,7 @@ class ResearchMemory:
                         item["details"] = (self._compact_attempt(item["details"]) if key == "scientific_attempts" else
                                            {k: item["details"][k] for k in ("category", "semantic_status", "unresolved", "limitations")}
                                            if key == "literature_contexts" else
-                                           {k:item["details"][k] for k in ("outcome","kind","independence","confirmation_access","overlap_count","intervals","unresolved","limitations")}
+                                           {k:item["details"].get(k) for k in ("outcome","kind","independence","confirmation_access","overlap_count","intervals","unresolved","limitations")}
                                            if key == "scientific_followups" else {})
                         # Native distributions/full contracts stay reference-resolvable.
                         item["references"] = item["references"][:2]
@@ -378,7 +393,13 @@ class ResearchMemory:
                 view[key].pop()
                 omitted[key] += 1
             views.append(view)
-        context = MemoryContext(query=query[:1000], digests=tuple(views))
+        alternatives = [d.digest_id for d in digests if query and not terms(query) & terms(" ".join((d.direction, *d.objectives,
+            *d.entities, *d.topics, *(i.summary for field in (d.hypotheses, d.candidates, d.scientific_attempts,
+            d.literature_contexts, d.scientific_followups, d.operational_blockers, d.uncertainties, d.continuation_proposals) for i in field))))]
+        context = MemoryContext(query=query[:1000], digests=tuple(views), retrieval={
+            "version": "memory-retrieval-v3-bounded-alternatives", "alternative_digest_ids": alternatives,
+            "alternative_limit": filters.get("alternative_limit", 3), "result_limit": limit,
+            "basis": "lexical matches plus bounded recent filtered alternatives; relevance unmeasured"})
         while len(canonical_bytes(context.model_dump(mode="json"))) > context.max_bytes and context.digests:
             context = context.model_copy(update={"digests": context.digests[:-1], "omitted_digests": context.omitted_digests + 1})
         return context

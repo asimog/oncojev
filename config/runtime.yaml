@@ -1,20 +1,21 @@
 mode: live
+unbounded_work: true
 testing:
   observation_target_seconds: 120
   block:
-    default_seconds: 90
-    min_seconds: 60
-    max_seconds: 90
-    handoff_reserve_seconds: 15
+    default_seconds: 240
+    min_seconds: 180
+    max_seconds: 300
+    handoff_reserve_seconds: 30
   public_data:
     max_response_bytes: 10000000
     max_block_download_bytes: 20000000
     max_service_download_bytes: 50000000
 block:
-  default_seconds: 900
-  min_seconds: 300
-  max_seconds: 3600
-  handoff_reserve_seconds: 90
+  default_seconds: 240
+  min_seconds: 180
+  max_seconds: 300
+  handoff_reserve_seconds: 30
   max_tool_calls: 500
   max_model_requests: 200
   max_provider_tool_calls: 500

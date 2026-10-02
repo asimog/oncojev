@@ -19,7 +19,7 @@ from src.science.sandbox import (GithubMethodRequest,SandboxPolicy,SandboxError,
 
 class LocalVenvScientificBackend:
     def __init__(self, root, policy=None, *, download_limit=10_000_000, workspace_limit=100_000_000,
-                 workspace_base=None, max_processes=16, minimum_free_disk_bytes=10_000_000):
+                 workspace_base=None, max_processes=16, minimum_free_disk_bytes=10_000_000, recovery_inputs=None):
         self.root=Path(root).resolve()
         self.policy=policy or SandboxPolicy()
         self.download_limit=download_limit
@@ -31,6 +31,8 @@ class LocalVenvScientificBackend:
         self.minimum_free_disk_bytes=minimum_free_disk_bytes
         self.process_resources=[]
         self.deadline=None
+        self.recovery_inputs = recovery_inputs
+        self.recovered_bytes = 0
 
     def _remaining(self):
         remaining=self.policy.timeout_seconds if self.deadline is None else self.deadline-time.monotonic()
@@ -38,6 +40,15 @@ class LocalVenvScientificBackend:
         return remaining
 
     def _fetch(self,url):
+        if self.recovery_inputs is not None:
+            self._remaining()
+            if url not in self.recovery_inputs:
+                raise SandboxError('retained package unavailable; network fallback forbidden')
+            data = self.recovery_inputs[url]
+            if not isinstance(data, bytes) or len(data) > self.download_limit:
+                raise SandboxError('invalid or oversized retained package bytes')
+            self.recovered_bytes += len(data)
+            return data
         chunks=[]
         deadline=time.monotonic()+self._remaining()
         with httpx.Client(timeout=min(20,self._remaining()),follow_redirects=False,trust_env=False,headers={'Accept-Encoding':'identity'}) as client:
@@ -115,6 +126,7 @@ class LocalVenvScientificBackend:
         if sys.platform!='linux' or platform.machine()!='x86_64':raise SandboxError('local scientific execution requires Linux x86_64; no unconfined fallback')
         self.downloaded=0
         self.process_resources=[]
+        self.recovered_bytes=0
         self.deadline=time.monotonic()+self.policy.timeout_seconds
         request.input_identity()
         self.root.mkdir(parents=True,exist_ok=True)
@@ -158,7 +170,8 @@ class LocalVenvScientificBackend:
                 'network':'disabled_for_install_test_execute','confinement':'landlock-seccomp-single-process-v2-trusted-launcher',
                 'cpu':self.policy.cpu,'memory_mb':self.policy.memory_mb,'workspace_bytes':self._disk_used(),
                 'aggregate_controls':'owned-command-v1','process_resources':self.process_resources,
-                'downloaded_bytes':self.downloaded,'experiment_path':str(root),'dependency_lock':'retained exact wheel bytes/hashes; fresh qualification is separate'}
+                'downloaded_bytes':self.downloaded,'recovered_bytes':self.recovered_bytes,
+                'recovery_source':'retained_content_addressed_bytes' if self.recovery_inputs is not None else None,'experiment_path':str(root),'dependency_lock':'retained exact wheel bytes/hashes; fresh qualification is separate'}
             receipt=SandboxReceipt(repository_url=request.repository_url,commit_sha=commit,environment=environment,
                 environment_sha256=content_hash(environment),input_sha256=request.input_identity(),
                 install=install[0],test=test[0],first_run=first[0],replay_run=replay[0],

@@ -43,6 +43,11 @@ class ServiceResources:
     data_block_downloaded_bytes: dict[str, int] = field(default_factory=dict)
     block_downloaded_bytes: dict[str, int] = field(default_factory=dict)
     receipts: list[dict] = field(default_factory=list)
+    execution_receipts: list[dict] = field(default_factory=list)
+
+    def record_execution(self, owner, observation):
+        """Retain measured consumption across fresh block runtimes, even on failure."""
+        self.execution_receipts.append({"owner": owner, **observation})
 
     @classmethod
     def from_policy(cls, policy):
@@ -67,8 +72,10 @@ class ServiceResources:
         try:
             yield receipt
         finally:
-            receipt.update(status="released", duration_seconds=perf_counter() - started)
-            self.heavy_owner = None
+            receipt.update(status="quarantined" if self.execution_failure else "released",
+                           duration_seconds=perf_counter() - started)
+            if not self.execution_failure:
+                self.heavy_owner = None
 
     @contextmanager
     def reserve_download(self, owner, declared_size, *, category="other", workspace_used=0, durable_used=0, paths=(), archive_limit=None):
@@ -168,7 +175,19 @@ class ServiceResources:
 
     def snapshot(self):
         last_coder = next((r["process_resources"] for r in reversed(self.receipts) if "process_resources" in r), None)
-        return {"heavy_local_execution_limit": 1, "heavy_owner": self.heavy_owner,
+        cpu = []
+        for receipt in self.execution_receipts:
+            counters = dict(line.split(maxsplit=1) for line in receipt.get("cpu_stat", "").splitlines() if " " in line)
+            if "usage_usec" in counters:
+                cpu.append(int(counters["usage_usec"]) / 1_000_000)
+            elif receipt.get("unit_observation", {}).get("CPUUsageNSec") is not None:
+                cpu.append(int(receipt["unit_observation"]["CPUUsageNSec"]) / 1_000_000_000)
+        return {"installed_science_usage": {
+                    "process_families": len(self.execution_receipts), "measured_process_families": len(cpu),
+                    "cpu_observed_seconds": sum(cpu) if cpu else None,
+                    "cpu_seconds": sum(cpu) if cpu and len(cpu) == len(self.execution_receipts) else None,
+                    "last_execution": self.execution_receipts[-1] if self.execution_receipts else None},
+                "heavy_local_execution_limit": 1, "heavy_owner": self.heavy_owner,
                 "max_file_bytes": self.max_file_bytes,
                 "max_block_download_bytes": self.max_block_download_bytes,
                 "max_service_download_bytes": self.max_service_download_bytes,
@@ -182,4 +201,4 @@ class ServiceResources:
                     "workspace_bytes": self.max_workspace_bytes},
                 "last_coder_execution": last_coder, "execution_failure": self.execution_failure,
                 "max_science_processes": self.max_science_processes,
-                "process_cpu_memory_enforcement": "Coder and local external science: owned-command-v1; installed in-process science has no kernel family quota"}
+                "process_cpu_memory_enforcement": "Coder, external and installed Science: owned-command-v1"}

@@ -40,7 +40,7 @@ class PreparedFrontier(BaseModel, frozen=True):
     )
 
 
-MATERIAL_KINDS = (RecordKind.CYCLE, RecordKind.OUTCOME_CORRECTION, RecordKind.BLOCK,
+MATERIAL_KINDS = (RecordKind.MISSION, RecordKind.ACQUISITION, RecordKind.REPRESENTATION_PARSE, RecordKind.EXTERNAL_LOOKUP, RecordKind.CYCLE, RecordKind.OUTCOME_CORRECTION, RecordKind.BLOCK,
                   RecordKind.STATE_REVISION, RecordKind.EVIDENCE, RecordKind.VERIFICATION,
                   RecordKind.BLOCK_DELTA, RecordKind.MEMORY_DIGEST, RecordKind.SCIENTIFIC_ATTEMPT, RecordKind.LITERATURE_CONTEXT, RecordKind.FOLLOWUP_PLAN, RecordKind.FOLLOWUP_RESULT)
 
@@ -137,3 +137,50 @@ def beam(candidates):
     rank = {"advance": 0, "keep_alive": 1, "pending": 1, "defer": 2, "reject_retain": 3}
     allowed = [c for c in candidates if c.status not in {"defer", "reject_retain"}]
     return tuple(c.candidate_id for c in sorted(allowed, key=lambda c: rank[c.status])[:5])
+
+
+class DirectorProposal(BaseModel, frozen=True):
+    """Bounded authored question; grounding context is separate from result support."""
+    objective: str = Field(min_length=1, max_length=1000)
+    proposed_test: str = Field(min_length=1, max_length=500)
+    population: str = Field(min_length=1, max_length=500)
+    design: str = Field(min_length=1, max_length=500)
+    capability_ids: tuple[str, ...] = Field(min_length=1, max_length=5)
+    context_refs: tuple[MemoryReference, ...] = Field(min_length=1, max_length=10)
+    prerequisite_refs: tuple[MemoryReference, ...] = Field(default=(), max_length=10)
+    replication: str | None = Field(default=None, max_length=500)
+
+
+def authored_investigations(runtime, proposals):
+    from src.memory.service import reference
+    if len(proposals) > 5:
+        raise ValueError('at most five Director proposals per frontier')
+    memory = runtime.memory_service()
+    mission = next((r for r in reversed(runtime.repository.store.records(kind=RecordKind.MISSION))
+                    if r.record_id == runtime.mission_id), None)
+    if proposals and mission is None:
+        raise ValueError('Director proposals require a retained current mission')
+    candidates = []
+    allowed = {RecordKind.INDEX_RECEIPT, RecordKind.EXTERNAL_LOOKUP, RecordKind.ACQUISITION,
+               RecordKind.SCIENTIFIC_ARTIFACT, RecordKind.REPRESENTATION_PARSE, RecordKind.METHOD_CANDIDATES,
+               RecordKind.INSTITUTIONAL_OBSERVATION, RecordKind.REGISTRY_REVISION, RecordKind.GLOBAL_RELATION,
+               RecordKind.SCIENTIFIC_ATTEMPT, RecordKind.FOLLOWUP_RESULT, RecordKind.EVIDENCE}
+    for proposal in proposals:
+        proposal = DirectorProposal.model_validate(proposal)
+        if not proposal.objective.strip() or any(ref.kind not in allowed for ref in proposal.context_refs):
+            raise ValueError('inspected capability/source/relation context required')
+        for ref in (*proposal.context_refs, *proposal.prerequisite_refs):
+            memory.resolve(ref)
+        if any(runtime.index_for().describe(identity) is None for identity in proposal.capability_ids):
+            raise ValueError('unknown proposed capability')
+        scope = {'proposed_test': proposal.proposed_test, 'population': proposal.population,
+                 'design': proposal.design, 'replication': proposal.replication, 'capability_ids': proposal.capability_ids,
+                 'mission_ref': reference(mission).model_dump(mode='json'),
+                 'prerequisite_refs': [ref.model_dump(mode='json') for ref in proposal.prerequisite_refs],
+                 'grounding_role': 'authored proposal context; scientific resolution remains unmeasured'}
+        identity = content_hash({'mission': runtime.mission_id, 'objective': normalize(proposal.objective),
+            'test': normalize(proposal.proposed_test), 'population': normalize(proposal.population),
+            'design': normalize(proposal.design), 'replication': proposal.replication})
+        candidates.append(Investigation(candidate_id=identity, objective=proposal.objective,
+            origin='director_authored', source_refs=(reference(mission), *proposal.context_refs), scope=scope))
+    return tuple(candidates)

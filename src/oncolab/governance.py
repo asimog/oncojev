@@ -12,6 +12,8 @@ from src.oncolab.models import OncoLabDescriptor, OncoLabValidationState, OncoLa
 from src.persistence.records import RecordKind, StoredRecord
 from src.provenance import content_hash
 from src.runtime.verification import local_verification_passed
+from src.science.qualification import scientific_qualification_resolves
+from src.evals.reference import utility_evaluation_resolves
 
 
 class CapabilityProposal(BaseModel, frozen=True):
@@ -73,7 +75,9 @@ def review(institution, proposal_id):
             for kind in (RecordKind.REFERENCE_VALIDATION,RecordKind.ENVIRONMENT_QUALIFICATION,RecordKind.UTILITY_EVALUATION):
                 proofs=[r for r in linked if r.kind==kind]
                 if proofs and not any(r.payload.get('status')=='passed' and r.payload.get('candidate_id') in candidate_ids
-                    and r.payload.get('scope_sha256')==scope_hash for r in proofs):
+                    and r.payload.get('scope_sha256')==scope_hash
+                    and (utility_evaluation_resolves(institution.store, r.payload, institution.application) if kind==RecordKind.UTILITY_EVALUATION
+                         else scientific_qualification_resolves(institution.store, kind, r.payload)) for r in proofs):
                     reasons.append('failed_or_changed_scope:'+kind.value)
             references=[r for r in linked if r.kind==RecordKind.REFERENCE_VALIDATION]
             if references and not any(all(r.payload.get(key) is True for key in
@@ -84,7 +88,7 @@ def review(institution, proposal_id):
                 and r.payload.get('independent_replay') is True for r in qualifications):
                 reasons.append('missing_fresh_locked_reinstall_replay')
             local=[r for r in linked if r.kind==RecordKind.LOCAL_VERIFICATION]
-            if local and not any(local_verification_passed(r.payload, institution.application) for r in local):
+            if local and not any(local_verification_passed(r.payload, institution.application, environment_provider=institution.environment_provider, store=institution.store) for r in local):
                 reasons.append('local_execution_not_verified_for_application')
             if not proposal.descriptor.version or any(r.payload.get('receipt',{}).get('commit_sha')!=proposal.descriptor.version for r in candidates):reasons.append('missing_or_conflicting_immutable_operation_version')
             if not proposal.routes or any(r.tool!='run_reusable_method' or r.candidate_id not in candidate_ids or r.scope_sha256!=scope_hash for r in proposal.routes):
@@ -92,8 +96,13 @@ def review(institution, proposal_id):
             if proposal.descriptor.validation_state!=OncoLabValidationState.REUSABLE or proposal.descriptor.availability!=OncoLabAvailability.REUSABLE:
                 reasons.append('promotion_requires_explicit_scoped_reusable_contract')
             licences=[r for r in linked if r.kind==RecordKind.EXTERNAL_LOOKUP]
-            if not licences or not any(any(c.get('licence') and c.get('licence') not in {'NOASSERTION','UNKNOWN'} and c.get('external_id') in
-                {proposal.descriptor.implementation_or_source,proposal.scope.get('external_id')} for c in r.payload.get('cards',[])) for r in licences):
+            commits={r.payload.get('receipt',{}).get('commit_sha') for r in candidates}
+            repositories={r.payload.get('receipt',{}).get('repository_url') for r in candidates}
+            if not licences or not any(any(c.get('licence') and c.get('licence') not in {'NOASSERTION','UNKNOWN'}
+                and c.get('homepage') in repositories and c.get('metadata',{}).get('commit_sha') in commits
+                and (c.get('homepage')==proposal.descriptor.implementation_or_source or c.get('external_id') in
+                    {proposal.descriptor.implementation_or_source,proposal.scope.get('external_id')})
+                for c in r.payload.get('cards',[])) for r in licences):
                 reasons.append('unresolved_licence_source_binding')
             # Actual validated use must bind candidate inputs/software; independent
             # scope/reference/utility gates above cannot be replaced with run count.
@@ -119,7 +128,7 @@ def review(institution, proposal_id):
         else:routes.pop(proposal.capability_id,None)
         change_hash=content_hash({'descriptors':[d.model_dump(mode='json') for d in descriptors],
                                  'routes':{k:[r.model_dump(mode='json') for r in v] for k,v in routes.items()}})
-        payload={'review_id':str(uuid4()),'proposal_id':proposal_id,'parent':parent,'policy_version':'scoped-governance-v2-local',
+        payload={'review_id':str(uuid4()),'proposal_id':proposal_id,'parent':parent,'policy_version':'scoped-governance-v3-resolved',
             'status':'rejected' if reasons else 'accepted','reasons':reasons,'scope_sha256':scope_hash,'change_sha256':change_hash}
         review_record=institution.store.append(StoredRecord(kind=RecordKind.REGISTRY_REVIEW,record_id=payload['review_id'],payload=payload))
         institution.observe(InstitutionalObservation(observation_id='review:'+payload['review_id'],capability_id=proposal.capability_id,

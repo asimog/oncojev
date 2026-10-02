@@ -1,0 +1,654 @@
+{
+  "version": "scientific-reference-corpus-v1",
+  "topic": "lung cancer",
+  "scope": "Published numerical references, independently expert-annotated lung-cancer source/claim relations and generated adverse contracts; label scopes reported separately.",
+  "cases": [
+    {
+      "case_id": "anscombe-1",
+      "split": "tuning",
+      "domain": "method_reference",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "numeric",
+        "method": "pearson_correlation",
+        "values": {
+          "x": [
+            10,
+            8,
+            13,
+            9,
+            11,
+            14,
+            6,
+            4,
+            12,
+            7,
+            5
+          ],
+          "y": [
+            8.04,
+            6.95,
+            7.58,
+            8.81,
+            8.33,
+            9.96,
+            7.24,
+            4.26,
+            10.84,
+            4.82,
+            5.68
+          ]
+        },
+        "observe": [
+          "correlation"
+        ]
+      },
+      "expected": {
+        "correlation_rounded": 0.816
+      },
+      "reference_url": "https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/anscombe.html",
+      "label_basis": "Published R datasets bytes; rounded Pearson agreement only, not linear-design validity. Source: https://raw.githubusercontent.com/wch/r-source/trunk/src/library/datasets/data/anscombe.R",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "anscombe-2",
+      "split": "held_out",
+      "domain": "method_reference",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "numeric",
+        "method": "pearson_correlation",
+        "values": {
+          "x": [
+            10,
+            8,
+            13,
+            9,
+            11,
+            14,
+            6,
+            4,
+            12,
+            7,
+            5
+          ],
+          "y": [
+            9.14,
+            8.14,
+            8.74,
+            8.77,
+            9.26,
+            8.1,
+            6.13,
+            3.1,
+            9.13,
+            7.26,
+            4.74
+          ]
+        },
+        "observe": [
+          "correlation"
+        ]
+      },
+      "expected": {
+        "correlation_rounded": 0.816
+      },
+      "reference_url": "https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/anscombe.html",
+      "label_basis": "Published R datasets bytes; rounded Pearson agreement only, not linear-design validity. Source: https://raw.githubusercontent.com/wch/r-source/trunk/src/library/datasets/data/anscombe.R",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "anscombe-3",
+      "split": "held_out",
+      "domain": "method_reference",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "numeric",
+        "method": "pearson_correlation",
+        "values": {
+          "x": [
+            10,
+            8,
+            13,
+            9,
+            11,
+            14,
+            6,
+            4,
+            12,
+            7,
+            5
+          ],
+          "y": [
+            7.46,
+            6.77,
+            12.74,
+            7.11,
+            7.81,
+            8.84,
+            6.08,
+            5.39,
+            8.15,
+            6.42,
+            5.73
+          ]
+        },
+        "observe": [
+          "correlation"
+        ]
+      },
+      "expected": {
+        "correlation_rounded": 0.816
+      },
+      "reference_url": "https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/anscombe.html",
+      "label_basis": "Published R datasets bytes; rounded Pearson agreement only, not linear-design validity. Source: https://raw.githubusercontent.com/wch/r-source/trunk/src/library/datasets/data/anscombe.R",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "anscombe-4",
+      "split": "tuning",
+      "domain": "method_reference",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "numeric",
+        "method": "pearson_correlation",
+        "values": {
+          "x": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            19,
+            8,
+            8,
+            8
+          ],
+          "y": [
+            6.58,
+            5.76,
+            7.71,
+            8.84,
+            8.47,
+            7.04,
+            5.25,
+            12.5,
+            5.56,
+            7.91,
+            6.89
+          ]
+        },
+        "observe": [
+          "correlation"
+        ]
+      },
+      "expected": {
+        "correlation_rounded": 0.817
+      },
+      "reference_url": "https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/anscombe.html",
+      "label_basis": "Published R datasets bytes; rounded Pearson agreement only, not linear-design validity. Source: https://raw.githubusercontent.com/wch/r-source/trunk/src/library/datasets/data/anscombe.R",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "invalid-pair-length",
+      "split": "held_out",
+      "domain": "invalid_design",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "numeric",
+        "method": "pearson_correlation",
+        "values": {
+          "x": [
+            1,
+            2,
+            3
+          ],
+          "y": [
+            1,
+            2
+          ]
+        },
+        "observe": [
+          "correlation"
+        ]
+      },
+      "expected": {
+        "invalid_rejected": true
+      },
+      "reference_url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html",
+      "label_basis": "Independent API requirement: aligned paired measurements; generated adverse case requires review.",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "planted-orthogonal-null",
+      "split": "held_out",
+      "domain": "null",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "numeric",
+        "method": "pearson_correlation",
+        "values": {
+          "x": [
+            -2,
+            -1,
+            0,
+            1,
+            2
+          ],
+          "y": [
+            4,
+            1,
+            0,
+            1,
+            4
+          ]
+        },
+        "observe": [
+          "correlation"
+        ]
+      },
+      "expected": {
+        "correlation_rounded": 0.0
+      },
+      "reference_url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html",
+      "label_basis": "Analytical zero covariance from symmetry; this deterministic null does not estimate empirical false positives.",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "memory-zero-overlap-failed",
+      "split": "tuning",
+      "domain": "memory",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "memory",
+        "query": "lung cancer",
+        "retained_statement": "Pulmonary adenocarcinoma procedure requires repaired prerequisites"
+      },
+      "expected": {
+        "alternative_recalled": true
+      },
+      "reference_url": "https://docs.gdc.cancer.gov/Data_Portal/Users_Guide/Clinical_Data_Analysis/",
+      "label_basis": "Lung-mission terminology and generated retrieval contract; outcome text is an operational fixture, not scientific evidence.",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "memory-zero-overlap-inconclusive",
+      "split": "held_out",
+      "domain": "memory",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "memory",
+        "query": "lung cancer",
+        "retained_statement": "Pulmonary adenocarcinoma uncertainty requires additional disjoint participants"
+      },
+      "expected": {
+        "alternative_recalled": true
+      },
+      "reference_url": "https://docs.gdc.cancer.gov/Data_Portal/Users_Guide/Clinical_Data_Analysis/",
+      "label_basis": "Lung-mission terminology and generated retrieval contract; outcome text is an operational fixture, not scientific evidence.",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "memory-zero-overlap-contrary",
+      "split": "held_out",
+      "domain": "memory",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "memory",
+        "query": "lung cancer",
+        "retained_statement": "Pulmonary adenocarcinoma opposite association needs scope comparison"
+      },
+      "expected": {
+        "alternative_recalled": true
+      },
+      "reference_url": "https://docs.gdc.cancer.gov/Data_Portal/Users_Guide/Clinical_Data_Analysis/",
+      "label_basis": "Lung-mission terminology and generated retrieval contract; outcome text is an operational fixture, not scientific evidence.",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "relation-different-populations",
+      "split": "tuning",
+      "domain": "relation",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "relation",
+        "relation": {
+          "left": {
+            "objective": "Association in adenocarcinoma cases"
+          },
+          "right": {
+            "objective": "Opposite association in squamous carcinoma cases"
+          }
+        }
+      },
+      "expected": {
+        "scientific_resolution": "unknown"
+      },
+      "reference_url": "https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/anscombe.html",
+      "label_basis": "Reference principle: similar summary statistics do not establish same underlying design; relation truth remains independently unreviewed.",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "relation-same-scope-opposite",
+      "split": "held_out",
+      "domain": "relation",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "relation",
+        "relation": {
+          "left": {
+            "objective": "Positive association in same declared cases"
+          },
+          "right": {
+            "objective": "Negative association in same declared cases"
+          }
+        }
+      },
+      "expected": {
+        "scientific_resolution": "unknown"
+      },
+      "reference_url": "https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/anscombe.html",
+      "label_basis": "Reference principle: similar summary statistics do not establish same underlying design; relation truth remains independently unreviewed.",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "relation-replication-distinct",
+      "split": "held_out",
+      "domain": "relation",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "relation",
+        "relation": {
+          "left": {
+            "objective": "Association in discovery participants"
+          },
+          "right": {
+            "objective": "Same direction in disjoint confirmation participants"
+          }
+        }
+      },
+      "expected": {
+        "scientific_resolution": "unknown"
+      },
+      "reference_url": "https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/anscombe.html",
+      "label_basis": "Reference principle: similar summary statistics do not establish same underlying design; relation truth remains independently unreviewed.",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "scifact-lung-55-49556906",
+      "split": "tuning",
+      "domain": "source_backed_statement",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "statement",
+        "statement": "AMP-activated protein kinase (AMPK) activation reduces inflammation-related fibrosis in the lungs.",
+        "resolved_support": {
+          "title": "Metformin reverses established lung fibrosis in a bleomycin model",
+          "abstract": "Fibrosis is a pathological result of a dysfunctional repair response to tissue injury and occurs in a number of organs, including the lungs1. Cellular metabolism regulates tissue repair and remodelling responses to injury2-4. AMPK is a critical sensor of cellular bioenergetics and controls the switch from anabolic to catabolic metabolism5. However, the role of AMPK in fibrosis is not well understood. Here, we demonstrate that in humans with idiopathic pulmonary fibrosis (IPF) and in an experimental mouse model of lung fibrosis, AMPK activity is lower in fibrotic regions associated with metabolically active and apoptosis-resistant myofibroblasts. Pharmacological activation of AMPK in myofibroblasts from lungs of humans with IPF display lower fibrotic activity, along with enhanced mitochondrial biogenesis and normalization of sensitivity to apoptosis. In a bleomycin model of lung fibrosis in mice, metformin therapeutically accelerates the resolution of well-established fibrosis in an AMPK-dependent manner. These studies implicate deficient AMPK activation in non-resolving, pathologic fibrotic processes, and support a role for metformin (or other AMPK activators) to reverse established fibrosis by facilitating deactivation and apoptosis of myofibroblasts.",
+          "epistemic_status": "retained publication abstract; source assessment only"
+        }
+      },
+      "expected": {
+        "source_support": "supports"
+      },
+      "reference_url": "https://github.com/allenai/scifact",
+      "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
+      "independent_review": "reviewed",
+      "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=55, document=49556906; annotation sha256=8cfc5f4aeb8f03abc74b84bbe41059a1c8ce4db6be39343df222a09a4b7c9309"
+    },
+    {
+      "case_id": "scifact-lung-379-19005293",
+      "split": "tuning",
+      "domain": "source_backed_statement",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "statement",
+        "statement": "Enhanced early production of inflammatory chemokines damages viral control in the lung.",
+        "resolved_support": {
+          "title": "Memory CD4+ T cells induce innate responses independently of pathogen",
+          "abstract": "Inflammation induced by recognition of pathogen-associated molecular patterns markedly affects subsequent adaptive responses. We asked whether the adaptive immune system can also affect the character and magnitude of innate inflammatory responses. We found that the response of memory, but not naive, CD4+ T cells enhances production of multiple innate inflammatory cytokines and chemokines (IICs) in the lung and that, during influenza infection, this leads to early control of virus. Memory CD4+ T cell\u2013induced IICs and viral control require cognate antigen recognition and are optimal when memory cells are either T helper type 1 (TH1) or TH17 polarized but are independent of interferon-\u03b3 (IFN-\u03b3) and tumor necrosis factor-\u03b1 (TNF-\u03b1) production and do not require activation of conserved pathogen recognition pathways. This represents a previously undescribed mechanism by which memory CD4+ T cells induce an early innate response that enhances immune protection against pathogens.",
+          "epistemic_status": "retained publication abstract; source assessment only"
+        }
+      },
+      "expected": {
+        "source_support": "contradicts"
+      },
+      "reference_url": "https://github.com/allenai/scifact",
+      "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
+      "independent_review": "reviewed",
+      "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=379, document=19005293; annotation sha256=6f46b55ec2108182e642b4e3539881797d8898cefc14932efa10ddc6bde3ad5d"
+    },
+    {
+      "case_id": "scifact-lung-515-29564505",
+      "split": "tuning",
+      "domain": "source_backed_statement",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "statement",
+        "statement": "High levels of CRP lead to a higher risk of exacerbations in chronic obstructive pulmonary disease (COPD).",
+        "resolved_support": {
+          "title": "Inflammatory biomarkers and exacerbations in chronic obstructive pulmonary disease.",
+          "abstract": "IMPORTANCE Exacerbations of respiratory symptoms in chronic obstructive pulmonary disease (COPD) have profound and long-lasting adverse effects on patients.   \n OBJECTIVE To test the hypothesis that elevated levels of inflammatory biomarkers in individuals with stable COPD are associated with an increased risk of having exacerbations.   \n DESIGN, SETTING, AND PARTICIPANTS Prospective cohort study examining 61,650 participants with spirometry measurements from the Copenhagen City Heart Study (2001-2003) and the Copenhagen General Population Study (2003-2008). Of these, 6574 had COPD, defined as a ratio between forced expiratory volume in 1 second (FEV1) and forced vital capacity below 0.7.   \n MAIN OUTCOMES AND MEASURES Baseline levels of C-reactive protein (CRP) and fibrinogen and leukocyte count were measured in participants at a time when they were not experiencing symptoms of exacerbations. Exacerbations were recorded and defined as short-course treatment with oral corticosteroids alone or in combination with an antibiotic or as a hospital admission due to COPD. Levels of CRP and fibrinogen and leukocyte count were defined as high or low according to cut points of 3 mg/L, 14 \u03bcmol/L, and 9 \u00d710(9)/L, respectively.   \n RESULTS During follow-up, 3083 exacerbations were recorded (mean, 0.5/participant). In the first year of follow-up, multivariable-adjusted odds ratios for having frequent exacerbations were 1.2 (95% CI, 0.7-2.2; 17 events/1000 person-years) for individuals with 1 high biomarker, 1.7 (95% CI, 0.9-3.2; 32 events/1000 person-years) for individuals with 2 high biomarkers, and 3.7 (95% CI, 1.9-7.4; 81 events/1000 person-years) for individuals with 3 high biomarkers compared with individuals who had no elevated biomarkers (9 events/1000 person-years; trend: P = 2 \u00d7 10(-5)). Corresponding hazard ratios using maximum follow-up time were 1.4 (95% CI, 1.1-1.8), 1.6 (95% CI, 1.3-2.2), and 2.5 (95% CI, 1.8-3.4), respectively (trend: P = 1 \u00d7 10(-8)). The addition of inflammatory biomarkers to a basic model including age, sex, FEV1 percent predicted, smoking, use of any inhaled medication, body mass index, history of previous exacerbations, and time since most recent prior exacerbation improved the C statistics from 0.71 to 0.73 (comparison: P = 9 \u00d7 10(-5)). Relative risks were consistent in those with milder COPD, in those with no history of frequent exacerbations, and in the 2 studies separately. The highest 5-year absolute risks of having frequent exacerbations in those with 3 high biomarkers (vs no high biomarkers) were 62% (vs 24%) for those with Global Initiative for Chronic Obstructive Lung Disease (GOLD) grades C-D (n = 558), 98% (vs 64%) in those with a history of frequent exacerbations (n = 127), and 52% (vs 15%) for those with GOLD grades 3-4 (n = 465).   \n CONCLUSIONS AND RELEVANCE Simultaneously elevated levels of CRP and fibrinogen and leukocyte count in individuals with COPD were associated with increased risk of having exacerbations, even in those with milder COPD and in those without previous exacerbations. Further investigation is needed to determine the clinical value of these biomarkers for risk stratification.",
+          "epistemic_status": "retained publication abstract; source assessment only"
+        }
+      },
+      "expected": {
+        "source_support": "supports"
+      },
+      "reference_url": "https://github.com/allenai/scifact",
+      "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
+      "independent_review": "reviewed",
+      "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=515, document=29564505; annotation sha256=edfd45f01bf908db4f178363444415102df40a2a307aa15712a4a21b46620973"
+    },
+    {
+      "case_id": "scifact-lung-919-16422880",
+      "split": "tuning",
+      "domain": "source_backed_statement",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "statement",
+        "statement": "Participants who quit smoking reduce lung cancer risk by approximately 50%.",
+        "resolved_support": {
+          "title": "Effect of smoking reduction on lung cancer risk.",
+          "abstract": "CONTEXT Many smokers are unable or unwilling to completely quit smoking. A proposed means of harm reduction is to reduce the number of cigarettes smoked per day. However, it is not clear whether this strategy decreases the risk for tobacco-related diseases.   \n OBJECTIVE To assess the effects of smoking reduction on lung cancer incidence.   \n DESIGN, SETTING, AND PARTICIPANTS Observational population-based cohort study with up to 31 years of follow-up from the Copenhagen Centre for Prospective Population Studies, which administrates data from 3 longitudinal studies conducted in Copenhagen and suburbs, the Copenhagen City Heart Study, the Copenhagen Male Study, and the Glostrup Population Studies, Denmark. Participants were 11,151 men and 8563 women (N = 19,714) aged 20 to 93 years, who attended 2 consecutive examinations with a 5- to 10-year interval between 1964 and 1988. Participants underwent a physical examination and completed self-filled questionnaires about lifestyle habits. The study population was divided into 6 groups according to smoking habits: continued heavy smokers (> or =15 cigarettes/d), reducers (reduced from > or =15 cigarettes/d by minimum of 50% without quitting), continued light smokers (1-14 cigarettes/d), quitters (stopped between first and second examination), stable ex-smokers, and never smokers.   \n MAIN OUTCOME MEASURE Incident primary lung cancer cases assessed by record linkage with the National Cancer Registry until December 31, 2003.   \n RESULTS There were 864 incident lung cancers during follow-up. Using Cox regression, the adjusted hazard ratio (HR) for lung cancer in reducers was 0.73 (95% confidence interval [CI], 0.54-0.98) compared with persistent heavy smokers. The HR for light smokers was 0.44 (95% CI, 0.35-0.56); for quitters, HR 0.50 (95% CI, 0.36-0.69), for stable ex-smokers, HR 0.17 (95% CI, 0.13-0.23), and for never smokers, HR 0.09 (95% CI, 0.06-0.13).   \n CONCLUSION Among individuals who smoke 15 or more cigarettes per day, smoking reduction by 50% significantly reduces the risk of lung cancer.",
+          "epistemic_status": "retained publication abstract; source assessment only"
+        }
+      },
+      "expected": {
+        "source_support": "supports"
+      },
+      "reference_url": "https://github.com/allenai/scifact",
+      "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
+      "independent_review": "reviewed",
+      "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=919, document=16422880; annotation sha256=428166f5889fe2229886b51595827600a8824b3d283f229ee6717e4f253f1f7e"
+    },
+    {
+      "case_id": "scifact-lung-1347-19005293",
+      "split": "tuning",
+      "domain": "source_backed_statement",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "statement",
+        "statement": "Upon viral challenge, influenza-specific memory CD4+ T cells greatly diminish the early production of inflammatory chemokines in the lung.",
+        "resolved_support": {
+          "title": "Memory CD4+ T cells induce innate responses independently of pathogen",
+          "abstract": "Inflammation induced by recognition of pathogen-associated molecular patterns markedly affects subsequent adaptive responses. We asked whether the adaptive immune system can also affect the character and magnitude of innate inflammatory responses. We found that the response of memory, but not naive, CD4+ T cells enhances production of multiple innate inflammatory cytokines and chemokines (IICs) in the lung and that, during influenza infection, this leads to early control of virus. Memory CD4+ T cell\u2013induced IICs and viral control require cognate antigen recognition and are optimal when memory cells are either T helper type 1 (TH1) or TH17 polarized but are independent of interferon-\u03b3 (IFN-\u03b3) and tumor necrosis factor-\u03b1 (TNF-\u03b1) production and do not require activation of conserved pathogen recognition pathways. This represents a previously undescribed mechanism by which memory CD4+ T cells induce an early innate response that enhances immune protection against pathogens.",
+          "epistemic_status": "retained publication abstract; source assessment only"
+        }
+      },
+      "expected": {
+        "source_support": "contradicts"
+      },
+      "reference_url": "https://github.com/allenai/scifact",
+      "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
+      "independent_review": "reviewed",
+      "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=1347, document=19005293; annotation sha256=50fa6a11b7347a1b9d175b20838e0da7cc6fd7cfb0338cf7ff5fd2c0395a88fe"
+    },
+    {
+      "case_id": "scifact-lung-1348-19005293",
+      "split": "tuning",
+      "domain": "source_backed_statement",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "statement",
+        "statement": "Upon viral challenge, influenza-specific memory CD4+ T cells greatly enhance the early production of inflammatory chemokines in the lung.",
+        "resolved_support": {
+          "title": "Memory CD4+ T cells induce innate responses independently of pathogen",
+          "abstract": "Inflammation induced by recognition of pathogen-associated molecular patterns markedly affects subsequent adaptive responses. We asked whether the adaptive immune system can also affect the character and magnitude of innate inflammatory responses. We found that the response of memory, but not naive, CD4+ T cells enhances production of multiple innate inflammatory cytokines and chemokines (IICs) in the lung and that, during influenza infection, this leads to early control of virus. Memory CD4+ T cell\u2013induced IICs and viral control require cognate antigen recognition and are optimal when memory cells are either T helper type 1 (TH1) or TH17 polarized but are independent of interferon-\u03b3 (IFN-\u03b3) and tumor necrosis factor-\u03b1 (TNF-\u03b1) production and do not require activation of conserved pathogen recognition pathways. This represents a previously undescribed mechanism by which memory CD4+ T cells induce an early innate response that enhances immune protection against pathogens.",
+          "epistemic_status": "retained publication abstract; source assessment only"
+        }
+      },
+      "expected": {
+        "source_support": "supports"
+      },
+      "reference_url": "https://github.com/allenai/scifact",
+      "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
+      "independent_review": "reviewed",
+      "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=1348, document=19005293; annotation sha256=b72fae613974b304e8539b3e10a4432cf46e2938cb644099cc464fbdeb4bf422"
+    },
+    {
+      "case_id": "scifact-lung-1372-21003930",
+      "split": "tuning",
+      "domain": "source_backed_statement",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "statement",
+        "statement": "Walking in traffic areas in London did not improve lung function in elderly adults.",
+        "resolved_support": {
+          "title": "Respiratory and cardiovascular responses to walking down a traffic-polluted road compared with walking in a traffic-free area in participants aged 60 years and older with chronic lung or heart disease and age-matched healthy controls: a randomised, crossover study",
+          "abstract": "BACKGROUND Long-term exposure to pollution can lead to an increase in the rate of decline of lung function, especially in older individuals and in those with chronic obstructive pulmonary disease (COPD), whereas shorter-term exposure at higher pollution levels has been implicated in causing excess deaths from ischaemic heart disease and exacerbations of COPD. We aimed to assess the effects on respiratory and cardiovascular responses of walking down a busy street with high levels of pollution compared with walking in a traffic-free area with lower pollution levels in older adults.   \n METHODS In this randomised, crossover study, we recruited men and women aged 60 years and older with angiographically proven stable ischaemic heart disease or stage 2 Global initiative for Obstructive Lung Disease (GOLD) COPD who had been clinically stable for 6 months, and age-matched healthy volunteers. Individuals with ischaemic heart disease or COPD were recruited from existing databases or outpatient respiratory and cardiology clinics at the Royal Brompton & Harefield NHS Foundation Trust and age-matched healthy volunteers using advertising and existing databases. All participants had abstained from smoking for at least 12 months and medications were taken as recommended by participants' doctors during the study. Participants were randomly assigned by drawing numbered disks at random from a bag to do a 2 h walk either along a commercial street in London (Oxford Street) or in an urban park (Hyde Park). Baseline measurements of participants were taken before the walk in the hospital laboratory. During each walk session, black carbon, particulate matter (PM) concentrations, ultrafine particles, and nitrogen dioxide (NO2) concentrations were measured.   \n FINDINGS Between October, 2012, and June, 2014, we screened 135 participants, of whom 40 healthy volunteers, 40 individuals with COPD, and 39 with ischaemic heart disease were recruited. Concentrations of black carbon, NO2, PM10, PM2.5, and ultrafine particles were higher on Oxford Street than in Hyde Park. Participants with COPD reported more cough (odds ratio [OR] 1\u00b795, 95% CI 0\u00b796-3\u00b795; p<0\u00b71), sputum (3\u00b715, 1\u00b739-7\u00b713; p<0\u00b705), shortness of breath (1\u00b786, 0\u00b797-3\u00b757; p<0\u00b71), and wheeze (4\u00b700, 1\u00b752-10\u00b750; p<0\u00b705) after walking down Oxford Street compared with Hyde Park. In all participants, irrespective of their disease status, walking in Hyde Park led to an increase in lung function (forced expiratory volume in the first second [FEV1] and forced vital capacity [FVC]) and a decrease in pulse wave velocity (PWV) and augmentation index up to 26 h after the walk. By contrast, these beneficial responses were attenuated after walking on Oxford Street. In participants with COPD, a reduction in FEV1 and FVC, and an increase in R5-20 were associated with an increase in during-walk exposure to NO2, ultrafine particles and PM2.5, and an increase in PWV and augmentation index with NO2 and ultrafine particles. In healthy volunteers, PWV and augmentation index were associated both with black carbon and ultrafine particles.   \n INTERPRETATION Short-term exposure to traffic pollution prevents the beneficial cardiopulmonary effects of walking in people with COPD, ischaemic heart disease, and those free from chronic cardiopulmonary diseases. Medication use might reduce the adverse effects of air pollution in individuals with ischaemic heart disease. Policies should aim to control ambient levels of air pollution along busy streets in view of these negative health effects.   \n FUNDING British Heart Foundation.",
+          "epistemic_status": "retained publication abstract; source assessment only"
+        }
+      },
+      "expected": {
+        "source_support": "supports"
+      },
+      "reference_url": "https://github.com/allenai/scifact",
+      "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
+      "independent_review": "reviewed",
+      "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=1372, document=21003930; annotation sha256=ed8c557f8148280e439a3752b8ceecb06c3fdc37d452bd4a65768ab7dcd33c20"
+    },
+    {
+      "case_id": "scifact-lung-1373-21003930",
+      "split": "tuning",
+      "domain": "source_backed_statement",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "statement",
+        "statement": "Walking in traffic areas in London improves lung function in elderly adults.",
+        "resolved_support": {
+          "title": "Respiratory and cardiovascular responses to walking down a traffic-polluted road compared with walking in a traffic-free area in participants aged 60 years and older with chronic lung or heart disease and age-matched healthy controls: a randomised, crossover study",
+          "abstract": "BACKGROUND Long-term exposure to pollution can lead to an increase in the rate of decline of lung function, especially in older individuals and in those with chronic obstructive pulmonary disease (COPD), whereas shorter-term exposure at higher pollution levels has been implicated in causing excess deaths from ischaemic heart disease and exacerbations of COPD. We aimed to assess the effects on respiratory and cardiovascular responses of walking down a busy street with high levels of pollution compared with walking in a traffic-free area with lower pollution levels in older adults.   \n METHODS In this randomised, crossover study, we recruited men and women aged 60 years and older with angiographically proven stable ischaemic heart disease or stage 2 Global initiative for Obstructive Lung Disease (GOLD) COPD who had been clinically stable for 6 months, and age-matched healthy volunteers. Individuals with ischaemic heart disease or COPD were recruited from existing databases or outpatient respiratory and cardiology clinics at the Royal Brompton & Harefield NHS Foundation Trust and age-matched healthy volunteers using advertising and existing databases. All participants had abstained from smoking for at least 12 months and medications were taken as recommended by participants' doctors during the study. Participants were randomly assigned by drawing numbered disks at random from a bag to do a 2 h walk either along a commercial street in London (Oxford Street) or in an urban park (Hyde Park). Baseline measurements of participants were taken before the walk in the hospital laboratory. During each walk session, black carbon, particulate matter (PM) concentrations, ultrafine particles, and nitrogen dioxide (NO2) concentrations were measured.   \n FINDINGS Between October, 2012, and June, 2014, we screened 135 participants, of whom 40 healthy volunteers, 40 individuals with COPD, and 39 with ischaemic heart disease were recruited. Concentrations of black carbon, NO2, PM10, PM2.5, and ultrafine particles were higher on Oxford Street than in Hyde Park. Participants with COPD reported more cough (odds ratio [OR] 1\u00b795, 95% CI 0\u00b796-3\u00b795; p<0\u00b71), sputum (3\u00b715, 1\u00b739-7\u00b713; p<0\u00b705), shortness of breath (1\u00b786, 0\u00b797-3\u00b757; p<0\u00b71), and wheeze (4\u00b700, 1\u00b752-10\u00b750; p<0\u00b705) after walking down Oxford Street compared with Hyde Park. In all participants, irrespective of their disease status, walking in Hyde Park led to an increase in lung function (forced expiratory volume in the first second [FEV1] and forced vital capacity [FVC]) and a decrease in pulse wave velocity (PWV) and augmentation index up to 26 h after the walk. By contrast, these beneficial responses were attenuated after walking on Oxford Street. In participants with COPD, a reduction in FEV1 and FVC, and an increase in R5-20 were associated with an increase in during-walk exposure to NO2, ultrafine particles and PM2.5, and an increase in PWV and augmentation index with NO2 and ultrafine particles. In healthy volunteers, PWV and augmentation index were associated both with black carbon and ultrafine particles.   \n INTERPRETATION Short-term exposure to traffic pollution prevents the beneficial cardiopulmonary effects of walking in people with COPD, ischaemic heart disease, and those free from chronic cardiopulmonary diseases. Medication use might reduce the adverse effects of air pollution in individuals with ischaemic heart disease. Policies should aim to control ambient levels of air pollution along busy streets in view of these negative health effects.   \n FUNDING British Heart Foundation.",
+          "epistemic_status": "retained publication abstract; source assessment only"
+        }
+      },
+      "expected": {
+        "source_support": "contradicts"
+      },
+      "reference_url": "https://github.com/allenai/scifact",
+      "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
+      "independent_review": "reviewed",
+      "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=1373, document=21003930; annotation sha256=eb9e5eda7952d6e1c6165081f2f276a266d5c80c1583aff4003223ca4b60b1b4"
+    },
+    {
+      "case_id": "scifact-lung-54-49556906",
+      "split": "held_out",
+      "domain": "source_backed_statement",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "statement",
+        "statement": "AMP-activated protein kinase (AMPK) activation increases inflammation-related fibrosis in the lungs.",
+        "resolved_support": {
+          "title": "Metformin reverses established lung fibrosis in a bleomycin model",
+          "abstract": "Fibrosis is a pathological result of a dysfunctional repair response to tissue injury and occurs in a number of organs, including the lungs1. Cellular metabolism regulates tissue repair and remodelling responses to injury2-4. AMPK is a critical sensor of cellular bioenergetics and controls the switch from anabolic to catabolic metabolism5. However, the role of AMPK in fibrosis is not well understood. Here, we demonstrate that in humans with idiopathic pulmonary fibrosis (IPF) and in an experimental mouse model of lung fibrosis, AMPK activity is lower in fibrotic regions associated with metabolically active and apoptosis-resistant myofibroblasts. Pharmacological activation of AMPK in myofibroblasts from lungs of humans with IPF display lower fibrotic activity, along with enhanced mitochondrial biogenesis and normalization of sensitivity to apoptosis. In a bleomycin model of lung fibrosis in mice, metformin therapeutically accelerates the resolution of well-established fibrosis in an AMPK-dependent manner. These studies implicate deficient AMPK activation in non-resolving, pathologic fibrotic processes, and support a role for metformin (or other AMPK activators) to reverse established fibrosis by facilitating deactivation and apoptosis of myofibroblasts.",
+          "epistemic_status": "retained publication abstract; source assessment only"
+        }
+      },
+      "expected": {
+        "source_support": "contradicts"
+      },
+      "reference_url": "https://github.com/allenai/scifact",
+      "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
+      "independent_review": "reviewed",
+      "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=54, document=49556906; annotation sha256=a4e3ead25e1f1c5f65e55014d103de1832d6b51feeba9c182a29bc97bb2e29ef"
+    },
+    {
+      "case_id": "scifact-lung-380-19005293",
+      "split": "held_out",
+      "domain": "source_backed_statement",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "statement",
+        "statement": "Enhanced early production of inflammatory chemokines improves viral control in the lung.",
+        "resolved_support": {
+          "title": "Memory CD4+ T cells induce innate responses independently of pathogen",
+          "abstract": "Inflammation induced by recognition of pathogen-associated molecular patterns markedly affects subsequent adaptive responses. We asked whether the adaptive immune system can also affect the character and magnitude of innate inflammatory responses. We found that the response of memory, but not naive, CD4+ T cells enhances production of multiple innate inflammatory cytokines and chemokines (IICs) in the lung and that, during influenza infection, this leads to early control of virus. Memory CD4+ T cell\u2013induced IICs and viral control require cognate antigen recognition and are optimal when memory cells are either T helper type 1 (TH1) or TH17 polarized but are independent of interferon-\u03b3 (IFN-\u03b3) and tumor necrosis factor-\u03b1 (TNF-\u03b1) production and do not require activation of conserved pathogen recognition pathways. This represents a previously undescribed mechanism by which memory CD4+ T cells induce an early innate response that enhances immune protection against pathogens.",
+          "epistemic_status": "retained publication abstract; source assessment only"
+        }
+      },
+      "expected": {
+        "source_support": "supports"
+      },
+      "reference_url": "https://github.com/allenai/scifact",
+      "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
+      "independent_review": "reviewed",
+      "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=380, document=19005293; annotation sha256=ad22e9960fa9ef7490d4016af5a498cddc7b5af9acdd6c7ecb09c71d7442d09a"
+    },
+    {
+      "case_id": "scifact-lung-513-13230773",
+      "split": "held_out",
+      "domain": "source_backed_statement",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "statement",
+        "statement": "High cardiopulmonary fitness causes increased mortality rate.",
+        "resolved_support": {
+          "title": "Prevalence and cardiovascular disease correlates of low cardiorespiratory fitness in adolescents and adults.",
+          "abstract": "CONTEXT Population surveys indicate that physical activity levels are low in the United States. One consequence of inactivity, low cardiorespiratory fitness, is an established risk factor for cardiovascular disease (CVD) morbidity and mortality, but the prevalence of cardiorespiratory fitness has not been quantified in representative US population samples.   \n OBJECTIVES To describe the prevalence of low fitness in the US population aged 12 through 49 years and to relate low fitness to CVD risk factors in this population.   \n DESIGN, SETTING, AND PARTICIPANTS Inception cohort study using data from the cross-sectional nationally representative National Health and Nutrition Examination Survey 1999-2002. Participants were adolescents (aged 12-19 years; n = 3110) and adults (aged 20-49 years; n = 2205) free from previously diagnosed CVD who underwent submaximal graded exercise treadmill testing to achieve at least 75% to 90% of their age-predicted maximum heart rate. Maximal oxygen consumption (VO2max) was estimated by measuring the heart rate response to reference levels of submaximal work.   \n MAIN OUTCOME MEASURES Low fitness defined using percentile cut points of estimated VO2max from existing external referent populations; anthropometric and other CVD risk factors measured according to standard methods.   \n RESULTS Low fitness was identified in 33.6% of adolescents (approximately 7.5 million US adolescents) and 13.9% of adults (approximately 8.5 million US adults); the prevalence was similar in adolescent females (34.4%) and males (32.9%) (P = .40) but was higher in adult females (16.2%) than in males (11.8%) (P = .03). Non-Hispanic blacks and Mexican Americans were less fit than non-Hispanic whites. In all age-sex groups, body mass index and waist circumference were inversely associated with fitness; age- and race-adjusted odds ratios of overweight or obesity (body mass index > or =25) ranged from 2.1 to 3.7 (P<.01 for all), comparing persons with low fitness with those with moderate or high fitness. Total cholesterol levels and systolic blood pressure were higher and levels of high-density lipoprotein cholesterol were lower among participants with low vs high fitness.   \n CONCLUSION Low fitness in adolescents and adults is common in the US population and is associated with an increased prevalence of CVD risk factors.",
+          "epistemic_status": "retained publication abstract; source assessment only"
+        }
+      },
+      "expected": {
+        "source_support": "contradicts"
+      },
+      "reference_url": "https://github.com/allenai/scifact",
+      "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
+      "independent_review": "reviewed",
+      "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=513, document=13230773; annotation sha256=c7183652b86fa0ed78e9f60a1f13ad97b6c0bb4a2aa740d0c14e4cd677c48a14"
+    },
+    {
+      "case_id": "scifact-lung-516-29564505",
+      "split": "held_out",
+      "domain": "source_backed_statement",
+      "public_inputs": {
+        "direction": "Investigate lung cancer",
+        "operation": "statement",
+        "statement": "High levels of CRP reduces the risk of exacerbations in chronic obstructive pulmonary disease (COPD).",
+        "resolved_support": {
+          "title": "Inflammatory biomarkers and exacerbations in chronic obstructive pulmonary disease.",
+          "abstract": "IMPORTANCE Exacerbations of respiratory symptoms in chronic obstructive pulmonary disease (COPD) have profound and long-lasting adverse effects on patients.   \n OBJECTIVE To test the hypothesis that elevated levels of inflammatory biomarkers in individuals with stable COPD are associated with an increased risk of having exacerbations.   \n DESIGN, SETTING, AND PARTICIPANTS Prospective cohort study examining 61,650 participants with spirometry measurements from the Copenhagen City Heart Study (2001-2003) and the Copenhagen General Population Study (2003-2008). Of these, 6574 had COPD, defined as a ratio between forced expiratory volume in 1 second (FEV1) and forced vital capacity below 0.7.   \n MAIN OUTCOMES AND MEASURES Baseline levels of C-reactive protein (CRP) and fibrinogen and leukocyte count were measured in participants at a time when they were not experiencing symptoms of exacerbations. Exacerbations were recorded and defined as short-course treatment with oral corticosteroids alone or in combination with an antibiotic or as a hospital admission due to COPD. Levels of CRP and fibrinogen and leukocyte count were defined as high or low according to cut points of 3 mg/L, 14 \u03bcmol/L, and 9 \u00d710(9)/L, respectively.   \n RESULTS During follow-up, 3083 exacerbations were recorded (mean, 0.5/participant). In the first year of follow-up, multivariable-adjusted odds ratios for having frequent exacerbations were 1.2 (95% CI, 0.7-2.2; 17 events/1000 person-years) for individuals with 1 high biomarker, 1.7 (95% CI, 0.9-3.2; 32 events/1000 person-years) for individuals with 2 high biomarkers, and 3.7 (95% CI, 1.9-7.4; 81 events/1000 person-years) for individuals with 3 high biomarkers compared with individuals who had no elevated biomarkers (9 events/1000 person-years; trend: P = 2 \u00d7 10(-5)). Corresponding hazard ratios using maximum follow-up time were 1.4 (95% CI, 1.1-1.8), 1.6 (95% CI, 1.3-2.2), and 2.5 (95% CI, 1.8-3.4), respectively (trend: P = 1 \u00d7 10(-8)). The addition of inflammatory biomarkers to a basic model including age, sex, FEV1 percent predicted, smoking, use of any inhaled medication, body mass index, history of previous exacerbations, and time since most recent prior exacerbation improved the C statistics from 0.71 to 0.73 (comparison: P = 9 \u00d7 10(-5)). Relative risks were consistent in those with milder COPD, in those with no history of frequent exacerbations, and in the 2 studies separately. The highest 5-year absolute risks of having frequent exacerbations in those with 3 high biomarkers (vs no high biomarkers) were 62% (vs 24%) for those with Global Initiative for Chronic Obstructive Lung Disease (GOLD) grades C-D (n = 558), 98% (vs 64%) in those with a history of frequent exacerbations (n = 127), and 52% (vs 15%) for those with GOLD grades 3-4 (n = 465).   \n CONCLUSIONS AND RELEVANCE Simultaneously elevated levels of CRP and fibrinogen and leukocyte count in individuals with COPD were associated with increased risk of having exacerbations, even in those with milder COPD and in those without previous exacerbations. Further investigation is needed to determine the clinical value of these biomarkers for risk stratification.",
+          "epistemic_status": "retained publication abstract; source assessment only"
+        }
+      },
+      "expected": {
+        "source_support": "contradicts"
+      },
+      "reference_url": "https://github.com/allenai/scifact",
+      "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
+      "independent_review": "reviewed",
+      "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=516, document=29564505; annotation sha256=a373db601bff2b986ac75639a5ea02a602b2ea03ff6b1a7d9e9396a1d667223b"
+    }
+  ],
+  "external_sources": [
+    {
+      "name": "SciFact",
+      "url": "https://scifact.s3-us-west-2.amazonaws.com/release/latest/data.tar.gz",
+      "archive_sha256": "11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be",
+      "annotation_license": "CC BY 4.0",
+      "abstract_license": "ODC-By 1.0",
+      "attribution": "David Wadden et al., Fact or Fiction: Verifying Scientific Claims, EMNLP 2020, https://aclanthology.org/2020.emnlp-main.609/"
+    }
+  ]
+}

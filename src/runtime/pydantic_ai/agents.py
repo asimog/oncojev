@@ -3,6 +3,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 import os
+import math
 from pathlib import Path
 
 from pydantic_ai import Agent
@@ -31,13 +32,19 @@ def _code_mode_tools(_ctx: object, tool_definition: object) -> bool:
     }
 
 
-def _runtime_capabilities(workspace: Path, max_tool_calls: int, role: str) -> list[object]:
+def _runtime_capabilities(workspace: Path, max_tool_calls: int, role: str, *, enable_coder: bool = True, unbounded_work: bool = False) -> list[object]:
     """Compose writable Coder workspace tools with typed domain orchestration."""
     # The SDK requires a positive snippet limit. Our preflight disables run_code
     # entirely for configured zero, before the SDK can execute a snippet.
     sdk_tool_calls = 1 if max_tool_calls == 0 else max_tool_calls
-    capabilities: list[object] = [RuntimeControls(role, max_tool_calls), CodeMode(tools=_code_mode_tools, max_tool_calls=sdk_tool_calls)]
-    if os.name == "posix":
+    # The pinned SDK compares integer counts against this value; infinity
+    # removes its application dispatch/retry ceilings without a larger quota.
+    code = CodeMode(tools=_code_mode_tools, max_tool_calls=math.inf if unbounded_work else sdk_tool_calls,
+                    max_retries=math.inf if unbounded_work else 3,
+                    resource_limits={"max_duration_secs": None, "max_memory": None,
+                                     "max_suspensions": (1 << 64) - 1} if unbounded_work else None)
+    capabilities: list[object] = [RuntimeControls(role, max_tool_calls), code]
+    if enable_coder and os.name == "posix":
         workspace.mkdir(parents=True, exist_ok=True)
         coder = Coder(sub_agents=False, unrestricted_filesystem=True).visit_and_replace(
             lambda capability: owned_shell() if isinstance(capability, Shell) else capability)
@@ -65,6 +72,8 @@ def _build(
     researcher_code_calls: int | None = None,
     director=None,
     paths=None,
+    enable_coder: bool = True,
+    unbounded_work: bool = False,
 ) -> OncoJevAgents:
     workspace = Path(__file__).resolve().parents[3]
     paths = paths or select_paths(workspace, process_settings(workspace))
@@ -77,8 +86,8 @@ def _build(
         researcher = Agent(
             researcher_model, name="oncojev-researcher", instructions=RESEARCHER_INSTRUCTIONS,
             deps_type=ResearcherDeps, model_settings=researcher_settings,
-            capabilities=_runtime_capabilities(researcher_workspace, max_tool_calls if researcher_code_calls is None else researcher_code_calls, "researcher"),
-            defer_model_check=True,
+            capabilities=_runtime_capabilities(researcher_workspace, max_tool_calls if researcher_code_calls is None else researcher_code_calls, "researcher", enable_coder=enable_coder, unbounded_work=unbounded_work),
+            retries={"tools": math.inf, "output": math.inf} if unbounded_work else 1, defer_model_check=True,
         )
         register_researcher_tools(researcher)
         return researcher
@@ -87,19 +96,20 @@ def _build(
     director = director or Agent(
         director_model, name="oncojev-director", instructions=DIRECTOR_INSTRUCTIONS,
         deps_type=DirectorDeps, model_settings=director_settings,
-        capabilities=_runtime_capabilities(paths.require_owned(paths.director), max_tool_calls, "director"),
-        defer_model_check=True,
+        capabilities=_runtime_capabilities(paths.require_owned(paths.director), max_tool_calls, "director", enable_coder=enable_coder, unbounded_work=unbounded_work),
+        retries={"tools": math.inf, "output": math.inf} if unbounded_work else 1, defer_model_check=True,
     )
     if fresh_director:
         register_director_tools(director)
     return OncoJevAgents(director=director, researcher=build_researcher(), _fresh_researcher=build_researcher)
 
 
-def create_agents(director_model: str, researcher_model: str, max_tool_calls: int = 100) -> OncoJevAgents:
-    return _build(director_model, researcher_model, max_tool_calls)
+def create_agents(director_model: str, researcher_model: str, max_tool_calls: int = 100, *, enable_coder: bool = True, unbounded_work: bool = False) -> OncoJevAgents:
+    """Fixture entry point; disable Coder explicitly for offline scripted checks."""
+    return _build(director_model, researcher_model, max_tool_calls, enable_coder=enable_coder, unbounded_work=unbounded_work)
 
 
-def create_configured_agents(config: ModelsConfig, max_tool_calls: int = 100, researcher_code_calls: int | None = None, *, director=None, paths=None) -> OncoJevAgents:
+def create_configured_agents(config: ModelsConfig, max_tool_calls: int = 100, researcher_code_calls: int | None = None, *, director=None, paths=None, unbounded_work: bool = False) -> OncoJevAgents:
     if paths is None:
         load_local_environment()
     configure_agent_telemetry()
@@ -109,4 +119,5 @@ def create_configured_agents(config: ModelsConfig, max_tool_calls: int = 100, re
         researcher_code_calls,
         director,
         paths,
+        unbounded_work=unbounded_work,
     )
