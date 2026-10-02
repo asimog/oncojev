@@ -192,3 +192,16 @@ fixes and local web startup are complete, while independent scientific review,
 qualified broader assay/inferential prerequisites, accepted reusable utility and the
 single scientific-result/review/memory/next-allocation trajectory remain open in the
 current plan. Eight attempted Task 12 scenarios do not close those prerequisites.
+
+
+Post-audit completion check (2026-10-02 23:36 UTC): the corrected existing GDC
+client received HTTP 503 again for a bounded five-case TCGA-LUAD cases query with
+recorded-age/vital-status fields. Exact request/error:
+`var/production-audit/gdc-post-audit-diagnostic.json`. This confirms the fresh-source
+availability blocker for the observed endpoint; it does not establish a permanent
+outage or scientific negative. A repeated provider trajectory was not started on
+unchanged unavailable inputs. Earlier controlled historical-input attempts remain
+explicitly separate. The active plan removes completed audit implementation scope,
+labels seq 1158 as historical and resolves current native proof through the final
+post-commit receipt. No runtime behavior, timers, data ceilings or scientific
+qualification requirements were changed by this reconciliation.

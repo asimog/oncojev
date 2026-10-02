@@ -20595,6 +20595,12 @@
     "store_lineage": "var/production-audit/store-lineage.json",
     "post_commit_verification": "var/production-audit/final-verification.json",
     "security_plugin": "did not start: managed filesystem permission profile required",
-    "scientific_qualification": "incomplete; active plan retains Tasks 3,4,5,9,10,11,12"
+    "scientific_qualification": "incomplete; active plan retains Tasks 3,4,5,9,10,11,12",
+    "post_audit_source_diagnostic": {
+      "artifact": "var/production-audit/gdc-post-audit-diagnostic.json",
+      "observed_status": "HTTP 503",
+      "checked_at": "2026-10-02T23:36:08.664094+00:00",
+      "scope": "bounded availability only; not a scientific negative"
+    }
   }
 }

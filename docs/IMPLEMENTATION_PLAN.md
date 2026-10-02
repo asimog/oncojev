@@ -2,17 +2,6 @@
 
 ## Task 3 — Extend the neutral evaluation substrate and independent corpus
 
-Production audit correction (2026-10-02): require actual complete, distinct
-repetition rows for every candidate-bound case/condition/memory comparison series,
-not just a claimed `repeats` value. Reject duplicated/missing repetition identities
-and operationally failed rows before utility can qualify. Owners:
-`src/evals/reference.py`, `tests/invariants/test_qualification.py`. Synthetic
-adversarial review records reproduced false passing utility with one row and with
-three copies of repetition zero; they are rejection-contract fixtures, never
-independent scientific evidence. Proof: before-fix failures, corrected rejection
-and complete-series preservation, plus existing qualification/evaluation owners.
-Independent-review and real candidate-utility prerequisites remain unchanged.
-
 Goal: Provide reusable, independent measurement of scientific validity and research
 decisions beyond the existing generated contract cases.
 
@@ -451,33 +440,14 @@ actual SDK invalid/valid-call behavior and immutable old-pin/migration invariant
 This correction does not add a source-owned Welch operation or qualify clinical
 utility. Correction and explicit ordinary-history migration passed actual SDK
 invalid/valid-call and immutable-pin/no-op checks; routes and authority were
-preserved (`var/task11-proof/gdc-metadata-correction.json`). Final source passed
-ordinary native qualification seq 1158 and six isolated native probes. Earlier live
+preserved (`var/task11-proof/gdc-metadata-correction.json`). The metadata correction passed historical
+ordinary native qualification seq 1158 and six isolated native probes. Latest native
+qualification is resolved from `var/production-audit/final-verification.json`,
+including the current HEAD and retained exact-worktree archive. Earlier live
 trajectories retain their exact archived seq-347 basis; the correction does not
 retroactively qualify their missing scientific composition.
 
 ## Task 12 — Verify a composed oncology research trajectory
-
-Production audit feature specification (2026-10-02): repair demonstrated nested
-SQLite bundle rollback while preserving the existing record owner and append-only
-schema. Goal: a caught inner write failure cannot commit a partial bundle, while
-outer successful writes commit together and outer failure rolls everything back.
-Scope: explicit outer transaction and nested savepoints in
-`src/persistence/store.py`; real SQLite-trigger fault/reopen regressions in
-`tests/invariants/test_persistence.py`. No data migration or new store. Compare
-the supplied historical H/R/D plan against current owners/logs/proofs; repair
-verified defects and stale active status, retaining independent-review/utility
-and composed-trajectory gaps. Security plugin scan cannot start in the current
-disabled filesystem-permission profile; direct code review remains active.
-Also repair the independently observed web dependency advisories through a supported
-patched Next.js branch, React/types alignment, asynchronous route parameters and
-patched PostCSS override. Owners: `web/package.json`, lockfile, route/config and the
-existing rendered frontend invariant. Verify typecheck, production build, live routes
-and fresh advisory reports. No unrelated framework/runtime or scientific scope changes.
-Completion proof: before-fix failing regression, focused/full contracts, current
-architecture/whitespace checks and final native qualification; commit fixes only
-after their review. This audit does not reinstate cancelled deployment or activate
-conditional frameworks/publication without their triggers.
 
 Goal: Establish one exact-basis scientific and operational trajectory through the
 real service rather than infer composition from separate slice checks.
@@ -523,8 +493,11 @@ its top-level null error field must not be interpreted as scientific success. Th
 unchanged 300 s scheduled-review probe started review at 300.09 s without cancelling
 its pending task; interruption recovery closed once and repeated recovery was a
 no-op. Initial unsupported-discovery failures, all source/provider errors and later
-observations remain preserved. Valid fresh GDC diagnostics returned HTTP 503 for
-the observed request; bounded slices do not prove general data-limit usefulness.
+observations remain preserved. Valid fresh GDC diagnostics returned HTTP 503; a post-audit bounded five-case LUAD
+request through the corrected client again returned HTTP 503 at 2026-10-02 23:36 UTC
+(`var/production-audit/gdc-post-audit-diagnostic.json`). Source availability, model
+latency/failures and missing external review remain distinct from repaired code defects.
+Bounded slices do not prove general data-limit usefulness.
 
 Remaining completion proof: one retained eligible analysis-to-review-to-next-choice
 trajectory on its pinned basis, including justified challenge or explicit missing
@@ -534,9 +507,14 @@ remain explicitly unsupported as requested. Source-owned Welch is unavailable; t
 provided-array route does not confer source lineage. Publication was not triggered.
 No timers or scientific phases were shortened to manufacture a successful result.
 The stale GDC limitation and unsupported endpoint SDK surface were corrected under
-Task 11, with final ordinary WSL proof seq 1158; earlier live observations resolve
-against `var/task12-proof/qualified-source-basis-347.zip`, not the corrected source.
-Current native source bytes are archived in `qualified-source-basis-1158.zip`.
+Task 11, with historical ordinary WSL proof seq 1158; earlier live observations
+resolve against `var/task12-proof/qualified-source-basis-347.zip`. That later native
+basis remains archived in `qualified-source-basis-1158.zip`. Completed production
+audit fixes and historical-plan reconciliation are recorded in TASK_LOG and the dated
+lung assessment, rather than future implementation scope. Current native proof and
+its exact-worktree archive resolve through `var/production-audit/final-verification.json`.
+Independent review remains withheld as requested; an unavailable Security plugin
+scan cannot qualify the broader security claim.
 API/UI services are active with HTTP 200 in testing maintenance mode, which proves
 startup/transport and keeps automatic research paused. Task 12 stays active.
 
