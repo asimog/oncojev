@@ -1,7 +1,7 @@
 # ADR: Rewrite Simple Implementation Plan
 
 Status: **ACCEPTED with the changes below**. Date: 2026-10-02.
-Owning document: [Implementation plan](IMPLEMENTATION_PLAN.md).
+Owning document: [Implementation plan](../../IMPLEMENTATION_PLAN.md).
 
 ## Context
 
@@ -13,9 +13,9 @@ gates recur across phases. Reading it requires familiarity with the H/D/R taxono
 Important: OncoLab registry pins and qualification guards
 exist, while the reusable execution route required by governance has no dispatcher.
 Missing qualification is different from missing implementation. The
-[reconciliation](PLAN_RECONCILIATION.md) helps recover those distinctions, but its
+[reconciliation](../PLAN_RECONCILIATION.md) helps recover those distinctions, but its
 obligation mappings should not become permanent planning machinery. The
-[previous proposal](Archive/ADR/PLAN_STATUS.md) was rejected for preserving that structure.
+[previous proposal](PLAN_STATUS.md) was rejected for preserving that structure.
 
 ## Decision
 

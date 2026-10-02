@@ -402,3 +402,66 @@ block and refreshed next-block pins compose correctly. Local contracts, live sou
 model connectivity, scientific utility, WSL2 qualification and remote publication
 have separate supported conclusions; absent required external proof stays explicit.
 Correct the stale Delta pin limitation only where composed behavior establishes it.
+
+## Task 17 — Add isolated fast local testing limits
+
+Goal: Make implementation runs smaller through `ONCOJEV_TESTING=1` without a
+different lifecycle, scientific authority or qualification claim.
+
+Scope: Reconcile [the proposed testing ADR](PROPOSED_ADR_FAST_LOCAL_TESTING.md)
+before implementation. Read `ONCOJEV_TESTING` from ignored `.env.local` through the
+existing environment owner: unset/`0` is normal, `1` enables testing; unsupported
+values fail before storage side effects. Keep editable timing/public-data ceilings
+in a typed section of existing runtime YAML and revalidate the same RuntimeConfig.
+Use a 90-second default, min/max 60/90 and reserve 15; retain shorter valid user
+bounds. The separate 120-second observation target is reporting metadata, not a
+hard full-cycle timeout. Add only GDC/Xena data byte sublimits beneath existing service
+accounting; preserve ordinary software reservations and failed-byte charging.
+Do not cap role/tool/source-call/Jev/Reasoner/sandbox/search/Code Mode budgets,
+providers, costs or execution controls for testing.
+
+Extend path/service ownership with one fixed per-process
+`<data-root or application var>/testing/<run-id>/` database/Director/Researcher/
+sandbox namespace. Use WSL2/Linux native storage with the existing local_venv backend
+for full application testing, and Windows for focused contract/UI checks. Do not
+switch backends automatically or introduce Windows confinement in this task.
+Load local env before paths; validate environment and constructor
+database paths before opening/recovery, including resolved escapes. Thread frozen
+settings through all consumers and direct live-script storage paths; preserve
+within-process history, actual path receipts and existing retention. Retain analysis
+and export access without automatic deletion/merge. Selected later normal ingestion
+requires provenance-preserving ordinary validation/admission; there is no generic
+cross-store importer today, and this switch does not introduce one. Keep replay,
+admission and normal defaults intact. Bind testing institutional identities/pins
+separately and reject testing local qualification in the existing consumer, retaining
+exploratory execution, admission and proposal/review history.
+
+Owning code: `src/config/environment.py`, `src/config/loader.py`,
+`src/config/models.py`, `config/runtime.yaml`, `.env.example`, `src/runtime/paths.py`,
+`src/autonomous.py`, `src/runtime/resources.py`, `src/runtime/pydantic_ai/factory.py`,
+`src/runtime/pydantic_ai/agents.py`, `src/runtime/pydantic_ai/contracts.py`,
+`src/science/sandbox.py`, `src/oncolab/institution.py`, `src/runtime/verification.py`,
+`scripts/run_live_cycle.py` and relevant standalone/worker entry points;
+`tests/invariants/test_boundaries.py`, `tests/invariants/test_live_mode.py`,
+`tests/invariants/test_persistence.py`.
+
+Actual blockers: Shared GDC/software reservation cannot provide data-only caps by
+scalar rewrite. Environment selection is too late and paths are reread per cycle;
+the direct live-cycle script bypasses service database ownership; Docker experiments
+use system temporary storage. Identity/qualification consumers lack profile guards.
+Soft allocation does not bound total cycle/drain/review time; the observation target
+does not cancel required work. Generic cross-store ingestion and Docker qualification
+are not prerequisites of this testing switch. Assessment report in the ADR records these facts;
+implementation and live/native/scientific utility remain unverified.
+
+Done when: Focused behavior tests preserve unset/disabled defaults, stricter custom
+bounds and every unchanged budget; reject invalid switches/database escapes before
+storage writes; demonstrate isolated actual records and role/backend paths, fixed
+settings, within-process continuity and distinct-process roots. Show real shorter
+allocation/handoff, data-only cap rejection/charging across cycles and unaffected
+ordinary software acquisition. Retain analysis access and scientific admission;
+prove testing-specific local qualification rejection using otherwise complete policy
+inputs, without denying exploratory observations or manufacturing reusable proof.
+Relevant existing checks pass; no native/live/scientific qualification or generic
+cross-store ingestion is inferred. Log completed implementation/proof separately
+from ADR decision status.

@@ -29,4 +29,4 @@ build and browser checks are separate from Python source-bound execution tests.
 
 Read models omit retained artifact byte payloads while preserving identities and an explicit omission flag; durable scientific input bytes remain unchanged.
 
-Unfinished work is tracked only in the [active plan](IMPLEMENTATION_PLAN.md).
+Unfinished work is tracked only in the [active plan](../IMPLEMENTATION_PLAN.md).

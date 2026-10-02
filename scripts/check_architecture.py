@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import ast
 import hashlib
+import os
 from pathlib import Path
 import re
 import sys
@@ -12,24 +13,26 @@ from urllib.parse import unquote, urlsplit
 import yaml
 
 if __package__:
-    from .repo_index import Declarations, module_name, python_files
+    from .repo_index import Declarations, EXCLUDED, linked, module_name, python_files
 else:
-    from repo_index import Declarations, module_name, python_files
+    from repo_index import Declarations, EXCLUDED, linked, module_name, python_files
 
 ROOT = Path(__file__).resolve().parents[1]
 CURRENT_DOCS = ("README.md", "AGENTS.md", "docs/ARCHITECTURE.md",
                 "docs/IMPLEMENTATION_PLAN.md", "docs/TASK_LOG.md",
-                "docs/CAPABILITIES.md", "docs/JEV.md", "docs/FRONTEND.md")
+                "docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md")
+ARCHIVE_LINKS = {"docs/Archive/ADR/GUIDANCE.md", "docs/Archive/PREVIOUS_TASK_LOG.md"}
 CANONICAL = {"docs/ARCHITECTURE.md", "AGENTS.md"}
 CLASSES = {"ENFORCED", "TESTED", "REVIEWED"}
 
 
-def owned_path(root: Path, name: str) -> Path:
+def owned_path(root: Path, name: str, *, historical_link: bool = False) -> Path:
     """Resolve references without reading excluded or external input."""
     relative = Path(name)
     if relative.is_absolute() or "\\" in name or ".." in relative.parts:
         raise ValueError(f"invalid repository reference: {name}")
-    if ".upstream" in relative.parts or relative.parts[:2] == ("docs", "Archive"):
+    if ".upstream" in relative.parts or (relative.parts[:2] == ("docs", "Archive")
+                                        and not (historical_link and name in ARCHIVE_LINKS)):
         raise ValueError(f"excluded repository reference: {name}")
     path = root / relative
     for part in (root, *(root / Path(*relative.parts[:i]) for i in range(1, len(relative.parts) + 1))):
@@ -114,10 +117,26 @@ def check_documents(root: Path) -> None:
     source = root / "src"
     documents += sorted(source.glob("*/README.md"))
     documents += sorted((source / "oncolab" / "labskills").glob("README.md"))
+    markdown = []
+    for scope in ("docs",):
+        start = root / scope
+        if not start.is_dir() or linked(start):
+            continue
+        for directory, folders, files in os.walk(start, followlinks=False):
+            folders[:] = [name for name in folders if name not in EXCLUDED | {".next"}
+                          and not linked(Path(directory) / name)
+                          and (Path(directory) / name) != root / "docs/Archive"]
+            markdown.extend(Path(directory) / name for name in files if name.endswith(".md"))
+    unexpected = sorted(p.relative_to(root).as_posix() for p in markdown
+                        if p.relative_to(root).as_posix() not in CURRENT_DOCS)
+    if unexpected:
+        raise ValueError("archive non-current docs Markdown: " + ", ".join(unexpected))
     for document in documents:
         document = owned_path(root, document.relative_to(root).as_posix())
         text = prose(document.read_text(encoding="utf-8"))
         relative = document.relative_to(root).as_posix()
+        if relative == "docs/TASK_LOG.md" and len(re.findall(r"(?m)^##\s+", text)) > 2:
+            raise ValueError("TASK_LOG retains at most two completed entries; rotate older proof to archive")
         if relative != "docs/IMPLEMENTATION_PLAN.md" and re.search(
             r"(?im)^#{1,6}\s+(?:Task\s+\d+\b|(?:Roadmap|Backlog|Future work)\s*$)|^\s*[-*]\s+\[ \]", text
         ):
@@ -135,9 +154,14 @@ def check_documents(root: Path) -> None:
             name = (document.parent / unquote(url.path)).resolve() if url.path else document
             if not name.is_relative_to(root):
                 raise ValueError(f"external local link in {relative}: {target}")
-            linked = owned_path(root, name.relative_to(root).as_posix())
-            if url.fragment and linked.suffix == ".md":
-                headings = re.findall(r"(?m)^#{1,6}\s+(.+)$", prose(linked.read_text(encoding="utf-8")))
+            relative_link = name.relative_to(root).as_posix()
+            target_path = owned_path(root, relative_link, historical_link=True)
+            if relative_link in ARCHIVE_LINKS:
+                if url.fragment:
+                    raise ValueError("historical links must name the file without reading archived headings")
+                continue
+            if url.fragment and target_path.suffix == ".md":
+                headings = re.findall(r"(?m)^#{1,6}\s+(.+)$", prose(target_path.read_text(encoding="utf-8")))
                 anchors = {re.sub(r"[^\w\- ]", "", heading.lower()).replace(" ", "-") for heading in headings}
                 if unquote(url.fragment) not in anchors:
                     raise ValueError(f"missing heading link in {relative}: {target}")

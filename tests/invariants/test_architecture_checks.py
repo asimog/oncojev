@@ -7,7 +7,7 @@ import sys
 import pytest
 import yaml
 
-from scripts.check_architecture import check_imports
+from scripts.check_architecture import check_documents, check_imports
 
 
 CHECKER = Path(__file__).resolve().parents[2] / "scripts/check_architecture.py"
@@ -17,7 +17,7 @@ CHECKER = Path(__file__).resolve().parents[2] / "scripts/check_architecture.py"
 def checkout(tmp_path):
     documents = ("README.md", "AGENTS.md", "docs/ARCHITECTURE.md",
                  "docs/IMPLEMENTATION_PLAN.md", "docs/TASK_LOG.md",
-                 "docs/CAPABILITIES.md", "docs/JEV.md", "docs/FRONTEND.md")
+                 "docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md")
     for name in documents:
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -43,7 +43,8 @@ def checkout(tmp_path):
     }
     (tmp_path / "architecture.yaml").write_text(yaml.safe_dump(projection), encoding="utf-8")
     # Excluded files contain both invalid syntax and prohibited planning structures.
-    for name in ("docs/Archive/old.md", ".upstream/old.py"):
+    for name in ("docs/Archive/old.md", "docs/Archive/ADR/GUIDANCE.md",
+                 "docs/Archive/PREVIOUS_TASK_LOG.md", ".upstream/old.py"):
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("## Task 99\nnot python !!!", encoding="utf-8")
@@ -69,7 +70,7 @@ def test_valid_projection_is_read_only_and_does_not_execute_evidence(checkout):
 
 @pytest.mark.parametrize("drift", ["stale", "missing-owner", "missing-symbol", "missing-file",
                                    "excluded", "escape", "unknown-owner", "unknown-class",
-                                   "not-test", "canonical", "authority", "flow"])
+                                   "not-test", "canonical", "authority", "flow", "archive-exception-evidence"])
 def test_projection_rejects_drift_with_an_actionable_failure(checkout, drift):
     assert run(checkout).returncode == 0
     path = checkout / "architecture.yaml"
@@ -79,10 +80,11 @@ def test_projection_rejects_drift_with_an_actionable_failure(checkout, drift):
         (checkout / "AGENTS.md").write_text("changed owner rules\n")
     elif drift == "missing-owner":
         data["owners"]["science"]["paths"] = ["src/deleted.py"]
-    elif drift in {"missing-symbol", "missing-file", "excluded", "escape", "not-test"}:
+    elif drift in {"missing-symbol", "missing-file", "excluded", "escape", "not-test", "archive-exception-evidence"}:
         claim["evidence"] = [{"missing-symbol": "tests/test_owner.py::deleted",
                               "missing-file": "tests/deleted.py::test_guard",
                               "excluded": "docs/Archive/old.md", "escape": "../outside.py",
+                              "archive-exception-evidence": "docs/Archive/ADR/GUIDANCE.md",
                               "not-test": "src/owner.py::guard"}[drift]]
     elif drift == "unknown-owner":
         claim["owner"] = "deleted"
@@ -101,12 +103,14 @@ def test_projection_rejects_drift_with_an_actionable_failure(checkout, drift):
 
 
 @pytest.mark.parametrize("name,content", [
-    ("README.md", "## Task 7\n"), ("docs/CAPABILITIES.md", "## Backlog\n"),
-    ("src/science/README.md", "- [ ] Implement a capability\n"),
+    ("docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md", "## Task 7\n"),
+    ("docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md", "## Backlog\n"),
+    ("docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md", "- [ ] Implement a capability\n"),
     ("docs/TASK_LOG.md", "Status: blocked\n"), ("docs/TASK_LOG.md", "**Done when: criterion**\n"),
-    ("README.md", "[owner](src/deleted.py)\n"),
-    ("README.md", "[section](docs/ARCHITECTURE.md#deleted)\n"),
-    ("README.md", "[historical instructions](docs/Archive/old.md)\n"),
+    ("docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md", "[owner](../src/deleted.py)\n"),
+    ("docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md", "[section](ARCHITECTURE.md#deleted)\n"),
+    ("docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md", "[historical instructions](Archive/old.md)\n"),
+    ("docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md", "[historical heading](Archive/ADR/GUIDANCE.md#task-99)\n"),
 ])
 def test_active_documents_reject_broken_navigation_and_planning_structures(checkout, name, content):
     assert run(checkout).returncode == 0
@@ -120,10 +124,57 @@ def test_active_documents_reject_broken_navigation_and_planning_structures(check
 
 def test_plan_owns_structures_while_examples_and_ordinary_prose_are_allowed(checkout):
     (checkout / "docs/IMPLEMENTATION_PLAN.md").write_text("## Task 7\n- [ ] implement\n")
-    (checkout / "README.md").write_text("Changed wording; future research is uncertain.\n"
-                                       "[current](docs/ARCHITECTURE.md#current-owner)\n"
+    (checkout / "docs/PROPOSED_ADR_FAST_LOCAL_TESTING.md").write_text("Changed wording; future research is uncertain.\n"
+                                       "[current](ARCHITECTURE.md#current-owner)\n"
                                        "```markdown\n## Task 7\n- [ ] example\n```\n")
     assert run(checkout).returncode == 0
+
+
+@pytest.mark.parametrize("name", ["docs/another-adr.md", "docs/reports/old.md"])
+def test_non_current_markdown_must_be_archived(checkout, name):
+    assert run(checkout).returncode == 0
+    path = checkout / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("# Untracked extra document\n")
+    result = run(checkout)
+    assert result.returncode == 1
+    assert "archive non-current docs Markdown: " + name in result.stderr
+
+
+def test_docs_archive_rule_preserves_external_readmes(checkout):
+    for name in ("src/science/README.md", "skills/README.md", "evals/README.md", "web/README.md"):
+        path = checkout / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# Component documentation\n")
+    before = {p.relative_to(checkout): p.read_bytes() for p in checkout.rglob("README.md")}
+    assert run(checkout).returncode == 0
+    assert {p.relative_to(checkout): p.read_bytes() for p in checkout.rglob("README.md")} == before
+
+
+@pytest.mark.parametrize("target", ["docs/Archive/ADR/GUIDANCE.md", "docs/Archive/PREVIOUS_TASK_LOG.md"])
+def test_named_archive_navigation_checks_existence_without_reading_history(checkout, monkeypatch, target):
+    (checkout / "AGENTS.md").write_text(f"[Explicit history exception]({target})\n")
+    read_text = Path.read_text
+    def guarded_read(path, *args, **kwargs):
+        if "Archive" in path.parts:
+            pytest.fail("routine document checking read historical content")
+        return read_text(path, *args, **kwargs)
+    monkeypatch.setattr(Path, "read_text", guarded_read)
+    check_documents(checkout)
+    (checkout / target).unlink()
+    with pytest.raises(ValueError, match="missing repository reference"):
+        check_documents(checkout)
+
+
+@pytest.mark.parametrize("entries", [0, 1, 2, 3])
+def test_rolling_task_log_rejects_a_third_completed_entry(checkout, entries):
+    path = checkout / "docs/TASK_LOG.md"
+    path.write_text("# Task Log\n\n" + "".join(
+        f"## Completed task {index}\n\nResult: verified.\n\n" for index in range(entries)))
+    result = run(checkout)
+    assert result.returncode == (1 if entries > 2 else 0)
+    if entries > 2:
+        assert "TASK_LOG retains at most two completed entries" in result.stderr
 
 
 @pytest.mark.parametrize("source", ["from ..science.admission import admit_scientific_evidence",

@@ -106,8 +106,14 @@ the shared heavy-work lease, rather than that process-family governor.
 
 The service uses SQLite under its configured data root or explicit database path.
 Disposable workspaces are separate from retained inputs and canonical records.
-The [implementation plan](IMPLEMENTATION_PLAN.md) owns unfinished work;
-[TASK_LOG](TASK_LOG.md) records completed-task verification only.
+The [implementation plan](IMPLEMENTATION_PLAN.md) owns unfinished work; the
+[current testing ADR](PROPOSED_ADR_FAST_LOCAL_TESTING.md) remains a proposal.
+[TASK_LOG](TASK_LOG.md) retains only the two most recent completed-task entries,
+newest first; displaced entries are preserved in `docs/Archive/PREVIOUS_TASK_LOG.md`.
+Other Markdown within `docs/` and retired ADRs are archived, excluded from routine
+scans, and read only under the scoped exception in AGENTS. Root, source, skill,
+evaluation and web READMEs retain their locations; this cleanup does not change
+procedural runtime content or source provenance.
 
 [architecture.yaml](../architecture.yaml) projects these boundaries and agent rules
 for mechanical reference checks. It is not runtime policy or another authority;

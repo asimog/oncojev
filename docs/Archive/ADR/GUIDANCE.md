@@ -1,3 +1,26 @@
+# ADR guidance and template
+
+Read this document only for explicit ADR work or a consequential architecture,
+ownership, state, persistence or execution decision. Routine tasks use their
+assigned plan feature spec and current architecture instead.
+
+ADRs record proposals, decisions and rationale. Reconcile claims against current
+code before implementation. Acceptance is explicit and is separate from delivered
+scope and qualification. Update affected current owners; keep future work in
+IMPLEMENTATION_PLAN and completed verification in the two-entry rolling TASK_LOG.
+Append displaced older entries intact to `docs/Archive/PREVIOUS_TASK_LOG.md`.
+The checker verifies
+static integrity; it does not accept ADRs or prove their semantic correctness.
+
+Historical ADRs remain in `docs/Archive/ADR/` and are excluded from routine reading
+and scans. Read them only when their history is explicitly relevant. This guide
+and template are archived too; AGENTS permits a scoped exception for explicit ADR
+work, consequential decisions and historical proof. No repeated user approval is
+needed for that exception, and archived material is not current architecture.
+
+## Template
+
+```markdown
 # ADR: <decision title>
 
 Date: YYYY-MM-DD.
@@ -5,8 +28,8 @@ Owning document(s): <link to existing current authorities>.
 
 <Start from HEAD/worktree and verify the affected owner, configuration/input flow
 and tests before saving the reconciled proposal. Rewrite unsupported claims in the
-proposal itself; do not first save an untouched supplied version. This archived
-template is used explicitly, not as routine repository authority.>
+proposal itself; do not first save an untouched supplied version. Use this template explicitly for ADR work; it is not another
+current-state or planning authority.>
 
 ## Context
 
@@ -55,3 +78,4 @@ its basis/date, linking a superseding ADR if applicable. Separately state delive
 implementation scope and supported/unproven evidence. Writing or passing checks
 does not imply acceptance; acceptance does not imply implementation completion.
 An unresolved proposal is PROPOSED; rejected proposals authorize no work.>
+```

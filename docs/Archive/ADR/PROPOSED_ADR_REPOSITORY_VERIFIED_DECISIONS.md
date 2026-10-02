@@ -1,8 +1,8 @@
 # ADR: Reconcile architectural proposals against repository truth
 
 Date: 2026-10-02.
-Owners: [Agent rules](../AGENTS.md), [current architecture](ARCHITECTURE.md),
-[implementation plan](IMPLEMENTATION_PLAN.md) and [completed verification](TASK_LOG.md).
+Owners: [Agent rules](../../../AGENTS.md), [current architecture](../../ARCHITECTURE.md),
+[implementation plan](../../IMPLEMENTATION_PLAN.md) and [completed verification](../PREVIOUS_TASK_LOG.md).
 
 ## Context
 
@@ -40,7 +40,9 @@ its static/manual limits, rather than introduce a new architectural subsystem.
 
 ## Decision
 
-Extend AGENTS and the existing archived template with this bounded workflow. Retain
+Extend AGENTS and consolidate guidance/template in [docs/ADR.md](GUIDANCE.md), outside
+the excluded archive. Read it only for explicit ADR work or consequential decisions;
+historical ADRs remain excluded. Retain
 the current checker and tests; add no ADR parser, approval service, tracker or runtime
 policy reader.
 
@@ -88,15 +90,16 @@ Static checks do not upgrade REVIEWED claims or certify current native qualifica
 
 ## Verification
 
-Implemented scope: the AGENTS clarification and revised archived template are present;
-only the reviewed AGENTS canonical-source hash changed in the projection. Explicit
-ADR/template section and local-link review passed. Application/checker/test code and
-the implementation plan are unchanged.
+Implemented scope: the AGENTS clarification and combined current ADR guidance/template
+are present. The current guide participates in document integrity checks while archive
+exclusion remains. This location correction does not add ADR acceptance automation.
+Completed verification and its implementation basis are linked below.
 
 The existing governance/declaration tests passed: 32 tests in 15.92s before edits;
 their code is unchanged. Post-edit full and documentation-only architecture checks
-passed. Exact commands and proof limits are recorded in [TASK_LOG](TASK_LOG.md). The ADR and
-archived template need explicit link/section review because routine scans exclude them.
+passed for the original workflow delivery. Exact commands and proof limits are recorded
+in [TASK_LOG](../PREVIOUS_TASK_LOG.md). Individual proposal contents still require explicit review;
+the current guide's links are included in document checks.
 No new behavior test is warranted for a documentation-only rule; existing fixture-mutation
 tests protect the reused checker. No application/runtime, WSL/native, live-provider,
 scientific or integration verification is required by this decision.

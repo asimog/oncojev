@@ -1,6 +1,6 @@
 # OncoLab Index semantics
 
-Current capability and verification contracts. [Architecture](ARCHITECTURE.md) owns component boundaries.
+Current capability and verification contracts. [Architecture](../ARCHITECTURE.md) owns component boundaries.
 
 `OncoLabIndex` is the one shared application registry for Director and Researcher within a runtime. It provides bounded deterministic retrieval and loads bundled records from `src/oncolab/proven/verified-executions.yaml` plus resolvable durable verification receipts through factory composition, separately from descriptor status. Loading is idempotent by capability/verification identity and never resumes research. Verification names a declared execution, not the maturity or scientific validity of a statistics family. `describe_oncolab` returns at most 20 verification records and an omitted count. The Pydantic AI harness is only a client through runtime dependencies; it owns no registry. “OncoLab” names this domain index; Pydantic AI capabilities and tools remain framework plumbing under `src/runtime/pydantic_ai/`.
 
@@ -60,13 +60,13 @@ Selected procedural guidance lives in `src/oncolab/labskills/` and is loaded onl
 for an active Researcher block. It remains separate from the index and from
 Pydantic AI's Coder/Code Mode framework capabilities.
 
-Runtime budget and Coder confinement contracts are owned by [architecture](ARCHITECTURE.md#composition-and-execution) and the strict [runtime configuration](../config/runtime.yaml). Scratch does not promote capabilities or admit evidence.
+Runtime budget and Coder confinement contracts are owned by [architecture](../ARCHITECTURE.md#composition-and-execution) and the strict [runtime configuration](../../config/runtime.yaml). Scratch does not promote capabilities or admit evidence.
 
 Role tools expose progressive OncoLab cards and explicit contract expansion, plus local method, representation, hypothesis/test and statement-support measurements. Local semantic contracts are not promoted capabilities. External GitHub acquisition retains inadequacy rationale and alternatives; installed lexical overlap no longer vetoes an unmet need. Existing sandbox, credential and allocation limits apply.
 
 Current source/analysis, replay and retention behavior is described in
-[Science](../src/science/README.md), [acquisition](../src/sources/README.md) and
-[architecture](ARCHITECTURE.md#ownership-boundaries).
+[Science](../../src/science/README.md), [acquisition](../../src/sources/README.md) and
+[architecture](../ARCHITECTURE.md#ownership-boundaries).
 The bundled Pearson verification proves only its declared three-row fixture.
 
 OncoLab registry revisions retain accepted descriptors and routes separately from
@@ -74,7 +74,7 @@ append-only institutional usage, failure, suitability and verification history.
 Blocks pin their registry revision, history boundary and application identity;
 subsequent observations or accepted changes do not rewrite their contracts.
 New allocations see the current accepted basis. Legacy unpinned context remains
-unknown. Unfinished work is tracked only in the [active plan](IMPLEMENTATION_PLAN.md).
+unknown. Unfinished work is tracked only in the [active plan](../IMPLEMENTATION_PLAN.md).
 
 
 External bio.tools search and describe retain public method metadata and bounded

@@ -3,9 +3,9 @@ schema_version: 1
 authority: projection
 canonical_sources:
   - path: docs/ARCHITECTURE.md
-    sha256: bbbc2148fe30b77ba1125a3f5523ad6cb273f8acc5f9a07ecbc23c0dd8664a35
+    sha256: 75c40ab499391210c1e80c8bbdd37c8c73bba9a6108ce42247d73ef3b90f4c44
   - path: AGENTS.md
-    sha256: 24585a245360d8c735e3f4da6512286e951096a31a504b6e229888e4e5b15437
+    sha256: 0b982975ab5f2c0ae45dbc66d88eb2f37d7e4a48965f98efb8a22d6d345005b4
 # Owners/directions are REVIEWED authority/data flow, not an import DAG.
 classification:
   ENFORCED: Named executable guard enforces only its stated scope.

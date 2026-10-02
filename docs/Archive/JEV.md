@@ -65,6 +65,6 @@ authority. Uncertain distributions or scope remain unknown; required material an
 potential-novelty coverage checks are deterministic. The distribution thresholds
 are uncalibrated annotation policy, not scientific confidence or proof of novelty.
 
-Unfinished work is tracked only in the [active plan](IMPLEMENTATION_PLAN.md).
+Unfinished work is tracked only in the [active plan](../IMPLEMENTATION_PLAN.md).
 
 Global investigation and relation contracts use `global-contracts-v1` and a separate `global-frontier-policy-v1`. They reuse native projection/receipt decoding under Director semantic allowances, preserve alternatives on failure, and cannot admit evidence or resolve scientific contradictions. Original relation sides and native distributions remain reference-resolvable.

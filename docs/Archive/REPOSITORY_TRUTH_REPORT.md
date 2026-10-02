@@ -136,6 +136,6 @@ current evidence or reread; native enforcement/connectivity/utility is unproven 
   passed. These checks prove their local contracts only, not a whole-system
   certification, current native confinement, live connectivity or scientific utility.
 
-Architecture authority remains [ARCHITECTURE.md](ARCHITECTURE.md), with ownership
-defined by [AGENTS.md](../AGENTS.md). The plan/status authority is separate and is
+Architecture authority remains [ARCHITECTURE.md](../ARCHITECTURE.md), with ownership
+defined by [AGENTS.md](../../AGENTS.md). The plan/status authority is separate and is
 read only after this code-first report; report drift does not change either owner.

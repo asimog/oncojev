@@ -33,5 +33,5 @@ and declared routes. Execution checks distinguish metadata-only, access, missing
 inputs and callable operation prerequisites. Library installation is not authority.
 
 Current institutional and discovery contracts are described in
-[Index semantics](../../docs/CAPABILITIES.md). Unfinished work is tracked only in
+[institutional ownership](../../docs/ARCHITECTURE.md#ownership-boundaries). Unfinished work is tracked only in
 the [active plan](../../docs/IMPLEMENTATION_PLAN.md).
