@@ -96,6 +96,8 @@ Integrated batches use two passes where necessary: build the concrete mechanism 
 | H14 — frontier audit, generator contract and bounded calibration/Autoresearch (D3/D5) | P1, policy correctness and measured semantic research | Build: H0 caller inventory and H4/H6/H7 baselines. Acceptance: H13 comparisons/instability evidence. | PARTIAL: explicit caller/policy ownership; generator and measured calibration gates remain |
 | H15 — final documentation/full verification | Integration | Active H1–H10 and H12–H14 acceptance/dispositions; cancelled H11 cannot block completion | PARTIAL: code/plan baseline reconciled; full local scientific/integration and implemented-documentation acceptance remains |
 
+**Baseline implementation commit:** [ffbb638](https://github.com/asimog/oncojev/commit/ffbb63899d0a2c9681fdb9d62e558024f07920bb), pushed and remote main verified.
+
 ### Local baseline — DELIVERED (H2/H9/H10/H15, 2026-10-02)
 
 First dependency-ordered implementation batch from the goal objective; starting
@@ -139,6 +141,59 @@ counts passed. `uv lock --check --offline` passed.
 3.3.6 and psycopg-binary 3.3.6. Current Ubuntu WSL2 reports kernel
 `6.6.114.1-microsoft-standard-WSL2`, Python 3.12.3; this inventory is not
 confinement certification. H2/H9/H10/H15 remain PARTIAL for their remaining gates.
+
+### Local resource prerequisites — DELIVERED sub-batch (H2/H10, 2026-10-02)
+
+Starting HEAD `ffbb63899d0a2c9681fdb9d62e558024f07920bb`. Coder's command PATH and
+read-only dependency policy now use the actual Python environment/base interpreter
+rather than `/app/.venv`. The verifier locates the actual application tree and
+retains real-file permission controls, native file/shell/descendant checks and
+CodeMode use. It no longer assumes credential files are absent from the host.
+Scientific `local-venv-v2` creates fresh package environments with read-only links
+to the exact hash-recorded base interpreter, avoiding three large managed-binary
+copies. No prior experiment packages or application site-packages are imported
+into the fresh scientific environment. The scientific application-write negative
+control now opens a real application file for write without changing it; only
+actual permission/read-only errors qualify, never a missing-file error.
+
+**Direct WSL2 observations:** the unchanged initial verifier failed its `/app`
+assumption. Managed Python 3.12.13 with copied executables exceeded the existing
+100 MB experiment ceiling; the available system Python 3.12.3 lacks venv bootstrap
+support. The repaired managed-Python path used about 11.15 MB and independently
+replayed the fixture in a second fresh environment. Kernel
+`6.6.114.1-microsoft-standard-WSL2`, x86_64, glibc 2.39; exact Python binary SHA-256
+`45a8c2736f55defe6b15a9b65196a60e4ac32e06338c563ff2d1d8f708693788`.
+Coder application reads under `/mnt/c` were denied; the same code/config on native
+Linux storage passed **21/21 checks per role**, including base-interpreter
+library write denial. Fresh scientific execution also confirmed that the
+application-only `httpx` package was not inherited. This is a required platform
+precondition, not an unconfined fallback. Only explicit public source/config/skill/
+script/manifest files were copied into the disposable native proof tree; no
+`.upstream`, credentials, Windows `.venv` or original database was copied.
+The production-code/config application identity matched the Windows checkout.
+
+**Commands/proof:** locked environment creation used
+`UV_PROJECT_ENVIRONMENT=/home/rahul_khatri/.cache/oncojev-wsl-venv uv sync --frozen --no-dev --project /mnt/c/dev/oncojev`.
+Direct native proof commands ran with that environment's Python and
+`LOGFIRE_SEND_TO_LOGFIRE=false`:
+`python -B -m scripts.verify_coder_container` and
+`python -B -m scripts.verify_local_science` — passed actual filesystem, secret,
+peer, application, scientific network/process denial and fresh replay controls.
+Windows `.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_boundaries.py tests/invariants/test_persistence.py -k 'code_mode or heavy_work or own_workspace or github or artifact' -q`
+— **7 passed, 117 deselected in 9.38s**. Architecture/diff, changed-document links
+and preserved original SQLite integrity/count checks passed. Native and Windows
+application identity: `application-v1:8250b622a7deb073e1743d77b039fc0f681b58bf7bb3769d0c866e5258d49a57`.
+
+**Remaining resource gate:** no aggregate Coder process/CPU/memory/disk enforcement
+or complete local-verification receipt is claimed. The installed Harness Shell
+supervises background commands that can outlive backend `run()`; the existing
+per-call lease alone cannot qualify that process lifetime. Scientific bootstrap/expanded
+clone/install disk guards, complete cancellation/reservation telemetry and current
+composed lifecycle remain open. A transient user systemd/cgroup unit with
+TasksMax/MemoryMax/CPUQuota/RuntimeMaxSec executed successfully on this WSL2 host;
+that feasibility probe is not production enforcement. H2/H10 stay PARTIAL. The
+next coherent resource batch must implement and adversarially verify those controls
+before extending science or claiming the complete local gate.
 
 ### H0 — DONE: baseline audit and reconciliation
 

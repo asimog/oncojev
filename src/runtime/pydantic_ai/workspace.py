@@ -20,7 +20,7 @@ class ConfinedBackend:
         temporary = self.workspace / ".tmp"
         temporary.mkdir(exist_ok=True)
         self.backend = LocalWorkspaceBackend(self.workspace, env={
-            "PATH": "/app/.venv/bin:/usr/local/bin:/usr/bin:/bin",
+            "PATH": str(Path(sys.executable).parent) + ":/usr/local/bin:/usr/bin:/bin",
             "HOME": str(self.workspace), "TMPDIR": str(temporary),
             "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "LC_CTYPE": "C.UTF-8",
             "PYTHONDONTWRITEBYTECODE": "1"})

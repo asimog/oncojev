@@ -124,7 +124,7 @@ class LocalVenvScientificBackend:
                 name=unquote(Path(urlparse(wheel.url).path).name)
                 if not re.fullmatch(r'[A-Za-z0-9_.+-]+\.whl',name):raise SandboxError('unsupported wheel filename')
                 (inputs/'wheels'/name).write_bytes(data)
-            bootstrap=subprocess.run([sys.executable,'-I','-m','venv','--copies',str(root/'venv')],env={'PATH':'/usr/local/bin:/usr/bin:/bin'},
+            bootstrap=subprocess.run([sys.executable,'-I','-m','venv','--symlinks',str(root/'venv')],env={'PATH':'/usr/local/bin:/usr/bin:/bin'},
                 stdin=subprocess.DEVNULL,capture_output=True,timeout=self.policy.timeout_seconds,check=False)
             if bootstrap.returncode:raise SandboxError('fresh experiment venv initialization failed')
             install=self._command(root,request.install_command,'install')
@@ -132,8 +132,9 @@ class LocalVenvScientificBackend:
             first=self._command(root,request.execute_command,'execute')
             replay=self._command(root,request.execute_command,'replay')
             values=DockerScientificSandbox._parse_replayed_output(first[1],replay[1])
-            environment={'backend':'local_venv','executor_version':'local-venv-v1','platform':platform.platform(),
+            environment={'backend':'local_venv','executor_version':'local-venv-v2','platform':platform.platform(),
                 'python_version':platform.python_version(),'python_sha256':hashlib.sha256(Path(sys.executable).resolve().read_bytes()).hexdigest(),
+                'interpreter_link_mode':'read_only_base_interpreter','base_python_prefix':sys.base_prefix,
                 'archive_sha256':hashlib.sha256(archive).hexdigest(),'dependencies':[w.model_dump(mode='json') for w in request.dependency_wheels],
                 'dependencies_sha256':content_hash([w.model_dump(mode='json') for w in request.dependency_wheels]),
                 'network':'disabled_for_install_test_execute','confinement':'landlock-seccomp-single-process-v1',

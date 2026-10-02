@@ -2,7 +2,7 @@
 
 Requires Landlock ABI >= 3 (including cross-directory rename and truncation).
 No fallback executes an unconfined command. This is a coding boundary, not the
-network-isolated, replay-validated scientific Docker sandbox.
+network-isolated, replay-validated scientific execution boundary.
 """
 
 import ctypes
@@ -22,7 +22,8 @@ def confine(workspace: Path, application: Path) -> None:
     spec = importlib.util.spec_from_file_location('oncojev_confinement', path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    module.restrict_filesystem((workspace,), tuple(application / name for name in PUBLIC_TREE))
+    module.restrict_filesystem((workspace,),
+        (*tuple(application / name for name in PUBLIC_TREE), Path(sys.prefix), Path(sys.base_prefix)))
 
 
 if __name__ == "__main__":

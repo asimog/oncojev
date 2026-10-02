@@ -46,7 +46,7 @@ def main():
     # Inputs are always read-only. Installation can mutate only its fresh venv;
     # tests/execution write only inherited bounded stdout/stderr, never filesystem state.
     writable=(root/'venv',) if phase=='install' else ()
-    readonly=(root/'repository',root/'venv',root/'inputs',application/'src',application/'config')
+    readonly=(root/'repository',root/'venv',root/'inputs',application/'src',application/'config',Path(sys.base_prefix))
     module.restrict_filesystem(writable,readonly)
     for limit,value in ((resource.RLIMIT_AS,settings['memory_mb']*1024*1024),
                         (resource.RLIMIT_CPU,settings['timeout']),

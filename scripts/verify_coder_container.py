@@ -1,4 +1,7 @@
-"""Verify both OncoJev roles compose Coder and Code Mode in Linux Docker."""
+"""Verify both Coder/Code Mode roles directly on Linux, including local WSL2.
+
+The historical filename is retained; no container runtime is invoked.
+"""
 
 from __future__ import annotations
 
@@ -20,6 +23,8 @@ from src.reasoner.service import DeterministicReasoner
 from src.runtime.pydantic_ai.agents import create_agents
 from src.runtime.pydantic_ai.contracts import DirectorDeps, HarnessRuntime, ResearcherDeps
 from src.science.execution import ScienceExecutor
+
+APPLICATION = Path(__file__).resolve().parents[1]
 
 
 def _as_stream(respond):
@@ -62,7 +67,7 @@ def _model(role: str, peer: Path, secret: Path, proof_root: Path):
                 ]
             )
         if calls == 2:
-            return ModelResponse(parts=[ToolCallPart("read_file", {"path": "/app/config/runtime.yaml"}, tool_call_id=f"{role}-read-app")])
+            return ModelResponse(parts=[ToolCallPart("read_file", {"path": str(APPLICATION / "config/runtime.yaml")}, tool_call_id=f"{role}-read-app")])
         if calls == 3:
             return ModelResponse(parts=[ToolCallPart("write_file", {"path": str(peer / "native-write-denied.txt"), "content": "denied"}, tool_call_id=f"{role}-native-denial")])
         if calls == 4:
@@ -87,6 +92,7 @@ checks = {{
     "own_shell_write": (own / "shell-write-proof.txt").read_text() == "writable",
     "application_readable": "default_seconds" in p("/app/config/runtime.yaml").read_text(),
     "application_write_denied": denied(lambda: open_write("/app/config/runtime.yaml")),
+    "interpreter_library_write_denied": denied(lambda: open_write(json.__file__)),
     "application_symlink_write_denied": denied(lambda: open_write(own / "app-alias")),
     "production_source_write_denied": denied(lambda: open_write("/app/src/director/agent.py")),
     "questions_write_denied": denied(lambda: open_write("/app/src/jev/questions.py")),
@@ -111,6 +117,7 @@ checks["descendant_own_write"] = allowed_child.returncode == 0 and (own / "child
 assert all(checks.values())
 '''
             code = code.replace('"/app/var/', '"' + str(proof_root) + '/')
+            code = code.replace('"/app/', '"' + str(APPLICATION) + '/')
             command = shlex.quote(sys.executable) + " -c " + shlex.quote(code)
             return ModelResponse(parts=[ToolCallPart("shell", {"command": command}, tool_call_id=f"{role}-shell")])
         if calls == 5:
@@ -132,7 +139,7 @@ def main() -> None:
     # Every negative control must target a real file, not a missing path.
     for relative in ("src/director/agent.py", "src/jev/questions.py", "src/jev/frontier.py",
                      "src/oncolab/catalogue.py", "config/runtime.yaml", "railway.toml"):
-        assert (Path("/app") / relative).is_file(), relative
+        assert (APPLICATION / relative).is_file(), relative
     runtime = HarnessRuntime(
         manager=BlockManager(),
         jev=DeterministicJevClient(),
@@ -144,13 +151,13 @@ def main() -> None:
     block = runtime.manager.create("Coder smoke block", "verify harness composition", ResourceAllocation(seconds=3600))
     runtime.research_state.start(block.block_id, block.objective)
     runtime.skills.start(block.block_id)
-    proof_root = data_root(Path("/app")) / "verification" / str(uuid4())
+    proof_root = data_root(APPLICATION) / "verification" / str(uuid4())
     proof_root.mkdir(parents=True)
     os.environ["ONCOJEV_DATA_ROOT"] = str(proof_root)
     agents = create_agents("test", "test")
-    director_root = director_path(Path("/app"))
-    researcher_root = workspace_root(Path("/app")) / block.block_id
-    peer = workspace_root(Path("/app")) / "peer"
+    director_root = director_path(APPLICATION)
+    researcher_root = workspace_root(APPLICATION) / block.block_id
+    peer = workspace_root(APPLICATION) / "peer"
     peer.mkdir(parents=True)
     (peer / "peer-private.txt").write_text("fake private block data")
     secret = proof_root / "provider-secret-sentinel"
@@ -175,7 +182,7 @@ def main() -> None:
     for result in (director, researcher):
         read_results = [part.content for message in result.new_messages() for part in message.parts
                         if isinstance(part, ToolReturnPart) and part.tool_name == "read_file"]
-        assert any("default_seconds" in json.dumps(content, default=str) for content in read_results)
+        assert any("default_seconds" in json.dumps(content, default=str) for content in read_results), read_results
     assert (director_root / "coder-write-proof.txt").read_text() == "director workspace is writable\n"
     researcher_proof = researcher_root / "coder-write-proof.txt"
     assert researcher_proof.read_text() == "researcher workspace is writable\n"
@@ -190,8 +197,6 @@ def main() -> None:
     assert (proof_root / "authoritative-db-sentinel").read_text() == "fake authoritative records"
     assert not (peer / "native-write-denied.txt").exists()
     assert not (director_root / "native-write-denied.txt").exists()
-    assert not Path("/app/.env.local").exists()
-    assert not Path("/app/.logfire").exists()
     print(json.dumps(results, sort_keys=True))
 
 

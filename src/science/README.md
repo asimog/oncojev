@@ -5,7 +5,8 @@ is the admission boundary. External execution defaults to the fail-closed Linux 
 The historical Docker backend and its receipts remain compatible. Both retain immutable
 public GitHub commits, exact inputs, command/output identities and replay receipts;
 typed candidates require explicit validation before admission. Local experiments
-use fresh Python environments, offline retained wheels, Landlock read-only inputs,
+use fresh Python package environments referencing the exact base interpreter
+read-only, offline retained wheels, Landlock read-only inputs,
 scrubbed environments and seccomp single-process execution with no networking.
 Tests/execution write only bounded inherited stdout/stderr. Source builds,
 subprocesses, threads and filesystem output are unsupported on this backend.

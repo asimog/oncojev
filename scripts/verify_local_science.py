@@ -11,21 +11,28 @@ from src.science.sandbox import GithubMethodRequest, SandboxPolicy, validate_san
 
 
 def main():
+    application_config = Path(__file__).resolve().parents[1] / "config/runtime.yaml"
+    assert application_config.is_file(), "application write control must target a real file"
     with tempfile.TemporaryDirectory(prefix="scientific-boundary-") as directory:
         root = Path(directory)
         secret = root / "service-secret"
         secret.write_text("never accessible to scientific code")
         peer = root / "peer"
         peer.mkdir()
-        script = f'''import json, os, socket, subprocess
+        script = f'''import json, os, socket, subprocess, sys, importlib.util
 from pathlib import Path
+import errno
 def denied(operation):
     try: operation()
-    except (OSError, PermissionError): return
+    except OSError as error:
+        if error.errno in (errno.EPERM, errno.EACCES, errno.EROFS): return
+        raise
     raise AssertionError("external authority was available")
 denied(lambda: Path({str(secret)!r}).read_text())
 denied(lambda: Path({str(peer / "write")!r}).write_text("escaped"))
-denied(lambda: Path("/app/config/runtime.yaml").write_text("escaped"))
+denied(lambda: Path({str(application_config)!r}).open("r+"))
+denied(lambda: Path(json.__file__).open("r+"))
+assert importlib.util.find_spec("httpx") is None, "application packages leaked into fresh experiment"
 denied(lambda: socket.socket())
 denied(lambda: subprocess.run(["/bin/true"]))
 assert not any(key in os.environ for key in ("GITHUB_TOKEN", "OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "ONCOJEV_DATABASE_URL", "ONCOJEV_MIGRATION_DATABASE_URL", "ONCOJEV_WRITER_PASSWORD"))
