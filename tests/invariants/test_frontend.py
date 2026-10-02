@@ -74,7 +74,7 @@ global.fetch=async(url,options)=>{
  const page=require('./app/page.tsx').default;
  const html=render(await page());assert(html.includes('live_api')&&html.includes('retained_records')&&html.includes('SourceTimeout'));
  assert(html.includes('Source attempts 3')&&html.includes('successes 1')&&html.includes('failures 1'));
- const detail=render(await require('./app/blocks/[blockId]/page.tsx').default({params:{blockId:block.summary.block_id}}));
+ const detail=render(await require('./app/blocks/[blockId]/page.tsx').default({params:Promise.resolve({blockId:block.summary.block_id})}));
  assert(detail.includes('historical completion claim contradicted or unverified')&&detail.includes('SourceTimeout')&&detail.includes('objective attainment unknown'));
  global.fetch=async()=>{throw new Error('offline')};
  const offline=await getData();assert.equal(offline.transport,'offline_snapshot');assert.equal(offline.data_provenance,'synthetic_fixture');assert.equal(offline.overview.evidence,0);

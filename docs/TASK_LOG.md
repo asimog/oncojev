@@ -5,6 +5,32 @@ predecessor, newest first; append displaced entries intact to
 [Previous Task Log](Archive/PREVIOUS_TASK_LOG.md). The architecture checker rejects
 a third level-two entry. Future work belongs only in IMPLEMENTATION_PLAN.
 
+## 2026-10-02 — Production audit: engineering fixes and historical reconciliation
+
+Result: repaired caught-inner SQLite bundle rollback and utility gates accepting
+missing/duplicated repetition rows. Updated vulnerable web dependencies with the
+actual async route contract and explicit build root. Current plan reconciles stale
+running/repair/compression claims against finished proof. Original Windows history
+is archived separately and verified against all 1,216 envelopes; future ordinary
+research uses the user-selected WSL assessment history. No records merged.
+
+Verification: 297 invariants passed in 89.35 s with owned WSL paths; before-fix fault
+regressions retained. Web production build/typecheck passed; npm audit zero advisories;
+installed external Python package audit found none, excluding the local editable app.
+Architecture checks passed. API/web transport returns 200; missing block returns 404.
+Raw engineering evidence: `var/production-audit/` and `var/audit-*-*.log`.
+
+Implementation: `src/persistence/store.py`, `src/evals/reference.py`, their behavioral
+owners and patched web package/route/config. Accepted nested-atomicity decision:
+`docs/Archive/ADR/ACCEPTED_ADR_NESTED_SQLITE_ATOMICITY.md`. The dated lung assessment
+retains historical H/R/D comparison, actual fixes, initial failed invocation and scope.
+Final native qualification is separate and binds the post-commit HEAD in
+`var/production-audit/final-verification.json`; the older seq-1158 proof remains
+historical. Codex Security plugin did not start because its worker requires a managed
+filesystem permission profile; no plugin result claimed. Scientific independent
+review, broader assay/inference, reusable utility and composed Task 12 proof remain
+in the plan. API testing maintenance keeps automatic research paused.
+
 ## 2026-10-02 — Task 2: Refresh final WSL native qualification
 
 Result: Current source, including compressed-assay transforms, composed-verification preparation and the corrected GDC metadata/SDK contract, has
@@ -34,29 +60,3 @@ Implementation identity: uncommitted worktree at HEAD
 `2d10d1d2fe7875690d48f8eecaa929679753d877`; exact application/environment hashes are
 retained in seq 1158 and the machine-readable assessment. Existing scientific history,
 unrelated worktree edits and ignored credentials were preserved.
-
-## 2026-10-02 — Task 8: Assess the frozen lung oncology selection
-
-Result: Three named scoped needs received no-build decisions: the existing source
-summary adequately supplies retained age-slice mean/count/missingness; survival
-inference lacks qualified time-origin/endpoint/censoring/design prerequisites; TMB
-lacks source-bound callable territory and audited variant/sample denominators.
-The existing governed transforms expose availability without manufacturing endpoints,
-assays, missing values or burden. No new inferential wrapper was justified.
-
-Proof: ordinary GDC assessment retains 100/1089 case rows, 95 observed ages/five
-missing, 72 available time/event pairs/28 missing, and five MAF metadata records.
-Case and file queries, exact inputs, baseline measurement, transform and decisions
-resolve in `var/oncojev.sqlite3`; outcome `69f8c2a3381a4a14ba54cbb806f6e3af`, seq 134.
-Corrected file-project filter assessment acquired 31,564 data bytes. The initial
-empty wrong-field file query and its outcome remain history; the corrected bounded
-query uses `cases.project.project_id`. Exact final report/raw log is in
-`var/task8-proof/`. Two installed native operations ran under shared controls.
-
-Verification: actual source assessment and existing governed baseline/transform
-completed; architecture and whitespace checks passed exit 0. The finite selection
-was frozen in the plan before assessment and is retained with its declaration in
-ordinary history. Broader independent scientific review remains pending. No clinical
-survival estimate, TMB value, population coverage or new scientific benefit claimed.
-Implementation is the explicit `scripts/assess_oncology_selection.py` through existing
-source/Science/persistence owners; this completes only the selected no-build scope.

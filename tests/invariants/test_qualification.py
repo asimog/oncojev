@@ -259,3 +259,27 @@ def test_fixed_dispatch_does_not_execute_arbitrary_qualified_commands():
             'execute_command': ('python', 'unqualified_driver.py')})}))
         assert not supported_mean_operation(fixed.model_copy(update={'receipt': fixed.receipt.model_copy(update={'commit_sha': 'b' * 40})}))
     finally: store.close()
+
+
+@pytest.mark.parametrize("repetitions", [(0,), (0, 0, 0), (0, 1, 2)])
+def test_utility_declared_repeats_cannot_replace_distinct_measured_rows(repetitions):
+    """Adversarial synthetic reviews prove rejection only, never scientific utility."""
+    from src.evals.reference import retain_utility_evaluation
+    store = SqliteResearchStore()
+    try:
+        candidate, _ = fixture(store)
+        corpus = content_hash({"fixture": "not independent scientific evidence"})
+        observations = {"candidate_id": candidate.candidate_id, "scope_sha256": content_hash(SCOPE)}
+        reviewer = store.append(StoredRecord(kind=RecordKind.SERVICE_EVENT, record_id="synthetic-negative-review", payload={
+            "event_type": "IndependentUtilityReview", "observations_sha256": content_hash(observations),
+            "corpus_sha256": corpus, "candidate_id": candidate.candidate_id, "scope_sha256": content_hash(SCOPE)}))
+        report = {"mode": "live", "repeats": 3, "scientific_utility": 1, "corpus_sha256": corpus, "rows": [
+            {"case_id": "adverse-fixture", "condition": "science_only", "memory_alternative_limit": 0,
+             "repetition": repetition, "independent_review": "reviewed", "agreement": True,
+             "observations": dict(observations), "review_reference": record_reference(reviewer)}
+            for repetition in repetitions]}
+        proof = retain_utility_evaluation(store, candidate.candidate_id, SCOPE, report, application_identity="fixture")
+        assert proof.payload["status"] == ("passed" if repetitions == (0, 1, 2) else "unsupported")
+        assert not store.records(kind=RecordKind.EVIDENCE)
+    finally:
+        store.close()

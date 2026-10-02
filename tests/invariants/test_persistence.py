@@ -2596,3 +2596,31 @@ def test_frontier_reopens_deferred_lung_question_on_observed_prerequisite_change
     runtime.repository = ResearchRepository(reopened)
     assert portfolio(runtime)['candidates'][0]['readiness_history'] == node['readiness_history']
     reopened.close()
+
+
+@pytest.mark.parametrize("abort_outer", [False, True])
+def test_caught_nested_bundle_failure_never_commits_partial_history(tmp_path, abort_outer):
+    database = tmp_path / "nested-bundle.sqlite3"
+    store = SqliteResearchStore(database)
+    make = lambda identity: StoredRecord(kind=RecordKind.SERVICE_EVENT, record_id=identity, payload={"identity": identity})
+    store._connection.execute("CREATE TRIGGER reject_inner BEFORE INSERT ON records WHEN NEW.record_id = 'rejected' BEGIN SELECT RAISE(ABORT, 'inner write failure'); END")
+    try:
+        try:
+            with store.transaction():
+                store.append(make("outer-before"))
+                with pytest.raises(sqlite3.IntegrityError, match="inner write failure"):
+                    store.append_many((make("inner-partial"), make("rejected")))
+                assert [r.record_id for r in store.records()] == ["outer-before"]
+                store.append(make("outer-after"))
+                if abort_outer:
+                    raise RuntimeError("outer write failure")
+        except RuntimeError:
+            if not abort_outer:
+                raise
+    finally:
+        store.close()
+    reopened = SqliteResearchStore(database)
+    try:
+        assert [r.record_id for r in reopened.records()] == ([] if abort_outer else ["outer-before", "outer-after"])
+    finally:
+        reopened.close()

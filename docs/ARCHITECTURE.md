@@ -88,7 +88,9 @@ resume a Researcher run. Each block permits one Researcher launch.
   identity. New observations or revisions do not silently change their contracts.
 - ResearchState uses frozen models and recorded snapshots; nested mappings are
   not deeply immutable Python objects. Runtime-owned updates append revisions;
-  SQLite rejects record UPDATE/DELETE, and corrections append new records.
+  SQLite rejects record UPDATE/DELETE, and corrections append new records. Explicit
+  outer transactions and nested savepoints preserve bundle atomicity even when an
+  inner failure is caught; outer failure rolls back all nested writes.
 - Missing inputs, unknown results and operational failures are not scientific
   negatives. Soft handoff prevents new expensive work while preserving in-flight
   work. Required command controls fail closed and ownership remains held until
@@ -205,6 +207,11 @@ Ordinary source-bound admission and retained observations/proposals remain avail
 no automatic cross-store ingestion or authority transfer is added.
 
 Normal service storage uses SQLite under its configured data root or explicit database path.
+The selected ordinary WSL history is `var/oncojev.sqlite3`. The original Windows
+history remains separately preserved in its source checkout and the read-only local
+archive `var/archive/original-windows-history-20261002.sqlite3`; it is not merged
+into assessment or testing history. The archive receipt verifies all original record
+envelopes and unchanged source bytes. Neither archive location implies remote backup.
 Disposable workspaces are separate from retained inputs and canonical records.
 The [implementation plan](IMPLEMENTATION_PLAN.md) owns unfinished work; the
 [current testing ADR](PROPOSED_ADR_FAST_LOCAL_TESTING.md) is accepted; its testing

@@ -460,3 +460,29 @@ qualification producers and the Researcher recovery tool use actual owned artifa
 and receipts. Decision remains in `Archive/ADR/ADR_SCOPED_OPERATION_QUALIFICATION.md`.
 Scope is the pinned stdlib-only method on the exact declared host Python constraints;
 arbitrary dependency-bearing, R/Conda or whole-host recovery remains unsupported.
+
+## 2026-10-02 — Task 8: Assess the frozen lung oncology selection
+
+Result: Three named scoped needs received no-build decisions: the existing source
+summary adequately supplies retained age-slice mean/count/missingness; survival
+inference lacks qualified time-origin/endpoint/censoring/design prerequisites; TMB
+lacks source-bound callable territory and audited variant/sample denominators.
+The existing governed transforms expose availability without manufacturing endpoints,
+assays, missing values or burden. No new inferential wrapper was justified.
+
+Proof: ordinary GDC assessment retains 100/1089 case rows, 95 observed ages/five
+missing, 72 available time/event pairs/28 missing, and five MAF metadata records.
+Case and file queries, exact inputs, baseline measurement, transform and decisions
+resolve in `var/oncojev.sqlite3`; outcome `69f8c2a3381a4a14ba54cbb806f6e3af`, seq 134.
+Corrected file-project filter assessment acquired 31,564 data bytes. The initial
+empty wrong-field file query and its outcome remain history; the corrected bounded
+query uses `cases.project.project_id`. Exact final report/raw log is in
+`var/task8-proof/`. Two installed native operations ran under shared controls.
+
+Verification: actual source assessment and existing governed baseline/transform
+completed; architecture and whitespace checks passed exit 0. The finite selection
+was frozen in the plan before assessment and is retained with its declaration in
+ordinary history. Broader independent scientific review remains pending. No clinical
+survival estimate, TMB value, population coverage or new scientific benefit claimed.
+Implementation is the explicit `scripts/assess_oncology_selection.py` through existing
+source/Science/persistence owners; this completes only the selected no-build scope.

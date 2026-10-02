@@ -3,7 +3,7 @@ schema_version: 1
 authority: projection
 canonical_sources:
   - path: docs/ARCHITECTURE.md
-    sha256: bf525fc434d3553310d046e88d08949e80f6708bda19effa211d8741f2e3f0a2
+    sha256: 9a5d883ef0e3937be652545f944749a9cd927b9c5bb42fd0181325bcdcc4dbe8
   - path: AGENTS.md
     sha256: d1bd27bd5ad58cd36b4c8d7c420fe20ec1b0d4e71d645e56b3057e8ca50ed285
 # Owners/directions are REVIEWED authority/data flow, not an import DAG.

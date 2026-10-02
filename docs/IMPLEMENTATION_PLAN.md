@@ -2,6 +2,17 @@
 
 ## Task 3 — Extend the neutral evaluation substrate and independent corpus
 
+Production audit correction (2026-10-02): require actual complete, distinct
+repetition rows for every candidate-bound case/condition/memory comparison series,
+not just a claimed `repeats` value. Reject duplicated/missing repetition identities
+and operationally failed rows before utility can qualify. Owners:
+`src/evals/reference.py`, `tests/invariants/test_qualification.py`. Synthetic
+adversarial review records reproduced false passing utility with one row and with
+three copies of repetition zero; they are rejection-contract fixtures, never
+independent scientific evidence. Proof: before-fix failures, corrected rejection
+and complete-series preservation, plus existing qualification/evaluation owners.
+Independent-review and real candidate-utility prerequisites remain unchanged.
+
 Goal: Provide reusable, independent measurement of scientific validity and research
 decisions beyond the existing generated contract cases.
 
@@ -20,8 +31,8 @@ candidates, without admitting benchmark labels as scientific evidence. Own the s
 corpus, labels, held-out splits, condition adapters, comparison harness, metrics and
 resource accounting, independently of Jev, Reasoner, memory or search policy.
 Generalize the existing fresh-condition harness rather than build another harness;
-its current three conditions omit a Jev-only comparison and multi-block memory/search
-ablations. Task 11 consumes this substrate for whole-lab evaluation; it does not
+it now includes Jev-only comparison and matched multi-block memory/search
+ablations; extend their independently reviewed scientific scope. Task 11 consumes this substrate for whole-lab evaluation; it does not
 recreate corpus, labels, harness, utility records or accounting. Capability-specific
 evaluations retain their own scientific scope and completion proof. Reuse suitable cases/results while keeping
 ability-level acceptance distinct from complete-lab utility.
@@ -41,18 +52,21 @@ expert-annotated lung/pulmonary SciFact claim-document pairs, and separately lab
 generated adverse/memory/relation contracts. Offline comparison retains 192 rows,
 native semantic receipts, measured usage and explicit unavailable costs. A one-case
 live assessment completed 24 comparisons, with twelve Jev-enabled annotation matches;
-the full twelve-case, three-repeat live assessment is running. Configured 80-candidate
-recall still misses the fixed lexical-mismatch query; 200-candidate diagnostics are
-separate. Reports are retained under `var/task3-proof/`.
+the full twelve-case, three-repeat live assessment finished 144 observations: 71/72
+Jev-enabled annotation matches and one operational failure; the other 72 observations
+have no support classifier. Task 11 retained 192 matched offline and 24 held-out live
+composition comparisons. Reviewed SciPy metadata repair recovered fixed and held-out
+linear-query recall from zero to one at configured 80/8 limits. Larger-budget
+diagnostics remain separate. Reports are retained under `var/task3-proof/`.
 
 Retained blockers: independent scientific review for broader representation,
 relation/next-test/challenge labels remains pending, as requested. Published SciFact
-annotations close only claim-document support labels. Matched multi-block comparisons
+annotations close only claim-document support labels. Broader independently reviewed multi-block scientific comparisons
 and actual candidate-bound measured utility remain outstanding; a producer now
 retains candidate/scope/comparison identity and rejects unsupported qualification.
-The current 109-item catalogue misses labelled `stat.scipy` for
-`co movement linear association` at candidate budget 80; the evaluation override
-of 200 retrieves it by exhausting the catalogue and hides the configured-budget miss.
+The original configured-budget lexical miss and its exhaustive 200-candidate
+diagnostic remain retained; bounded metadata repair is supported by Task 11 receipts,
+not by exhaustive retrieval.
 
 Done when: A bounded, versioned scientific corpus runs through the actual consumers
 and fresh conditions, with per-case results, independent label basis, native model/
@@ -106,8 +120,9 @@ allocation retains the selected experience and basis. Portfolio history reconstr
 blocked/deferred-to-newly-testable changes through exact prerequisites. Bounded
 zero-overlap scientific-context retrieval exposes route/omission receipts. Focused
 five-check tool/lineage assessment passed; broader independent scientific next-test
-labels remain pending. Full owner checks exposed an unrelated empty failed-cycle
-fallback; repair and revalidation are in progress.
+labels remain pending. The empty failed-cycle harness fallback now retains adapter
+errors correctly. The 24 held-out live composition comparisons finished without
+semantic, adapter or SDK snippet failures; scripted choices establish lineage only.
 
 Done when: Real tools compare a new mission-grounded question with no prior hypothesis
 and retain its provenance without admitting it as evidence. They recover a
@@ -173,9 +188,10 @@ broader scientific label review remains explicitly retained. The real GDC lung s
 retains 100/1089 cases in 25,618 bytes; 95 age observations and 72 time/event rows
 are usable, with five missing ages and 28 missing time/event pairs. This establishes
 bounded acquisition/transform utility for the inspected slice, not population or
-survival validity. Owned proof is in `var/task5-proof/`. Compression/large-table
-MAF/CNV support and independently reviewed challenge/representation decisions remain
-unsupported. Actual scoped utility qualification depends on Task 6/7's candidate
+survival validity. Owned proof is in `var/task5-proof/`. Declared compressed MAF
+within the documented limits now has real lung-file proof. Larger tables beyond
+those limits, compressed CNV and independently reviewed challenge/representation
+decisions remain unsupported. Actual scoped utility qualification depends on Task 6/7's candidate
 proof; carry these limitations forward without manufacturing review or admission.
 
 ## Task 9 — Extend scientific challenges and follow-up
@@ -279,9 +295,11 @@ reject before execution. Two actual fresh GDC source blocks retained LUAD/LUSC a
 means (18/19 complete rows), validated pipeline replay and explicit admission, with
 owned source/vector identities and missingness limitations. Promotion review was
 truthfully rejected; `var/task10-proof/reusable-mean.json` retains source use and the
-review. Independent scientific utility remains unsupported. Fresh ordinary local proof (seq 1158) resolves the compressed-assay/composed-verification source/environment, and
-pinned licence binding resolves the exact inspected source/commit. Final re-review
-rejects only unsupported utility; raw outcome is `var/task10-proof/review-current.json`. Acceptance, subsequent accepted-route native
+review. Independent scientific utility remains unsupported. Historical ordinary proof (seq 1158) resolves its archived source/environment;
+pinned licence binding resolves the exact inspected source/commit. On that basis,
+review `ce7f42ed-87cc-449c-94d0-a0492bbf22b3` rejected only unsupported utility
+(`var/task10-proof/review-current.json`). Audit changes invalidate the old current-basis
+claim; final HEAD requires fresh native proof and promotion re-review. Acceptance, subsequent accepted-route native
 execution, qualified updates and retirement cannot be claimed without utility review.
 
 Done when: A qualified candidate is accepted into a reconstructible revision and
@@ -439,6 +457,27 @@ trajectories retain their exact archived seq-347 basis; the correction does not
 retroactively qualify their missing scientific composition.
 
 ## Task 12 — Verify a composed oncology research trajectory
+
+Production audit feature specification (2026-10-02): repair demonstrated nested
+SQLite bundle rollback while preserving the existing record owner and append-only
+schema. Goal: a caught inner write failure cannot commit a partial bundle, while
+outer successful writes commit together and outer failure rolls everything back.
+Scope: explicit outer transaction and nested savepoints in
+`src/persistence/store.py`; real SQLite-trigger fault/reopen regressions in
+`tests/invariants/test_persistence.py`. No data migration or new store. Compare
+the supplied historical H/R/D plan against current owners/logs/proofs; repair
+verified defects and stale active status, retaining independent-review/utility
+and composed-trajectory gaps. Security plugin scan cannot start in the current
+disabled filesystem-permission profile; direct code review remains active.
+Also repair the independently observed web dependency advisories through a supported
+patched Next.js branch, React/types alignment, asynchronous route parameters and
+patched PostCSS override. Owners: `web/package.json`, lockfile, route/config and the
+existing rendered frontend invariant. Verify typecheck, production build, live routes
+and fresh advisory reports. No unrelated framework/runtime or scientific scope changes.
+Completion proof: before-fix failing regression, focused/full contracts, current
+architecture/whitespace checks and final native qualification; commit fixes only
+after their review. This audit does not reinstate cancelled deployment or activate
+conditional frameworks/publication without their triggers.
 
 Goal: Establish one exact-basis scientific and operational trajectory through the
 real service rather than infer composition from separate slice checks.

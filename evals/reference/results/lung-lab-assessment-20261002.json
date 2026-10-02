@@ -20575,5 +20575,26 @@
       "annotations"
     ],
     "scientific_qualification_added": false
+  },
+  "production_audit": {
+    "baseline_github_commit": "3390437",
+    "invariants": {
+      "passed": 297,
+      "skipped": 0,
+      "seconds": 89.35,
+      "raw": "var/production-audit/full-invariants-owned-paths.log"
+    },
+    "fixes": [
+      "nested SQLite bundle rollback",
+      "distinct measured utility repetitions",
+      "patched web dependencies and async route parameters"
+    ],
+    "npm_advisories": 0,
+    "python_advisories": 0,
+    "python_audit_exclusion": "editable local application",
+    "store_lineage": "var/production-audit/store-lineage.json",
+    "post_commit_verification": "var/production-audit/final-verification.json",
+    "security_plugin": "did not start: managed filesystem permission profile required",
+    "scientific_qualification": "incomplete; active plan retains Tasks 3,4,5,9,10,11,12"
   }
 }

@@ -7,9 +7,10 @@ import { getData } from "@/lib/snapshot";
 
 export const dynamic = "force-dynamic";
 
-export default async function BlockPage({ params }: { params: { blockId: string } }) {
+export default async function BlockPage({ params }: { params: Promise<{ blockId: string }> }) {
+  const { blockId } = await params;
   const data = await getData();
-  const view = data.blocks.find((item)=>item.reconstruction.block_id===params.blockId);
+  const view = data.blocks.find((item)=>item.reconstruction.block_id===blockId);
   if (!view) {
     notFound();
   }

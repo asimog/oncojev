@@ -120,7 +120,29 @@ def utility_evaluation_resolves(store, payload, application_identity):
         report = comparison.payload['comparison']
         relevant = [row for row in report['rows'] if row.get('observations', {}).get('candidate_id') == payload['candidate_id']
             and row.get('observations', {}).get('scope_sha256') == payload['scope_sha256']]
-        if not relevant or report.get('mode') != 'live' or report.get('repeats', 0) < 3 or report.get('scientific_utility') is None:
+        repeats = report.get('repeats')
+        if (not relevant or report.get('mode') != 'live' or type(repeats) is not int
+                or not 3 <= repeats <= 20 or report.get('scientific_utility') is None):
+            return False
+        # A declared count does not prove stochastic repetition. Each measured
+        # candidate case/condition/memory series must contain every distinct row.
+        series = {}
+        for row in relevant:
+            case_id, condition = row.get('case_id'), row.get('condition')
+            memory, repetition = row.get('memory_alternative_limit'), row.get('repetition')
+            if (not isinstance(case_id, str) or not case_id.strip()
+                    or condition not in {value.value for value in CONDITIONS}
+                    or type(memory) is not int or memory < 0
+                    or type(repetition) is not int or not 0 <= repetition < repeats):
+                return False
+            seen = series.setdefault((case_id, condition, memory), set())
+            if repetition in seen:
+                return False
+            seen.add(repetition)
+            observed = row.get('observations', {})
+            if observed.get('failure_type') is not None or observed.get('adapter_error_type') is not None:
+                return False
+        if any(seen != set(range(repeats)) for seen in series.values()):
             return False
         # The reviewer record must concern this comparison, rather than upstream
         # doctests or an unrelated published corpus annotation.

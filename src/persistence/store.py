@@ -114,19 +114,25 @@ class SqliteResearchStore(RecordReads):
 
     @contextmanager
     def transaction(self):
-        """Serialize a synchronous owner workflow and commit only its outer boundary."""
+        """Serialize owner writes; each nested boundary rolls back independently."""
         with self._lock:
             outer = self._transaction_depth == 0
+            savepoint = f"oncojev_nested_{self._transaction_depth}"
+            self._connection.execute("BEGIN" if outer else f"SAVEPOINT {savepoint}")
             self._transaction_depth += 1
             try:
                 yield
+                if outer:
+                    self._connection.commit()
+                else:
+                    self._connection.execute(f"RELEASE SAVEPOINT {savepoint}")
             except BaseException:
                 if outer:
                     self._connection.rollback()
+                else:
+                    self._connection.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
+                    self._connection.execute(f"RELEASE SAVEPOINT {savepoint}")
                 raise
-            else:
-                if outer:
-                    self._connection.commit()
             finally:
                 self._transaction_depth -= 1
 
