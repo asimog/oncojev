@@ -62,7 +62,7 @@ Current contracts and explicit remaining limits (future acceptance below is not 
 | --- | --- | --- |
 | `ActiveResearchContext` / run handle | `src/runtime/pydantic_ai/contracts.py`, composed by service/cycle lifecycle | Actual context/handle: mission/cycle/block/run IDs, start sequence, task/terminal state and output/dossier/delta ownership. Application/registry/history pins live in the linked `JevBlockStart`; independent usage/budgets live in `HarnessRuntime`, not copied into the handle. Never share mutable ResearchState with Director. |
 | Service work state / event | Python service lifecycle, block/cycle models and persistence | Implemented `ServiceResearchState`: ALLOCATING, RESEARCHER_ACTIVE, DIRECTOR_GLOBAL_WORK, WAITING_FOR_RESEARCH_EVENT, POST_BLOCK_REVIEW; active-run identity, event identity/deduplication. Operational only: never mission completion, semantic exhaustion or required human direction. Run outcome and objective attainment remain distinct. |
-| Single-worker resource policy / heavy-work lease | Existing runtime controls and service-owned reservations; H2 baseline, H3 telemetry, H6 acquisition, H10 execution | Per-operation/block/service ceilings and usage; independent Director allowance; one heavy-local-work lease; typed busy/rejection receipts and observed byte/wall-duration measurements. Coder aggregate process/CPU/memory/disk and cancellation controls have native WSL2 proof below; scientific clone/bootstrap/install integration and complete telemetry remain open. No scientific judgment or additional agent/service. |
+| Single-worker resource policy / heavy-work lease | Existing runtime controls and service-owned reservations; H2 baseline, H3 telemetry, H6 acquisition, H10 execution | Per-operation/block/service ceilings and usage; independent Director allowance; one heavy-local-work lease; typed busy/rejection receipts and observed byte/wall-duration measurements. Coder and external scientific clone/bootstrap/install aggregate controls have native WSL2 proof below; in-process Science quotas and complete telemetry remain open. No scientific judgment or additional agent/service. |
 | `BlockDelta` | `src/dossier/delta.py`, derived from stored block-owned references | Actual start/end sequence and run/block IDs; explicit supported record/event categories with at most 20 references each and omission counts. Resource keys include `allocated_seconds`, `actual_elapsed_seconds`, `unused_allowance_seconds`, `reason_for_terminal_state`, Researcher/Director turn/idle wall time, metered download bytes and recorded execution/lease/limit-failure counts. `workspace_observed_bytes`, `workspace_peak_bytes` and `cpu_seconds` are currently unknown. Global relation records are not automatically copied into a block delta; only explicit matching block-owned events are included. No inferred negatives/resolutions or resource-derived scientific value. |
 | Global frontier / relations / review | Director domain with deterministic policy and memory references | `global-frontier-v2` pins mission and candidate identity. `current_basis` hashes latest sequence per material kind, Index snapshot, institutional registry/history/application pin, mission and version; it is not a raw whole-DB high-water or separately stored digest/active-block tuple. Read-only review/export/global measurement records do not invalidate selection themselves. Projections/native receipts retain question/policy versions, distributions, source references and limits. Portfolio/review observations cannot declare scientific resolution. |
 | OncoLab registry revision | `src/oncolab/` plus append-only persistence; Python governance | Parent revision, content hash, accepted state transition and governance version, reconstructable descriptors/contracts/routes/reusable status. Only governed capability-state changes create revisions; blocks pin immutable state, no agent CRUD. |
@@ -272,6 +272,32 @@ application identity:
 No original SQLite writes occurred. This closes an entry-point control gap;
 aggregate scientific clone/bootstrap/install enforcement and the complete local
 receipt remain open. No scientific functionality was extended; H2/H10 stay PARTIAL.
+
+### External scientific aggregate controls — DELIVERED sub-batch (H2/H10, 2026-10-02)
+
+Starting HEAD `a314953cd996db93a365d42e92ef3b9d73f54606`. Archive expansion/bootstrap
+and offline install/test/execute/replay now share the owned cgroup/tmpfs governor.
+`local-venv-v4` retains five validated native resource/cleanup receipts and exact
+raw output hashes. Retained scratch reduces disk allowance; interpreter links are
+not traversed. Failed received body chunks remain charged and durably recorded,
+even when charging rejects an overage. Remaining wall allowance gates new phases;
+an in-flight public read retains its bounded socket timeout. Admission/reuse
+boundaries and historical receipts remain protected.
+
+Before-fix checks against `a314953` failed for bootstrap exceeding 8 MB, factory
+rejection of interpreter links, and missing failed-transfer receipts. Direct WSL2
+`LOGFIRE_SEND_TO_LOGFIRE=false /home/rahul_khatri/.cache/oncojev-wsl-venv/bin/python -B -m scripts.verify_science_resources`
+passed **9 checks** covering bootstrap/expansion/install/retained disk, cancellation,
+aggregate memory, timeout, actual failed HTTP usage and factory reservations.
+`verify_local_science` passed fresh replay/confinement; Coder resources passed 11
+checks. These are local controls and fixture transport, not scientific utility.
+
+Windows command:
+`.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider -o addopts='' tests/invariants/test_boundaries.py tests/invariants/test_persistence.py tests/invariants/test_live_mode.py -k 'resource or heavy_work or sandbox or github or artifact or shutdown or runtime_applies or failed_local_transfer' -q`
+— **20 passed, 136 deselected, one existing deprecation warning in 20.97s**.
+Architecture and diff checks passed. Original SQLite was
+not opened for writing. H2/H10 remain PARTIAL: in-process Science kernel quotas,
+complete local verification and composed telemetry/acceptance are not delivered.
 
 ### H0 — DONE: baseline audit and reconciliation
 

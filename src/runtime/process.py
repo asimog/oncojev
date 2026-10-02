@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import platform
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -32,10 +33,24 @@ class ProcessResult:
     stdout: str
     stderr: str
     resources: dict
+    stdout_raw: bytes = b""
+    stderr_raw: bytes = b""
 
 
 class ProcessCleanupFailed(RuntimeError):
     """A family may still be active; all further heavy execution must fail closed."""
+
+
+def workspace_bytes(root):
+    """Count owned regular files, never traverse external links/junctions."""
+    total = 0
+    for directory, folders, files in os.walk(root, followlinks=False):
+        folders[:] = [name for name in folders if not (Path(directory) / name).is_symlink()
+                      and not (Path(directory) / name).is_junction()]
+        for name in files:
+            entry = (Path(directory) / name).lstat()
+            if stat.S_ISREG(entry.st_mode): total += entry.st_size
+    return total
 
 
 def run_owned_command(workspace, argv, environment, limits=ProcessLimits()):
@@ -76,8 +91,9 @@ def run_owned_command(workspace, argv, environment, limits=ProcessLimits()):
             observed["unit_observation"] = dict(line.split("=", 1) for line in native.stdout.splitlines() if "=" in line)
             observed.update(unit=unit, control_version="owned-command-v1", limits=asdict(limits),
                 stdout_bytes=len(completed.stdout), stderr_bytes=len(completed.stderr))
-            return ProcessResult(completed.returncode, completed.stdout[:limits.output_bytes].decode(errors="replace"),
-                completed.stderr[:limits.output_bytes].decode(errors="replace"), observed)
+            stdout, stderr = completed.stdout[:limits.output_bytes], completed.stderr[:limits.output_bytes]
+            return ProcessResult(completed.returncode, stdout.decode(errors="replace"),
+                stderr.decode(errors="replace"), observed, stdout, stderr)
         finally:
             # This runs outside the confined family, including on client timeout.
             try:

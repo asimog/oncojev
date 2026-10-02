@@ -72,7 +72,10 @@ print(json.dumps({{"values": {{"value": 4.0}}}}))
         assert "tampered interpreter ran" in tampered_output, "control did not execute the modified interpreter"
         assert secret.read_text() == "never accessible to scientific code", "modified experiment interpreter executed before confinement"
         print(json.dumps({"status": "passed", "scope": "fixture transport; actual Linux executor and fresh environments",
-            "environment": candidate.receipt.environment, "independent_replay": True,
+            "environment": {key:value for key,value in candidate.receipt.environment.items() if key!="process_resources"},
+            "resource_phases": [{"phase":p["phase"],"kernel_controls_verified":p["kernel_controls_verified"],
+                "cleanup_confirmed":p["cleanup_confirmed"],"memory_peak":p["memory_peak"],"pids_peak":p["pids_peak"]}
+                for p in candidate.receipt.environment["process_resources"]], "independent_replay": True,
             "secret_peer_app_network_process_denial": True, "modified_interpreter_remains_confined": True,
             "output_sha256": hashlib.sha256(candidate.output_json.encode()).hexdigest()}))
 

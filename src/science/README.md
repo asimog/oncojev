@@ -10,6 +10,12 @@ read-only, offline retained wheels, Landlock read-only inputs,
 scrubbed environments and seccomp single-process execution with no networking.
 The application interpreter applies confinement before executing any fresh
 environment entry point, including one replaced during installation.
+Archive/bootstrap/install/test/replay use the shared cgroup/tmpfs governor and
+retain per-phase resource/cleanup receipts. Retained scratch reduces disk allowance;
+installation has a bounded temporary directory. Inputs/repository stay read-only.
+Public body chunks are charged before rejection without response decompression or
+environment proxies. New phases use the remaining wall allowance; in-flight reads
+retain a bounded socket timeout. Failed usage survives reservation/budget rejection.
 Tests/execution write only bounded inherited stdout/stderr. Source builds,
 subprocesses, threads and filesystem output are unsupported on this backend.
 Fresh qualification and scientific fidelity remain separate governance gates.

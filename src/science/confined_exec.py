@@ -43,9 +43,9 @@ def main():
     path=application/'src'/'runtime'/'confinement.py'
     spec=importlib.util.spec_from_file_location('oncojev_confinement',path)
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
-    # Inputs are always read-only. Installation can mutate only its fresh venv;
+    # Inputs are read-only. Install mutates its fresh venv and bounded temporary directory;
     # tests/execution write only inherited bounded stdout/stderr, never filesystem state.
-    writable=(root/'venv',) if phase=='install' else ()
+    writable=(root/'venv',root/'outputs'/'install-temp') if phase=='install' else ()
     readonly=(root/'repository',root/'venv',root/'inputs',application/'src',application/'config',Path(sys.base_prefix))
     module.restrict_filesystem(writable,readonly)
     for limit,value in ((resource.RLIMIT_AS,settings['memory_mb']*1024*1024),

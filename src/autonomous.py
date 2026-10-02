@@ -122,7 +122,8 @@ class AutonomousService:
             max_coder_processes=self.policy.resources.max_coder_processes,
             max_coder_memory_mb=self.policy.resources.max_coder_memory_mb,
             max_coder_cpu=self.policy.resources.max_coder_cpu,
-            max_coder_seconds=self.policy.resources.max_coder_seconds)
+            max_coder_seconds=self.policy.resources.max_coder_seconds,
+            max_science_processes=self.policy.resources.max_science_processes)
         self._last_system = None
         self.director = None
         self._loop_runner = asyncio.Runner()

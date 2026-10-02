@@ -31,6 +31,7 @@ class ServiceResources:
     max_coder_memory_mb: int = 512
     max_coder_cpu: int = 2
     max_coder_seconds: int = 60
+    max_science_processes: int = 16
     execution_failure: str | None = None
     reservations: dict[str, dict] = field(default_factory=dict)
     heavy_owner: str | None = None
@@ -131,4 +132,5 @@ class ServiceResources:
                     "cpu": self.max_coder_cpu, "seconds": self.max_coder_seconds,
                     "workspace_bytes": self.max_workspace_bytes},
                 "last_coder_execution": last_coder, "execution_failure": self.execution_failure,
-                "process_cpu_memory_enforcement": "Coder owned-command-v1; scientific aggregate integration pending"}
+                "max_science_processes": self.max_science_processes,
+                "process_cpu_memory_enforcement": "Coder and local external science: owned-command-v1; installed in-process science has no kernel family quota"}

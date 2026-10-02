@@ -277,8 +277,15 @@ def validate_sandbox_candidate(candidate: SandboxMeasurementCandidate, analysis_
         confinement=receipt.environment.get('confinement')
         if confinement not in {'landlock-seccomp-single-process-v1','landlock-seccomp-single-process-v2-trusted-launcher'}:
             raise SandboxError('unqualified local confinement')
-        if confinement=='landlock-seccomp-single-process-v2-trusted-launcher' and receipt.environment.get('executor_version')!='local-venv-v3':
+        if confinement=='landlock-seccomp-single-process-v2-trusted-launcher' and receipt.environment.get('executor_version') not in {'local-venv-v3','local-venv-v4'}:
             raise SandboxError('local trusted launcher version mismatch')
+        if receipt.environment.get('executor_version')=='local-venv-v4':
+            resources=receipt.environment.get('process_resources',[])
+            if (receipt.environment.get('aggregate_controls')!='owned-command-v1'
+                or [r.get('phase') for r in resources]!=['prepare','install','test','execute','replay']
+                or any(r.get('kernel_controls_verified') is not True or r.get('cleanup_confirmed') is not True
+                       or r.get('workspace_committed') is not True or r.get('exit_code')!=0 for r in resources)):
+                raise SandboxError('incomplete owned scientific resource proof')
         if receipt.environment.get('dependencies_sha256')!=content_hash([w.model_dump(mode='json') for w in candidate.request.dependency_wheels]):
             raise SandboxError('local dependency identity mismatch')
     else:raise SandboxError('unsupported scientific execution backend')

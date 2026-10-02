@@ -19,6 +19,7 @@ from pydantic_ai.usage import RunUsage, UsageLimits
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.exceptions import IncompleteToolCall, UsageLimitExceeded, RunCancelled
 from src.runtime.resources import ServiceResources
+from src.runtime.process import ProcessCleanupFailed
 from src.block.manager import BlockManager
 from src.block.models import BlockStatus, ServiceResearchState
 from src.oncolab.catalogue import initial_oncolab_index
@@ -391,6 +392,11 @@ class HarnessRuntime:
             self.append_event(block_id, "HeavyExecutionLease", dict(receipt))
             try:
                 return await self.offload(operation, *inputs)
+            except ProcessCleanupFailed as error:
+                from src.runtime.resources import ResourceRejected
+                self.service_resources.execution_failure = 'owned_command_stop_unconfirmed'
+                receipt['operational_error'] = self.service_resources.execution_failure
+                raise ResourceRejected(self.service_resources.execution_failure, 0) from error
             finally:
                 self.append_event(block_id, "HeavyExecutionReleased", {"owner": block_id})
 
@@ -870,7 +876,9 @@ def register_researcher_tools(
             if isinstance(runtime.sandbox, LocalVenvScientificBackend):
                 owner = ctx.deps.block_id
                 backend = LocalVenvScientificBackend(runtime.sandbox.root / owner / "experiments", runtime.sandbox.policy,
-                    workspace_limit=runtime.service_resources.max_workspace_bytes)
+                    workspace_limit=runtime.service_resources.max_workspace_bytes,workspace_base=runtime.sandbox.root / owner,
+                    max_processes=runtime.service_resources.max_science_processes,
+                    minimum_free_disk_bytes=runtime.service_resources.minimum_free_disk_bytes)
                 with runtime.gdc.reserve(owner, None) as reservation:
                     backend.download_limit = reservation.capacity
                     try:
@@ -879,9 +887,14 @@ def register_researcher_tools(
                         try:
                             reservation.consume(backend.downloaded)
                         finally:
-                            runtime.service_resources.charge_download(owner, backend.downloaded)
-                            append(ctx, "ScientificTransferReceipt", {"consumed_bytes": backend.downloaded,
-                                "reserved_bytes": reservation.capacity, "backend": "local_venv"})
+                            try:
+                                runtime.service_resources.charge_download(owner, backend.downloaded)
+                            finally:
+                                try:
+                                    append(ctx, "ScientificResourceReceipt", {'executions':backend.process_resources,'operational_only':True})
+                                finally:
+                                    append(ctx, "ScientificTransferReceipt", {"consumed_bytes": backend.downloaded,
+                                        "reserved_bytes": reservation.capacity, "backend": "local_venv"})
             else:
                 candidate = await runtime.heavy_operation(ctx.deps.block_id, runtime.sandbox.acquire_and_execute, request.model_copy(deep=True))
             if runtime.repository is not None:

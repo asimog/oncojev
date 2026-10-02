@@ -286,6 +286,49 @@ def test_researcher_can_use_sandbox_tool_without_promoting_method(tmp_path):
  assert view.resolved_inputs[view.measurements[0]['source_refs'][0]]['candidate_id']==candidate['candidate_id']
  assert view.verifications[0]['capability_id']=='software.github-scientific'
  store.close()
+def test_failed_local_transfer_retains_billing_receipts_when_budget_is_exceeded(tmp_path, monkeypatch):
+ """Real typed tool/persistence boundary; Linux execution has separate native proof."""
+ from src.config.loader import load_models_config,load_runtime_config
+ from src.config.models import RuntimeMode
+ from src.persistence.store import SqliteResearchStore
+ from src.persistence.repository import ResearchRepository
+ from src.persistence.records import RecordKind
+ from src.runtime.resources import ServiceResources,ResourceRejected
+ from src.runtime.pydantic_ai.factory import build_harness_runtime
+ from src.science.local import LocalVenvScientificBackend
+ monkeypatch.setenv('ONCOJEV_DATA_ROOT',str(tmp_path))
+ resources=ServiceResources(max_file_bytes=1000,max_block_download_bytes=1000,max_service_download_bytes=1000)
+ store=SqliteResearchStore();repository=ResearchRepository(store)
+ runtime=build_harness_runtime(load_models_config(ROOT/'config/models.yaml'),
+  load_runtime_config(ROOT/'config/runtime.yaml').model_copy(update={'mode':RuntimeMode.DETERMINISTIC}),
+  environment={},repository=repository,resources=resources)
+ block=runtime.manager.allocate('failed public software transfer','fixture',300)
+ repository.record_block(block)
+ runtime.research_state.start(block.block_id,block.objective);runtime.skills.start(block.block_id)
+ def failed_transfer(self,request):
+  self.downloaded=1001
+  raise SandboxError('fixture transport exceeded its reserved body-byte capacity')
+ monkeypatch.setattr(LocalVenvScientificBackend,'acquire_and_execute',failed_transfer)
+ calls=0
+ async def model(messages,info):
+  nonlocal calls
+  calls+=1
+  if calls==1:
+   return ModelResponse(parts=[ToolCallPart('run_code',{'code':'await acquire_github_scientific_method(capability_need="unavailable statistical operation", why_existing_capabilities_are_inadequate="installed methods do not estimate this quantity", repository_url="https://github.com/example/public-method", requested_ref="main", install_command=["python","--version"], test_command=["python","run.py"], execute_command=["python","run.py"], input_json={})'},tool_call_id='failed-transfer')])
+  return ModelResponse(parts=[TextPart('operational failure retained')])
+ researcher=create_agents('test','test').fresh_researcher()
+ try:
+  with researcher.override(model=scripted(model)):
+   researcher.run_sync('exercise failed byte accounting',deps=ResearcherDeps(runtime=runtime,block_id=block.block_id))
+  events=[record.payload for record in store.records(kind=RecordKind.LEDGER_EVENT,block_id=block.block_id)]
+  transfer=[event['payload'] for event in events if event['event_type']=='ScientificTransferReceipt']
+  assert transfer and transfer[0]['consumed_bytes']==1001 and transfer[0]['reserved_bytes']==1000
+  assert resources.downloaded_bytes==1001 and resources.heavy_owner is None and not resources.reservations
+  assert not store.records(kind=RecordKind.SANDBOX_CANDIDATE) and not store.records(kind=RecordKind.EVIDENCE)
+  with pytest.raises(ResourceRejected):
+   with runtime.gdc.reserve('fresh-block',None):pytest.fail('new block reset service transfer usage')
+ finally:store.close()
+
 def test_harness_code_mode_runs_contract_tools_and_director_delegates():
  seen=[]
  def response(request):

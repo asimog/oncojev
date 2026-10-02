@@ -140,7 +140,8 @@ def build_harness_runtime(
             max_coder_processes=policy.resources.max_coder_processes,
             max_coder_memory_mb=policy.resources.max_coder_memory_mb,
             max_coder_cpu=policy.resources.max_coder_cpu,
-            max_coder_seconds=policy.resources.max_coder_seconds)
+            max_coder_seconds=policy.resources.max_coder_seconds,
+            max_science_processes=policy.resources.max_science_processes)
     def meter_download(byte_count):
         active = runtime.active_research
         owner = active.block_id if active else "unassigned"
@@ -166,13 +167,8 @@ def build_harness_runtime(
         workspace = workspace_root(root) / owner
         if workspace.exists() and (workspace.is_symlink() or workspace.is_junction()):
             raise ResourceRejected("workspace capacity cannot follow linked paths", 0)
-        used = 0
-        if workspace.exists():
-            for entry in workspace.rglob("*"):
-                if entry.is_symlink() or entry.is_junction():
-                    raise ResourceRejected("workspace capacity cannot follow linked paths", 0)
-                if entry.is_file():
-                    used += entry.stat().st_size
+        from src.runtime.process import workspace_bytes
+        used = workspace_bytes(workspace)
         durable = 0
         paths = [workspace]
         if runtime.repository is not None:
