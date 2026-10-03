@@ -516,3 +516,30 @@ Implementation identity: uncommitted worktree at HEAD
 `2d10d1d2fe7875690d48f8eecaa929679753d877`; exact application/environment hashes are
 retained in seq 1158 and the machine-readable assessment. Existing scientific history,
 unrelated worktree edits and ignored credentials were preserved.
+
+
+## 2026-10-02 — Production audit: engineering fixes and historical reconciliation
+
+Result: repaired caught-inner SQLite bundle rollback and utility gates accepting
+missing/duplicated repetition rows. Updated vulnerable web dependencies with the
+actual async route contract and explicit build root. Current plan reconciles stale
+running/repair/compression claims against finished proof. Original Windows history
+is archived separately and verified against all 1,216 envelopes; future ordinary
+research uses the user-selected WSL assessment history. No records merged.
+
+Verification: 297 invariants passed in 89.35 s with owned WSL paths; before-fix fault
+regressions retained. Web production build/typecheck passed; npm audit zero advisories;
+installed external Python package audit found none, excluding the local editable app.
+Architecture checks passed. API/web transport returns 200; missing block returns 404.
+Raw engineering evidence: `var/production-audit/` and `var/audit-*-*.log`.
+
+Implementation: `src/persistence/store.py`, `src/evals/reference.py`, their behavioral
+owners and patched web package/route/config. Accepted nested-atomicity decision:
+`docs/Archive/ADR/ACCEPTED_ADR_NESTED_SQLITE_ATOMICITY.md`. The dated lung assessment
+retains historical H/R/D comparison, actual fixes, initial failed invocation and scope.
+Final native qualification is separate and binds the post-commit HEAD in
+`var/production-audit/final-verification.json`; the older seq-1158 proof remains
+historical. Codex Security plugin did not start because its worker requires a managed
+filesystem permission profile; no plugin result claimed. Scientific independent
+review, broader assay/inference, reusable utility and composed Task 12 proof remain
+in the plan. API testing maintenance keeps automatic research paused.

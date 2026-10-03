@@ -4,6 +4,8 @@ Recommendation: **ADOPT WITH LIMITATIONS**. Current evidence supports the retent
 measurement and deterministic-authority architecture, plus a narrow generated-case
 context-ranking benefit. It does not establish broader autonomous scientific utility.
 
+Implementation `4e47eec98bc6898236fe812b54d9b977e052f207` extends the existing owners.
+
 Baseline `83b9def` was pushed to `asimog/oncojev/main` before task work. Its 136-file
 checkpoint contained line-ending changes only; content was verified with
 `git diff --ignore-space-at-eol`. Existing scientific stores and earlier proof were
@@ -49,7 +51,7 @@ no generalization or held-out proof.
 | Contradiction vs scope difference | Three repeats retained unknown contradiction for both terse different-population and same-scope-opposite contracts. | The Noul contracts do not establish that distinction on these underspecified cases. Unknown is preserved, not scored as scientific rejection. |
 | Independent replication distinction | All three Jev repeats measured replication true; one left paraphrase unknown, two measured paraphrase false. | Joint generated-label agreement 2/3, one unknown. Scientific replication itself is unverified. |
 | False semantic merges | No semantic merge operation; original alternatives remain reference-resolvable. | Structural zero, not a learned merge-quality benchmark. |
-| Semantic instability | Native probabilities differed in all ten matched search series. A separate identical-payload/question repeat check also exposed probability variation; categorical outcomes are reported separately in the machine-readable results. | Numeric variability is distinct from changed categorical policy. Relation paraphrase classification had one unknown repeat. |
+| Semantic instability | Native probabilities differed in all ten matched search series. A separate identical-payload/question repeat check exposed probability variation in all five domain series while categorical outcomes stayed stable. | Numeric variability is distinct from changed categorical policy. Relation paraphrase classification had one unknown repeat. |
 
 The fixed-candidate comparison records Reasoner proposals but does not let them change
 the matched candidate set. It therefore isolates Jev measurement; it does not establish

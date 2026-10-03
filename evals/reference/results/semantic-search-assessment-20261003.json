@@ -6515,5 +6515,18 @@
     ],
     "marginal_jev_deltas": [],
     "interpretation": "Generated labels measure contracts only. Fixed candidates isolate measurement; Reasoner proposals do not change this matched set. Unknown is not failure or scientific rejection."
+  },
+  "implementation_commit": "4e47eec98bc6898236fe812b54d9b977e052f207",
+  "verification": {
+    "focused_tests": 195,
+    "elapsed_seconds": 68.17,
+    "scope": [
+      "tests/invariants/test_semantic_retention.py",
+      "tests/invariants/test_boundaries.py",
+      "tests/invariants/test_persistence.py",
+      "tests/invariants/test_evaluation.py"
+    ],
+    "architecture": "passed",
+    "git_diff_check": "passed"
   }
 }
