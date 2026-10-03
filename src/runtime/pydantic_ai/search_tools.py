@@ -13,6 +13,23 @@ from src.researcher.state import StateFragment
 from src.runtime.pydantic_ai.semantic import measure_async
 
 
+def retain_hypothesis(runtime, block_id, hypothesis, proposed_test, *, provenance=("researcher-hypothesis",)):
+    """Retain proposals before measurement; exact duplicates preserve original identity."""
+    runtime.check_work(block_id, {})
+    if not hypothesis.strip() or not proposed_test.strip() or max(len(hypothesis), len(proposed_test)) > 2000:
+        raise ValueError("bounded nonempty hypothesis and test required")
+    def normalized(text): return " ".join(unicodedata.normalize("NFKC", text).casefold().split())
+    identity = content_hash({"statement": normalized(hypothesis), "test": normalized(proposed_test)})
+    try: state = runtime.research_state.get(block_id)
+    except KeyError: state = runtime.research_state.start(block_id, runtime.manager.block(block_id).objective)
+    duplicate = any(f.kind == "hypothesis" and f.fragment_id == identity for f in state.candidates)
+    if not duplicate:
+        runtime.persist_state(state.append("candidates", StateFragment(fragment_id=identity, kind="hypothesis",
+            summary=hypothesis, provenance=provenance,
+            details={"statement": hypothesis, "proposed_test": proposed_test, "scientific_status": "unknown"})))
+    return identity, duplicate
+
+
 def register_search_page(agent):
     @agent.tool
     async def search_oncolab_page(ctx: RunContext[Any], query: str = "", limit: int = 8, continuation: str | None = None,
@@ -83,8 +100,13 @@ def register_local_semantic_tools(agent):
             "representations": representations, "candidates": alternatives, "omitted_candidates": 0,
             "continuation": page.continuation, "exhausted": page.exhausted,
             "total_candidates": page.total_candidates, "authority": "planning_only"}
+        # The bounded agent view may omit details; the existing durable owner retains all generated alternatives.
+        import copy
+        retained_result = copy.deepcopy(result)
+        result["omitted_candidate_ids"] = []
         while len(canonical_bytes(result)) > 32768 and alternatives:
-            alternatives.pop(); result["omitted_candidates"] += 1
+            result["omitted_candidate_ids"].append(alternatives.pop()["capability_id"])
+            result["omitted_candidates"] += 1
         if len(canonical_bytes(result)) > 32768:
             raise ValueError("representation context exceeds method generation byte bound; select fewer inputs")
         state = runtime.research_state.get(block_id)
@@ -94,7 +116,7 @@ def register_local_semantic_tools(agent):
         if runtime.repository is not None:
             from src.persistence.records import RecordKind, StoredRecord
             runtime.repository.store.append(StoredRecord(kind=RecordKind.METHOD_CANDIDATES,
-                record_id=identity, block_id=block_id, payload=result))
+                record_id=identity, block_id=block_id, payload=retained_result))
         return result
 
     @agent.tool
@@ -176,18 +198,58 @@ def register_local_semantic_tools(agent):
         except KeyError:state=runtime.research_state.start(block_id,runtime.manager.block(block_id).objective)
         memory=runtime.memory_service()
         historical=list(memory.items("hypotheses",hypothesis,limit=5)) if memory else []
-        prior=[f.details for f in state.candidates if f.kind=="hypothesis"]
-        prior.extend({"statement":i["summary"],"proposed_test":i.get("details",{}).get("proposed_test")} for i in historical)
+        measured_ids = {f.details["hypothesis_id"] for f in state.candidates if f.kind == "hypothesis_assessment"}
+        prior=[f.details for f in state.candidates if f.kind=="hypothesis" and
+               not (f.fragment_id == identity and "reasoner-proposal" in f.provenance and identity not in measured_ids)]
+        # Exact local equality can skip reassessment. Historical equality lacks
+        # source/population/replication scope and must not suppress comparison.
         duplicate=next((i for i in prior if normalized(i.get("statement",""))==normalized(hypothesis)
                         and normalized(i.get("proposed_test") or "")==normalized(proposed_test)),None)
+        prior.extend({"statement":i["summary"],"proposed_test":i.get("details",{}).get("proposed_test")} for i in historical)
+        # Retention precedes every disabled, failed or exhausted semantic path.
+        retain_hypothesis(runtime, block_id, hypothesis, proposed_test)
         if duplicate:
             runtime.append_event(block_id,"HypothesisExactDuplicate",{"identity":identity,"hypothesis":hypothesis,"proposed_test":proposed_test})
             return {"identity":identity,"exact_duplicate":True,"semantic_called":False,"epistemic_status":"hypothesis"}
-        payload={"objective":state.objective,"hypothesis":hypothesis,"proposed_test":proposed_test,"prior_hypotheses":prior[:10]}
+        if not runtime.enable_jev:
+            return {"identity":identity,"exact_duplicate":False,"semantic_called":False,"semantic_status":"disabled_condition","epistemic_status":"hypothesis"}
+        payload={"objective":state.objective,"hypothesis":hypothesis,"proposed_test":proposed_test,"prior_hypotheses":prior[:10],
+                 "omitted_prior_hypotheses":max(0,len(prior)-10)}
         result=await measure_async(runtime,block_id,"hypothesis",identity,payload,escalate=True)
-        runtime.persist_state(state.append("candidates",StateFragment(fragment_id=identity,kind="hypothesis",summary=hypothesis,
-            provenance=(result["call_id"],),details={"statement":hypothesis,"proposed_test":proposed_test})))
+        runtime.persist_state(runtime.research_state.get(block_id).append("candidates", StateFragment(
+            fragment_id=result["call_id"], kind="hypothesis_assessment", summary=hypothesis,
+            provenance=(identity, result["call_id"]), details={"hypothesis_id": identity, "scientific_status": "unknown"})))
         return {**result,"identity":identity,"exact_duplicate":False}
+
+    @agent.tool
+    async def annotate_hypothesis(ctx: RunContext[Any], hypothesis_id: str, status: str, rationale: str,
+                                  related_hypothesis_id: str | None = None, reference_seqs: list[int] = []) -> dict[str, Any]:
+        """Append challenged/reopened/superseded/revised proposal lineage; no scientific resolution."""
+        from src.persistence.records import RecordKind
+        runtime = ctx.deps.runtime; block_id = ctx.deps.block_id
+        runtime.claim(block_id, "tool", runtime.max_tool_calls)
+        if status not in {"challenged", "reopened", "superseded", "revised"} or not rationale.strip() or len(rationale) > 2000:
+            raise ValueError("explicit proposal transition and bounded rationale required")
+        if runtime.repository is None or len(reference_seqs) > 10 or len(set(reference_seqs)) != len(reference_seqs):
+            raise ValueError("durable bounded references required")
+        states = runtime.repository.store.records(kind=RecordKind.STATE_REVISION)
+        hypotheses = {f["fragment_id"] for r in states for f in r.payload.get("candidates", ()) if f["kind"] == "hypothesis"}
+        if hypothesis_id not in hypotheses or related_hypothesis_id is not None and related_hypothesis_id not in hypotheses:
+            raise ValueError("transition requires retained hypothesis identities")
+        if status in {"superseded", "revised"} and (not related_hypothesis_id or related_hypothesis_id == hypothesis_id):
+            raise ValueError("revision/supersession requires a distinct retained replacement")
+        from src.memory.service import reference
+        records = [runtime.repository.store.record_at(seq) for seq in reference_seqs]
+        if any(record is None for record in records): raise ValueError("unresolved transition basis")
+        sources = [reference(record).model_dump(mode="json") for record in records]
+        details = {"hypothesis_id": hypothesis_id, "status": status, "rationale": rationale,
+            "related_hypothesis_id": related_hypothesis_id, "source_refs": sources,
+            "scientific_status": "unknown", "authority": "proposal_annotation"}
+        identity = str(uuid4())
+        runtime.persist_state(runtime.research_state.get(block_id).append("candidates", StateFragment(
+            fragment_id=identity, kind="hypothesis_transition", summary=f"{status}: {rationale}",
+            provenance=(hypothesis_id, *((related_hypothesis_id,) if related_hypothesis_id else ())), details=details)))
+        return {"transition_id": identity, **details}
 
     return {"assess_hypothesis":assess_hypothesis}
 

@@ -10,6 +10,7 @@ RESEARCHER_INSTRUCTIONS = (
     "and generate_method_candidates for an explicit scientific need, representation contract and owned inputs. Generated input readiness leaves scientific suitability unmeasured; retain competing alternatives and prerequisite gaps. "
     "describe selected IDs and assess_method against your need before choosing among routes. "
     "Use assess_representation on owned inputs and assess_hypothesis for test alignment; semantic measurements grant no execution permission. "
+    "Use annotate_hypothesis for challenged, reopened, revised or superseded proposal lineage with retained identity/replacement links; scientific resolution still requires actual evidence. "
     "Use parse_gdc_star_counts for selected exact versioned gene IDs from an owned open STAR Counts TSV. It preserves count/TPM/FPKM columns and missing genes; a parsed single-file gene summary does not establish sample/case linkage, a cohort matrix or normalization equivalence. "
     "Challenge supported case-paired findings with declare_source_followup before accessing new confirmation inputs, then run_source_analysis with its followup_id and frozen target contract. Declare multiplicity, meaningful effect bounds and alternative explanations. Observed case overlap or unknown coverage cannot establish independent replication; same-participant changes are sensitivity checks. "
     "Record statement-specific interpretations/support with record_dossier_statement; unresolved support remains explicit. "

@@ -20,6 +20,7 @@ class ReferenceCase(BaseModel, frozen=True):
     label_basis: str
     independent_review: Literal['pending', 'reviewed'] = 'pending'
     reviewer_record: str | None = None
+    search_labels: dict[str, Any] = Field(default_factory=dict)
 
 
 def load_reference_corpus(path):
@@ -74,12 +75,13 @@ def evaluate_reference_cases(cases, adapter, *, models, policy, environment=None
                         'condition': condition.value, 'memory_alternative_limit': alternative_limit, 'repetition': repetition,
                         'observations': captured, 'expected': case.expected, 'agreement': comparable == case.expected if available and metrics.status.value != 'failed' else None,
                         'metrics': metrics.model_dump(mode='json'), 'label_basis': case.label_basis,
-                        'independent_review': case.independent_review, 'reference_url': case.reference_url})
+                        'independent_review': case.independent_review, 'reference_url': case.reference_url,
+                        'search_metrics': search_metrics(captured, case.search_labels) if case.search_labels else None})
                     if on_row is not None: on_row(rows[-1])
     return {'version': 'scientific-reference-comparison-v1', 'rows': rows, 'corpus_sha256': content_hash([case.model_dump(mode='json') for case in cases]),
         'effective_policy': policy.model_dump(mode='json'), 'models': models.model_dump(mode='json'), 'repeats': repeats,
         'mode': policy.mode.value, 'resource_comparability': 'same frozen policy and public inputs; observed costs may be unavailable',
-        'scientific_utility': None, 'leakage_limits': ['Answer-bearing expected values, labels, split and reference URLs are withheld from adapters.',
+        'search_summary': summarize_search_rows(rows), 'scientific_utility': None, 'leakage_limits': ['Answer-bearing expected values, labels, split and reference URLs are withheld from adapters.',
             'Published cases may occur in model training; held-out split does not establish model pretraining independence.',
             'Independent scientific label review remains pending unless explicitly bound to a reviewer record.']}
 
@@ -169,6 +171,9 @@ async def _reference_consumer_async(system, repository, condition, inputs, *, al
     from src.sources.models import AcquisitionRecord
     from src.sources.representation import RepresentationNeed, assess_retained_representation
     runtime = system.runtime
+    if inputs['operation'] == 'source_trajectory':
+        from src.evals.whole_lab import observe_source_trajectory
+        return await observe_source_trajectory(system, repository, inputs, alternative_limit=alternative_limit)
     block = runtime.manager.create('Published reference method check in lung cancer mission', 'evaluation only', ResourceAllocation(seconds=240, handoff_reserve_seconds=30))
     repository.record_block(block)
     observed = {'scientific_utility': None, 'false_positive_rate': None, 'verified_replication': False}
@@ -186,7 +191,9 @@ async def _reference_consumer_async(system, repository, condition, inputs, *, al
         runtime.append_event(block.block_id, 'ReasonerOutput', proposal.model_dump(mode='json'))
         observed['reasoner_used'] = True
     operation = inputs['operation']
-    if operation == 'whole_lab':
+    if operation == 'search_comparison':
+        observed.update(await observe_search_candidates(system, repository, inputs, block, alternative_limit=alternative_limit))
+    elif operation == 'whole_lab':
         from src.evals.whole_lab import observe_whole_lab
         observed.update(await observe_whole_lab(system, repository, inputs, block, alternative_limit=alternative_limit))
     elif operation == 'numeric':
@@ -209,6 +216,14 @@ async def _reference_consumer_async(system, repository, condition, inputs, *, al
             result = await measure_async(runtime, block.block_id, 'representation', record.acquisition_id,
                 {'need': inputs['need'], 'representation': checks['representation'], 'checks': checks}, eligible=checks['eligible'])
             observed['semantic_action'] = result['frontier']['action']
+    elif operation == 'fixed_projection':
+        observed['fixed_payload_sha256'] = content_hash(inputs['payload'])
+        if runtime.enable_jev:
+            from src.director.frontier import GlobalFrontierPolicy
+            policy = GlobalFrontierPolicy() if inputs['context_type'].startswith('global_') else None
+            result = await measure_async(runtime, block.block_id, inputs['context_type'], inputs['identity'],
+                inputs['payload'], eligible=inputs['eligible'], policy=policy)
+            observed['fixed_action'] = result['frontier']['action']
     elif operation == 'statement':
         observed['source_support'] = 'unmeasured'
         if runtime.enable_jev:
@@ -222,6 +237,8 @@ async def _reference_consumer_async(system, repository, condition, inputs, *, al
         if runtime.enable_jev:
             result = await measure_async(runtime, block.block_id, 'global_relation', 'reference-relation', inputs['relation'])
             observed['native_decisions'] = result['decisions']
+            observed['relation_properties'] = {dimension: semantic_property(result['decisions'], dimension)
+                for dimension in ('paraphrase', 'related_distinct', 'independent_replication', 'contradiction', 'resolvability')}
         observed['scientific_resolution'] = 'unknown'
         # No deterministic classifier manufactures labels from statement wording.
         observed['relation_classification'] = 'unmeasured'
@@ -252,3 +269,175 @@ def reference_consumer_adapter(system, repository, condition, inputs, *, alterna
     import asyncio
     return asyncio.run(_reference_consumer_async(system, repository, condition, inputs,
         alternative_limit=alternative_limit))
+
+
+async def observe_search_candidates(system, repository, inputs, block, *, alternative_limit):
+    """Matched public candidates through domain owners; evaluation labels stay outside."""
+    from types import SimpleNamespace
+    from src.memory.models import CycleDigest, MemoryItem
+    from src.memory.service import reference
+    from src.runtime.pydantic_ai.contracts import ResearcherDeps
+    from src.runtime.pydantic_ai.search_tools import semantic_memory_context_async
+    runtime = system.runtime
+    domain = inputs['search_domain']
+    candidates = inputs['candidates']
+    observed = {'retrieved_ids': [], 'retained_ids': [], 'selectable_ids': [], 'merged_pairs': [],
+        'duplicate_ids': [], 'fit_by_id': {}, 'merge_mode': 'no semantic merge operation; originals retained', 'choice_mode': 'fixed matched candidates; deterministic categorical ordering',
+        'reasoner_influence': 'proposal observed separately; candidate set held fixed for marginal Jev comparison'}
+    runtime.persist_state(runtime.research_state.start(block.block_id, block.objective))
+    ctx = SimpleNamespace(deps=ResearcherDeps(runtime, block.block_id))
+    # Invoke installed tool functions with the same runtime/deps as SDK dispatch.
+    tools = system.agents.researcher._function_toolset.tools
+    if domain in {'information', 'investigation'}:
+        for candidate in candidates:
+            record = repository.store.append(StoredRecord(kind=RecordKind.SERVICE_EVENT, record_id=candidate['id'],
+                payload={'event_type': 'EvaluationContext', 'summary': candidate['summary'], 'operational_only': True}))
+            item = MemoryItem(item_id=candidate['id'], summary=candidate['summary'], epistemic_status='uncertainty',
+                references=(reference(record),), details=candidate.get('scope', {}))
+            digest = CycleDigest(digest_id=candidate['id'], cycle_id=candidate['id'], mission_id=runtime.mission_id,
+                direction=candidate['summary'], recorded_at=record.recorded_at, cycle_status='incomplete', director_outcome='unknown',
+                references=(reference(record),), uncertainties=(item,))
+            repository.store.append(StoredRecord(kind=RecordKind.MEMORY_DIGEST, record_id=digest.digest_id, payload=digest.model_dump(mode='json')))
+        if domain == 'information':
+            context = await semantic_memory_context_async(runtime, inputs['query'], limit=5, block_id=block.block_id,
+                alternative_limit=alternative_limit)
+            observed['retrieved_ids'] = [digest['digest_id'] for digest in context['digests']]
+            observed['retained_ids'] = observed['retrieved_ids'][:]
+            observed['selectable_ids'] = observed['retrieved_ids'][:]
+            observed['retrieval'] = context['retrieval']
+        else:
+            from src.runtime.pydantic_ai.global_tools import prepare_frontier
+            frontier = await prepare_frontier(runtime, inputs['query'], limit=10)
+            aliases = {candidate.candidate_id: candidate.source_refs[0].record_id for candidate in frontier.candidates}
+            observed['retrieved_ids'] = list(aliases.values())
+            observed['retained_ids'] = list(aliases.values())
+            observed['selectable_ids'] = [aliases[identity] for identity in frontier.beam]
+            observed['frontier'] = frontier.model_dump(mode='json')
+    elif domain == 'representation':
+        from src.sources.models import AcquisitionRecord
+        for candidate in candidates:
+            record = AcquisitionRecord.model_validate(candidate['acquisition'])
+            runtime.retain_acquisition(block.block_id, record)
+        generated = await tools['generate_representation_candidates'].function(ctx, inputs['need'],
+            [AcquisitionRecord.model_validate(candidate['acquisition']).acquisition_id for candidate in candidates])
+        observed['generation'] = generated
+        for candidate in candidates:
+            record = AcquisitionRecord.model_validate(candidate['acquisition'])
+            observed['retrieved_ids'].append(candidate['id']); observed['retained_ids'].append(candidate['id'])
+            from src.sources.representation import RepresentationNeed, assess_retained_representation
+            checks = assess_retained_representation(record, RepresentationNeed.model_validate(inputs['need']))
+            action = 'keep_alive' if checks['eligible'] else 'defer'
+            if runtime.enable_jev:
+                result = await tools['assess_representation'].function(ctx, record.acquisition_id, inputs['need'])
+                action = result['frontier']['action']
+                observed['fit_by_id'][candidate['id']] = semantic_property(result['decisions'], 'sufficiency')
+            if checks['eligible'] and action not in {'defer', 'reject_retain'}: observed['selectable_ids'].append(candidate['id'])
+    elif domain == 'method':
+        from src.sources.models import AcquisitionRecord
+        record = AcquisitionRecord.model_validate(inputs['acquisition'])
+        runtime.retain_acquisition(block.block_id, record)
+        generated = await tools['generate_method_candidates'].function(ctx, inputs['need'], [record.acquisition_id], limit=8)
+        observed['generation'] = generated
+        from src.oncolab.methods import ScientificNeed, method_inputs, method_route_checks
+        representations = method_inputs([record], ScientificNeed.model_validate(inputs['need']))
+        for candidate in candidates:
+            observed['retrieved_ids'].append(candidate['id']); observed['retained_ids'].append(candidate['id'])
+            from src.oncolab.execution import check_routes
+            index = runtime.index_for(block.block_id)
+            checks = {'eligible': any(check['eligible'] for check in method_route_checks(index, candidate['id'], representations))}
+            action = 'keep_alive' if checks['eligible'] else 'defer'
+            if runtime.enable_jev:
+                result = await tools['assess_method'].function(ctx, candidate['id'], inputs['need'], [record.acquisition_id])
+                action = result['frontier']['action']
+                observed['fit_by_id'][candidate['id']] = semantic_property(result['decisions'], 'estimand_fit')
+            if checks['eligible'] and action not in {'defer', 'reject_retain'}: observed['selectable_ids'].append(candidate['id'])
+    elif domain == 'hypothesis':
+        for candidate in candidates:
+            result = await tools['assess_hypothesis'].function(ctx, candidate['statement'], candidate['test'])
+            observed['retrieved_ids'].append(candidate['id'])
+            if result['exact_duplicate']: observed['duplicate_ids'].append(candidate['id'])
+            # Exact duplicates remain source-linked; low fit is never a scientific negative.
+            observed['retained_ids'].append(candidate['id'])
+            if not result['exact_duplicate'] and result.get('frontier', {}).get('action') not in {'reject_retain', 'defer'}:
+                observed['selectable_ids'].append(candidate['id'])
+            if result.get('decisions'):
+                observed['fit_by_id'][candidate['id']] = semantic_property(result['decisions'], 'test_alignment')
+    else: raise ValueError('unsupported search domain')
+    observed['selected_id'] = next(iter(observed['selectable_ids']), None)
+    observed['preserved_count'] = len(set(observed['retained_ids']))
+    observed['unknown_scientific_status'] = not repository.store.records(kind=RecordKind.EVIDENCE) and all(
+        fragment.details.get('scientific_status') == 'unknown' for fragment in runtime.research_state.get(block.block_id).candidates
+        if fragment.kind in {'hypothesis', 'hypothesis_transition'})
+    return observed
+
+
+def semantic_property(decisions, dimension):
+    """Evaluation interpretation of a native Noul dimension, with an explicit unknown band."""
+    value = next((decision['p_true'] for decision in decisions if decision['question_id'].endswith(':' + dimension)
+                  and 'p_true' in decision), None)
+    return None if value is None or .25 <= value <= .75 else value > .75
+
+
+def search_metrics(observations, labels):
+    """Labels enter only post-consumption scoring; missing denominators stay unknown."""
+    useful = set(labels.get('useful_ids', ()))
+    retrieved = set(observations.get('retrieved_ids', ()))
+    retained = set(observations.get('retained_ids', ()))
+    selectable = set(observations.get('selectable_ids', ()))
+    duplicate = set(labels.get('duplicate_ids', ()))
+    fits = labels.get('fit_by_id', {})
+    measured = observations.get('fit_by_id', {})
+    low_overlap = set(labels.get('low_overlap_ids', ()))
+    relations = labels.get('relation_properties', {})
+    relation_observed = observations.get('relation_properties', {})
+    return {'useful_candidate_recall': len(useful & retrieved)/len(useful) if useful else None,
+        'selectable_useful_recall': len(useful & selectable)/len(useful) if useful else None,
+        'alternative_preservation': len(retrieved & retained)/len(retrieved) if retrieved else None,
+        'false_semantic_merges': len(observations.get('merged_pairs', ())) if retrieved else None,
+        'duplicate_work_avoidance': len(duplicate & set(observations.get('duplicate_ids', ())))/len(duplicate) if duplicate else None,
+        'low_lexical_overlap_recall': len(low_overlap & retrieved)/len(low_overlap) if low_overlap else None,
+        'fit_accuracy': sum(measured.get(identity) == expected for identity, expected in fits.items())/len(fits)
+            if fits and all(measured.get(identity) is not None for identity in fits) else None,
+        'next_investigation_alignment': observations.get('selected_id') in useful if useful and observations.get('selected_id') else None,
+        'unknown_preserved': observations.get('unknown_scientific_status'),
+        'relation_accuracy': sum(relation_observed.get(key) == value for key, value in relations.items())/len(relations)
+            if relations and all(relation_observed.get(key) is not None for key in relations) else None,
+        'scientific_utility': None}
+
+
+def summarize_search_rows(rows):
+    """Paired marginal deltas and instability; offline fixtures never imply empirical benefit."""
+    from collections import defaultdict
+    series = defaultdict(list)
+    for row in rows:
+        series[(row['case_id'], row['condition'], row['memory_alternative_limit'])].append(row)
+    summaries = []
+    for (case_id, condition, alternative_limit), values in series.items():
+        signatures = []
+        for row in values:
+            receipts = row['observations'].get('native_semantic_receipts', ())
+            # Compare semantic purposes/probabilities, excluding run-specific IDs/timing.
+            signatures.append(content_hash([(receipt['context_type'], [(question['semantic_purpose'],
+                {key: decision[key] for key in ('p_true', 'probabilities', 'expected_score', 'level_probabilities', 'confidence') if key in decision})
+                for question in receipt.get('questions', ()) for decision in receipt.get('decisions', ())
+                if question['question_id'] == decision['question_id']]) for receipt in receipts]))
+        summaries.append({'case_id': case_id, 'condition': condition, 'memory_alternative_limit': alternative_limit,
+            'metrics': [row.get('search_metrics') for row in values],
+            'semantic_instability': len(set(signatures)) > 1 if len(values) > 1 and any(row['observations'].get('native_semantic_receipts') for row in values) else None,
+            'policy_instability': len({content_hash({'selected': row['observations'].get('selected_id'), 'selectable': row['observations'].get('selectable_ids'), 'fit': row['observations'].get('fit_by_id')}) for row in values}) > 1 if len(values) > 1 else None,
+            'failures': sum(row['observations'].get('failure_type') is not None for row in values),
+            'provider_costs': [row['observations'].get('provider_cost') for row in values]})
+    deltas = []
+    for row in rows:
+        baseline = {'science_jev': 'science_only', 'science_jev_reasoner': 'science_reasoner'}.get(row['condition'])
+        if baseline is None or not row.get('search_metrics'): continue
+        match = next((other for other in rows if other['case_id'] == row['case_id'] and other['condition'] == baseline
+            and other['memory_alternative_limit'] == row['memory_alternative_limit'] and other['repetition'] == row['repetition']), None)
+        if match is None: continue
+        deltas.append({'case_id': row['case_id'], 'condition': row['condition'], 'baseline': baseline,
+            'memory_alternative_limit': row['memory_alternative_limit'], 'repetition': row['repetition'],
+            'metrics': {key: row['search_metrics'][key] - match['search_metrics'][key]
+                if type(row['search_metrics'][key]) in {float, int} and type(match['search_metrics'][key]) in {float, int} else None
+                for key in row['search_metrics']}})
+    return {'series': summaries, 'marginal_jev_deltas': deltas,
+        'interpretation': 'Generated labels measure contracts only. Fixed candidates isolate measurement; Reasoner proposals do not change this matched set. Unknown is not failure or scientific rejection.'}

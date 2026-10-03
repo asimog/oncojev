@@ -306,6 +306,42 @@ change only their scoped contracts. The real admission path remains authoritativ
 Goal: Evaluate the complete lab's investigation selection, scientific continuation
 and semantic decisions, adopting refinements only where measured failures justify them.
 
+Assigned semantic-search reconciliation slice (2026-10-03): retain proposals before
+semantic narrowing, repair demonstrated omission/direct-hypothesis memory gaps,
+and expose append-only challenge/reopen/revision/supersession lineage without a
+new owner. Extend the existing reference/fresh-condition substrate with matched
+five-domain recall/preservation/fit/relation/next-choice metrics, native probability
+and categorical instability, observed costs and explicit unknowns. Completion proof
+for this engineering slice is behavioral regressions, paired observations and one
+source-owned outcome-to-formal-frontier-to-next-choice trajectory. Independent
+scientific labels and autonomous utility are separate retained qualification work.
+
+Verified slice outcome: five generated tuning cases ran 60 live comparisons across
+four conditions/three repeats; three relation contracts ran 18 live comparisons.
+All conditions retained useful candidates; Jev improved first-choice context ordering
+only in the generated low-overlap case. Joint hypothesis alignment and contradiction
+classification retained unknowns. Native probabilities varied; observed search choices
+and fit signatures stayed stable. No independent five-domain scientific labels were
+fabricated. Three final owned-launch source paths each completed two Researcher runs,
+dossiers and Deltas: 41/100 complete source pairs yielded a model-conditional
+inconclusive Pearson effect-bound result, followed by a different duration-coverage/
+endpoint-prerequisite question selected through actual formal frontier IDs. Reopening
+119 retained envelopes reconstructed both completed blocks and validated memory.
+The five new cases are tuning-only; the 696-row offline report is contract/fixture
+measurement, not empirical utility. Matched candidates keep Reasoner proposals out
+of candidate-set changes, so autonomous Reasoner-generation benefit is unmeasured.
+Detailed observed results and original trajectory records are retained under
+evals/reference/results/semantic-search-assessment-20261003.* and
+semantic-search-trajectory-20261003.json; raw observations remain under
+var/semantic-search-proof/. Engineering decision: ADOPT WITH LIMITATIONS.
+
+Retained qualification limits for this slice: independent representation/method/
+relation/next-investigation scientific labels, genuine autonomous choice utility,
+fresh acquisition, endpoint validity and independent replication. Scripted choices,
+source replay/prior exposure and unchanged ordinary data/science controls are explicit;
+no final-committed-basis whole-environment or reusable promotion qualification is
+claimed. These gaps keep Task 11 active; they do not justify another search framework.
+
 Scope: Consume Task 3's neutral corpus, held-out methodology, condition adapters,
 metrics, utility-record producer and accounting. Own multi-block experiments and
 their scientific interpretation, not another evaluation substrate. Compare the

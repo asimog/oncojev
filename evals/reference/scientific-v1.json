@@ -328,7 +328,13 @@
       },
       "reference_url": "https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/anscombe.html",
       "label_basis": "Reference principle: similar summary statistics do not establish same underlying design; relation truth remains independently unreviewed.",
-      "independent_review": "pending"
+      "independent_review": "pending",
+      "search_labels": {
+        "relation_properties": {
+          "contradiction": false,
+          "paraphrase": false
+        }
+      }
     },
     {
       "case_id": "relation-same-scope-opposite",
@@ -351,7 +357,13 @@
       },
       "reference_url": "https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/anscombe.html",
       "label_basis": "Reference principle: similar summary statistics do not establish same underlying design; relation truth remains independently unreviewed.",
-      "independent_review": "pending"
+      "independent_review": "pending",
+      "search_labels": {
+        "relation_properties": {
+          "contradiction": true,
+          "paraphrase": false
+        }
+      }
     },
     {
       "case_id": "relation-replication-distinct",
@@ -374,7 +386,13 @@
       },
       "reference_url": "https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/anscombe.html",
       "label_basis": "Reference principle: similar summary statistics do not establish same underlying design; relation truth remains independently unreviewed.",
-      "independent_review": "pending"
+      "independent_review": "pending",
+      "search_labels": {
+        "relation_properties": {
+          "independent_replication": true,
+          "paraphrase": false
+        }
+      }
     },
     {
       "case_id": "scifact-lung-55-49556906",
@@ -639,6 +657,324 @@
       "label_basis": "Independent SciFact expert annotation; original claim-document relation retained without translating it into scientific evidence.",
       "independent_review": "reviewed",
       "reviewer_record": "SciFact release sha256=11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be; original claim=516, document=29564505; annotation sha256=a373db601bff2b986ac75639a5ea02a602b2ea03ff6b1a7d9e9396a1d667223b"
+    },
+    {
+      "case_id": "search-information-tuning",
+      "split": "tuning",
+      "domain": "information",
+      "public_inputs": {
+        "operation": "search_comparison",
+        "search_domain": "information",
+        "direction": "Compare lung research candidate contracts",
+        "query": "mechanistic vulnerability",
+        "candidates": [
+          {
+            "id": "relevant",
+            "summary": "Prior inconclusive EGFR response association requires a larger independently sampled lung cohort."
+          },
+          {
+            "id": "lexical",
+            "summary": "mechanistic vulnerability search operational summary"
+          }
+        ]
+      },
+      "expected": {
+        "unknown_scientific_status": true
+      },
+      "search_labels": {
+        "useful_ids": [
+          "relevant"
+        ],
+        "low_overlap_ids": [
+          "relevant"
+        ]
+      },
+      "reference_url": "https://github.com/asimog/oncojev",
+      "label_basis": "Generated engineering contract labels; paired repeated inputs test machinery. Held-out tag does not establish independent scientific labels or a distinct generalization case.",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "search-representation-tuning",
+      "split": "tuning",
+      "domain": "representation",
+      "public_inputs": {
+        "operation": "search_comparison",
+        "search_domain": "representation",
+        "direction": "Compare lung research candidate contracts",
+        "need": {
+          "estimand": "correlation",
+          "representation": "paired_data",
+          "entity_key": "id",
+          "fields": {
+            "x": "x",
+            "y": "y"
+          },
+          "numeric_roles": [
+            "x",
+            "y"
+          ],
+          "minimum_complete_rows": 3
+        },
+        "candidates": [
+          {
+            "id": "paired",
+            "acquisition": {
+              "acquisition_id": "2dec1171-e544-4b54-8f67-ddd2f8a42084",
+              "source": "fixture",
+              "retrieved_at": "2026-10-03T18:10:07.550400Z",
+              "request": {
+                "purpose": "generated paired contract"
+              },
+              "records": [
+                {
+                  "id": "a",
+                  "x": 1,
+                  "y": 2
+                },
+                {
+                  "id": "b",
+                  "x": 2,
+                  "y": 3
+                },
+                {
+                  "id": "c",
+                  "x": 3,
+                  "y": 5
+                }
+              ],
+              "public_only": true,
+              "origin": "public",
+              "provenance": [
+                "generated evaluation fixture; no scientific evidence"
+              ],
+              "response_bytes": null,
+              "coverage": null,
+              "content_sha256": "39d670250aa736b67422e8ad07040ddc3b878271fb66835b8220ad6e2b23980a"
+            }
+          },
+          {
+            "id": "missing",
+            "acquisition": {
+              "acquisition_id": "cca3c86d-d22f-4a3c-aaa2-fbc0195c5cef",
+              "source": "fixture",
+              "retrieved_at": "2026-10-03T18:10:07.550501Z",
+              "request": {
+                "purpose": "missing y"
+              },
+              "records": [
+                {
+                  "id": "a",
+                  "x": 1
+                },
+                {
+                  "id": "b",
+                  "x": 2
+                }
+              ],
+              "public_only": true,
+              "origin": "public",
+              "provenance": [
+                "generated evaluation fixture; no scientific evidence"
+              ],
+              "response_bytes": null,
+              "coverage": null,
+              "content_sha256": "84c850815aa81bb699e80088ff068969f41380c2bdf1128ea8d9bc07557f4686"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "unknown_scientific_status": true
+      },
+      "search_labels": {
+        "useful_ids": [
+          "paired"
+        ],
+        "fit_by_id": {
+          "paired": true,
+          "missing": false
+        }
+      },
+      "reference_url": "https://github.com/asimog/oncojev",
+      "label_basis": "Generated engineering contract labels; paired repeated inputs test machinery. Held-out tag does not establish independent scientific labels or a distinct generalization case.",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "search-method-tuning",
+      "split": "tuning",
+      "domain": "method",
+      "public_inputs": {
+        "operation": "search_comparison",
+        "search_domain": "method",
+        "direction": "Compare lung research candidate contracts",
+        "need": {
+          "question": "Do X and Y correlate?",
+          "estimand": "correlation",
+          "population": "generated paired rows",
+          "design": "paired exploratory",
+          "representation_need": {
+            "estimand": "correlation",
+            "representation": "paired_data",
+            "entity_key": "id",
+            "fields": {
+              "x": "x",
+              "y": "y"
+            },
+            "numeric_roles": [
+              "x",
+              "y"
+            ],
+            "minimum_complete_rows": 3
+          }
+        },
+        "acquisition": {
+          "acquisition_id": "2dec1171-e544-4b54-8f67-ddd2f8a42084",
+          "source": "fixture",
+          "retrieved_at": "2026-10-03T18:10:07.550400Z",
+          "request": {
+            "purpose": "generated paired contract"
+          },
+          "records": [
+            {
+              "id": "a",
+              "x": 1,
+              "y": 2
+            },
+            {
+              "id": "b",
+              "x": 2,
+              "y": 3
+            },
+            {
+              "id": "c",
+              "x": 3,
+              "y": 5
+            }
+          ],
+          "public_only": true,
+          "origin": "public",
+          "provenance": [
+            "generated evaluation fixture; no scientific evidence"
+          ],
+          "response_bytes": null,
+          "coverage": null,
+          "content_sha256": "39d670250aa736b67422e8ad07040ddc3b878271fb66835b8220ad6e2b23980a"
+        },
+        "candidates": [
+          {
+            "id": "science.source-paired"
+          },
+          {
+            "id": "science.acquisition-summary"
+          },
+          {
+            "id": "stat.method.correlation"
+          }
+        ]
+      },
+      "expected": {
+        "unknown_scientific_status": true
+      },
+      "search_labels": {
+        "useful_ids": [
+          "science.source-paired"
+        ],
+        "fit_by_id": {
+          "science.source-paired": true,
+          "science.acquisition-summary": false
+        }
+      },
+      "reference_url": "https://github.com/asimog/oncojev",
+      "label_basis": "Generated engineering contract labels; paired repeated inputs test machinery. Held-out tag does not establish independent scientific labels or a distinct generalization case.",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "search-hypothesis-tuning",
+      "split": "tuning",
+      "domain": "hypothesis",
+      "public_inputs": {
+        "operation": "search_comparison",
+        "search_domain": "hypothesis",
+        "direction": "Compare lung research candidate contracts",
+        "candidates": [
+          {
+            "id": "aligned",
+            "statement": "X relates to Y",
+            "test": "paired correlation"
+          },
+          {
+            "id": "duplicate",
+            "statement": " X  relates to Y ",
+            "test": "paired correlation"
+          },
+          {
+            "id": "alternative",
+            "statement": "A latent common cause explains X and Y",
+            "test": "compare confounder-adjusted association"
+          }
+        ]
+      },
+      "expected": {
+        "unknown_scientific_status": true
+      },
+      "search_labels": {
+        "useful_ids": [
+          "aligned",
+          "alternative"
+        ],
+        "duplicate_ids": [
+          "duplicate"
+        ],
+        "fit_by_id": {
+          "aligned": true,
+          "alternative": true
+        }
+      },
+      "reference_url": "https://github.com/asimog/oncojev",
+      "label_basis": "Generated engineering contract labels; paired repeated inputs test machinery. Held-out tag does not establish independent scientific labels or a distinct generalization case.",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "search-investigation-tuning",
+      "split": "tuning",
+      "domain": "investigation",
+      "public_inputs": {
+        "operation": "search_comparison",
+        "search_domain": "investigation",
+        "direction": "Compare lung research candidate contracts",
+        "query": "lung association",
+        "candidates": [
+          {
+            "id": "next",
+            "summary": "lung association remains inconclusive; measure independent cohort prerequisites",
+            "scope": {
+              "proposed_test": "assess independent cohort coverage",
+              "population": "lung",
+              "design": "prerequisite assessment"
+            }
+          },
+          {
+            "id": "repeat",
+            "summary": "lung association repeat same data",
+            "scope": {
+              "proposed_test": "same original correlation",
+              "population": "lung",
+              "design": "paired"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "unknown_scientific_status": true
+      },
+      "search_labels": {
+        "useful_ids": [
+          "next"
+        ]
+      },
+      "reference_url": "https://github.com/asimog/oncojev",
+      "label_basis": "Generated engineering contract labels; paired repeated inputs test machinery. Held-out tag does not establish independent scientific labels or a distinct generalization case.",
+      "independent_review": "pending"
     }
   ],
   "external_sources": [

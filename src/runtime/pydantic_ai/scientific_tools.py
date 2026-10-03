@@ -132,7 +132,17 @@ def register_scientific_tools(agent):
         from uuid import uuid4
         identity = str(uuid4())
         runtime.repository.record_immutable(RecordKind.METHOD_CANDIDATES, identity, {**result, "kind": "representations"}, block_id)
-        return {**result, "receipt_id": identity}
+        from src.provenance import canonical_bytes
+        view = {**result, "receipt_id": identity, "candidates": list(result["candidates"]),
+            "omitted_candidate_ids": result["omitted_candidate_ids"][:20],
+            "omitted_identity_count": max(0, len(result["omitted_candidate_ids"])-20)}
+        while len(canonical_bytes(view)) > 32768 and view["candidates"]:
+            removed = view["candidates"].pop()
+            view["omitted_candidates"] += 1
+            if len(view["omitted_candidate_ids"]) < 20: view["omitted_candidate_ids"].append(removed["candidate_id"])
+            else: view["omitted_identity_count"] += 1
+        if len(canonical_bytes(view)) > 32768: raise ValueError("representation need exceeds bounded candidate view")
+        return view
 
     @agent.tool
     async def transform_gdc_representation(ctx: RunContext[Any], operation: str, acquisition_ids: list[str] = [],

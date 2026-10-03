@@ -68,7 +68,7 @@ def generate(digests, *, limit=20):
                 details = item.details
                 objective=item.summary
                 scope = {key: (details[key] if isinstance(details.get(key), bool) else str(details[key])[:500] if details.get(key) is not None else None) for key in
-                         ("proposed_test", "population", "design", "method", "replication", "capability_id")}
+                         ("proposed_test", "population", "design", "method", "replication", "capability_id", "hypothesis_id", "status", "related_hypothesis_id")}
                 scope.update(entities=digest.entities[:5], topics=digest.topics[:5])
                 if field=="scientific_followups":
                     outcome=details.get("outcome","unknown")

@@ -114,6 +114,18 @@ Portfolio history records prerequisite-driven readiness changes without resolvin
 scientific uncertainty. Memory reserves bounded zero-overlap alternatives only from
 retained scientific context, keeping empty operational cycles out of this fallback.
 
+
+Hypotheses are retained in existing candidate snapshots before semantic measurement,
+including the full Reasoner batch and failed/disabled proposals. Exact duplicates
+retain lineage; explicit challenged/reopened/revised/superseded annotations append
+proposal history with retained identity/replacement links and unknown scientific
+status. They do not alter source findings or resolve hypotheses. Derived memory and
+compact context retain direct hypotheses, proposed tests and transition links;
+global candidate scopes preserve those links. Full method-generation receipts precede
+byte-limited views; representation omission/source identities remain recoverable from
+the existing receipt owner. The bounded decision is recorded in
+`docs/Archive/ADR/ADR_RETAINED_SEMANTIC_ALTERNATIVES.md`.
+
 Source-backed representation alternatives retain availability and unmet prerequisites.
 Fixed GDC transforms support bounded open MAF/CNV, case clinical/survival fields,
 exactly linked selected-gene cohorts and one-to-one case joins. Their governed
@@ -125,6 +137,11 @@ numerical references and independent SciFact lung/pulmonary annotations remain
 separate from generated adverse contracts and research evidence. Per-case receipts
 retain native distributions, observed usage, failures and unknown scientific utility.
 Published held-out splits cannot establish independence from model pretraining.
+The same owner measures matched five-domain recall/preservation and fit, explicit
+unavailable classifiers, native probability versus categorical instability and
+paired Jev deltas. Generated tuning labels and controlled source replay establish
+contracts/lineage only; scripted SDK source trajectories use the existing owned
+Researcher launch, completion, dossier and Delta path.
 
 ## Composition and execution
 

@@ -182,5 +182,7 @@ def representation_alternatives(records, artifacts, need: RepresentationNeed, *,
             'availability': 'derivable' if artifact.access == 'open' else 'controlled_inaccessible',
             'input_ready': False, 'limitations': ['Owned bytes still require the supported parser and declared entity/unit/build checks.']})
     return {'version': 'representation-alternatives-v1', 'need': need.model_dump(mode='json'), 'candidates': alternatives[:limit],
-        'omitted_candidates': max(0, len(alternatives)-limit), 'inspected_acquisitions': len(records), 'inspected_artifacts': len(artifacts),
+        'omitted_candidates': max(0, len(alternatives)-limit),
+        'omitted_candidate_ids': [candidate['candidate_id'] for candidate in alternatives[limit:]],
+        'acquisition_ids': [record.acquisition_id for record in records], 'artifact_ids': [artifact.artifact_id for artifact in artifacts], 'inspected_acquisitions': len(records), 'inspected_artifacts': len(artifacts),
         'retrieval': 'bounded owned schema/modality scan; lexical terms do not exclude alternatives', 'authority': 'planning_only'}

@@ -1271,6 +1271,11 @@ def register_researcher_tools(
             append(ctx, "ReasonerFailure", {"error_type": type(error).__name__})
             raise
         append(ctx, "ReasonerOutput", output.model_dump(mode="json"))
+        from src.runtime.pydantic_ai.search_tools import retain_hypothesis
+        # Generate/retain the entire proposal batch before any semantic narrowing.
+        for hypothesis in output.hypotheses:
+            retain_hypothesis(runtime, ctx.deps.block_id, hypothesis.statement, hypothesis.proposed_test,
+                provenance=("reasoner-proposal", hypothesis.hypothesis_id))
         if runtime.enable_jev:
             for hypothesis in output.hypotheses[:5]:
                 try:

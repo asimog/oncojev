@@ -16,7 +16,7 @@ class MemoryReference(BaseModel, frozen=True):
 class MemoryItem(BaseModel, frozen=True):
     item_id: str
     summary: str
-    epistemic_status: Literal["hypothesis", "uncertainty", "operational_failure", "semantic_history", "proposal", "legacy_prose", "director_note", "scientific_negative", "scientific_attempt", "tentative_literature_context", "scientific_followup"]
+    epistemic_status: Literal["hypothesis", "uncertainty", "operational_failure", "semantic_history", "proposal", "legacy_prose", "director_note", "scientific_negative", "scientific_attempt", "tentative_literature_context", "scientific_followup", "hypothesis_transition"]
     references: tuple[MemoryReference, ...] = ()
     details: dict[str, Any] = Field(default_factory=dict)
 

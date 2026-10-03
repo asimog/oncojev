@@ -3,7 +3,7 @@ schema_version: 1
 authority: projection
 canonical_sources:
   - path: docs/ARCHITECTURE.md
-    sha256: b0fc71bfcbad8efc7f2263193a9474ad5216f72853769049b0dc16f713537686
+    sha256: b40db526ca65596b551f4dc51d6fac1247bc2759ebbbb6b41d5f2115ca951d62
   - path: AGENTS.md
     sha256: d1bd27bd5ad58cd36b4c8d7c420fe20ec1b0d4e71d645e56b3057e8ca50ed285
 # Owners/directions are REVIEWED authority/data flow, not an import DAG.
@@ -69,6 +69,11 @@ owners:
     responsibility: Configuration, identity, procedural guidance, development verification and documentation.
     forbidden: [skills executing capabilities, generated projections superseding canonical documents]
 authority_boundaries:
+  - owner: researcher
+    classification: TESTED
+    statement: Proposals survive semantic failure; hypothesis revisions append unknown proposal lineage without scientific resolution.
+    evidence: [tests/invariants/test_semantic_retention.py::test_direct_hypothesis_survives_semantic_failure_and_memory_reopen, tests/invariants/test_semantic_retention.py::test_hypothesis_annotations_append_lineage_and_never_resolve_science, tests/invariants/test_semantic_retention.py::test_reasoner_batch_is_retained_before_first_failed_semantic_call]
+    limit: Offline behavioral contracts; independent scientific utility and autonomous choice quality remain unmeasured.
   - owner: service
     classification: TESTED
     statement: Testing startup rejects escaped stores and freezes isolated paths, policy and application identity across cycles.

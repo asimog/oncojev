@@ -90,7 +90,7 @@ class ResearchMemory:
             RecordKind.MEASUREMENT, RecordKind.EVIDENCE, RecordKind.STATE_REVISION, RecordKind.OUTCOME_CORRECTION, RecordKind.SCIENTIFIC_ATTEMPT, RecordKind.LITERATURE_CONTEXT, RecordKind.FOLLOWUP_PLAN, RecordKind.FOLLOWUP_RESULT})
         priority = {"evidence": 0, "measurement": 1, "dossier": 2, "outcome_correction": 3, "cycle": 4, "block": 5, "state_revision": 6, "scientific_attempt": 2, "literature_context": 2, "followup_plan":2, "followup_result":2}
         refs = tuple(sorted(refs, key=lambda r: (priority[r.kind], -r.seq)))
-        fingerprint = content_hash({"derivation":"research-memory-v4-followup-questions-v1", "records": [(r.seq, content_hash(r.payload)) for r in sorted(records, key=lambda r: r.seq)]})
+        fingerprint = content_hash({"derivation":"research-memory-v5-retained-hypotheses", "records": [(r.seq, content_hash(r.payload)) for r in sorted(records, key=lambda r: r.seq)]})
         hypotheses, candidates, blockers, uncertainties, proposals = [], [], [], [], []
         attempts, attempt_unresolved = self._attempt_items(records)
         followups, followup_unresolved = self._followup_items(records)
@@ -137,6 +137,14 @@ class ResearchMemory:
                     for fragment in record.payload.get("uncertainties", ()):
                         uncertainties.append(MemoryItem(item_id=fragment["fragment_id"], summary=fragment["summary"],
                             epistemic_status="uncertainty", references=(reference(record),)))
+                    # Direct hypotheses and append-only transitions are canonical proposals too.
+                    for fragment in record.payload.get("candidates", ()):
+                        if fragment["kind"] == "hypothesis":
+                            hypotheses.append(MemoryItem(item_id=fragment["fragment_id"], summary=fragment["summary"],
+                                epistemic_status="hypothesis", references=(reference(record),), details=fragment.get("details", {})))
+                        elif fragment["kind"] == "hypothesis_transition":
+                            candidates.append(MemoryItem(item_id=fragment["fragment_id"], summary=fragment["summary"],
+                                epistemic_status="hypothesis_transition", references=(reference(record),), details=fragment.get("details", {})))
                     # Only explicitly labelled entities/topics support exact filters.
                     for fragment in (*record.payload.get("candidates", ()), *record.payload.get("observations", ())):
                         entities.update(str(e) for e in fragment.get("details", {}).get("entities", ()))
@@ -378,7 +386,11 @@ class ResearchMemory:
                                            {k: item["details"][k] for k in ("category", "semantic_status", "unresolved", "limitations")}
                                            if key == "literature_contexts" else
                                            {k:item["details"].get(k) for k in ("outcome","kind","independence","confirmation_access","overlap_count","intervals","unresolved","limitations")}
-                                           if key == "scientific_followups" else {})
+                                           if key == "scientific_followups" else
+                                           {k:item["details"].get(k) for k in ("proposed_test", "population", "design", "replication", "scientific_status")}
+                                           if key == "hypotheses" else
+                                           {k:item["details"].get(k) for k in ("hypothesis_id", "status", "related_hypothesis_id", "rationale", "scientific_status")}
+                                           if item.get("epistemic_status") == "hypothesis_transition" else {})
                         # Native distributions/full contracts stay reference-resolvable.
                         item["references"] = item["references"][:2]
             view["omitted_items"] = omitted
