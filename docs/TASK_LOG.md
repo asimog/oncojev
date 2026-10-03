@@ -29,11 +29,21 @@ literature context was absent. Preserve all earlier observations; no later fix
 retroactively qualifies this source archive. Task 12 scientific qualification,
 independent review and reusable utility remain in the plan.
 
+Additional completed verification (2026-10-03, committed 04deffb): source-only
+controlled replay retained a failed ModelAPIError block and a completed next block,
+each with one dossier/Delta and no unresolved inputs. History refreshed 31 to 307;
+review/memory informed the distinct next allocation. The completed block admitted
+a bounded age summary, typed unknown/insufficient_material literature context, and
+InvalidAnalysis array-path rejection. Cycle/review times: 725.89/371.56 s and
+774.09/552.37 s. ResourceBusy remains operational; no clinical utility inferred.
+Exact archived source/setup and closed-store observation resolve through
+var/task12-proof/source-context-04deffb-setup.json.
+
 Implementation: src/runtime/pydantic_ai/contracts.py, src/science/execution.py,
 their behavioral owners and corrected stale Delta H5 pin limitation. Accepted
 archived ADRs: bounded allocation correction and descriptive source attempts.
 The dated lung assessment and var/task12-proof/completed-assessments.json retain
-all ten finished scenarios, errors, interventions, timings and limitations.
+all eleven finished scenarios, errors, interventions, timings and limitations.
 
 ## 2026-10-02 — Production audit: engineering fixes and historical reconciliation
 

@@ -20458,7 +20458,7 @@
     "Published reference numerical labels and generated composition contracts do not establish independently reviewed clinical choice utility.",
     "Published SciFact lung claim labels support only their original source/claim classification; pretraining leakage remains possible.",
     "No accepted reusable native promotion, qualified changed-scope update or retirement was fabricated.",
-    "No complete composed clinical research trajectory is claimed; Task 12 is now explicitly requested; composed verification remains pending.",
+    "Task 12 has eleven finished controlled/provider-backed scenarios; corrected-source continuity, unknown context and invalid-array rejection are demonstrated. Broader scientific qualification remains incomplete.",
     "Conditional reflection/calibration/framework replacements were not adopted without their measured failure/benefit triggers.",
     "240-second default block allocation, 180\u2013300-second range and 30-second handoff reserve do not promise terminal wall time.",
     "Actual data-limit assessment establishes bounded clinical slice availability; broader real-investigation usefulness is not established."
@@ -20532,7 +20532,7 @@
   },
   "task12_observations": {
     "completed_assessment_artifact": "var/task12-proof/completed-assessments.json",
-    "completed_scenarios": 10,
+    "completed_scenarios": 11,
     "stock_serve_phases_seconds": [
       341.77539072799846,
       1021.5315814930073,
@@ -20543,7 +20543,7 @@
     "historical_paired_review_seconds": 423.274298267992,
     "source_intervention": "explicit historical input provisioning; no expected outputs or qualification imported",
     "current_status_authority": "docs/IMPLEMENTATION_PLAN.md",
-    "status": "verification_executed; composed_scientific_qualification_incomplete",
+    "status": "verification_performed_scoped_continuity_demonstrated_full_scientific_qualification_incomplete",
     "historical_paired_serve": {
       "artifact": "var/task12-proof/retained-paired-serve/observation.json",
       "first_cycle_seconds": 410.24614611500874,
@@ -20555,7 +20555,7 @@
       "top_level_error_type": null,
       "interpretation": "Stock serve caught and retained the cycle failure; null top-level error does not qualify scientific success."
     },
-    "remaining_qualification": "Corrected descriptive-attempt/array-path basis needs composed scientific verification with literature context; independent scientific review, clinical utility and qualified reuse remain unsupported.",
+    "remaining_qualification": "Broader scientific utility and independently reviewed useful next-test/challenge choices remain unsupported. Controlled retained-input continuity and typed unknown literature context are demonstrated; fresh source connectivity and accepted reuse are separate prerequisites.",
     "trajectory_source_archive": "var/task12-proof/qualified-source-basis-347.zip",
     "trajectory_worktree_sha256": "cb884f1af5b9e07b6ef66b56832d4a33dd31e241f9bed24dced5c17f3192ae99",
     "source_correction_does_not_retroactively_qualify_trajectory": true,
@@ -20628,6 +20628,95 @@
       "application_identity": "application-testing-v1:826b55c3d8738f8cd4beb67faa94fa6b182cab29c403f838740a08be728ca280",
       "conclusion": "Analysis/review/memory to distinct next allocation completed with refreshed history 6->352 and same registry. No allocation correction was requested in this run. Literature context absent; second-block array-path missingness result scientifically unqualified: diagnosis fields are present inside 96 arrays. Subsequent code fixes cannot qualify this earlier basis.",
       "source_snapshot": "var/task12-proof/allocation-corrected-source-worktree.json"
+    },
+    "corrected_source_context_assessment": {
+      "name": "retained-descriptive-serve-source-context-04deffb",
+      "artifact": "var/task12-proof/retained-descriptive-serve-source-context-04deffb/observation.json",
+      "phases": [
+        {
+          "phase": "run_once",
+          "cycle_index": 1,
+          "status": "raised",
+          "error_type": "ModelAPIError",
+          "elapsed_seconds": 725.8858066860121
+        },
+        {
+          "phase": "post_block_review",
+          "cycle_index": 1,
+          "elapsed_seconds": 371.5629865669762
+        },
+        {
+          "phase": "run_once",
+          "cycle_index": 2,
+          "status": "complete",
+          "director_outcome": "returned",
+          "block_ids": [
+            "b452d566-049f-4ae3-8b1a-d4e863467df9"
+          ],
+          "director_error_type": null,
+          "elapsed_seconds": 774.0918810009898
+        },
+        {
+          "phase": "post_block_review",
+          "cycle_index": 2,
+          "elapsed_seconds": 552.3742518240178
+        }
+      ],
+      "error_type": null,
+      "phase_errors": [
+        {
+          "phase": "run_once",
+          "cycle_index": 1,
+          "status": "raised",
+          "error_type": "ModelAPIError",
+          "elapsed_seconds": 725.8858066860121
+        }
+      ],
+      "blocks": [
+        {
+          "block_id": "328dbf15-2377-40d0-ad8a-8c06c3a1b021",
+          "run_outcome": "failed",
+          "objective_attainment": "unknown",
+          "complete": false,
+          "unresolved_source_refs": [],
+          "measurement_count": 2,
+          "evidence_count": 0,
+          "literature_context_count": 0,
+          "delta_count": 1,
+          "start": {
+            "application_identity": "application-testing-v1:0634b631c61ba09f71f1cce0849ced5d52b8b1381165f6c589875ad918e1c26e",
+            "oncolab_history_high_water": 31,
+            "oncolab_registry_revision": "63bf15e53989d1aa324f2374765895a87e7ca76fe48c12321e826f113e04db9d",
+            "allocation": {
+              "handoff_reserve_seconds": 30,
+              "seconds": 300
+            }
+          }
+        },
+        {
+          "block_id": "b452d566-049f-4ae3-8b1a-d4e863467df9",
+          "run_outcome": "completed",
+          "objective_attainment": "unknown",
+          "complete": true,
+          "unresolved_source_refs": [],
+          "measurement_count": 4,
+          "evidence_count": 1,
+          "literature_context_count": 1,
+          "delta_count": 1,
+          "start": {
+            "application_identity": "application-testing-v1:0634b631c61ba09f71f1cce0849ced5d52b8b1381165f6c589875ad918e1c26e",
+            "oncolab_history_high_water": 307,
+            "oncolab_registry_revision": "63bf15e53989d1aa324f2374765895a87e7ca76fe48c12321e826f113e04db9d",
+            "allocation": {
+              "handoff_reserve_seconds": 30,
+              "seconds": 300
+            }
+          }
+        }
+      ],
+      "source_snapshot": "var/task12-proof/source-context-04deffb-setup.json",
+      "scope": "Exact historical public source replay only, not fresh acquisition or independent replication.",
+      "conclusion": "First block failed ModelAPIError after retained descriptive measurements; review/memory informed a distinct next allocation. Second block completed with admitted bounded age summary, typed unknown/insufficient_material literature context and InvalidAnalysis for diagnosis-array paths. ResourceBusy remains operational. No clinical utility, independent review, accepted reusable method or remote publication qualified."
     }
   },
   "gdc_metadata_correction": {
@@ -20667,10 +20756,29 @@
     "security_plugin": "did not start: managed filesystem permission profile required",
     "scientific_qualification": "incomplete; active plan retains Tasks 3,4,5,9,10,11,12",
     "post_audit_source_diagnostic": {
-      "artifact": "var/production-audit/gdc-post-audit-diagnostic.json",
-      "observed_status": "HTTP 503",
-      "checked_at": "2026-10-02T23:36:08.664094+00:00",
-      "scope": "bounded availability only; not a scientific negative"
+      "checked_at": "2026-10-03T16:49:34.055313+00:00",
+      "request": {
+        "endpoint": "cases",
+        "filters": {
+          "op": "in",
+          "content": {
+            "field": "project.project_id",
+            "value": [
+              "TCGA-LUAD"
+            ]
+          }
+        },
+        "fields": [
+          "case_id",
+          "demographic.age_at_index",
+          "demographic.vital_status"
+        ],
+        "size": 5
+      },
+      "scope": "Bounded current availability revalidation; not scientific evidence or composed qualification.",
+      "status": "failed",
+      "error_type": "HTTPStatusError",
+      "http_status": 503
     },
     "allocation_correction": {
       "owner": "src/runtime/pydantic_ai/contracts.py",
@@ -20709,7 +20817,96 @@
         "seconds": 91.08,
         "log": "var/production-audit/source-context-full-invariants.log"
       },
-      "native": "Resolve final post-commit receipt var/production-audit/final-verification.json"
+      "native": "Resolve final post-commit receipt var/production-audit/final-verification.json",
+      "provider_backed_assessment": {
+        "name": "retained-descriptive-serve-source-context-04deffb",
+        "artifact": "var/task12-proof/retained-descriptive-serve-source-context-04deffb/observation.json",
+        "phases": [
+          {
+            "phase": "run_once",
+            "cycle_index": 1,
+            "status": "raised",
+            "error_type": "ModelAPIError",
+            "elapsed_seconds": 725.8858066860121
+          },
+          {
+            "phase": "post_block_review",
+            "cycle_index": 1,
+            "elapsed_seconds": 371.5629865669762
+          },
+          {
+            "phase": "run_once",
+            "cycle_index": 2,
+            "status": "complete",
+            "director_outcome": "returned",
+            "block_ids": [
+              "b452d566-049f-4ae3-8b1a-d4e863467df9"
+            ],
+            "director_error_type": null,
+            "elapsed_seconds": 774.0918810009898
+          },
+          {
+            "phase": "post_block_review",
+            "cycle_index": 2,
+            "elapsed_seconds": 552.3742518240178
+          }
+        ],
+        "error_type": null,
+        "phase_errors": [
+          {
+            "phase": "run_once",
+            "cycle_index": 1,
+            "status": "raised",
+            "error_type": "ModelAPIError",
+            "elapsed_seconds": 725.8858066860121
+          }
+        ],
+        "blocks": [
+          {
+            "block_id": "328dbf15-2377-40d0-ad8a-8c06c3a1b021",
+            "run_outcome": "failed",
+            "objective_attainment": "unknown",
+            "complete": false,
+            "unresolved_source_refs": [],
+            "measurement_count": 2,
+            "evidence_count": 0,
+            "literature_context_count": 0,
+            "delta_count": 1,
+            "start": {
+              "application_identity": "application-testing-v1:0634b631c61ba09f71f1cce0849ced5d52b8b1381165f6c589875ad918e1c26e",
+              "oncolab_history_high_water": 31,
+              "oncolab_registry_revision": "63bf15e53989d1aa324f2374765895a87e7ca76fe48c12321e826f113e04db9d",
+              "allocation": {
+                "handoff_reserve_seconds": 30,
+                "seconds": 300
+              }
+            }
+          },
+          {
+            "block_id": "b452d566-049f-4ae3-8b1a-d4e863467df9",
+            "run_outcome": "completed",
+            "objective_attainment": "unknown",
+            "complete": true,
+            "unresolved_source_refs": [],
+            "measurement_count": 4,
+            "evidence_count": 1,
+            "literature_context_count": 1,
+            "delta_count": 1,
+            "start": {
+              "application_identity": "application-testing-v1:0634b631c61ba09f71f1cce0849ced5d52b8b1381165f6c589875ad918e1c26e",
+              "oncolab_history_high_water": 307,
+              "oncolab_registry_revision": "63bf15e53989d1aa324f2374765895a87e7ca76fe48c12321e826f113e04db9d",
+              "allocation": {
+                "handoff_reserve_seconds": 30,
+                "seconds": 300
+              }
+            }
+          }
+        ],
+        "source_snapshot": "var/task12-proof/source-context-04deffb-setup.json",
+        "scope": "Exact historical public source replay only, not fresh acquisition or independent replication.",
+        "conclusion": "First block failed ModelAPIError after retained descriptive measurements; review/memory informed a distinct next allocation. Second block completed with admitted bounded age summary, typed unknown/insufficient_material literature context and InvalidAnalysis for diagnosis-array paths. ResourceBusy remains operational. No clinical utility, independent review, accepted reusable method or remote publication qualified."
+      }
     }
   }
 }

@@ -179,8 +179,10 @@ are usable, with five missing ages and 28 missing time/event pairs. This establi
 bounded acquisition/transform utility for the inspected slice, not population or
 survival validity. Owned proof is in `var/task5-proof/`. Declared compressed MAF
 within the documented limits now has real lung-file proof. Larger tables beyond
-those limits, compressed CNV and independently reviewed challenge/representation
-decisions remain unsupported. Actual scoped utility qualification depends on Task 6/7's candidate
+those limits and independently reviewed challenge/representation decisions remain
+unqualified. The same bounded table parser accepts source-declared gzip CNV with
+the CNV schema, but no retained public compressed-CNV native run establishes its
+practical or scientific usefulness. Actual scoped utility qualification depends on Task 6/7's candidate
 proof; carry these limitations forward without manufacturing review or admission.
 
 ## Task 9 — Extend scientific challenges and follow-up
@@ -288,7 +290,9 @@ review. Independent scientific utility remains unsupported. Historical ordinary 
 pinned licence binding resolves the exact inspected source/commit. On that basis,
 review `ce7f42ed-87cc-449c-94d0-a0492bbf22b3` rejected only unsupported utility
 (`var/task10-proof/review-current.json`). Audit changes invalidate the old current-basis
-claim; final HEAD requires fresh native proof and promotion re-review. Acceptance, subsequent accepted-route native
+claim; post-commit native proof and promotion re-review resolve through
+var/production-audit/final-verification.json. The refreshed review still rejects
+only unsupported utility; no accepted scientific qualification is inferred. Acceptance, subsequent accepted-route native
 execution, qualified updates and retirement cannot be claimed without utility review.
 
 Done when: A qualified candidate is accepted into a reconstructible revision and
@@ -371,19 +375,16 @@ Owning code: `src/autonomous.py`, `src/director/frontier.py`,
 `tests/invariants/test_persistence.py`, `tests/invariants/test_boundaries.py`,
 `tests/invariants/test_evaluation.py`.
 
-Feature specification (2026-10-02): repair the retained `stat.scipy` lexical miss
-by correcting only canonical purpose/tags to match existing Pearson/Welch routes,
-with an explicit reviewed migration preserving routes and historical pins. Measure
-before/after on the retained registry at candidate/search budgets 80/8; exercise
-stable-query continuation and changed-snapshot rejection. Extend the existing Task 3
-reference adapter with controlled multi-block SDK Researcher work, typed memory,
-Director program review/frontier/allocation and a fresh Researcher selection, crossed
-with memory present/withheld and retained-only/open-proposal conditions. Scripted
-choices are composition proof; autonomous next-test/clinical utility stays unknown.
-Reuse numerical references and live semantic providers separately; no answer labels
-enter adapter prompts and no synthetic/reference measurement becomes evidence.
+Implemented retrieval/composition scope (2026-10-02): canonical SciPy purpose/tags
+were repaired against existing Pearson/Welch routes with reviewed migration and
+old-pin preservation. Configured 80/8 fixed/held-out retrieval, continuation and
+changed-snapshot rejection were measured. The existing Task 3 adapter now retains
+controlled multi-block SDK work, typed memory, review/frontier/allocation and fresh
+Researcher choices crossed with memory/search variants. Scripted choices establish
+composition; clinical/autonomous choice utility remains unmeasured. No answer labels
+enter adapter prompts and no reference/synthetic result becomes scientific evidence.
 
-Current implementation/proof (2026-10-02): final verification passed 284 invariants
+Current implementation/proof (2026-10-02): the earlier Task 11 slice passed 284 invariants
 in 89.81 s, architecture/whitespace checks, and six native probes per profile. The
 dated report is `evals/reference/results/lung-lab-assessment-20261002.md` with its
 JSON/raw retained comparisons. Unchanged-budget retained-registry recall
@@ -413,8 +414,9 @@ experience-to-choice benefit. Task 3 supplies independent held-out cases and
 comparison adapters; Task 4 supplies the formal open-proposal path and choice
 lineage for those comparisons. No semantic or framework refinement is required
 until its failure/benefit trigger is measured.
-Current-catalogue candidate coverage already has a labelled configured-budget miss;
-its bounded repair must not wait for a growing-scale failure or a larger-budget pass.
+The retained labelled catalogue miss was repaired at configured 80/8 limits with
+fixed and held-out recall proof. Its original miss and larger-budget diagnostic
+remain preserved; broader autonomous scientific-choice coverage stays unmeasured.
 
 Done when: Repeated matched-budget held-out comparisons through the composed lab
 support scoped versioned changes or measured no-change, with false merges, useful
@@ -429,23 +431,17 @@ actual consumer, with held-out recall, continuation and resource regressions che
 and retained. A measured remaining limit stays explicit rather than being hidden by
 increasing the evaluation budget.
 
-Task 12 exposed a source metadata correction owned here: reconcile the stale
-`source.gdc` limitation with the actual anonymous `acquire_gdc` four-endpoint
-wrapper and selected-open-file retrieval. Scope is canonical limitations plus an
-explicit reviewed metadata-only migration preserving all routes, authority and
-historical pins. Also expose the four supported endpoint names in SDK validation
-so unsupported guesses fail before retrieval. Owning code: `src/oncolab/catalogue.py`,
-`src/oncolab/institution.py`, `src/runtime/pydantic_ai/contracts.py`; proof needs
-actual SDK invalid/valid-call behavior and immutable old-pin/migration invariants.
-This correction does not add a source-owned Welch operation or qualify clinical
-utility. Correction and explicit ordinary-history migration passed actual SDK
-invalid/valid-call and immutable-pin/no-op checks; routes and authority were
-preserved (`var/task11-proof/gdc-metadata-correction.json`). The metadata correction passed historical
-ordinary native qualification seq 1158 and six isolated native probes. Latest native
-qualification is resolved from `var/production-audit/final-verification.json`,
-including the current HEAD and retained exact-worktree archive. Earlier live
-trajectories retain their exact archived seq-347 basis; the correction does not
-retroactively qualify their missing scientific composition.
+Completed source metadata correction: the actual anonymous acquire_gdc wrapper
+and selected-open-file retrieval are reflected in canonical limitations and an
+explicit reviewed metadata-only migration. Actual SDK validation accepts only the
+four supported endpoints and rejects unsupported guesses before transport. Owning
+catalogue, institution and contracts code preserve routes, authority and immutable
+old pins; migration no-op and invalid/valid-call checks passed. Retained migration:
+var/task11-proof/gdc-metadata-correction.json. Historical ordinary native proof
+seq 1158 remains archived; current qualification resolves through
+var/production-audit/final-verification.json and its exact source archive. Source-
+owned Welch and clinical utility remain unavailable. Earlier live trajectories
+retain their own archived basis; later qualification does not certify them.
 
 ## Task 12 — Verify a composed oncology research trajectory
 
@@ -474,7 +470,7 @@ explicit longer scenario for the unchanged 300 s scheduled Director review. Scri
 Windows profile checks establish contracts, not live timing or scientific benefit;
 these trajectories remain separate from routine implementation checks.
 
-Current verification (2026-10-02): ten provider-backed observation scenarios
+Current verification (2026-10-03): eleven provider-backed observation scenarios
 finished with closed-store reconstruction and retained public exports; see
 `evals/reference/results/lung-lab-assessment-20261002.md` and
 `var/task12-proof/completed-assessments.json`. The stock isolated `serve` completed
@@ -494,8 +490,8 @@ unchanged 300 s scheduled-review probe started review at 300.09 s without cancel
 its pending task; interruption recovery closed once and repeated recovery was a
 no-op. Initial unsupported-discovery failures, all source/provider errors and later
 observations remain preserved. Valid fresh GDC diagnostics returned HTTP 503; a post-audit bounded five-case LUAD
-request through the corrected client again returned HTTP 503 at 2026-10-02 23:36 UTC
-(`var/production-audit/gdc-post-audit-diagnostic.json`). Source availability, model
+request through the corrected client again returned HTTP 503 at 2026-10-03 16:49 UTC
+(`var/production-audit/gdc-report-final-20261003.json`). Source availability, model
 latency/failures and missing external review remain distinct from repaired code defects.
 Bounded slices do not prove general data-limit usefulness.
 
@@ -517,10 +513,24 @@ existing context gate stays intact, and unsupported traversal fails InvalidAnaly
 The corrected frozen trajectory resolves against allocation-corrected-source-worktree.json;
 later code/native proof cannot qualify its scientific outcome retroactively.
 
-Remaining completion proof: corrected-source scientific composition including valid
-representation/method choice, justified challenge or explicit missing prerequisite
-and typed literature context; retain the demonstrated review/memory/next-allocation
-behavior on that pinned basis. Qualified reuse remains conditional on Task
+Corrected-source assessment on committed 04deffb finished on 2026-10-03. Cycle
+one failed ModelAPIError after retaining measurements (725.89 s; review 371.56 s);
+cycle two completed (774.09 s; review 552.37 s). Both dossiers/Deltas closed once
+and resolve their inputs; the failed block remains failed, not successful. Review/
+memory informed a distinct next allocation, history 31 to 307 with the same registry.
+The completed block admitted a bounded age summary and retained typed unknown/
+insufficient_material literature context. Diagnosis-array paths rejected
+InvalidAnalysis; a competing worker request failed ResourceBusy operationally.
+Exact source/setup and observation: source-context-04deffb-setup.json and
+retained-descriptive-serve-source-context-04deffb/observation.json under
+var/task12-proof/. No expected outcomes were imported and no error became a
+scientific negative. This closes the confirmed context/array-path engineering proof
+gaps; the unchanged 120 s target remains reporting rather than cancellation.
+
+Remaining completion proof: broader scientific usefulness and independently
+reviewed representation/challenge/next-test choices. The controlled retained-input
+continuation and typed unknown context do not qualify fresh acquisition,
+independent replication or clinical utility. Qualified reuse remains conditional on Task
 10's scientific-utility prerequisite. Independent scientific review/clinical utility
 remain explicitly unsupported as requested. Source-owned Welch is unavailable; the
 provided-array route does not confer source lineage. Publication was not triggered.

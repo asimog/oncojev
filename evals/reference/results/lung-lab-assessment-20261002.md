@@ -17,15 +17,15 @@ reusable promotion was fabricated.
 | Task | Demonstrated outcome | Retained limitation |
 |---|---|---|
 | 1 | Installed scientific work uses governed processes; native limits, confinement, cancellation/drain and cleanup observed. | Individual control/procedure proof is separate from a composed clinical trajectory. |
-| 2 | Six native probes passed in ordinary and isolated testing profiles. Ordinary historical proof resolves its archived application, worktree, Python/packages, policy, kernel and filesystems; final-HEAD refresh is separate. | Testing observations cannot qualify reusable methods or import into ordinary history. |
+| 2 | Six native probes passed in ordinary and isolated testing profiles. Current ordinary proof resolves application, worktree, Python/packages, policy, kernel and filesystems through `var/production-audit/final-verification.json`; older receipts remain archived. | Testing observations cannot qualify reusable methods or import into ordinary history. |
 | 3 | 24-case reference harness; 12 published expert-annotated lung/pulmonary SciFact cases. Live source/claim classifications agreed on 71/72 Jev-enabled observations, with one operational failure. | The other 72 observations had no support classifier. Broader relation, representation and useful next-test labels remain independently unreviewed; pretraining leakage is possible. |
 | 4 | Mission-grounded open proposals, prerequisite/readiness history, bounded zero-overlap experience retrieval and choice references. | Scripted mechanism tests establish lineage; clinical choice usefulness remains unreviewed. |
-| 5 | Owned MAF/CNV/clinical/survival/join/expression representations preserve keys, units/missingness and exact lineage. Real lung slice supplied 95 recorded ages and 72 available time/event pairs in 100 cases. | Explicit native compressed MAF proof validated all 43 events (18,509 compressed / 84,970 decoded bytes); the declared TP53/EGFR/KRAS panel retained one KRAS event. No absence or clinical validity inferred; bounds remain 8 MiB decoded, 100,000 inspected rows and 100 selected events. Independent scientific usefulness remains unreviewed. |
+| 5 | Owned MAF/CNV/clinical/survival/join/expression representations preserve keys, units/missingness and exact lineage. Real lung slice supplied 95 recorded ages and 72 available time/event pairs in 100 cases. | Explicit native compressed MAF proof validated all 43 events (18,509 compressed / 84,970 decoded bytes); the declared TP53/EGFR/KRAS panel retained one KRAS event. No absence or clinical validity inferred; bounds remain 8 MiB decoded, 100,000 inspected rows and 100 selected events. The shared bounded parser accepts gzip CNV, but public compressed-CNV native and scientific proof remains absent. Independent scientific usefulness remains unreviewed. |
 | 6 | Pinned upstream mean examples, changed-input cases and invalid-input rejection qualified through actual independent executions and resources. | Descriptive finite mean only; no oncology inference or new clinical benefit. |
 | 7 | Fresh five-phase stdlib-only environment recovery used 8,447,774 retained archive bytes and zero network bytes; drift/missing/corrupt inputs rejected. | Explicit empty dependency set and exact host constraints; no general package or whole-host restoration claim. |
 | 8 | Frozen age-summary, overall-survival and TMB needs received no-build decisions. Existing summary suffices; inferential endpoint and callable-territory prerequisites are absent. | No clinical survival estimate or TMB value was manufactured. |
 | 9 | Actual lung data supplied 41 complete age/death-duration pairs. Pearson and standardized OLS points matched at −0.348283236572435; both were inconclusive. Reopened history informed a referenced next prerequisite assessment. | Same-data robustness is not replication. Endpoint, selection, confounding and independent clinical review remain unresolved. |
-| 10 | Fixed pinned-mean dispatcher, strict resolved proof gates, actual LUAD/LUSC source use across distinct blocks and explicit admission. Historical review rejected promotion only for unsupported scientific utility on its qualified basis. | No accepted-route native execution, qualified update or retirement can be claimed without that prerequisite. |
+| 10 | Fixed pinned-mean dispatcher, strict resolved proof gates, actual LUAD/LUSC source use across distinct blocks and explicit admission. Refreshed native proof/re-review still reject promotion only for unsupported scientific utility; current receipt resolves through final-verification.json. | No accepted-route native execution, qualified update or retirement can be claimed without that prerequisite. |
 | 11 | Current-registry retrieval repair, controlled multi-block comparisons and repeated live held-out composition retained actual SDK/tool/review-to-choice lineage. | Autonomous clinical decision usefulness, scientific coverage, false-merge rate and independent clinical next-test alignment remain unmeasured. |
 
 Whole-lab comparisons reused the existing fresh-condition reference evaluation
@@ -70,7 +70,7 @@ matched budgets, condition counts and limitations. Raw proofs are under
 Initial failed assessments and their corrected outcomes remain retained.
 
 Pre-audit verification: the full ordinary-profile suite exited 0 with **291 passed / one skipped** among **292 collected invariants**. The skipped frontend check lacked its deleted Linux Node executable; restoring the exact official-SHA256-verified **v22.22.2** release passed it separately (**1 passed in 0.47 s**). All 292 invariants were therefore verified across those two runs, not reported as an uninterrupted 292-pass suite. Focused SDK/migration/qualification checks passed **12**. Architecture and whitespace checks passed. All **six ordinary** native probes passed with qualifying record `50a94491032440978961416cbf1e69f3`, seq **1158**, on the corrected GDC metadata/SDK source basis. All **six testing** probes passed with `qualifying: false`. Raw proof: `var/task2-proof/ordinary-gdc-final/`, `var/task2-proof/testing-gdc-final/`, `var/tasks1-12-final-ordinary-tests.log`, and `var/task12-final-frontend-restored.log`. Promotion review `ce7f42ed-87cc-449c-94d0-a0492bbf22b3` rejects only `failed_or_changed_scope:utility_evaluation`. Earlier failed/skipped observations remain retained. API and web were restarted and verified active/HTTP 200, with testing maintenance flags preserved.
-Task 12 verification now retains ten finished observation scenarios (including a caught cycle failure) and a separate unchanged-timer/recovery probe in `var/task12-proof/completed-assessments.json`. The unmodified isolated `serve` trajectory completed two cycles/reviews: **341.78 / 1,021.53 s**, then **920.09 / 979.07 s** (cycle / review). Both blocks closed early, each with one dossier and Delta and no unresolved reconstructed source references. Next-block history advanced from **32 to 390**, with the same application/registry identity; the second allocation explicitly requested 300 s while the service default stayed 240 s. The next objective used prior failures to try different acquisition shapes. These were blocked scientific outcomes, not successful clinical analyses.
+Task 12 verification now retains eleven finished observation scenarios (including a caught cycle failure) and a separate unchanged-timer/recovery probe in `var/task12-proof/completed-assessments.json`. The unmodified isolated `serve` trajectory completed two cycles/reviews: **341.78 / 1,021.53 s**, then **920.09 / 979.07 s** (cycle / review). Both blocks closed early, each with one dossier and Delta and no unresolved reconstructed source references. Next-block history advanced from **32 to 390**, with the same application/registry identity; the second allocation explicitly requested 300 s while the service default stayed 240 s. The next objective used prior failures to try different acquisition shapes. These were blocked scientific outcomes, not successful clinical analyses.
 
 A separate controlled replay of public GDC acquisition **seq 123** supplies an exact historical source artifact and no expected outcomes or qualification records. The eligible paired-field run retained **41 complete rows out of 100**, Pearson **r = −0.3482832365724353**, and same-data unstandardized OLS. Its cycle/review took **346.75 / 423.27 s**; literature context is **unknown**. The native caller omitted standardization parameters, so this does not qualify the standardized challenge. Raw recorded death-duration fields still lack qualified endpoint/time-origin/censoring design; these are stored-field relationships, not survival, causal, representative-cohort or clinical-outcome results. Source-replay intervention is explicitly separate from unmodified source acquisition.
 
@@ -80,9 +80,9 @@ The attempted historical-input two-cycle trajectory finished with **410.25 s cyc
 
 The separate scheduled-review probe observed the unchanged **300 s** timer at **300.09 s**, without cancelling its controlled pending task. Subsequent interruption recovery retained exactly one interrupted dossier; repeating recovery added none. These controlled probes establish their named lifecycle behaviors, not an autonomous scientific result.
 
-**Task 12 verification was performed; full qualification remains incomplete.** The latest controlled descriptive assessment connects a valid source-slice analysis through review/memory to a distinct next allocation on its pinned basis. Its invalid array-path interpretation and missing literature context still prevent full scientific qualification; the subsequent corrected code needs its own composed proof. Literature context, scientific utility and independent clinical next-test review remain unsupported; accepted reuse depends on Task 10's withheld utility prerequisite. Publication was not triggered. The observation target remains 120 s, with the actual overruns retained.
+**Task 12 verification was performed; full qualification remains incomplete.** The latest controlled descriptive assessment connects a valid source-slice analysis through review/memory to a distinct next allocation on its pinned basis. The earlier array-path interpretation remains unqualified. The corrected 04deffb assessment below demonstrates typed unknown context and valid rejection, with one failed and one completed cycle. Scientific utility and independent clinical next-test review remain unsupported; accepted reuse depends on Task 10's withheld utility prerequisite. Publication was not triggered. The observation target remains 120 s, with the actual overruns retained.
 
-All provider-backed trajectories used the archived **seq-347 source basis** (`var/task12-proof/qualified-source-basis-347.zip`, worktree hash `cb884f1af5b9e07b6ef66b56832d4a33dd31e241f9bed24dced5c17f3192ae99`). Final corrected native code is separately qualified at **seq 1158**, archived in `qualified-source-basis-1158.zip`. Final source checks do not retroactively turn an earlier failed trajectory into composed qualification.
+The early provider-backed trajectories used the archived **seq-347 source basis** (`var/task12-proof/qualified-source-basis-347.zip`, worktree hash `cb884f1af5b9e07b6ef66b56832d4a33dd31e241f9bed24dced5c17f3192ae99`). Final corrected native code is separately qualified at **seq 1158**, archived in `qualified-source-basis-1158.zip`. Final source checks do not retroactively turn an earlier failed trajectory into composed qualification.
 
 
 Production audit and historical-plan reconciliation (2026-10-02)
@@ -110,7 +110,7 @@ The current plan retains Tasks 3, 4, 5, 9, 10, 11 and 12. Completed scopes for T
 | H12 | Deterministic reconstruction/export and isolated publisher owners exist. Publication was not requested or triggered; literature context for the attempted trajectory remains unknown. |
 | H13 | Published lung SciFact/reference cases and repeated four-condition comparisons exist. Broader independent labels, measured next-test benefit and candidate utility remain Task 3/11 gaps. |
 | H14 | Configured frontier policy and comparison substrate remain owned. Extra reflection, calibration, diversity controls or shared-generator extraction require measured justification. |
-| H15 | Documentation/status reconciliation and engineering verification completed. Task 12 was exercised through ten finished scenarios but full scientific composition remains unqualified. |
+| H15 | Documentation/status reconciliation and engineering verification completed. Task 12 was exercised through eleven finished scenarios but full scientific composition remains unqualified. |
 
 The historical return scopes map to existing owners rather than new tasks: R1
 history is preserved; R2 representations map to Task 5; R3 methods and R4 canonical
@@ -191,7 +191,7 @@ The remaining production claim is therefore limited: the demonstrated engineerin
 fixes and local web startup are complete, while independent scientific review,
 qualified broader assay/inferential prerequisites, accepted reusable utility and the
 corrected scientific composition with valid challenge and literature context remain open in the
-current plan. Ten attempted Task 12 scenarios do not close those prerequisites.
+current plan. Eleven finished Task 12 scenarios do not close those prerequisites.
 
 
 Post-audit completion check (2026-10-02 23:36 UTC): the corrected existing GDC
@@ -234,8 +234,7 @@ in 93.43 s. Architecture and whitespace checks passed. The exact corrected
 worktree/setup snapshot is retained in
 `var/task12-proof/allocation-corrected-source-worktree.json`. The corrected composed
 assessment finished separately with the operational and scientific limitations below.
-No native qualification is claimed for the subsequent source-attempt correction yet. Earlier native receipts remain historical until refreshed on
-the final committed basis.
+The subsequent source-attempt correction was natively qualified on committed 04deffb, with six probes per profile and an ordinary receipt accepted by the actual consumer. Current final-HEAD receipts resolve through var/production-audit/final-verification.json; earlier native receipts remain archived.
 
 
 The allocation-corrected controlled trajectory finished both cycles and reviews:
@@ -274,3 +273,39 @@ contracts passed in 7.70 s after correction. The full suite passed 314 invariant
 resolves through the post-commit receipt for this later basis; it cannot qualify the earlier trajectory
 retroactively. Independent scientific review, clinical utility, qualified reuse,
 broader assay/inference and publication remain unsupported as previously stated.
+
+
+Corrected provider-backed assessment, completed 2026-10-03 on **04deffb**: the
+source-only replay retained a **ModelAPIError** in cycle one after its descriptive
+measurements (**725.89 s**, review **371.56 s**). Cycle two completed (**774.09 s**,
+review **552.37 s**), with four measurements, one admitted bounded source-slice
+result and one typed literature context: **unknown / insufficient_material**.
+Empty/title-only material cannot support a literature classification. Both blocks
+retain exactly one dossier/Delta and no unresolved inputs; the first dossier is
+failed, not a successful scientific outcome. Review/memory informed a distinct
+next objective, with history **31 → 307** under the same registry. Diagnosis-array
+paths now reject **InvalidAnalysis**; one competing request failed **ResourceBusy**
+operationally. Neither failure is scientific evidence. The age result remains
+95 numeric records, mean 67.4 and median 67.0 within the same historical 100-row
+slice; no independent replication, representative population or clinical effect
+is established. Exact setup, source archive and terminal observation are retained
+in `var/task12-proof/source-context-04deffb-setup.json` and
+`var/task12-proof/retained-descriptive-serve-source-context-04deffb/observation.json`.
+
+The final gap classification is:
+
+| Gap | Current disposition |
+|---|---|
+| Native command/science confinement, resource limits, cleanup and owned WSL paths | Engineering implemented; six native probes per profile, current receipt and exact source archive retained. |
+| Nested bundle rollback, repetition-count utility gate, allocation correction, descriptive attempt lineage and array traversal | Confirmed defects fixed; 314 invariants passed; latest controlled source run exercised lineage, context and array rejection. |
+| Two-minute observation | Reporting target only; provider/scientific/review overruns retained without shortened procedures. |
+| Bounded datasets and compressed CNV | Existing parser and scoped slice/MAF proof; broader practical adequacy and public compressed-CNV qualification remain unmeasured. |
+| Scientific labels, representation/challenge/next-test quality and reusable utility | Independent review retained as requested; published claim labels cover only their stated scope. No qualified reusable acceptance. |
+| Fresh source availability and model reliability | Latest bounded GDC diagnostic returned HTTP 503 at 2026-10-03 16:49 UTC; latest first cycle failed ModelAPIError. Neither proves a permanent outage or a scientific negative. |
+| Broad security qualification | Direct code/dependency audit completed within reported scope; Security plugin scan did not start because a managed filesystem permission profile was unavailable. |
+
+The historical feature plan was compared against current owners, logs and retained
+records; it was not implemented wholesale. Remaining Tasks 3/4/5/9/10/11/12 stay
+in the sole implementation plan where their broader completion proof is absent.
+The code corrections and controlled continuity proof support their stated scope;
+**full production/scientific readiness is not established**.
