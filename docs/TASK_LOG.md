@@ -5,6 +5,36 @@ predecessor, newest first; append displaced entries intact to
 [Previous Task Log](Archive/PREVIOUS_TASK_LOG.md). The architecture checker rejects
 a third level-two entry. Future work belongs only in IMPLEMENTATION_PLAN.
 
+## 2026-10-02 — Task 5/12: Source measurement and continuation defects
+
+Result: one bounded Director correction permits recovery from a missing cycle
+allocation while preserving refusal failure and request budgets. Descriptive source
+measurements now retain exact ScientificAttempt lifecycle/input/result records;
+literature context keeps its existing eligibility gate and unknown empty/title-only
+classification. Unsupported numeric traversal across arrays rejects InvalidAnalysis
+instead of manufacturing absent-field results. Measurement/completed-attempt writes
+are atomic; invalid, operational-failed and interrupted outcomes stay distinct.
+
+Verification: 18 final focused SDK/context/ownership/lifecycle contracts passed in
+7.70 s; all 314 invariants passed in 91.08 s. Original failing regressions remain
+under var/production-audit/. Architecture/whitespace and scoped preservation review
+support the committed change. Final native qualification resolves separately through
+var/production-audit/final-verification.json against the post-commit basis.
+
+Retained controlled provider proof: two blocks/reviews closed and reconstructed,
+history advanced 6 to 352 under the same registry, and actual source analysis drove
+a distinct next allocation. Its array-path absence conclusion is scientifically
+unqualified: requested diagnosis fields occur inside 96 source arrays. Typed
+literature context was absent. Preserve all earlier observations; no later fix
+retroactively qualifies this source archive. Task 12 scientific qualification,
+independent review and reusable utility remain in the plan.
+
+Implementation: src/runtime/pydantic_ai/contracts.py, src/science/execution.py,
+their behavioral owners and corrected stale Delta H5 pin limitation. Accepted
+archived ADRs: bounded allocation correction and descriptive source attempts.
+The dated lung assessment and var/task12-proof/completed-assessments.json retain
+all ten finished scenarios, errors, interventions, timings and limitations.
+
 ## 2026-10-02 — Production audit: engineering fixes and historical reconciliation
 
 Result: repaired caught-inner SQLite bundle rollback and utility gates accepting
@@ -30,33 +60,3 @@ historical. Codex Security plugin did not start because its worker requires a ma
 filesystem permission profile; no plugin result claimed. Scientific independent
 review, broader assay/inference, reusable utility and composed Task 12 proof remain
 in the plan. API testing maintenance keeps automatic research paused.
-
-## 2026-10-02 — Task 2: Refresh final WSL native qualification
-
-Result: Current source, including compressed-assay transforms, composed-verification preparation and the corrected GDC metadata/SDK contract, has
-current ordinary local qualification. All six ordinary probes and six isolated
-testing probes passed: Director/Researcher confinement, aggregate command resources,
-five-phase external science/replay, scientific adverse controls, installed worker
-families/shutdown/drain and profile-path/retention isolation. Ordinary record
-`50a94491032440978961416cbf1e69f3`, seq 1158, resolves in `var/oncojev.sqlite3` against
-the exact current application/worktree, interpreter/package/stdlib, policy, kernel,
-control binaries and native Linux filesystems. Testing remains nonqualifying.
-
-Verification: current full invariant suite exited 0: 291 passed and one frontend check skipped after the Linux Node executable disappeared. Restoring the same official-SHA256-verified v22.22.2 release passed that check separately (1 passed in 0.47 s), verifying all 292 collected invariants across the two runs. Focused SDK/migration/qualification checks passed 12. Ordinary profile and owned Linux data paths were used. Architecture and whitespace checks passed exit 0.
-Raw proof: `var/task2-proof/ordinary-gdc-final/`,
-`var/task2-proof/testing-gdc-final/`, and their adjacent final raw logs. The API
-restarted with final source; API/web user services remain active and return HTTP 200
-on ports 8080/3000. Repository, `.venv` and data are on WSL2 ext4 `/dev/sdf`, outside
-`/mnt/c`. API testing maintenance mode keeps automatic research paused.
-
-Scope: native execution/control proof, not independently reviewed scientific utility,
-accepted reusable promotion, Docker/Railway qualification or a complete clinical
-trajectory. Re-review of actual Task 10 source-use history now rejects only unsupported
-utility. Tasks with remaining scientific-review/qualification criteria stay in the
-plan. The dated whole-lab assessment and raw comparisons live under
-`evals/reference/results/` and `var/task11-proof/`; original failed observations remain.
-
-Implementation identity: uncommitted worktree at HEAD
-`2d10d1d2fe7875690d48f8eecaa929679753d877`; exact application/environment hashes are
-retained in seq 1158 and the machine-readable assessment. Existing scientific history,
-unrelated worktree edits and ignored credentials were preserved.

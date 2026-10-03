@@ -474,7 +474,7 @@ explicit longer scenario for the unchanged 300 s scheduled Director review. Scri
 Windows profile checks establish contracts, not live timing or scientific benefit;
 these trajectories remain separate from routine implementation checks.
 
-Current verification (2026-10-02): eight provider-backed observation scenarios
+Current verification (2026-10-02): ten provider-backed observation scenarios
 finished with closed-store reconstruction and retained public exports; see
 `evals/reference/results/lung-lab-assessment-20261002.md` and
 `var/task12-proof/completed-assessments.json`. The stock isolated `serve` completed
@@ -499,9 +499,28 @@ request through the corrected client again returned HTTP 503 at 2026-10-02 23:36
 latency/failures and missing external review remain distinct from repaired code defects.
 Bounded slices do not prove general data-limit usefulness.
 
-Remaining completion proof: one retained eligible analysis-to-review-to-next-choice
-trajectory on its pinned basis, including justified challenge or explicit missing
-prerequisite and literature context. Qualified reuse remains conditional on Task
+The later HEAD 68b5eda descriptive replay admitted a source-slice age summary (95
+valid numeric ages of 100 rows), then completed review, but its second cycle failed
+InvalidBlockCount without allocation. Cycle/review/failed-next-cycle elapsed times
+were 252.84 / 345.65 / 187.68 s; literature search did not yield typed literature
+context. The allocation-corrected source replay then completed both cycles/reviews
+(514.67 / 538.35 s; 495.49 / 168.47 s), retaining a valid age summary and
+memory-informed distinct next allocation, history 6 to 352, and stable registry.
+No allocation correction was requested in that run. Both dossiers/Deltas closed
+once and reconstructed without unresolved input references. Scientific qualification
+remains incomplete: typed literature context was absent, and the second block
+treated unsupported diagnosis-array traversal as absence although 96 source rows
+contain the requested fields inside arrays. That conclusion is unqualified.
+The confirmed descriptive-attempt/context and array-path defects are now repaired
+and logged separately with 18 focused checks and 314 invariants in 91.08 s. The
+existing context gate stays intact, and unsupported traversal fails InvalidAnalysis.
+The corrected frozen trajectory resolves against allocation-corrected-source-worktree.json;
+later code/native proof cannot qualify its scientific outcome retroactively.
+
+Remaining completion proof: corrected-source scientific composition including valid
+representation/method choice, justified challenge or explicit missing prerequisite
+and typed literature context; retain the demonstrated review/memory/next-allocation
+behavior on that pinned basis. Qualified reuse remains conditional on Task
 10's scientific-utility prerequisite. Independent scientific review/clinical utility
 remain explicitly unsupported as requested. Source-owned Welch is unavailable; the
 provided-array route does not confer source lineage. Publication was not triggered.
@@ -529,7 +548,8 @@ Exactly-once closure, honest interruption, unchanged future defaults after one f
 block and refreshed next-block pins compose correctly. Local contracts, live source/
 model connectivity, scientific utility, WSL2 qualification and remote publication
 have separate supported conclusions; absent required external proof stays explicit.
-Correct the stale Delta pin limitation only where composed behavior establishes it.
+The stale Delta H5 pin limitation was corrected after actual refreshed continuation
+pins were observed; this does not qualify missing scientific context.
 
 ## Conditional extensions
 

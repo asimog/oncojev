@@ -2624,3 +2624,159 @@ def test_caught_nested_bundle_failure_never_commits_partial_history(tmp_path, ab
         assert [r.record_id for r in reopened.records()] == ([] if abort_outer else ["outer-before", "outer-after"])
     finally:
         reopened.close()
+
+
+@pytest.mark.parametrize("recovers", [False, True])
+@pytest.mark.parametrize("unbounded", [False, True])
+def test_missing_cycle_allocation_gets_one_bounded_director_correction(recovers, unbounded):
+    from src.runtime.cycle import CycleFailed
+    system = cycle_system()
+    repository = ResearchRepository(SqliteResearchStore())
+    system.runtime.unbounded_work = unbounded
+    calls = 0
+    async def director(messages, info):
+        nonlocal calls
+        calls += 1
+        assert any(tool.name == "run_code" for tool in info.function_tools)
+        if recovers and calls == 2:
+            return ModelResponse(parts=[ToolCallPart("run_code", {"code": 'await allocate_block(objective="source prerequisite assessment", why_now="retained limitation", seconds=60)'}, tool_call_id="corrected-allocation")])
+        return ModelResponse(parts=[TextPart("No allocation; claimed missing tool authority")])
+    async def researcher(messages, info):
+        return ModelResponse(parts=[TextPart("completed bounded investigation; no evidence")])
+    try:
+        with system.agents.director.override(model=scripted(director)), system.agents.researcher.override(model=scripted(researcher)):
+            if recovers:
+                result = run_cycle(system, "lung source prerequisite", repository=repository)
+                assert result.status.value == "complete" and len(result.block_ids) == 1
+            else:
+                with pytest.raises(CycleFailed, match="InvalidBlockCount"):
+                    run_cycle(system, "lung source prerequisite", repository=repository)
+        assert calls == (3 if recovers else 2)
+        corrections = [r for r in repository.store.records(kind=RecordKind.SERVICE_EVENT) if r.payload.get("event_type") == "DirectorAllocationCorrectionRequested"]
+        assert len(corrections) == 1 and corrections[0].payload["operational_only"] is True
+        assert len(system.runtime.manager.blocks()) == (1 if recovers else 0)
+        assert len(repository.store.records(kind=RecordKind.DOSSIER)) == (1 if recovers else 0)
+        assert not repository.store.records(kind=RecordKind.EVIDENCE)
+    finally:
+        repository.store.close()
+
+
+def test_allocation_correction_cannot_exceed_director_request_budget():
+    from src.runtime.cycle import CycleFailed
+    system = cycle_system()
+    system.runtime.director_request_limit = 1
+    repository = ResearchRepository(SqliteResearchStore())
+    calls = 0
+    async def director(messages, info):
+        nonlocal calls
+        calls += 1
+        return ModelResponse(parts=[TextPart("No block allocated")])
+    try:
+        with system.agents.director.override(model=scripted(director)):
+            with pytest.raises(CycleFailed, match="InvalidBlockCount"):
+                run_cycle(system, "lung source prerequisite", repository=repository)
+        assert calls == 1 and not system.runtime.manager.blocks()
+        cycle = repository.store.latest(RecordKind.CYCLE)
+        assert cycle.payload["status"] == "failed"
+        assert cycle.payload["director_error_type"] == "UsageLimitExceeded"
+        assert not repository.store.records(kind=RecordKind.EVIDENCE)
+    finally:
+        repository.store.close()
+
+
+@pytest.mark.parametrize("origin", ["public", "synthetic"])
+@pytest.mark.parametrize("title_only", [False, True])
+def test_descriptive_source_summary_has_exact_context_lineage_and_abstains(origin, title_only):
+    import httpx
+    from src.sources.public import PublicLiteratureSource
+    system=cycle_system();runtime=system.runtime;runtime.max_tool_calls=30
+    source=AcquisitionRecord(source="fixture",origin=origin,request={},records=({"id":"a","age":50},{"id":"b","age":70}),provenance=("controlled source input; no clinical inference",))
+    class Source:
+        async def search(self,*args):return source
+    runtime.gdc=Source()
+    runtime.literature=PublicLiteratureSource(httpx.MockTransport(lambda q:httpx.Response(200,json={"message":{"items":[{"title":["Stored slice age report"]}] if title_only else [],"total-results":1 if title_only else 0}})))
+    repo=ResearchRepository(SqliteResearchStore());outputs=[]
+    async def director(messages,info):
+        if not any(isinstance(v,ModelResponse) for v in messages):return ModelResponse(parts=[ToolCallPart("run_code",{"code":'b=await allocate_block(objective="describe retained ages",why_now="context plumbing",seconds=60)\nawait launch_researcher(block_id=b["block_id"])'},tool_call_id="allocate")])
+        return ModelResponse(parts=[TextPart("yield")])
+    async def researcher(messages,info):
+        if not any(isinstance(v,ModelResponse) for v in messages):return ModelResponse(parts=[ToolCallPart("run_code",{"code":'a=await acquire_gdc(endpoint="cases",filters={},fields=["age"],size=2)\nm=await measure_acquisition(acquisition_id=a["acquisition_id"],analysis_id="ages",numeric_field="age")\nl=await search_public_literature(query="lung recorded age",limit=1)\ntry:\n    await assess_literature_context(analysis_id="ages",claim="Mean recorded age in these two source rows is 60",literature_ids=[l["context_id"]])\nexcept ValueError as error:\n    print(str(error))'},tool_call_id="context")])
+        outputs.extend(str(getattr(p,"content","")) for v in messages for p in v.parts);return ModelResponse(parts=[TextPart("yield")])
+    try:
+        with system.agents.director.override(model=scripted(director)),system.agents.researcher.override(model=scripted(researcher)):
+            result=run_cycle(system,"lung descriptive context",repository=repo)
+        assert result.status.value=="complete"
+        from src.persistence.references import resolve_reference
+        from src.provenance import ExecutionReference
+        attempts=repo.store.records(kind=RecordKind.SCIENTIFIC_ATTEMPT)
+        assert [a.payload["stage"] for a in attempts]==["started","completed"]
+        final=attempts[-1].payload
+        assert final["outcome"]=="unknown" and final["analysis"]["test_plan"] is None
+        assert resolve_reference(repo.store,ExecutionReference.model_validate(final["input_reference"]))["content_sha256"]==source.content_sha256
+        assert resolve_reference(repo.store,ExecutionReference.model_validate(final["measurement_reference"]))["values"]["mean"]==60
+        contexts=repo.store.records(kind=RecordKind.LITERATURE_CONTEXT)
+        if origin=="public":
+            assert len(contexts)==1,outputs
+            assert contexts[0].payload["category"]=="unknown"
+            assert contexts[0].payload["semantic_status"]=="insufficient_material"
+            assert not any("context requires" in v for v in outputs)
+        else:
+            assert not contexts and any("exact source-bound measurement" in v for v in outputs)
+        assert not repo.store.records(kind=RecordKind.EVIDENCE)
+    finally:repo.store.close()
+
+@pytest.mark.parametrize("interrupted", [False,True])
+def test_descriptive_attempt_retains_failure_without_scientific_negative(interrupted):
+    import asyncio
+    from types import SimpleNamespace
+    system=cycle_system();runtime=system.runtime
+    repo=ResearchRepository(SqliteResearchStore());runtime.repository=repo
+    block=runtime.manager.allocate("describe source","fault behavior",60)
+    source=AcquisitionRecord(source="fixture",request={},records=({"id":"a","age":50},),provenance=("controlled source",))
+    runtime.retain_acquisition(block.block_id,source)
+    error=asyncio.CancelledError("controlled interruption") if interrupted else RuntimeError("controlled worker failure")
+    def fail(*args):raise error
+    runtime.science.measure_acquisition=fail
+    ctx=SimpleNamespace(deps=SimpleNamespace(runtime=runtime,block_id=block.block_id))
+    tool=system.agents.researcher._function_toolset.tools["measure_acquisition"].function
+    async def run():
+        with pytest.raises(type(error)):await tool(ctx,source.acquisition_id,"failed-age","age")
+    try:
+        asyncio.run(run())
+        attempts=repo.store.records(kind=RecordKind.SCIENTIFIC_ATTEMPT)
+        assert [a.payload["stage"] for a in attempts]==["started","interrupted" if interrupted else "operational_failed"]
+        assert all(a.payload["outcome"]=="attempted" and a.payload["measurement_reference"] is None for a in attempts)
+        assert not repo.store.records(kind=RecordKind.MEASUREMENT)
+        assert not repo.store.records(kind=RecordKind.EVIDENCE)
+        assert runtime.service_resources.heavy_owner is None
+    finally:repo.store.close()
+
+
+@pytest.mark.parametrize("foreign", [False, True])
+def test_descriptive_array_rejection_or_foreign_input_cannot_retain_a_measurement(foreign):
+    import asyncio
+    from types import SimpleNamespace
+    from src.science.models import InvalidAnalysis
+    system=cycle_system();runtime=system.runtime
+    repo=ResearchRepository(SqliteResearchStore());runtime.repository=repo
+    block=runtime.manager.allocate("describe source","input eligibility",60)
+    owner=runtime.manager.allocate("other block","ownership") if foreign else block
+    source=AcquisitionRecord(source="fixture",request={},records=({"id":"a","diagnoses":[{"age":50}]},),provenance=("controlled source",))
+    runtime.retain_acquisition(owner.block_id,source)
+    ctx=SimpleNamespace(deps=SimpleNamespace(runtime=runtime,block_id=block.block_id))
+    tool=system.agents.researcher._function_toolset.tools["measure_acquisition"].function
+    async def run():
+        with pytest.raises(ValueError if foreign else InvalidAnalysis):
+            await tool(ctx,source.acquisition_id,"invalid-age","diagnoses.age")
+    try:
+        asyncio.run(run())
+        attempts=repo.store.records(kind=RecordKind.SCIENTIFIC_ATTEMPT)
+        if foreign:
+            assert not attempts
+        else:
+            assert [a.payload["stage"] for a in attempts]==["started","invalid"]
+            assert attempts[-1].payload["outcome"]=="invalid"
+        assert not repo.store.records(kind=RecordKind.MEASUREMENT)
+        assert not repo.store.records(kind=RecordKind.EVIDENCE)
+        assert not repo.store.records(kind=RecordKind.LITERATURE_CONTEXT)
+    finally:repo.store.close()

@@ -20532,7 +20532,7 @@
   },
   "task12_observations": {
     "completed_assessment_artifact": "var/task12-proof/completed-assessments.json",
-    "completed_scenarios": 8,
+    "completed_scenarios": 10,
     "stock_serve_phases_seconds": [
       341.77539072799846,
       1021.5315814930073,
@@ -20555,10 +20555,80 @@
       "top_level_error_type": null,
       "interpretation": "Stock serve caught and retained the cycle failure; null top-level error does not qualify scientific success."
     },
-    "remaining_qualification": "One retained eligible scientific analysis through review/memory to next allocation on pinned basis; do not combine separate scenarios to assert completion.",
+    "remaining_qualification": "Corrected descriptive-attempt/array-path basis needs composed scientific verification with literature context; independent scientific review, clinical utility and qualified reuse remain unsupported.",
     "trajectory_source_archive": "var/task12-proof/qualified-source-basis-347.zip",
     "trajectory_worktree_sha256": "cb884f1af5b9e07b6ef66b56832d4a33dd31e241f9bed24dced5c17f3192ae99",
-    "source_correction_does_not_retroactively_qualify_trajectory": true
+    "source_correction_does_not_retroactively_qualify_trajectory": true,
+    "historical_descriptive_serve_before_correction": {
+      "artifact": "var/task12-proof/retained-descriptive-serve-68b5eda/observation.json",
+      "phases": [
+        {
+          "phase": "run_once",
+          "cycle_index": 1,
+          "status": "complete",
+          "director_outcome": "returned",
+          "block_ids": [
+            "a8089a06-70b8-4026-943a-59e6fa64ebd2"
+          ],
+          "director_error_type": null,
+          "elapsed_seconds": 252.8435495949816
+        },
+        {
+          "phase": "post_block_review",
+          "cycle_index": 1,
+          "elapsed_seconds": 345.64857699000277
+        },
+        {
+          "phase": "run_once",
+          "cycle_index": 2,
+          "status": "raised",
+          "error_type": "CycleFailed",
+          "elapsed_seconds": 187.68135265499586
+        }
+      ],
+      "application_identity": "application-testing-v1:cf05693037bb2270ff3812d1a273ec082d0e425ce3ef1253ad4d2345472f6b43",
+      "conclusion": "One admitted source-slice age summary and review; second cycle failed InvalidBlockCount without allocation. Null stock-serve top-level error does not erase failed phase."
+    },
+    "historical_descriptive_serve_allocation_corrected": {
+      "artifact": "var/task12-proof/retained-descriptive-serve-allocation-corrected-worktree/observation.json",
+      "phases": [
+        {
+          "phase": "run_once",
+          "cycle_index": 1,
+          "status": "complete",
+          "director_outcome": "returned",
+          "block_ids": [
+            "67c98fb7-2625-42f1-b3bb-7759476d704a"
+          ],
+          "director_error_type": null,
+          "elapsed_seconds": 514.6743746759894
+        },
+        {
+          "phase": "post_block_review",
+          "cycle_index": 1,
+          "elapsed_seconds": 538.3531912770122
+        },
+        {
+          "phase": "run_once",
+          "cycle_index": 2,
+          "status": "complete",
+          "director_outcome": "returned",
+          "block_ids": [
+            "b09d9331-3b55-4df2-9a56-9936df069ada"
+          ],
+          "director_error_type": null,
+          "elapsed_seconds": 495.4876062149997
+        },
+        {
+          "phase": "post_block_review",
+          "cycle_index": 2,
+          "elapsed_seconds": 168.46645798799
+        }
+      ],
+      "application_identity": "application-testing-v1:826b55c3d8738f8cd4beb67faa94fa6b182cab29c403f838740a08be728ca280",
+      "conclusion": "Analysis/review/memory to distinct next allocation completed with refreshed history 6->352 and same registry. No allocation correction was requested in this run. Literature context absent; second-block array-path missingness result scientifically unqualified: diagnosis fields are present inside 96 arrays. Subsequent code fixes cannot qualify this earlier basis.",
+      "source_snapshot": "var/task12-proof/allocation-corrected-source-worktree.json"
+    }
   },
   "gdc_metadata_correction": {
     "artifact": "var/task11-proof/gdc-metadata-correction.json",
@@ -20601,6 +20671,45 @@
       "observed_status": "HTTP 503",
       "checked_at": "2026-10-02T23:36:08.664094+00:00",
       "scope": "bounded availability only; not a scientific negative"
+    },
+    "allocation_correction": {
+      "owner": "src/runtime/pydantic_ai/contracts.py",
+      "decision": "docs/Archive/ADR/ACCEPTED_ADR_BOUNDED_ALLOCATION_CORRECTION.md",
+      "bounded_per_cycle": 1,
+      "focused": {
+        "passed": 22,
+        "deselected": 99,
+        "seconds": 11.36
+      },
+      "full_invariants": {
+        "passed": 302,
+        "seconds": 93.43
+      },
+      "live_corrected_assessment": "finished two cycles/reviews; operational continuity proven, bounded correction not requested; scientific array-path and context limitations retained",
+      "source_snapshot": "var/task12-proof/allocation-corrected-source-worktree.json"
+    },
+    "descriptive_context_and_array_path": {
+      "source_fields_present_in_diagnosis_arrays": 96,
+      "prior_absent_measurement_unqualified": true,
+      "owners": [
+        "src/science/execution.py",
+        "src/runtime/pydantic_ai/contracts.py"
+      ],
+      "focused": {
+        "passed": 18,
+        "deselected": 117,
+        "seconds": 7.7
+      },
+      "before_defects": [
+        "4 context/lifecycle failures",
+        "3 array-path failures; 1 dictionary control passed"
+      ],
+      "full_suite": {
+        "passed": 314,
+        "seconds": 91.08,
+        "log": "var/production-audit/source-context-full-invariants.log"
+      },
+      "native": "Resolve final post-commit receipt var/production-audit/final-verification.json"
     }
   }
 }

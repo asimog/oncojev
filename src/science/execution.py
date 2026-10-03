@@ -165,6 +165,8 @@ class ScienceExecutor:
     def _numeric(row,field):
         value=row
         for part in field.split("."):
+            if isinstance(value,(list,tuple)):
+                raise InvalidAnalysis("numeric field crosses an array; declare a supported representation or aggregation first")
             if not isinstance(value,dict) or part not in value:return "absent",None
             value=value[part]
         if value is None:return "null",None

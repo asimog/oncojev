@@ -77,4 +77,4 @@ def build_delta(store, block, run_id, start_sequence, finished_at: datetime, *, 
             "measured_process_families": len(cpu_observed), "process_families": len(executions)},
         limitations=("Turn and transport durations are wall time, not CPU measurements.",
                      "Only explicit negative/resolution events appear; missing entries are not negatives or resolutions.",
-                     "Workspace peaks are sampled allocated-byte lower bounds; missing CPU counters remain unknown. Exact registry/history pins follow H5."))
+                     "Workspace peaks are sampled allocated-byte lower bounds; missing CPU counters remain unknown. Application, registry and history pins are retained in the block start; later allocations refresh their own pins."))

@@ -75,6 +75,11 @@ resume a Researcher run. Each block permits one Researcher launch.
 
 ## Core invariants
 
+- An allocating Director turn returning no block can receive one protocol
+  correction through its existing output validator. The Director still chooses and
+  allocates through the existing tools; another empty return fails. The rejected
+  attempt is an operational service event, request/cost budgets remain enforced,
+  and standalone, event and review turns do not acquire an allocation requirement.
 - A successful run, block closure and scientific objective attainment are separate
   facts. `complete_block` requests handoff; successful finalization requires a
   Researcher completion receipt. Failures take precedence over contradictory
@@ -83,6 +88,12 @@ resume a Researcher run. Each block permits one Researcher launch.
   source references and finite top-level numeric values. Provided arrays,
   synthetic fixtures, model prose and raw scratch output cannot become evidence.
   This gate does not itself prove biological validity or resolve every reference.
+- Source-bound descriptive summaries retain the existing ScientificAttempt lifecycle
+  and exact owned acquisition/measurement references, with unknown scientific outcome.
+  This enables tentative literature context without admitting new evidence or treating
+  empty/title-only reports as classification. Numeric paths crossing arrays require
+  an explicit supported representation/aggregation and otherwise fail InvalidAnalysis;
+  unsupported traversal cannot become an absent-field measurement.
 - Retained inputs bind exact content and block ownership. Active blocks pin the
   registry revision, institutional history boundary and application content
   identity. New observations or revisions do not silently change their contracts.

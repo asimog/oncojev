@@ -16,7 +16,7 @@ from uuid import uuid4
 from time import perf_counter
 from pydantic_ai.usage import RunUsage, UsageLimits
 
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent, RunContext, ModelRetry
 from pydantic_ai.exceptions import IncompleteToolCall, UsageLimitExceeded, RunCancelled
 from src.runtime.resources import ServiceResources
 from src.runtime.process import ProcessCleanupFailed
@@ -648,6 +648,26 @@ def register_memory_tools(agent):
 def register_director_tools(
     agent: Agent[DirectorDeps, str],
 ) -> None:
+    @agent.output_validator
+    def require_cycle_allocation(ctx: RunContext[DirectorDeps], output: str) -> str:
+        if ctx.deps is None:
+            return output
+        runtime = ctx.deps.runtime
+        if (not runtime.cycle_id or not runtime.director_supervising_turn
+                or runtime.service_state is not ServiceResearchState.ALLOCATING
+                or any(block.cycle_id == runtime.cycle_id for block in runtime.manager.blocks())):
+            return output
+        key = f"director:allocation_correction:{runtime.cycle_id}"
+        if runtime._counts.get(key, 0):
+            return output  # The cycle owner retains InvalidBlockCount after refusal.
+        runtime._counts[key] = 1
+        if runtime.repository is not None:
+            runtime.repository.record_immutable(RecordKind.SERVICE_EVENT, str(uuid4()), {
+                "event_type": "DirectorAllocationCorrectionRequested", "operational_only": True,
+                "mission_id": runtime.mission_id, "cycle_id": runtime.cycle_id,
+                "reason": "InvalidBlockCount", "output_sha256": content_hash(output)}, None)
+        raise ModelRetry("This allocation turn returned without its required block. Use the Director functions in run_code to choose and allocate one defensible bounded investigation. Do not retry rejected scratch commands, invent an allocation or force unsupported science. Python owns launch fallback and outcome validation; planning alone does not satisfy this turn.")
+
     register_memory_tools(agent)
     register_search_page(agent)
     from src.runtime.pydantic_ai.discovery_tools import register_discovery_tools
@@ -1021,15 +1041,43 @@ def register_researcher_tools(
         runtime.claim(ctx.deps.block_id, "tool", runtime.max_tool_calls)
         record = runtime.resolve_acquisition(ctx.deps.block_id, acquisition_id)
         call_id = invocation(ctx, "science.acquisition-summary", analysis_id=analysis_id, acquisition_id=acquisition_id, numeric_field=numeric_field)
+        from src.science.models import ScientificAttempt, InvalidAnalysis
+        method = "record_count" if numeric_field is None else f"numeric_summary:{numeric_field}"
+        spec = AnalysisSpec(analysis_id=analysis_id, question="Describe the owned stored response slice",
+            population="stored response slice", estimand=method, method=method,
+            variables=(numeric_field,) if numeric_field is not None else (), source_refs=(acquisition_id,))
+        attempt = ScientificAttempt(attempt_id=call_id, block_id=ctx.deps.block_id,
+            capability_id="science.acquisition-summary", analysis=spec,
+            input_reference=ExecutionReference(kind="acquisition", value=acquisition_id,
+                sha256=content_hash(record.model_dump(mode="json")), block_id=ctx.deps.block_id),
+            stage="started", outcome="attempted", limitations=(
+                "Descriptive stored response slice; no population, clinical or independent-replication inference.",))
+        def retain(value):
+            if runtime.repository is not None:
+                runtime.repository.record_immutable(RecordKind.SCIENTIFIC_ATTEMPT,
+                    value.attempt_id + ":" + value.stage, value, ctx.deps.block_id)
+        retain(attempt)
         try:
             result = await runtime.heavy_operation(ctx.deps.block_id, runtime.science.measure_acquisition, record.model_copy(deep=True), analysis_id, numeric_field)
-        except Exception as error:
-            failure(ctx, call_id, "science.acquisition-summary", error)
+        except BaseException as error:
+            invalid = isinstance(error, InvalidAnalysis)
+            stage = "invalid" if invalid else "interrupted" if isinstance(error, asyncio.CancelledError) else "operational_failed"
+            retain(attempt.model_copy(update={"stage":stage, "outcome":"invalid" if invalid else "attempted",
+                "failure_type":type(error).__name__}))
+            if invalid:
+                append(ctx, "CapabilityFailure", {"invocation_id":call_id, "capability_id":"science.acquisition-summary",
+                    "error_type":type(error).__name__, "scientific_invalid":True})
+            else:
+                failure(ctx, call_id, "science.acquisition-summary", error)
             raise
         runtime.measurements[(ctx.deps.block_id, analysis_id)] = result
         save(ctx, state(ctx).add_measurement(result))
         if runtime.repository is not None:
-            runtime.repository.record_measurement(result, ctx.deps.block_id)
+            with runtime.repository.store.transaction():
+                runtime.repository.record_measurement(result, ctx.deps.block_id)
+                retain(attempt.model_copy(update={"stage":"completed", "outcome":"unknown",
+                    "measurement_reference":ExecutionReference(kind="measurement", value=analysis_id,
+                        sha256=content_hash(result.model_dump(mode="json")), block_id=ctx.deps.block_id)}))
         append(ctx, "ScienceMeasurement", {"analysis_id": analysis_id, "method": "acquisition_measurement", "acquisition_id": acquisition_id})
         append(ctx, "CapabilityResult", {"invocation_id": call_id, "capability_id": "science.acquisition-summary", "analysis_id": analysis_id, "origin": result.origin})
         return result.model_dump(mode="json")

@@ -70,7 +70,7 @@ matched budgets, condition counts and limitations. Raw proofs are under
 Initial failed assessments and their corrected outcomes remain retained.
 
 Pre-audit verification: the full ordinary-profile suite exited 0 with **291 passed / one skipped** among **292 collected invariants**. The skipped frontend check lacked its deleted Linux Node executable; restoring the exact official-SHA256-verified **v22.22.2** release passed it separately (**1 passed in 0.47 s**). All 292 invariants were therefore verified across those two runs, not reported as an uninterrupted 292-pass suite. Focused SDK/migration/qualification checks passed **12**. Architecture and whitespace checks passed. All **six ordinary** native probes passed with qualifying record `50a94491032440978961416cbf1e69f3`, seq **1158**, on the corrected GDC metadata/SDK source basis. All **six testing** probes passed with `qualifying: false`. Raw proof: `var/task2-proof/ordinary-gdc-final/`, `var/task2-proof/testing-gdc-final/`, `var/tasks1-12-final-ordinary-tests.log`, and `var/task12-final-frontend-restored.log`. Promotion review `ce7f42ed-87cc-449c-94d0-a0492bbf22b3` rejects only `failed_or_changed_scope:utility_evaluation`. Earlier failed/skipped observations remain retained. API and web were restarted and verified active/HTTP 200, with testing maintenance flags preserved.
-Task 12 verification now retains eight finished observation scenarios (including a caught cycle failure) and a separate unchanged-timer/recovery probe in `var/task12-proof/completed-assessments.json`. The unmodified isolated `serve` trajectory completed two cycles/reviews: **341.78 / 1,021.53 s**, then **920.09 / 979.07 s** (cycle / review). Both blocks closed early, each with one dossier and Delta and no unresolved reconstructed source references. Next-block history advanced from **32 to 390**, with the same application/registry identity; the second allocation explicitly requested 300 s while the service default stayed 240 s. The next objective used prior failures to try different acquisition shapes. These were blocked scientific outcomes, not successful clinical analyses.
+Task 12 verification now retains ten finished observation scenarios (including a caught cycle failure) and a separate unchanged-timer/recovery probe in `var/task12-proof/completed-assessments.json`. The unmodified isolated `serve` trajectory completed two cycles/reviews: **341.78 / 1,021.53 s**, then **920.09 / 979.07 s** (cycle / review). Both blocks closed early, each with one dossier and Delta and no unresolved reconstructed source references. Next-block history advanced from **32 to 390**, with the same application/registry identity; the second allocation explicitly requested 300 s while the service default stayed 240 s. The next objective used prior failures to try different acquisition shapes. These were blocked scientific outcomes, not successful clinical analyses.
 
 A separate controlled replay of public GDC acquisition **seq 123** supplies an exact historical source artifact and no expected outcomes or qualification records. The eligible paired-field run retained **41 complete rows out of 100**, Pearson **r = −0.3482832365724353**, and same-data unstandardized OLS. Its cycle/review took **346.75 / 423.27 s**; literature context is **unknown**. The native caller omitted standardization parameters, so this does not qualify the standardized challenge. Raw recorded death-duration fields still lack qualified endpoint/time-origin/censoring design; these are stored-field relationships, not survival, causal, representative-cohort or clinical-outcome results. Source-replay intervention is explicitly separate from unmodified source acquisition.
 
@@ -80,7 +80,7 @@ The attempted historical-input two-cycle trajectory finished with **410.25 s cyc
 
 The separate scheduled-review probe observed the unchanged **300 s** timer at **300.09 s**, without cancelling its controlled pending task. Subsequent interruption recovery retained exactly one interrupted dossier; repeating recovery added none. These controlled probes establish their named lifecycle behaviors, not an autonomous scientific result.
 
-**Task 12 verification was performed; full qualification remains incomplete.** A single retained eligible scientific analysis must still connect through review/memory to its next allocation on the pinned basis. Existing analysis and consecutive-service observations occurred in separate scenarios. Literature context, scientific utility and independent clinical next-test review remain unsupported; accepted reuse depends on Task 10's withheld utility prerequisite. Publication was not triggered. The observation target remains 120 s, with the actual overruns retained.
+**Task 12 verification was performed; full qualification remains incomplete.** The latest controlled descriptive assessment connects a valid source-slice analysis through review/memory to a distinct next allocation on its pinned basis. Its invalid array-path interpretation and missing literature context still prevent full scientific qualification; the subsequent corrected code needs its own composed proof. Literature context, scientific utility and independent clinical next-test review remain unsupported; accepted reuse depends on Task 10's withheld utility prerequisite. Publication was not triggered. The observation target remains 120 s, with the actual overruns retained.
 
 All provider-backed trajectories used the archived **seq-347 source basis** (`var/task12-proof/qualified-source-basis-347.zip`, worktree hash `cb884f1af5b9e07b6ef66b56832d4a33dd31e241f9bed24dced5c17f3192ae99`). Final corrected native code is separately qualified at **seq 1158**, archived in `qualified-source-basis-1158.zip`. Final source checks do not retroactively turn an earlier failed trajectory into composed qualification.
 
@@ -110,7 +110,7 @@ The current plan retains Tasks 3, 4, 5, 9, 10, 11 and 12. Completed scopes for T
 | H12 | Deterministic reconstruction/export and isolated publisher owners exist. Publication was not requested or triggered; literature context for the attempted trajectory remains unknown. |
 | H13 | Published lung SciFact/reference cases and repeated four-condition comparisons exist. Broader independent labels, measured next-test benefit and candidate utility remain Task 3/11 gaps. |
 | H14 | Configured frontier policy and comparison substrate remain owned. Extra reflection, calibration, diversity controls or shared-generator extraction require measured justification. |
-| H15 | Documentation/status reconciliation and engineering verification completed. Task 12 was exercised through eight finished scenarios but full scientific composition remains unqualified. |
+| H15 | Documentation/status reconciliation and engineering verification completed. Task 12 was exercised through ten finished scenarios but full scientific composition remains unqualified. |
 
 The historical return scopes map to existing owners rather than new tasks: R1
 history is preserved; R2 representations map to Task 5; R3 methods and R4 canonical
@@ -190,8 +190,8 @@ and promotion review, avoiding a copied mutable HEAD claim in committed prose.
 The remaining production claim is therefore limited: the demonstrated engineering
 fixes and local web startup are complete, while independent scientific review,
 qualified broader assay/inferential prerequisites, accepted reusable utility and the
-single scientific-result/review/memory/next-allocation trajectory remain open in the
-current plan. Eight attempted Task 12 scenarios do not close those prerequisites.
+corrected scientific composition with valid challenge and literature context remain open in the
+current plan. Ten attempted Task 12 scenarios do not close those prerequisites.
 
 
 Post-audit completion check (2026-10-02 23:36 UTC): the corrected existing GDC
@@ -199,9 +199,78 @@ client received HTTP 503 again for a bounded five-case TCGA-LUAD cases query wit
 recorded-age/vital-status fields. Exact request/error:
 `var/production-audit/gdc-post-audit-diagnostic.json`. This confirms the fresh-source
 availability blocker for the observed endpoint; it does not establish a permanent
-outage or scientific negative. A repeated provider trajectory was not started on
-unchanged unavailable inputs. Earlier controlled historical-input attempts remain
-explicitly separate. The active plan removes completed audit implementation scope,
+outage or scientific negative. A subsequent controlled historical-source assessment used the exact retained public
+input instead of treating the unavailable fresh endpoint as a scientific negative.
+Its intervention remains explicitly separate from fresh acquisition. The active plan removes completed audit implementation scope,
 labels seq 1158 as historical and resolves current native proof through the final
 post-commit receipt. No runtime behavior, timers, data ceilings or scientific
 qualification requirements were changed by this reconciliation.
+
+
+Continuation protocol assessment and correction (2026-10-02)
+
+The controlled descriptive `serve` assessment at HEAD 68b5eda finished with one
+admitted source-slice age summary: 95 valid numeric recorded ages out of 100 rows,
+mean 67.4, median 67.0, four absent and one null. Its cycle/review took
+252.84 / 345.65 s. A literature search was retained, but no typed literature-context
+assessment was produced. The next cycle failed InvalidBlockCount after 187.68 s
+because the Director returned without allocation. The stock server caught the
+failure; its null top-level error is not a success conclusion. Full raw phases,
+closed-store reconstruction and exports resolve through
+`var/task12-proof/retained-descriptive-serve-68b5eda/observation.json`.
+
+Repeated offline inspection of the real persistent SDK agent advertises run_code
+with allocation/frontier functions on both runs. The model claimed those functions
+were unavailable; that claim does not prove their absence from application or
+provider tools. The existing Director owner now offers one bounded correction for
+an empty allocating-turn return. Actual question choice and allocation remain
+Director-owned; a second refusal still fails and request/cost budgets apply.
+Operational receipt retention does not produce scientific evidence. The archived
+accepted ADR records this decision separately from composed qualification.
+
+Recovery/refusal, ordinary/unbounded modes, event/review preservation and request
+budget checks passed 22 focused tests in 11.36 s. The full suite passed 302 tests
+in 93.43 s. Architecture and whitespace checks passed. The exact corrected
+worktree/setup snapshot is retained in
+`var/task12-proof/allocation-corrected-source-worktree.json`. The corrected composed
+assessment finished separately with the operational and scientific limitations below.
+No native qualification is claimed for the subsequent source-attempt correction yet. Earlier native receipts remain historical until refreshed on
+the final committed basis.
+
+
+The allocation-corrected controlled trajectory finished both cycles and reviews:
+514.67 / 538.35 s, then 495.49 / 168.47 s. Both blocks closed exactly once with a
+dossier and Delta; closed-store reconstruction has no unresolved input references.
+The first source-slice age result informed a distinct next allocation challenging
+whether another age field/representation supplied independent information. History
+advanced from 6 to 352 under the same application and registry revision. No allocation
+correction was requested, so this run does not attribute recovery causally to the
+validator. Its exact raw observation/export and source/setup archive resolve through
+`var/task12-proof/retained-descriptive-serve-allocation-corrected-worktree/observation.json`
+and `var/task12-proof/allocation-corrected-source-worktree.json`.
+
+Full scientific qualification failed: no typed literature context was retained, and
+the second block measured dotted diagnosis paths through arrays as 100 absent rows.
+Read-only inspection of the original source shows diagnosis age and follow-up fields
+inside arrays in 96 rows. That measurement does not establish absence or an unavailable
+recorded diagnosis field. The earlier immutable measurement and conclusion remain
+preserved with this explicit limitation; no source records were rewritten.
+
+Two verified engineering defects were repaired after the frozen run finished.
+`measure_acquisition` now retains started/completed/invalid/operational-failed/
+interrupted ScientificAttempt records with exact owned input/result references;
+completed descriptive outcome stays unknown. Its existing literature consumer can
+annotate valid source summaries, while empty/title-only reports stay unknown and
+synthetic/foreign inputs remain ineligible. Numeric paths crossing arrays now reject
+with InvalidAnalysis until a supported representation/aggregation is declared; no
+arbitrary diagnosis is selected and no absent-field result is admitted. The actual
+measurement and completed attempt persist atomically. The accepted archived source-
+attempt ADR records the decision and proof boundaries. The stale Delta H5 pin
+limitation was corrected only after actual refreshed continuation pins were observed.
+
+Before correction, four lifecycle/context regressions and three array-path
+regressions failed; the dictionary missingness control passed. Eighteen focused
+contracts passed in 7.70 s after correction. The full suite passed 314 invariants in 91.08 s. Final native proof
+resolves through the post-commit receipt for this later basis; it cannot qualify the earlier trajectory
+retroactively. Independent scientific review, clinical utility, qualified reuse,
+broader assay/inference and publication remain unsupported as previously stated.

@@ -67,3 +67,22 @@ def test_source_metadata_review_preserves_routes_authority_old_pin_and_is_idempo
   with pytest.raises(ValueError,match='unsupported'):
    refresh_reviewed_search_metadata(institution,seed,capability_id='science.source-paired')
  finally:store.close()
+
+
+from src.science.execution import ScienceExecutor
+from src.science.models import InvalidAnalysis
+from src.sources.models import AcquisitionRecord
+
+@pytest.mark.parametrize("diagnoses", [[],[{"age_at_diagnosis":50}],[{"age_at_diagnosis":50},{"age_at_diagnosis":60}]])
+def test_array_numeric_path_requires_explicit_representation(diagnoses):
+    source=AcquisitionRecord(source="fixture",request={},records=({"id":"a","diagnoses":diagnoses},),provenance=("controlled source input",))
+    with pytest.raises(InvalidAnalysis,match="array"):
+        ScienceExecutor().measure_acquisition(source,"ages","diagnoses.age_at_diagnosis")
+
+
+def test_dictionary_missingness_and_leaf_array_types_remain_distinct():
+    rows=({"d":{"age":50}},{"d":{"age":None}},{"d":{}},{"d":{"age":[60]}})
+    source=AcquisitionRecord(source="fixture",request={},records=rows,provenance=("controlled source input",))
+    result=ScienceExecutor().measure_acquisition(source,"ages","d.age")
+    assert {k:result.values[k] for k in ["valid_numeric","absent","null","invalid_type"]}=={"valid_numeric":1,"absent":1,"null":1,"invalid_type":1}
+    assert result.values["mean"]==50
