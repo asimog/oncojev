@@ -1,0 +1,116 @@
+{
+  "version": "jev-source-audit-v1",
+  "date": "2026-10-04",
+  "baseline_head": "5f3f4175fb346d8214782439aeae557067a71666",
+  "starting_worktree": "pre-existing semantic continuation changes preserved",
+  "implementation": {
+    "code_test_patch_sha256": "3720be86fa27e78d320ae1c3996fb7d1432f51692a68bcbd2d0e29fabd8c8ded",
+    "files": {
+      "src/jev/client.py": "b0684dea0fb017b49221b384c665c5fd12f05335ce38e908830194295073d9e2",
+      "src/jev/questions.py": "9b016d1e47137066e4cea434c4d4f435553f4acd546356153513ec0cfe6a1bce",
+      "src/sources/representation.py": "2bd86b40169dfdb5bb536fc7442b45221a5257008630f59edf8b2bd0cd10dff9",
+      "src/evals/reference.py": "f0889e9cd8c402d8205f205504daffa486d8133308a724bb79fc018ec5d2b1d9",
+      "src/runtime/pydantic_ai/contracts.py": "34bdf48fe0a48c56eb8ae4d3eb0505af29ec2f3c9750d94b967b79628b5a796c",
+      "src/runtime/pydantic_ai/search_tools.py": "46ce50a3cf6d2800e41d50e1907a31ed6a005bacefb3083153fe77d7e00f6ca9",
+      "src/runtime/pydantic_ai/global_tools.py": "c64d9422d176fd992964b874bdd386aeb46eaa8c1f7b3249564afce4d7ffc76a",
+      "tests/invariants/test_semantic_retention.py": "3a31268387211c5651ec01cc9890aa235802c54e4a9706f5a7fa9432e2cbaa3c",
+      "tests/invariants/test_representations.py": "1b4f01483e31464e1e9915614b8c0fd3dc55a9d6768da386f11fe5cd917e5d67"
+    }
+  },
+  "findings": [
+    {
+      "id": "JEV-BATCH-BINDING",
+      "status": "fixed",
+      "severity": "P2",
+      "regression": "malformed semantic batches cannot create policy/evidence"
+    },
+    {
+      "id": "METHOD-BYTE-FAILURE-RETENTION",
+      "status": "fixed",
+      "severity": "P2",
+      "regression": "full candidate identities survive failed bounded view"
+    },
+    {
+      "id": "GLOBAL-RELATION-CONTEXT",
+      "status": "fixed",
+      "severity": "P2",
+      "regression": "only current candidate/selected-neighbour native relations supplied"
+    },
+    {
+      "id": "JEV-FAILURE-METADATA",
+      "status": "fixed",
+      "severity": "P2",
+      "regression": "missing model name cannot mask failed receipt"
+    }
+  ],
+  "verification": {
+    "owner_tests": {
+      "passed": 231,
+      "seconds": 83.45,
+      "warnings": 1,
+      "profile": "ONCOJEV_TESTING=0",
+      "provider_execution": false
+    },
+    "architecture": "passed",
+    "diff_check": "passed",
+    "additional_confirmed_bugs": 0,
+    "audit_scope": "shared Jev runtime callers, adapters, policy, receipt failures, method retention, global relation context; not exhaustive repository/security audit"
+  },
+  "preservation": {
+    "src/evals/reference.py": "unchanged",
+    "src/jev/questions.py": "unchanged",
+    "src/sources/representation.py": "unchanged",
+    "tests/invariants/test_semantic_retention.py": {
+      "prior_content_preserved_as_exact_prefix_bytes": 20156,
+      "appended_regressions_bytes": 7564
+    },
+    "tests/invariants/test_representations.py": "unchanged"
+  },
+  "retained_assessment_byte_hashes": {
+    "evals/reference/results/semantic-search-assessment-20261004.md": "fe022999f13e5131391f086ecd4d82a6facc0006f124067a87f332d7ce196dfd",
+    "evals/reference/results/semantic-search-assessment-20261004.json": "a6a7707f793770054edabf0b985cef2d855a741cffc614e3157c5bbf29932126",
+    "evals/reference/results/semantic-search-comparisons-20261004.json.gz": "2c3036ad42b801e5909c1504938f4d00b80b7e44cb231e42c743851eba70d8a8",
+    "evals/reference/results/semantic-search-autonomous-20261004.json.gz": "ff91dd275796ddc49664e7dd48c7285a0a72aa878ba58dbcd34799ed566c7803"
+  },
+  "raw_logs": {
+    "batch-regression.log": {
+      "path": "var/jev-fixes-20261004/batch-regression.log",
+      "sha256": "0c79cf9e7f691dff17fe293cb9da18ea18b42e6c70806d75346915cb3afd7643"
+    },
+    "batch-fixed.log": {
+      "path": "var/jev-fixes-20261004/batch-fixed.log",
+      "sha256": "fe9dca0451129aaabdd76ea13e310b61a52091a146a1f9fe5b72b851eb33547f"
+    },
+    "retention-regression.log": {
+      "path": "var/jev-fixes-20261004/retention-regression.log",
+      "sha256": "8524f903177a94917777faabc2c1fb37e813956aaf59398adca09f5416187ea0"
+    },
+    "relation-context-regression.log": {
+      "path": "var/jev-fixes-20261004/relation-context-regression.log",
+      "sha256": "7971b854a84a1f102654fb63374f1675220778df4f815a8e1e3081e62b6b4115"
+    },
+    "metadata-regression.log": {
+      "path": "var/jev-fixes-20261004/metadata-regression.log",
+      "sha256": "6d48a1ef5d66857d86f5e3b6cce17337443fe86d86028a1a970dbecf2be58537"
+    },
+    "owners-final.log": {
+      "path": "var/jev-fixes-20261004/owners-final.log",
+      "sha256": "2c86d84b7034b03aa99cfabf0cd2b6ed05c7ce7c3c132f11fa32ab8ac740134d"
+    },
+    "focused.log": {
+      "path": "var/jev-fixes-20261004/focused.log",
+      "sha256": "4c71645a043c49fddc1b519a208c8836ab03c8b6b49d34cff69106509d46e416"
+    },
+    "focused-final.log": {
+      "path": "var/jev-fixes-20261004/focused-final.log",
+      "sha256": "463bcbed6c82d5964bf07fa434384e4123100052f425e51ad11ebe265b2277db"
+    },
+    "focused-normal.log": {
+      "path": "var/jev-fixes-20261004/focused-normal.log",
+      "sha256": "efa218b3551738e2fbd2d2e6a0148aa474f95bf4cc0f48d733676edf360da362"
+    }
+  },
+  "scientific_utility": null,
+  "whole_repository_feature_completeness": false,
+  "native_environment_qualification": null
+}

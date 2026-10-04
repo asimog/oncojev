@@ -1,0 +1,14 @@
+{
+  "utility_migration": {
+    "retain_utility_evaluation": "AST preserved except source of condition vocabulary",
+    "utility_evaluation_resolves": "AST preserved except source of condition vocabulary"
+  },
+  "generated_artifact_sha256": "8b24d1b095a615b23a5384f33bf1e7293279b51f0d36f28eec4e261811e31730",
+  "generated_artifact_bytes": 1178174,
+  "owner_tests": "80 passed in 21.96 s; one intentional invalid-score warning",
+  "import_guard_tests": "50 passed in 7.65 s",
+  "wheel_proof": "var/production-convergence/package-wheel-isolation/proof.json",
+  "scope": "package separation and unchanged proof guards; no scientific utility/native/deployment qualification",
+  "expanded_isolation_tests": "13 passed in 4.89 s, including source-only fresh factory plus unsupported utility producer/resolver",
+  "wheel_proof_result": "116 wheel files; no evaluation/test package or selection result; extracted-wheel fresh factory and utility consumers exit 0"
+}

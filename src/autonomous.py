@@ -31,7 +31,7 @@ from src.runtime.pydantic_ai.factory import build_system
 from src.memory.service import ResearchMemory
 
 
-DEFAULT_DIRECTION = "Investigate lung cancer using public source-bound data, preserve uncertainty and admit only reproducible evidence."
+DEFAULT_DIRECTION = "Investigate scientifically useful questions using available public information and valid capabilities, preserving uncertainty and admitting only reproducible evidence."
 
 
 def recover_interrupted_blocks(repository: ResearchRepository) -> tuple[str, ...]:

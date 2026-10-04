@@ -158,8 +158,6 @@ def representation_alternatives(records, artifacts, need: RepresentationNeed, *,
                 contract = supported.get(file.get('data_type'))
                 if not contract: continue
                 modality, operation = contract
-                if need.representation and modality != need.representation and not (need.representation == 'expression_matrix' and modality == 'gene_summary'):
-                    continue
                 access = file.get('access')
                 required = ('file_id', 'data_format', 'data_type', 'access')
                 schema = file.get('data_format') in {'MAF', 'TXT', 'TSV'}
@@ -176,7 +174,6 @@ def representation_alternatives(records, artifacts, need: RepresentationNeed, *,
         contract = supported.get(metadata.get('data_type')) if artifact.source == 'gdc' else None
         if not contract: continue
         modality, operation = contract
-        if need.representation and modality != need.representation and not (need.representation == 'expression_matrix' and modality == 'gene_summary'): continue
         alternatives.append({'candidate_id': artifact.artifact_id, 'artifact_id': artifact.artifact_id,
             'byte_sha256': artifact.byte_sha256, 'representation': modality, 'operation': operation,
             'availability': 'derivable' if artifact.access == 'open' else 'controlled_inaccessible',

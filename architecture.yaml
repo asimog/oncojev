@@ -3,7 +3,7 @@ schema_version: 1
 authority: projection
 canonical_sources:
   - path: docs/ARCHITECTURE.md
-    sha256: b40db526ca65596b551f4dc51d6fac1247bc2759ebbbb6b41d5f2115ca951d62
+    sha256: 687edbf6beb1c2598701c26942fb0292a1ffaeeab2af9e849c9e6f369365bfe6
   - path: AGENTS.md
     sha256: d1bd27bd5ad58cd36b4c8d7c420fe20ec1b0d4e71d645e56b3057e8ca50ed285
 # Owners/directions are REVIEWED authority/data flow, not an import DAG.
@@ -57,7 +57,7 @@ owners:
     responsibility: Append-only records, reference-resolved reconstruction, dossier/delta and read-only views.
     forbidden: [evidence admission, operational success as objective attainment]
   evaluations:
-    paths: [src/evals]
+    paths: [evals]
     responsibility: Scoped outcome comparisons and utility measurements.
     forbidden: [mission-success authority, evaluation scores as scientific evidence]
   presentation:

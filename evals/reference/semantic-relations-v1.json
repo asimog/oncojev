@@ -1,0 +1,531 @@
+{
+  "version": "scientific-reference-corpus-v1",
+  "cases": [
+    {
+      "case_id": "specified-relation-opposite-same-scope",
+      "split": "tuning",
+      "domain": "global_relation",
+      "public_inputs": {
+        "operation": "relation",
+        "relation": {
+          "left": {
+            "claim": "Positive linear association of X and Y",
+            "population": "cohort A; adult untreated LUAD",
+            "participants": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "Pearson correlation of X and Y",
+            "method": "Pearson",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "measured_result",
+            "result": {
+              "estimate": 0.7,
+              "interval": [
+                0.5,
+                0.85
+              ],
+              "interpretation": "positive association under stated model"
+            }
+          },
+          "right": {
+            "claim": "Negative linear association of X and Y",
+            "population": "cohort A; adult untreated LUAD",
+            "participants": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "Pearson correlation of X and Y",
+            "method": "Pearson",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "measured_result",
+            "result": {
+              "estimate": -0.7,
+              "interval": [
+                -0.85,
+                -0.5
+              ],
+              "interpretation": "negative association under stated model"
+            }
+          },
+          "comparison_scope": "Only supplied explicit contracts; fabricated numerical observations for mechanistic scope testing, never scientific evidence"
+        }
+      },
+      "expected": {
+        "scientific_resolution": "unknown"
+      },
+      "search_labels": {
+        "relation_properties": {
+          "contradiction": true
+        }
+      },
+      "reference_url": "https://github.com/asimog/oncojev",
+      "label_basis": "Generated explicit-scope engineering contracts; numerical observations are fabricated and independent scientific review is pending",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "specified-relation-population-difference",
+      "split": "tuning",
+      "domain": "global_relation",
+      "public_inputs": {
+        "operation": "relation",
+        "relation": {
+          "left": {
+            "claim": "Positive linear association of X and Y",
+            "population": "cohort A; adult untreated LUAD",
+            "participants": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "Pearson correlation of X and Y",
+            "method": "Pearson",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "measured_result",
+            "result": {
+              "estimate": 0.7,
+              "interval": [
+                0.5,
+                0.85
+              ],
+              "interpretation": "positive association under stated model"
+            }
+          },
+          "right": {
+            "claim": "Negative linear association of X and Y",
+            "population": "cohort B; adult treated LUSC",
+            "participants": [
+              "b1",
+              "b2",
+              "b3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "Pearson correlation of X and Y",
+            "method": "Pearson",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "measured_result",
+            "result": {
+              "estimate": -0.7,
+              "interval": [
+                -0.85,
+                -0.5
+              ]
+            }
+          },
+          "comparison_scope": "Only supplied explicit contracts; fabricated numerical observations for mechanistic scope testing, never scientific evidence"
+        }
+      },
+      "expected": {
+        "scientific_resolution": "unknown"
+      },
+      "search_labels": {
+        "relation_properties": {
+          "contradiction": false,
+          "related_distinct": true
+        }
+      },
+      "reference_url": "https://github.com/asimog/oncojev",
+      "label_basis": "Generated explicit-scope engineering contracts; numerical observations are fabricated and independent scientific review is pending",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "specified-relation-different-estimand",
+      "split": "tuning",
+      "domain": "global_relation",
+      "public_inputs": {
+        "operation": "relation",
+        "relation": {
+          "left": {
+            "claim": "Positive linear association of X and Y",
+            "population": "cohort A; adult untreated LUAD",
+            "participants": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "Pearson correlation of X and Y",
+            "method": "Pearson",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "measured_result",
+            "result": {
+              "estimate": 0.7,
+              "interval": [
+                0.5,
+                0.85
+              ],
+              "interpretation": "positive association under stated model"
+            }
+          },
+          "right": {
+            "claim": "Difference in group means for X",
+            "population": "cohort A; adult untreated LUAD",
+            "participants": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "design": "independent groups",
+            "estimand": "Welch difference of independent group means",
+            "method": "Welch",
+            "variables": {
+              "group_a": "X in A",
+              "group_b": "X in B"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "measured_result",
+            "result": {
+              "estimate": 0.7,
+              "interval": [
+                0.5,
+                0.85
+              ],
+              "interpretation": "positive association under stated model"
+            }
+          },
+          "comparison_scope": "Only supplied explicit contracts; fabricated numerical observations for mechanistic scope testing, never scientific evidence"
+        }
+      },
+      "expected": {
+        "scientific_resolution": "unknown"
+      },
+      "search_labels": {
+        "relation_properties": {
+          "contradiction": false,
+          "related_distinct": true
+        }
+      },
+      "reference_url": "https://github.com/asimog/oncojev",
+      "label_basis": "Generated explicit-scope engineering contracts; numerical observations are fabricated and independent scientific review is pending",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "specified-relation-independent-replication",
+      "split": "tuning",
+      "domain": "global_relation",
+      "public_inputs": {
+        "operation": "relation",
+        "relation": {
+          "left": {
+            "claim": "Positive linear association of X and Y",
+            "population": "cohort A; adult untreated LUAD",
+            "participants": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "Pearson correlation of X and Y",
+            "method": "Pearson",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "measured_result",
+            "result": {
+              "estimate": 0.7,
+              "interval": [
+                0.5,
+                0.85
+              ],
+              "interpretation": "positive association under stated model"
+            }
+          },
+          "right": {
+            "claim": "Positive linear association of X and Y",
+            "population": "independent cohort B with same eligibility",
+            "participants": [
+              "b1",
+              "b2",
+              "b3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "Pearson correlation of X and Y",
+            "method": "Pearson",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "proposal",
+            "result": null,
+            "replication": "Acquire disjoint participants before measuring identical estimand; no outcome yet"
+          },
+          "comparison_scope": "Only supplied explicit contracts; fabricated numerical observations for mechanistic scope testing, never scientific evidence"
+        }
+      },
+      "expected": {
+        "scientific_resolution": "unknown"
+      },
+      "search_labels": {
+        "relation_properties": {
+          "paraphrase": false,
+          "independent_replication": true
+        }
+      },
+      "reference_url": "https://github.com/asimog/oncojev",
+      "label_basis": "Generated explicit-scope engineering contracts; numerical observations are fabricated and independent scientific review is pending",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "specified-relation-same-participant-sensitivity",
+      "split": "tuning",
+      "domain": "global_relation",
+      "public_inputs": {
+        "operation": "relation",
+        "relation": {
+          "left": {
+            "claim": "Positive linear association of X and Y",
+            "population": "cohort A; adult untreated LUAD",
+            "participants": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "Pearson correlation of X and Y",
+            "method": "Pearson",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "measured_result",
+            "result": {
+              "estimate": 0.7,
+              "interval": [
+                0.5,
+                0.85
+              ],
+              "interpretation": "positive association under stated model"
+            }
+          },
+          "right": {
+            "claim": "Positive linear association of X and Y",
+            "population": "cohort A; adult untreated LUAD",
+            "participants": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "standardized bivariate slope",
+            "method": "standardized simple OLS",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "standardize both complete-pair variables with sample SD",
+            "epistemic_status": "measured_result",
+            "result": {
+              "estimate": 0.7,
+              "interval": [
+                0.5,
+                0.85
+              ],
+              "interpretation": "positive association under stated model"
+            },
+            "replication": "none; same participants, sensitivity only"
+          },
+          "comparison_scope": "Only supplied explicit contracts; fabricated numerical observations for mechanistic scope testing, never scientific evidence"
+        }
+      },
+      "expected": {
+        "scientific_resolution": "unknown"
+      },
+      "search_labels": {
+        "relation_properties": {
+          "independent_replication": false,
+          "related_distinct": true
+        }
+      },
+      "reference_url": "https://github.com/asimog/oncojev",
+      "label_basis": "Generated explicit-scope engineering contracts; numerical observations are fabricated and independent scientific review is pending",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "specified-relation-operational-failure",
+      "split": "tuning",
+      "domain": "global_relation",
+      "public_inputs": {
+        "operation": "relation",
+        "relation": {
+          "left": {
+            "claim": "Positive linear association of X and Y",
+            "population": "cohort A; adult untreated LUAD",
+            "participants": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "Pearson correlation of X and Y",
+            "method": "Pearson",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "measured_result",
+            "result": {
+              "estimate": 0.7,
+              "interval": [
+                0.5,
+                0.85
+              ],
+              "interpretation": "positive association under stated model"
+            }
+          },
+          "right": {
+            "claim": "Positive linear association of X and Y",
+            "population": "cohort A; adult untreated LUAD",
+            "participants": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "Pearson correlation of X and Y",
+            "method": "Pearson",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "operational_failure",
+            "result": null,
+            "failure": "HTTP 503 before acquiring any source data; no scientific measurement"
+          },
+          "comparison_scope": "Only supplied explicit contracts; fabricated numerical observations for mechanistic scope testing, never scientific evidence"
+        }
+      },
+      "expected": {
+        "scientific_resolution": "unknown"
+      },
+      "search_labels": {
+        "relation_properties": {
+          "contradiction": false
+        }
+      },
+      "reference_url": "https://github.com/asimog/oncojev",
+      "label_basis": "Generated explicit-scope engineering contracts; numerical observations are fabricated and independent scientific review is pending",
+      "independent_review": "pending"
+    },
+    {
+      "case_id": "specified-relation-same-instance-duplicate",
+      "split": "tuning",
+      "domain": "global_relation",
+      "public_inputs": {
+        "operation": "relation",
+        "relation": {
+          "left": {
+            "claim": "Positive linear association of X and Y",
+            "population": "cohort A; adult untreated LUAD",
+            "participants": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "Pearson correlation of X and Y",
+            "method": "Pearson",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "measured_result",
+            "result": {
+              "estimate": 0.7,
+              "interval": [
+                0.5,
+                0.85
+              ],
+              "interpretation": "positive association under stated model"
+            }
+          },
+          "right": {
+            "claim": "Positive linear association of X and Y",
+            "population": "cohort A; adult untreated LUAD",
+            "participants": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "design": "paired cross-sectional observational",
+            "estimand": "Pearson correlation of X and Y",
+            "method": "Pearson",
+            "variables": {
+              "x": "X",
+              "y": "Y"
+            },
+            "endpoint": "molecular abundance",
+            "preprocessing": "same complete-pair rule",
+            "epistemic_status": "measured_result",
+            "result": {
+              "estimate": 0.7,
+              "interval": [
+                0.5,
+                0.85
+              ],
+              "interpretation": "positive association under stated model"
+            }
+          },
+          "comparison_scope": "Only supplied explicit contracts; fabricated numerical observations for mechanistic scope testing, never scientific evidence"
+        }
+      },
+      "expected": {
+        "scientific_resolution": "unknown"
+      },
+      "search_labels": {
+        "relation_properties": {
+          "paraphrase": true,
+          "independent_replication": false,
+          "contradiction": false
+        }
+      },
+      "reference_url": "https://github.com/asimog/oncojev",
+      "label_basis": "Generated explicit-scope engineering contracts; numerical observations are fabricated and independent scientific review is pending",
+      "independent_review": "pending"
+    }
+  ]
+}

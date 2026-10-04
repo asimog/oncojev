@@ -48,10 +48,11 @@ Blocks target 3-5 minutes: 240 s default, 180-300 s bounds and 30 s handoff rese
 Data-download ceilings and scientific process/isolation/validity controls remain.
 
 `serve` runs research continuously and exposes the read-only API; `cycle` runs
-one cycle. The service defaults to SQLite at `var/oncojev.sqlite3`. The active ordinary
-history is the WSL assessment store. Original Windows records are preserved separately
-in the read-only `var/archive/original-windows-history-20261002.sqlite3` archive;
-no automatic history merge is performed. An absolute
+one cycle. A new writable root bootstraps SQLite and the current curated capability
+registry without importing old research or bundled execution/fixture observations.
+The service defaults to SQLite at `var/oncojev.sqlite3`; that path may already contain
+local history, so use a new explicit root for a fresh instance. Historical archives
+are separate and are not automatically merged. An absolute
 `ONCOJEV_DATA_ROOT` changes the data root; `ONCOJEV_DB_PATH` overrides the database
 file. `HOST` and `PORT` configure the API bind address and port (default 8080).
 

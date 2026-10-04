@@ -6,7 +6,7 @@ from pathlib import Path
 from src.config.environment import load_local_environment
 from src.config.loader import load_models_config, load_runtime_config
 from src.config.models import RuntimeMode
-from src.evals.selection import evaluate_selection
+from evals.selection import evaluate_selection
 from src.persistence.repository import ResearchRepository
 from src.persistence.store import SqliteResearchStore
 from src.runtime.pydantic_ai.factory import build_harness_runtime, build_jev_client

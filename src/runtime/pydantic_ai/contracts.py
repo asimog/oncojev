@@ -28,7 +28,7 @@ from src.provenance import ExecutionReference, content_hash
 from src.oncolab.models import OncoLabKind
 from src.director.models import ResourceAllocation
 from src.evidence.models import ScientificEvidence
-from src.jev.client import JevClient
+from src.jev.client import JevClient, validate_jev_batch
 from src.jev.failure import JevOperationalFailure
 from src.jev.frontier import CandidateFrontierPolicy
 from src.jev.models import JevDecision, JevQuestionSpec, JevCallReceipt, JevExecutionFailure, JevFailureCategory
@@ -390,6 +390,16 @@ class HarnessRuntime:
             self.append_event(block_id, "IndexReceipt", receipt.model_dump(mode="json"))
         return receipt
 
+    def index_receipt_reference(self, receipt):
+        """Expose the persisted inspection context without granting execution or evidence."""
+        if self.repository is None:
+            return None
+        from src.memory.service import reference
+        saved = self.repository.store.latest(RecordKind.INDEX_RECEIPT, block_id=receipt.block_id)
+        if saved is None or saved.record_id != receipt.receipt_id:
+            raise ValueError("index receipt reference is unavailable")
+        return reference(saved).model_dump(mode="json")
+
     def set_service_state(self, value, *, cause=None):
         self.service_state = value
         if self.repository:
@@ -477,7 +487,8 @@ class HarnessRuntime:
     async def evaluate_jev(self, payload, questions):
         from copy import deepcopy
         async with self._jev_lock:
-            return await self.offload(self.jev.evaluate, deepcopy(payload), tuple(questions))
+            decisions = await self.offload(self.jev.evaluate, deepcopy(payload), tuple(questions))
+            return validate_jev_batch(decisions, questions)
 
     async def offload(self, operation, *inputs):
         """Only detached computation/transport; the caller owns state and persistence.
@@ -705,18 +716,19 @@ def register_director_tools(
     ) -> list[dict[str, Any]]:
         """Search bounded capability planning metadata; this never executes science."""
         matches = ctx.deps.runtime.index_for().search(query, kinds=kinds, tags=tags, limit=min(limit, ctx.deps.runtime.oncolab_search_k))
-        ctx.deps.runtime.index_receipt("director", "search", query=query, kinds=tuple(kinds), tags=tuple(tags),
+        receipt = ctx.deps.runtime.index_receipt("director", "search", query=query, kinds=tuple(kinds), tags=tuple(tags),
                                       requested_limit=limit, effective_limit=min(limit, ctx.deps.runtime.oncolab_search_k),
                                       returned_ids=tuple(m.capability_id for m in matches))
-        return [ctx.deps.runtime.index_for().card(match).model_dump(mode="json") for match in matches]
+        return [{**ctx.deps.runtime.index_for().card(match).model_dump(mode="json"),
+                 "context_reference": ctx.deps.runtime.index_receipt_reference(receipt)} for match in matches]
 
     @agent.tool
     async def describe_oncolab(ctx: RunContext[DirectorDeps], capability_id: str) -> dict[str, Any] | None:
         """Describe one capability and bounded verification history; neither grants execution authority."""
         result = ctx.deps.runtime.index_for().describe_with_verification(capability_id)
-        ctx.deps.runtime.index_receipt("director", "describe", requested_id=capability_id,
+        receipt = ctx.deps.runtime.index_receipt("director", "describe", requested_id=capability_id,
                                       returned_ids=(capability_id,) if result else ())
-        return result
+        return {**result, "context_reference": ctx.deps.runtime.index_receipt_reference(receipt)} if result else None
 
     @agent.tool
     async def allocate_block(
@@ -859,18 +871,19 @@ def register_researcher_tools(
         runtime = ctx.deps.runtime
         effective = min(limit, runtime.oncolab_search_k)
         matches = runtime.index_for(ctx.deps.block_id).search(query, kinds=kinds, tags=tags, limit=effective)
-        runtime.index_receipt("researcher", "search", block_id=ctx.deps.block_id, query=query, kinds=tuple(kinds),
+        receipt = runtime.index_receipt("researcher", "search", block_id=ctx.deps.block_id, query=query, kinds=tuple(kinds),
                               tags=tuple(tags), requested_limit=limit, effective_limit=effective,
                               returned_ids=tuple(m.capability_id for m in matches))
-        return [runtime.index_for(ctx.deps.block_id).card(match).model_dump(mode="json") for match in matches]
+        return [{**runtime.index_for(ctx.deps.block_id).card(match).model_dump(mode="json"),
+                 "context_reference": runtime.index_receipt_reference(receipt)} for match in matches]
 
     @agent.tool
     async def describe_oncolab(ctx: RunContext[ResearcherDeps], capability_id: str) -> dict[str, Any] | None:
         """Describe one global capability and its verification history before choosing a typed wrapper."""
         result = ctx.deps.runtime.index_for(ctx.deps.block_id).describe_with_verification(capability_id)
-        ctx.deps.runtime.index_receipt("researcher", "describe", block_id=ctx.deps.block_id, requested_id=capability_id,
+        receipt = ctx.deps.runtime.index_receipt("researcher", "describe", block_id=ctx.deps.block_id, requested_id=capability_id,
                                       returned_ids=(capability_id,) if result else ())
-        return result
+        return {**result, "context_reference": ctx.deps.runtime.index_receipt_reference(receipt)} if result else None
 
     @agent.tool
     async def acquire_gdc(
@@ -1207,10 +1220,14 @@ def register_researcher_tools(
             failures = error.failures if isinstance(error, JevOperationalFailure) else (
                 JevExecutionFailure(question_id=f"{candidate_id}-batch", category=JevFailureCategory.VALIDATION,
                                     detail=f"construction:{type(error).__name__}"),)
+            resolved = {d.model_resolved for d in getattr(error, "decisions", ())}
+            metadata = getattr(error, "metadata", None)
+            if isinstance(metadata, dict) and isinstance(metadata.get("model_resolved"), str):
+                resolved.add(metadata["model_resolved"])
             receipt = receipt.model_copy(update={"outcome": "failed", "duration_ms": (perf_counter()-started)*1000,
                                                  "failures": failures, "decisions": getattr(error, "decisions", ()),
                                                  "reported_metadata": getattr(error, "metadata", None),
-                                                 "models_resolved": (error.metadata["model_resolved"],) if getattr(error, "metadata", None) else ()})
+                                                 "models_resolved": tuple(sorted(resolved))})
             append(ctx, "JevExecutionFailure", {"call_id": call_id, "candidate_id": candidate_id,
                 "question_ids": [f.question_id for f in failures], "categories": [f.category.value for f in failures]})
             if runtime.repository is not None:

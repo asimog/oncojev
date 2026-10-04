@@ -13,7 +13,7 @@ from src.persistence.records import RecordKind, StoredRecord
 from src.provenance import content_hash
 from src.runtime.verification import local_verification_passed
 from src.science.qualification import scientific_qualification_resolves
-from src.evals.reference import utility_evaluation_resolves
+from src.oncolab.utility import utility_evaluation_resolves
 
 
 class CapabilityProposal(BaseModel, frozen=True):

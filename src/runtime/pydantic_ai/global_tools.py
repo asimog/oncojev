@@ -66,11 +66,18 @@ async def prepare_frontier(runtime, objective, *, limit=10, proposals=()):
                 record_id=relation["relation_id"], payload=relation))
             relations.append(relation)
         cards = index.search(candidate.objective, limit=3)
+        neighbour_ids = {other.candidate_id for other in neighbours}
+        applicable_relations = [r for r in relations
+            if candidate.candidate_id in {r["left"]["candidate_id"], r["right"]["candidate_id"]}
+            and ({r["left"]["candidate_id"], r["right"]["candidate_id"]} - {candidate.candidate_id}) <= neighbour_ids]
         payload = {"mission": objective, "candidate": candidate.model_dump(mode="json"),
                    "comparison": [c.model_dump(mode="json") for c in neighbours],
                    "capabilities": [index.card(c).model_dump(mode="json") for c in cards],
                    "block_seconds": runtime.manager.policy.default_seconds if runtime.manager.policy else 240,
-                   "relations": [{"relation_id": r["relation_id"], "status": r["status"]} for r in relations[-2:]]}
+                   "relations": [{"relation_id": r["relation_id"], "status": r["status"],
+                       "left_id": r["left"]["candidate_id"], "right_id": r["right"]["candidate_id"],
+                       "semantic_call_id": r.get("semantic_call_id"), "decisions": r.get("decisions", []),
+                       "failure_type": r.get("failure_type")} for r in applicable_relations]}
         result, failure = await measure("global_investigation", candidate.candidate_id, payload)
         if result:
             candidate = candidate.model_copy(update={"status": result["frontier"]["action"], "semantic_call_id": result["call_id"]})

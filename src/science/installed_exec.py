@@ -8,13 +8,17 @@ import sys
 def main():
     application = Path(sys.argv[1]).resolve(strict=True)
     root = Path(sys.argv[2]).resolve(strict=True)
+    # Resolve the trusted package before Landlock denies listing its parent.
+    # Otherwise a cold FileFinder can fall back to an unrelated editable install.
+    sys.path.insert(0, str(application))
+    import src
+    if Path(src.__file__).resolve().parent != application / "src":
+        raise RuntimeError("installed Science application package mismatch")
     spec = importlib.util.spec_from_file_location("confinement", application / "src/runtime/confinement.py")
     confinement = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(confinement)
     confinement.restrict_filesystem((root,), (application / "src", Path(sys.prefix), Path(sys.base_prefix)))
     confinement.restrict_process_authority()
-    # -I omits the checkout from sys.path. Only this trusted owner adds it.
-    sys.path.insert(0, str(application))
     from src.science.execution import ScienceExecutor
     from src.science.models import AnalysisSpec, InvalidAnalysis
     from src.sources.models import AcquisitionRecord, ScientificArtifact

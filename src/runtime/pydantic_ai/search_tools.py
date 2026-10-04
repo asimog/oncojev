@@ -33,9 +33,17 @@ def retain_hypothesis(runtime, block_id, hypothesis, proposed_test, *, provenanc
 def register_search_page(agent):
     @agent.tool
     async def search_oncolab_page(ctx: RunContext[Any], query: str = "", limit: int = 8, continuation: str | None = None,
-                                 kinds: list[str] = [], tags: list[str] = []) -> dict[str, Any]:
-        """Compact discovery with stable continuation. Expand IDs explicitly before selection."""
+                                 kinds: list[str] = [], tags: list[str] = [], need: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Discover contracts from a query or scientific need, including before acquisition.
+
+        Need constraints are retained context, not automatically satisfied prerequisites.
+        Expand selected IDs and validate their execution contracts before use.
+        """
         runtime=ctx.deps.runtime
+        from src.oncolab.methods import ScientificNeed
+        structured = ScientificNeed.model_validate(need) if need is not None else None
+        need_context = structured.model_dump(mode="json") if structured else None
+        query = query or (" ".join((structured.question, structured.estimand))[:4000] if structured else "")
         block_id=getattr(ctx.deps,"block_id",None)
         key=f"{block_id or 'director'}:index_candidates"
         effective=min(limit,runtime.oncolab_search_k) if runtime.unbounded_work else min(limit,runtime.oncolab_search_k,runtime.oncolab_candidate_k-runtime._counts.get(key,0))
@@ -48,8 +56,10 @@ def register_search_page(agent):
             query=query,kinds=tuple(kinds),tags=tuple(tags),requested_limit=limit,effective_limit=effective,
             returned_ids=tuple(c.capability_id for c in page.cards),snapshot_id=page.snapshot_id,
             retrieval_version=page.retrieval_version,continuation=continuation,
-            contract_hashes={c.capability_id:c.contract_sha256 for c in page.cards})
-        return {**page.model_dump(mode="json"),"receipt_id":receipt.receipt_id}
+            contract_hashes={c.capability_id:c.contract_sha256 for c in page.cards},
+            scientific_need=need_context, need_sha256=content_hash(need_context) if need_context is not None else None)
+        return {**page.model_dump(mode="json"),"receipt_id":receipt.receipt_id,
+                "context_reference":runtime.index_receipt_reference(receipt)}
 
 
 def available_inputs(runtime,block_id,acquisition_ids):
@@ -103,6 +113,11 @@ def register_local_semantic_tools(agent):
         # The bounded agent view may omit details; the existing durable owner retains all generated alternatives.
         import copy
         retained_result = copy.deepcopy(result)
+        identity = content_hash({"need": result["need_sha256"], "receipt": receipt.receipt_id})
+        if runtime.repository is not None:
+            from src.persistence.records import RecordKind, StoredRecord
+            runtime.repository.store.append(StoredRecord(kind=RecordKind.METHOD_CANDIDATES,
+                record_id=identity, block_id=block_id, payload=retained_result))
         result["omitted_candidate_ids"] = []
         while len(canonical_bytes(result)) > 32768 and alternatives:
             result["omitted_candidate_ids"].append(alternatives.pop()["capability_id"])
@@ -110,13 +125,8 @@ def register_local_semantic_tools(agent):
         if len(canonical_bytes(result)) > 32768:
             raise ValueError("representation context exceeds method generation byte bound; select fewer inputs")
         state = runtime.research_state.get(block_id)
-        identity = content_hash({"need": result["need_sha256"], "receipt": receipt.receipt_id})
         runtime.persist_state(state.append("candidates", StateFragment(fragment_id=identity, kind="method_alternatives",
             summary=need.question, provenance=(receipt.receipt_id, *acquisition_ids), details=result)))
-        if runtime.repository is not None:
-            from src.persistence.records import RecordKind, StoredRecord
-            runtime.repository.store.append(StoredRecord(kind=RecordKind.METHOD_CANDIDATES,
-                record_id=identity, block_id=block_id, payload=retained_result))
         return result
 
     @agent.tool
@@ -160,7 +170,7 @@ def register_local_semantic_tools(agent):
         if contract is None:raise ValueError("unknown capability ID")
         receipt=runtime.index_receipt("researcher","describe",block_id=block_id,requested_id=capability_id,
             returned_ids=(capability_id,),contract_hashes={capability_id:contract["contract_sha256"]},snapshot_id=runtime.index_for(block_id).snapshot_id)
-        if "representation_need" in need:
+        if "representation_need" in need or {"question", "estimand", "population", "design"} <= need.keys():
             structured = ScientificNeed.model_validate(need)
             if len(acquisition_ids) > 10 or len(set(acquisition_ids)) != len(acquisition_ids):
                 raise ValueError("bounded unique method inputs required")

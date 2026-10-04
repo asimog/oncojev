@@ -16,7 +16,7 @@ from src.memory.service import reference
 from src.oncolab.governance import CapabilityProposal, propose, review
 from src.oncolab.execution import ExecutionRoute
 from src.oncolab.models import OncoLabAvailability, OncoLabValidationState
-from src.evals.reference import retain_utility_evaluation
+from src.oncolab.utility import retain_utility_evaluation
 from src.provenance import content_hash
 
 

@@ -13,11 +13,16 @@ class ScientificNeed(BaseModel, frozen=True):
     estimand: str = Field(min_length=1, max_length=1000)
     population: str = Field(min_length=1, max_length=1000)
     design: str = Field(min_length=1, max_length=1000)
-    representation_need: RepresentationNeed
+    representation_need: RepresentationNeed | None = None
+    required_information: tuple[str, ...] = Field(default=(), max_length=20)
+    entity_relationships: tuple[str, ...] = Field(default=(), max_length=20)
+    measurement_requirements: tuple[str, ...] = Field(default=(), max_length=20)
+    constraints: tuple[str, ...] = Field(default=(), max_length=20)
+    known_uncertainty: tuple[str, ...] = Field(default=(), max_length=20)
 
     @model_validator(mode="after")
     def bounded_consistent_need(self):
-        if self.estimand != self.representation_need.estimand:
+        if self.representation_need is not None and self.estimand != self.representation_need.estimand:
             raise ValueError("method and representation must share the declared estimand")
         if len(canonical_bytes(self.model_dump(mode="json"))) > 8192:
             raise ValueError("scientific need exceeds byte bound")
@@ -28,6 +33,13 @@ def method_inputs(records, need):
     """Check each owned representation independently; never join partial inputs."""
     assessments = []
     for record in records:
+        if need.representation_need is None:
+            assessments.append({"acquisition_id": record.acquisition_id,
+                "content_sha256": record.content_sha256,
+                "checks": {"eligible": False, "status": "unbound",
+                           "reasons": ["representation_contract_unbound"]},
+                "available_inputs": {"acquisition": True}})
+            continue
         checks = assess_retained_representation(record, need.representation_need)
         # Application numerical routes require actual finite values even when
         # the caller omitted a numeric_roles declaration.

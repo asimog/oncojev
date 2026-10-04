@@ -63,6 +63,58 @@ def _decision(question: JevQuestionSpec, context: dict, answer: object) -> JevDe
     )
 
 
+def validate_jev_batch(decisions, questions):
+    """Validate measurement binding before any runtime policy consumes a batch.
+
+    Preserve valid partial answers for inspection on failure, never advancement.
+    Runtime adapters share this check; native transport validation is additional.
+    """
+    declared = {q.question_id: q for q in questions}
+    failures, valid, seen = [], [], set()
+    if not questions or len(declared) != len(questions):
+        failures.append(JevExecutionFailure(question_id="__batch__", category=JevFailureCategory.VALIDATION,
+            detail="invalid declared question batch"))
+    kinds = {"noul": NoulDecision, "choice": ChoiceDecision, "score": ScoreDecision}
+    for decision in decisions:
+        identity = getattr(decision, "question_id", "__batch__")
+        try:
+            question = declared.get(identity)
+            if question is None or identity in seen:
+                raise ValueError("unexpected or duplicate decision identity")
+            seen.add(identity)
+            if type(decision) is not kinds[question.primitive]:
+                raise ValueError("decision primitive differs from declared question")
+            # model_copy/alternate adapters may bypass Pydantic validation.
+            type(decision).model_validate(decision.model_dump())
+            if decision.projection_id != question.projection_id or decision.question_version != question.question_version:
+                raise ValueError("decision is bound to another projection or question version")
+            probabilities = None
+            if isinstance(decision, NoulDecision):
+                if not math.isfinite(decision.p_true): raise ValueError("nonfinite Noul value")
+            elif isinstance(decision, ChoiceDecision):
+                probabilities = decision.probabilities
+                if set(probabilities) != set(question.criteria) or decision.selected_option not in question.criteria:
+                    raise ValueError("choice support differs from declared criteria")
+            else:
+                probabilities = decision.level_probabilities
+                if set(probabilities) != set(range(len(question.criteria))) or not math.isfinite(decision.expected_score) or not 0 <= decision.expected_score <= len(question.criteria)-1:
+                    raise ValueError("score support differs from declared levels")
+            if probabilities is not None and (not probabilities or
+                any(not math.isfinite(p) or not 0 <= p <= 1 for p in probabilities.values()) or
+                abs(sum(probabilities.values())-1) > 1e-5):
+                raise ValueError("invalid native probability distribution")
+            valid.append(decision)
+        except (ValueError, TypeError, AttributeError) as error:
+            failures.append(JevExecutionFailure(question_id=identity, category=JevFailureCategory.VALIDATION,
+                detail=str(error)))
+    for identity in declared.keys() - seen:
+        failures.append(JevExecutionFailure(question_id=identity, category=JevFailureCategory.VALIDATION,
+            detail="missing decision"))
+    if failures:
+        raise JevOperationalFailure(tuple(failures), decisions=valid, metadata=getattr(decisions, "metadata", None))
+    return decisions
+
+
 class TypeSafeJevClient:
     """Live TypeSafe System One measurement; failures are operational, never judgments."""
 

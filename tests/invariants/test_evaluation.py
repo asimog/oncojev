@@ -9,9 +9,9 @@ from pydantic_ai.models.function import DeltaToolCall, FunctionModel
 
 from src.config.loader import load_models_config, load_runtime_config
 from src.config.models import RuntimeMode
-from src.evals.corpus import DIRECTIONS
-from src.evals.harness import evaluate_corpus, evaluate_direction
-from src.evals.models import EvaluationCondition, EvaluationReport
+from evals.corpus import DIRECTIONS
+from evals.harness import evaluate_corpus, evaluate_direction
+from evals.models import EvaluationCondition, EvaluationReport
 from src.persistence.repository import ResearchRepository
 from src.runtime.cycle import run_cycle
 from src.runtime.pydantic_ai.agents import create_agents
@@ -189,7 +189,7 @@ def test_failed_condition_preserves_partial_results_and_continues(failure):
 
 
 def test_selection_evaluation_exposes_recall_unknown_denominators_and_non_gdc_space():
-    from src.evals.selection import evaluate_selection,SelectionTask
+    from evals.selection import evaluate_selection,SelectionTask
     from src.runtime.pydantic_ai.contracts import HarnessRuntime
     from src.block.manager import BlockManager
     from src.director.models import ResourceAllocation
@@ -209,7 +209,7 @@ def test_selection_evaluation_exposes_recall_unknown_denominators_and_non_gdc_sp
 def test_representation_evaluation_isolates_labels_and_keeps_failure_fallback_gated(tmp_path):
     """Evaluation receipts expose misses/failures without leaking labels or granting absent inputs."""
     import asyncio, json
-    from src.evals.representation import RepresentationCase, evaluate_representations
+    from evals.representation import RepresentationCase, evaluate_representations
     from src.runtime.pydantic_ai.contracts import HarnessRuntime
     from src.persistence.store import SqliteResearchStore
     from src.persistence.records import RecordKind
@@ -253,7 +253,7 @@ def test_representation_evaluation_isolates_labels_and_keeps_failure_fallback_ga
 
 
 def test_reference_comparison_withholds_labels_and_matches_fresh_conditions():
-    from src.evals.reference import ReferenceCase, evaluate_reference_cases
+    from evals.reference import ReferenceCase, evaluate_reference_cases
     case = ReferenceCase(case_id='held-out-secret', split='held_out', domain='contract', public_inputs={'direction': 'lung cancer', 'values': [1, 2]},
         expected={'result': 3}, reference_url='https://example.invalid/reference', label_basis='independent review pending')
     stores, gates = [], []
@@ -272,7 +272,7 @@ def test_reference_comparison_withholds_labels_and_matches_fresh_conditions():
 
 
 def test_utility_producer_binds_candidate_scope_comparison_without_fabricating_qualification():
-    from src.evals.reference import retain_utility_evaluation
+    from src.oncolab.utility import retain_utility_evaluation
     from src.persistence.store import SqliteResearchStore
     from src.persistence.records import RecordKind, StoredRecord
     from src.provenance import content_hash
@@ -293,7 +293,7 @@ def test_utility_producer_binds_candidate_scope_comparison_without_fabricating_q
 
 
 def test_whole_lab_memory_and_open_proposal_variants_keep_actual_choice_lineage():
-    from src.evals.reference import evaluate_reference_cases, load_reference_corpus, reference_consumer_adapter
+    from evals.reference import evaluate_reference_cases, load_reference_corpus, reference_consumer_adapter
     cases = load_reference_corpus(ROOT / 'evals/reference/scientific-v1.json')
     case = cases[0].model_copy(update={'public_inputs': {**cases[0].public_inputs, 'operation': 'whole_lab', 'search_mode': 'retained_only'}})
     report = evaluate_reference_cases((case,), reference_consumer_adapter, models=load_models_config(ROOT / 'config/models.yaml'),
@@ -311,7 +311,7 @@ def test_whole_lab_memory_and_open_proposal_variants_keep_actual_choice_lineage(
 
 
 def test_reference_adapter_exception_is_not_masked_by_an_earlier_incomplete_cycle():
-    from src.evals.reference import evaluate_reference_cases, ReferenceCase
+    from evals.reference import evaluate_reference_cases, ReferenceCase
     from src.block.models import CycleStatus
     case = ReferenceCase(case_id='failure', split='held_out', domain='operational', public_inputs={'direction': 'lung cancer'},
         expected={'result': 1}, reference_url='https://example.test/fixture', label_basis='Operational failure fixture')

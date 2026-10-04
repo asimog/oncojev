@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 from types import SimpleNamespace
-from src.evals.selection import SELECTION_TASKS, SelectionTask, evaluate_selection
+from evals.selection import SELECTION_TASKS, SelectionTask, evaluate_selection
 from src.oncolab.institution import OncoLabInstitution, RegistryPin, application_identity
 from src.oncolab.catalogue import initial_oncolab_index
 from src.persistence.store import SqliteResearchStore

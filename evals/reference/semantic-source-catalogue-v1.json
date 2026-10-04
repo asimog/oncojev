@@ -1,0 +1,1808 @@
+{
+  "version": "scientific-reference-corpus-v1",
+  "cases": [
+    {
+      "case_id": "fresh-luad-paired-modality-recall",
+      "split": "tuning",
+      "domain": "representation",
+      "public_inputs": {
+        "operation": "search_comparison",
+        "search_domain": "representation",
+        "need": {
+          "estimand": "Explore source-backed alternatives for paired oncology measurements; prerequisites unmeasured",
+          "representation": "paired_data",
+          "entity_key": "case_id",
+          "entity_unit": "case",
+          "fields": {
+            "x": "x",
+            "y": "y"
+          },
+          "numeric_roles": [],
+          "units": {},
+          "identities": {},
+          "require_complete_coverage": false,
+          "minimum_complete_rows": 1
+        },
+        "candidates": [
+          {
+            "id": "file-catalogue",
+            "acquisition": {
+              "acquisition_id": "425f4f50-b25c-45b8-8b12-d91a4900717f",
+              "source": "gdc",
+              "retrieved_at": "2026-10-03T19:21:28.970773Z",
+              "request": {
+                "fields": "file_id,file_name,data_type,data_format,access,analysis.workflow_type,cases.case_id",
+                "format": "JSON",
+                "size": 100,
+                "from": 0,
+                "sort": "file_id:asc",
+                "filters": {
+                  "op": "and",
+                  "content": [
+                    {
+                      "op": "in",
+                      "content": {
+                        "field": "cases.project.project_id",
+                        "value": [
+                          "TCGA-LUAD"
+                        ]
+                      }
+                    },
+                    {
+                      "op": "in",
+                      "content": {
+                        "field": "data_type",
+                        "value": [
+                          "Masked Somatic Mutation",
+                          "Copy Number Segment",
+                          "Gene Expression Quantification"
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              "records": [
+                {
+                  "id": "00113bb1-f400-4a76-b508-c4b76c143a40",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "5fd0f07b-8bb9-4378-bd26-28a26057e8fe"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TCGA-55-8085-01A-11D-A92O-36.WholeGenome.RP-1657.cr.igv.reheader.seg.txt",
+                  "file_id": "00113bb1-f400-4a76-b508-c4b76c143a40",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "0042d9ae-e8f9-40ab-bcfd-8a0ca839df70",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "66ed89f6-8ba2-49d0-af0f-4b6ebf2381bf"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TATTY_p_TCGA_b52_156_SNP_N_GenomeWideSNP_6_B12_808922.grch38.seg.v2.txt",
+                  "file_id": "0042d9ae-e8f9-40ab-bcfd-8a0ca839df70",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "0052ae83-7ae5-470a-a125-5cd94a9fa9e9",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "5d2a9a4f-678d-4089-a8c5-81a5cb696629"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "a6a6b9c6-9db7-42b3-a09f-770b7e126fbb.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "0052ae83-7ae5-470a-a125-5cd94a9fa9e9",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "005633a9-bb87-43ef-9f87-64f57dd9f469",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "e5f956dd-f49f-435c-83c3-5b1b0a2050ed"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "BUNGS_p_TCGA_257_258_N_GenomeWideSNP_6_D11_1301070.grch38.seg.v2.txt",
+                  "file_id": "005633a9-bb87-43ef-9f87-64f57dd9f469",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "006679a6-4e37-4b6a-89b2-7c14861e8238",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "2b68b51f-bd4c-4bbb-b4e6-2eead53da2a4"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "PALLS_p_TCGASNP_213_N_GenomeWideSNP_6_B12_1148148.grch38.seg.v2.txt",
+                  "file_id": "006679a6-4e37-4b6a-89b2-7c14861e8238",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "007db2f8-927b-4e77-9f33-052f0be22a98",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "9b38eded-3f46-4aaa-9991-68008d97bdbe"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TCGA-44-7670-01A-11D-A92N-36.WholeGenome.RP-1657.cr.igv.reheader.seg.txt",
+                  "file_id": "007db2f8-927b-4e77-9f33-052f0be22a98",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "009254a2-ea81-4c76-8044-7267a9f81364",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "1575148b-0f63-44ee-86fd-93ae1a02be0b"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "dcc71d2d-9707-4234-a3e7-49b9cf977250.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "009254a2-ea81-4c76-8044-7267a9f81364",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "00b32bb6-8478-4869-9fd1-54ef74325111",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "4addf05f-3668-4b3f-a17f-c0227329ca52"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TATTY_p_TCGA_b52_156_SNP_N_GenomeWideSNP_6_C01_809070.grch38.seg.v2.txt",
+                  "file_id": "00b32bb6-8478-4869-9fd1-54ef74325111",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "00b79ebc-f2e4-4c9f-a1b7-beae9a37454f",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "9944f46f-9fa8-4e2c-a806-776bec7f8803"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "DUNGS_p_TCGA_b84_115_SNP_N_GenomeWideSNP_6_F06_771634.grch38.seg.v2.txt",
+                  "file_id": "00b79ebc-f2e4-4c9f-a1b7-beae9a37454f",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "00e8a704-8e8c-4ede-b3ed-40a5eece14f1",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "18478121-f1d1-4bdd-9511-8ab22f4a0660"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "18a20bbe-9dd3-403b-97aa-3281a388467f_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "00e8a704-8e8c-4ede-b3ed-40a5eece14f1",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "00f8128f-01fb-46a5-a4fc-591907b3d51a",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "cc3d9750-7ce0-489f-86d4-8017b7ebed29"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "DUNGS_p_TCGA_b84_115_SNP_N_GenomeWideSNP_6_B07_771566.grch38.seg.v2.txt",
+                  "file_id": "00f8128f-01fb-46a5-a4fc-591907b3d51a",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "010ba621-7ec1-452e-9115-b7ec5f9b37d2",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "47062ad2-ba82-45c8-a871-bdea84f0c405"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "45f13e24-9fba-4f78-a0ce-7da6b2b852f6.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "010ba621-7ec1-452e-9115-b7ec5f9b37d2",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "0118a568-3df7-4360-a809-d1fd71c7755e",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "706420c4-8820-4b41-80d9-f3efd1d2a4f0"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "907a44d7-1da0-489d-b707-b8f4239bbe71_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "0118a568-3df7-4360-a809-d1fd71c7755e",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "0121a6c3-c7ae-4619-b07a-27bb28541478",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "62380447-3b94-4e7c-823a-72dd7b4ccf3a"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "87c3bd07-208e-40e5-b427-f4f917260392.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "0121a6c3-c7ae-4619-b07a-27bb28541478",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "0182902d-bb3b-4b9d-bb2a-1b00c14e3b11",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "0c0b610e-fe4c-406d-a5ed-5cc3b11dabf5"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "0196bd59-8bff-46da-a06a-4114fb1ffdb6.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "0182902d-bb3b-4b9d-bb2a-1b00c14e3b11",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "01d0adea-7f62-4841-a9dd-670484dfde86",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "e8b7a103-644f-4865-92f8-80b053bd5e17"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "EGGAR_p_TCGAb33and37_SNP_N_GenomeWideSNP_6_B01_585118.grch38.seg.v2.txt",
+                  "file_id": "01d0adea-7f62-4841-a9dd-670484dfde86",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "01e89769-e754-4eca-a5a3-b1b72ac4953f",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "595fc3ad-f603-421b-b130-52f1f617050b"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "751f6ac7-2f2a-4300-9ba4-87a92920d8bb.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "01e89769-e754-4eca-a5a3-b1b72ac4953f",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "020889ff-a173-496b-85bf-a712180027c7",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "9944f46f-9fa8-4e2c-a806-776bec7f8803"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TCGA-50-5049-01A-01D-A92N-36.WholeGenome.RP-1657.cr.igv.reheader.seg.txt",
+                  "file_id": "020889ff-a173-496b-85bf-a712180027c7",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "023a34d9-c000-4053-b695-5b984b4a6fc1",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "362000e4-cf7c-48fc-93cc-8f5994b442ea"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "06770623-6a10-4874-9eea-1497077f18ac.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "023a34d9-c000-4053-b695-5b984b4a6fc1",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "02c37aa1-ff1e-4548-ace1-0953351e6d01",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "9b38eded-3f46-4aaa-9991-68008d97bdbe"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "418928d4-30ef-4e1c-ab3c-957ef4948ff8.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "02c37aa1-ff1e-4548-ace1-0953351e6d01",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "02ddde9e-c1d4-443b-95fa-1cb9ebcf30b6",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "6e3b6b72-142d-4b8d-a462-28a205796e41"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "433f9e13-9954-4055-8d1a-e0353dc1e878.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "02ddde9e-c1d4-443b-95fa-1cb9ebcf30b6",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "02f8051b-eeba-4da3-a517-b0b92ff4efac",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "8fdbd88f-19ae-4ab8-bcd7-6bfa1bbde742"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "26b2b1c8-8f78-4ef9-a90e-f5744154b8b4.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "02f8051b-eeba-4da3-a517-b0b92ff4efac",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "030d778f-ecb4-44eb-8baa-4286e18c9fdd",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "87f1b3df-4bc7-4336-b658-f30ac1c5c796"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "84595c09-6f85-4a1d-98fa-7d9bc9dc2c28.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "030d778f-ecb4-44eb-8baa-4286e18c9fdd",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "0344b01e-7430-4200-81cb-d48a3a8998ac",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "e0acafdd-06d0-48a6-bd68-577ef666a419"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "5387a7a6-6882-476e-a57c-fffca53b11e2.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "0344b01e-7430-4200-81cb-d48a3a8998ac",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "0344d3bb-8bb2-459e-bc1f-ba31c7470d08",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "301ca6e8-7981-4264-b4ae-38f56f7f9225"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "39807893-979e-44c6-ada9-444c68b863c3.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "0344d3bb-8bb2-459e-bc1f-ba31c7470d08",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "035231ec-5900-4d97-a10f-e39bd2c932fc",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "4b92fce2-3772-40eb-ab34-a27937b58590"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "514d32f1-f689-47bc-b748-2a831cc21d37.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "035231ec-5900-4d97-a10f-e39bd2c932fc",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "035ff92d-db23-40c6-9a9e-40d05cda9756",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "0c0b610e-fe4c-406d-a5ed-5cc3b11dabf5"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "2d5c6425-e3f4-4389-9ddf-fde694b4227e_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "035ff92d-db23-40c6-9a9e-40d05cda9756",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "03680aea-84a2-4775-bb9c-24f8c5907247",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "0075437e-ba1a-46be-86d6-9773209a2b5e"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "0a4e0b83-7afa-475b-8586-e9e79e31d6d2.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "03680aea-84a2-4775-bb9c-24f8c5907247",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "036d7acf-c341-4947-ad41-3447df724721",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "cc3d9750-7ce0-489f-86d4-8017b7ebed29"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "DUNGS_p_TCGA_b84_115_SNP_N_GenomeWideSNP_6_G11_771644.grch38.seg.v2.txt",
+                  "file_id": "036d7acf-c341-4947-ad41-3447df724721",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "03773c1f-655f-4f8a-b1e9-0da7b85c95aa",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "bd4e9a9f-17f3-4d33-92fc-fcc45dd0e7b4"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "24e2c0ac-fdfd-483f-bf7d-c44fa2f1b37a_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "03773c1f-655f-4f8a-b1e9-0da7b85c95aa",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "03a7fa67-c600-4256-8841-cb179fd787eb",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "595fc3ad-f603-421b-b130-52f1f617050b"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "DRAMA_p_TCGA_276_278_N_GenomeWideSNP_6_B08_1322406.grch38.seg.v2.txt",
+                  "file_id": "03a7fa67-c600-4256-8841-cb179fd787eb",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "03add666-b87c-414c-8695-5667f3b599c1",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "67dbe286-edb3-4d07-8f74-9e5254f01945"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "778cde8c-6445-4b59-9185-3cc50f51836d.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "03add666-b87c-414c-8695-5667f3b599c1",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "04444f9e-cb93-4248-adf5-f25e2dc42b3b",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "2f1a4b16-104c-40eb-8114-8245847bb716"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TCGA-86-8585-01A-11D-A92R-36.WholeGenome.RP-1657.cr.igv.reheader.seg.txt",
+                  "file_id": "04444f9e-cb93-4248-adf5-f25e2dc42b3b",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "045379cc-7576-4f63-a971-3202c6afcd5d",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "7a111b4f-46e9-4e34-8024-0b9fdc5cbcd8"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TCGA-MP-A4TH-01A-31D-A92T-36.WholeGenome.RP-1657.cr.igv.reheader.seg.txt",
+                  "file_id": "045379cc-7576-4f63-a971-3202c6afcd5d",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "0474ea67-9ba2-4047-b724-5fc3a865446c",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "44dec838-b653-42a7-a58b-a1fd232cd68c"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "6d2b0633-5be4-4026-920c-427d3aa7c763_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "0474ea67-9ba2-4047-b724-5fc3a865446c",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "04778fc1-a821-4029-a383-d88e711f3bee",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "2a43e61e-2151-4c5a-b062-74ce9dfd8d4a"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "22cd91fc-54c5-43e0-80ff-19a419298721.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "04778fc1-a821-4029-a383-d88e711f3bee",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "047c7c3b-0baa-41fe-91c7-e3c59a55bdc3",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "15340dd3-84ae-49fb-989a-eb212f3e73da"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "6680da97-11ec-49b1-8ebf-698f5e20b6a7.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "047c7c3b-0baa-41fe-91c7-e3c59a55bdc3",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "04ac9723-f0ec-449c-bdbc-e03a37e314ef",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "aea68827-dc0f-484d-a00d-06deeaa4b3ce"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "IMPLY_p_TCGA_b127_144_SNP_N_GenomeWideSNP_6_A11_808416.grch38.seg.v2.txt",
+                  "file_id": "04ac9723-f0ec-449c-bdbc-e03a37e314ef",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "04b50865-c367-44be-8288-3c5464135074",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "ffb0c0b7-165e-4439-b3e6-62431f40b7fe"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "32131c87-c7db-41cc-990c-f62e1788ad0d.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "04b50865-c367-44be-8288-3c5464135074",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "04cf76d7-4dc2-440d-a151-ce3a2d20fa5b",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "15f12d2c-b834-4bfc-b526-f03bf85bfe96"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "87fcadb6-f93b-4665-8737-99653ba137ec.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "04cf76d7-4dc2-440d-a151-ce3a2d20fa5b",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "04d00fa2-f3c0-4f6d-b518-10fab5d52e3f",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "27fceec1-3298-4cdd-a4e6-8f5cf34604f0"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "98eae374-5f58-4544-bb02-bf605a09ad15_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "04d00fa2-f3c0-4f6d-b518-10fab5d52e3f",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "04d3fa96-e143-4cf4-8d6c-cf8044b8a4e8",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "0c0b610e-fe4c-406d-a5ed-5cc3b11dabf5"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "BURST_p_TCGA_b119_SNP_N_GenomeWideSNP_6_F09_787236.grch38.seg.v2.txt",
+                  "file_id": "04d3fa96-e143-4cf4-8d6c-cf8044b8a4e8",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "04f56b82-0a1e-41e7-84a7-9c2ea651213b",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "3e1df30f-744a-41e9-a169-7dbbff66622e"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "GLIAS_p_TCGA_204_205_206_207_N_GenomeWideSNP_6_G11_1051850.grch38.seg.v2.txt",
+                  "file_id": "04f56b82-0a1e-41e7-84a7-9c2ea651213b",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "0500d0ea-cb96-4f7e-aeac-1af711b9b497",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "d12b6930-9ae4-4fe7-ad69-d183135c91ab"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "PALLS_p_TCGASNP_213_N_GenomeWideSNP_6_G08_1148162.grch38.seg.v2.txt",
+                  "file_id": "0500d0ea-cb96-4f7e-aeac-1af711b9b497",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "050b0844-ba9b-4257-8f83-f68f054f67ab",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "e499069b-a16a-49e9-941a-e3e9ea62af25"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "4f0437f4-be61-4881-8f74-fe88e4cc4ed3.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "050b0844-ba9b-4257-8f83-f68f054f67ab",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "051b45d7-7734-4c67-a451-b24299e51671",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "a8de1beb-6296-44eb-bd63-c603f70faaf3"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "26b29d49-3985-401d-b09b-ab0ebf6892c3_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "051b45d7-7734-4c67-a451-b24299e51671",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "055fcce9-7448-4a16-ad18-d235dac7ce97",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "ef42ae4c-a108-468e-beed-437cf3cf2962"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "b95a1889-2ef5-4da3-b5e9-14b678c4d71a.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "055fcce9-7448-4a16-ad18-d235dac7ce97",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "0565e401-525d-4419-8b79-0c33a513a72d",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "1c58d9b8-17a2-4fc6-9898-fe6f47bd2c2a"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "ae15bef8-478b-432e-b429-643a75bd2eb8_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "0565e401-525d-4419-8b79-0c33a513a72d",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "058aed5b-87c6-4fa2-8306-2df063015d39",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "3d2aa654-1b5f-4eb4-a1c2-af31f5760069"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "de614a3e-1c0d-49c7-a2f1-28bc58e6e5c7_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "058aed5b-87c6-4fa2-8306-2df063015d39",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "059cc0e4-8ea4-4638-87a4-468726a174f8",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "1b354837-4925-4480-ac32-6b44d0957314"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "d2ffa731-14a2-4a83-964e-c9969080263c_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "059cc0e4-8ea4-4638-87a4-468726a174f8",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "059df941-5be5-4118-a3ce-03b8eda4d9e4",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "35cb7841-9b09-465a-90c5-e3b8a9faad49"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "d040d578-1baf-46e8-8d98-1d2b89a94141.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "059df941-5be5-4118-a3ce-03b8eda4d9e4",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "05ac6fda-3c72-44c9-99c0-2b466ef1c2ab",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "c8544fb3-b26e-4672-bb81-a271db724b04"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "bad7aa24-1d36-4d5e-8766-34578be3d624.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "05ac6fda-3c72-44c9-99c0-2b466ef1c2ab",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "05fa4573-6ca5-40dc-a48b-ec847b7c58ad",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "9b93a7c5-f9b4-4461-8078-0201a725c9cf"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "58681163-9f9d-4f74-a1bb-3a4bcb4856d6.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "05fa4573-6ca5-40dc-a48b-ec847b7c58ad",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "0604fe41-2ade-4a62-add8-b8888508de8f",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "67a2593d-b986-4f84-a51c-7f2fb12e54ad"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "b42ab2e1-8902-4842-ae17-8ac156a8aaf7.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "0604fe41-2ade-4a62-add8-b8888508de8f",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "060badaa-6432-4366-a372-f42985923d07",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "ab9e6815-4d13-44db-93e5-553eb4f5bc95"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "3addff79-e536-4bbc-8529-a30c0e8b5b83.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "060badaa-6432-4366-a372-f42985923d07",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "0619322d-0cc4-4739-9734-ffc8752b6d2c",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "12ccd581-a921-41bc-bcee-4e9be54532cc"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "5ea8e18d-2d34-4c6e-a89d-36de5e91e80c_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "0619322d-0cc4-4739-9734-ffc8752b6d2c",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "063c4a85-ba33-45cb-bef5-80d00abc2196",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "8cc6bcec-65df-46a9-a88c-09762a132857"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TAROK_p_TCGA_264_N_GenomeWideSNP_6_E09_1306518.grch38.seg.v2.txt",
+                  "file_id": "063c4a85-ba33-45cb-bef5-80d00abc2196",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "064bb70b-890d-4f27-a880-6439a6e3336d",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "77828a90-8e2a-4664-b674-d837e6e34fe4"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "BROSE_p_TCGASNP_195_196_197_N_GenomeWideSNP_6_H10_1039680.grch38.seg.v2.txt",
+                  "file_id": "064bb70b-890d-4f27-a880-6439a6e3336d",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "064f9905-66c8-4308-a700-e5efdbeb984a",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "ddeacccf-0953-4952-8a4e-c2617f2e7bcc"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "DUNGS_p_TCGA_b84_115_SNP_N_GenomeWideSNP_6_F08_771620.grch38.seg.v2.txt",
+                  "file_id": "064f9905-66c8-4308-a700-e5efdbeb984a",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "06514112-7493-470d-88ea-2f40ab2cd6f8",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "46592b7b-6968-42a6-83af-0917c9f4a9a5"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TCGA-78-7535-01A-11D-A92R-36.WholeGenome.RP-1657.cr.igv.reheader.seg.txt",
+                  "file_id": "06514112-7493-470d-88ea-2f40ab2cd6f8",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "066d5c6a-9ca1-4627-9834-0be8f1aeb549",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "0ea4920f-f4c8-4590-84b3-eb419824e144"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "HILLY_p_TCGA_b90_wRedos_SNP_N_GenomeWideSNP_6_D09_748136.grch38.seg.v2.txt",
+                  "file_id": "066d5c6a-9ca1-4627-9834-0be8f1aeb549",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "06897553-4d83-4d45-a7df-2e4f0cc56d51",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "497cc506-03fe-4ffa-860b-5a12adb1bc7d"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "RAMIE_p_6TCGA_250_232_4_236_N_GenomeWideSNP_6_A10_1245244.grch38.seg.v2.txt",
+                  "file_id": "06897553-4d83-4d45-a7df-2e4f0cc56d51",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "069bc18f-9059-4cde-b612-ccc6344236a3",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "9b38eded-3f46-4aaa-9991-68008d97bdbe"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "NULLS_p_TCGA_183_185_186_SNP_N_GenomeWideSNP_6_D09_914232.grch38.seg.v2.txt",
+                  "file_id": "069bc18f-9059-4cde-b612-ccc6344236a3",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "06a639d9-ade5-4cbb-91b0-a41449ce4f49",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "16e64a1e-08b0-4c27-8c69-fa64551f8ca4"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "6531e137-3d23-44e7-af10-51e9cc517192.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "06a639d9-ade5-4cbb-91b0-a41449ce4f49",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "06b0cba3-ad65-40f0-93e2-bd59e164b08f",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "501c987e-d1eb-48a9-89eb-72a5062c90b4"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "GLYPH_p_TCGA_135_141_166_SNP_N_GenomeWideSNP_6_F04_902824.grch38.seg.v2.txt",
+                  "file_id": "06b0cba3-ad65-40f0-93e2-bd59e164b08f",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "06b36a1b-81a9-4b98-b2b6-97db96686bc6",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "4d51ee44-e6f4-4bcb-be28-e9df54b39a8d"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TCGA-55-8090-01A-11D-A92O-36.WholeGenome.RP-1657.cr.igv.reheader.seg.txt",
+                  "file_id": "06b36a1b-81a9-4b98-b2b6-97db96686bc6",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "06c8f74d-21ff-43ff-b921-a364f8010b42",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "742e0e32-25b5-4d41-8bf5-364b571cfd93"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "5623afdf-6852-4592-9a22-a36ac4319bb9.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "06c8f74d-21ff-43ff-b921-a364f8010b42",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "06ce81ad-a9fd-4f9c-9c7e-1ddbd8ec9d29",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "6bffe800-ec2b-4638-9333-97fe85dcd91c"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "c07a24a8-cdb2-4ae2-af2c-33848f15159f.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "06ce81ad-a9fd-4f9c-9c7e-1ddbd8ec9d29",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "06d5f913-5f62-4200-8a51-26c8fa2052b4",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "3a23cdb5-2327-45ac-b0b5-d4afe038c757"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "aae80a97-730b-4180-93de-56ddbb262419.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "06d5f913-5f62-4200-8a51-26c8fa2052b4",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "06dbacda-e119-4e05-b65a-799d89dd1758",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "3650e5b2-ef58-4b14-97b2-8698f2c160f8"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "c7aaf657-5f86-4959-9c6e-8d588646f532.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "06dbacda-e119-4e05-b65a-799d89dd1758",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "06f06504-8df3-427e-9cd5-61caf743801e",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "cd902d08-215e-4bd0-88e4-4fd01ab43cbf"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TCGA-86-8073-01A-11D-A92R-36.WholeGenome.RP-1657.cr.igv.reheader.seg.txt",
+                  "file_id": "06f06504-8df3-427e-9cd5-61caf743801e",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "06ff4238-b340-41d2-9067-7d2b4f842254",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "8f04660a-2efb-4947-9eab-375066b9eb33"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "DRAMA_p_TCGA_276_278_N_GenomeWideSNP_6_A11_1322520.grch38.seg.v2.txt",
+                  "file_id": "06ff4238-b340-41d2-9067-7d2b4f842254",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "0737eb23-c066-4522-8f5c-dbb4b3b516b0",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "b86b1616-20a2-4300-8daa-03dcc9938215"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "a0c9ebdf-951b-4d8d-aa79-3ff1c82342cd.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "0737eb23-c066-4522-8f5c-dbb4b3b516b0",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "074022f7-dbd6-4dc9-a767-0fa3182eb6cc",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "a534b96b-1665-444a-9308-e610f2f0e510"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TCGA-44-7660-01A-11D-A92N-36.WholeGenome.RP-1657.cr.igv.reheader.seg.txt",
+                  "file_id": "074022f7-dbd6-4dc9-a767-0fa3182eb6cc",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "074b0792-df3c-4b59-9f50-793bc14bcb81",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "0c0b610e-fe4c-406d-a5ed-5cc3b11dabf5"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "d832db0a-348f-4e28-953a-741192fe0826.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "074b0792-df3c-4b59-9f50-793bc14bcb81",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "07512cfc-493b-4c49-a48e-e598524e07ff",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "962fd4e7-9199-43d9-abce-e3dfa46da62c"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "SHOWS_p_7TCGA_236_238_Mx_N_GenomeWideSNP_6_F01_1244522.grch38.seg.v2.txt",
+                  "file_id": "07512cfc-493b-4c49-a48e-e598524e07ff",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "0765d9e8-0fec-46bc-832a-89945435d5b1",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "a815619f-dbba-469f-a1f7-dfbd51cd86c5"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "78bf9571-4145-4c0d-a61a-58a878351097.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "0765d9e8-0fec-46bc-832a-89945435d5b1",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "0766019a-c9b7-4224-973e-f1cfa16082ac",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "681b1176-9676-44d3-892c-1d5dba1ce25b"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "b6ddcda9-dad4-4e70-b12a-db197a496713.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "0766019a-c9b7-4224-973e-f1cfa16082ac",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "079e9ad0-d04c-4f0a-bbd5-3df63a638c28",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "8214a0d1-5e2d-4a7a-acb1-e5580755db83"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "GLYPH_p_TCGA_135_141_166_SNP_N_GenomeWideSNP_6_C10_902916.grch38.seg.v2.txt",
+                  "file_id": "079e9ad0-d04c-4f0a-bbd5-3df63a638c28",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "07a53d2a-ebf6-4517-880a-064bae5ee972",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "66763a0c-6cda-4832-a0cc-e7b496d78eaa"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "d20f5121-5e33-4b35-8cdf-df2eb51a099d.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "07a53d2a-ebf6-4517-880a-064bae5ee972",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "07d5681a-c07b-4a25-bfc3-c8b56e36445c",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "e5f956dd-f49f-435c-83c3-5b1b0a2050ed"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "781eaeea-7011-4738-84ec-da4e8534af1d.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "07d5681a-c07b-4a25-bfc3-c8b56e36445c",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "07df43a8-9ee3-4b6c-9d9f-cd0ee9b1532e",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "673493f6-975c-49e8-934c-001e9a0fff90"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "EGGAR_p_TCGAb33and37_SNP_N_GenomeWideSNP_6_H11_585164.grch38.seg.v2.txt",
+                  "file_id": "07df43a8-9ee3-4b6c-9d9f-cd0ee9b1532e",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "080636b9-3ec5-478e-8b36-7c7817ca7b6a",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "18478121-f1d1-4bdd-9511-8ab22f4a0660"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "SHOWS_p_7TCGA_236_238_Mx_N_GenomeWideSNP_6_C03_1244554.grch38.seg.v2.txt",
+                  "file_id": "080636b9-3ec5-478e-8b36-7c7817ca7b6a",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "08072e4f-0861-4fc6-90d2-21624660541f",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "3c4ff061-d214-4d1c-8d2e-3034f207c252"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "8d4a338a-70c1-4f6a-afaf-c0ccc7493315.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "08072e4f-0861-4fc6-90d2-21624660541f",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "080b1840-3bbf-46e2-83bb-813f7b96d063",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "eeab558b-8d1e-4843-861d-dbfb06061758"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "EGGAR_p_TCGAb33and37_SNP_N_GenomeWideSNP_6_A06_585212.grch38.seg.v2.txt",
+                  "file_id": "080b1840-3bbf-46e2-83bb-813f7b96d063",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "08103d21-eedf-4951-b625-4343319fc9f7",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "996a0070-e9bf-4601-8ef7-60212108258d"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "67f3a466-c62c-4de8-bf3a-5c2c5544b472_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "08103d21-eedf-4951-b625-4343319fc9f7",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "082e03c5-f49f-455e-9e6d-b477b962deca",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "4addf05f-3668-4b3f-a17f-c0227329ca52"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "e1a5102c-e7b6-49fd-b4a2-32a10936ab55.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "082e03c5-f49f-455e-9e6d-b477b962deca",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "0832e5ea-c92a-4f11-bf06-774d9420123b",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "996a0070-e9bf-4601-8ef7-60212108258d"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "DUNGS_p_TCGA_b84_115_SNP_N_GenomeWideSNP_6_C02_771474.grch38.seg.v2.txt",
+                  "file_id": "0832e5ea-c92a-4f11-bf06-774d9420123b",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "0844ee6b-d0ff-404c-bad7-6c99b274e090",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "a244a99a-d7cc-4fb1-bc76-b66886481621"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "TCGA-05-4417-01A-22D-A92M-36.WholeGenome.RP-1657.cr.igv.reheader.seg.txt",
+                  "file_id": "0844ee6b-d0ff-404c-bad7-6c99b274e090",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "085615ac-a63a-4092-81c6-7763dfc548a0",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "06fe7f3e-4edd-4150-981c-93787ea19b39"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "1c198ca7-c422-4ea5-928c-77f28fe14eeb.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "085615ac-a63a-4092-81c6-7763dfc548a0",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "085f796a-a23a-4005-b220-9603631ecb56",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "54a9cc9e-3eee-4caa-9f33-4ea64a2999ba"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "NULLS_p_TCGA_183_185_186_SNP_N_GenomeWideSNP_6_D12_914326.grch38.seg.v2.txt",
+                  "file_id": "085f796a-a23a-4005-b220-9603631ecb56",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "0869efb9-b167-45af-8b2c-67433e39baad",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "0c59ff96-5e4a-4664-a0b1-d057b4725483"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "ef19e097-8ae9-4362-b77a-76d8f5399760.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "0869efb9-b167-45af-8b2c-67433e39baad",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "0886dccd-3f81-4f47-9539-6f18ab0344c9",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "5fd0f07b-8bb9-4378-bd26-28a26057e8fe"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "PALLS_p_TCGASNP_213_N_GenomeWideSNP_6_D10_1148040.grch38.seg.v2.txt",
+                  "file_id": "0886dccd-3f81-4f47-9539-6f18ab0344c9",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "088971e2-9836-487f-92b4-1ef895c45c54",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "2f1a4b16-104c-40eb-8114-8245847bb716"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "eab29c94-5b9f-4943-97e4-5e716b338d0c_wgs_gdc_realn.cr.igv.reheader.seg.txt",
+                  "file_id": "088971e2-9836-487f-92b4-1ef895c45c54",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "GATK4 CNV"
+                  }
+                },
+                {
+                  "id": "08971a88-cb64-4030-93e5-08d77d2ed654",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "d717fa33-3c91-4ced-89c6-79ff5542f04c"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "978fb63c-dae9-4037-81c9-598e87341931.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "08971a88-cb64-4030-93e5-08d77d2ed654",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "08d83462-5fcb-40c6-9d44-dbc42faa4df6",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "cd902d08-215e-4bd0-88e4-4fd01ab43cbf"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "087c2c93-d071-41e1-a2e8-a1961ba54a86.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "08d83462-5fcb-40c6-9d44-dbc42faa4df6",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "08dc3e42-c96a-4550-9f7e-f3ae3b4f728b",
+                  "data_format": "MAF",
+                  "cases": [
+                    {
+                      "case_id": "12c27db5-db2f-48dc-a2ca-9557b951f43e"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "717fc03c-19da-4112-8d65-1df5f9b01d6f.wxs.aliquot_ensemble_masked.maf.gz",
+                  "file_id": "08dc3e42-c96a-4550-9f7e-f3ae3b4f728b",
+                  "data_type": "Masked Somatic Mutation",
+                  "analysis": {
+                    "workflow_type": "Aliquot Ensemble Somatic Variant Merging and Masking"
+                  }
+                },
+                {
+                  "id": "08f20fcb-8415-41c6-b070-01fa9c3fb513",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "4036c6fc-c82e-47bb-a384-6f299dc30b52"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "NULLS_p_TCGA_183_185_186_SNP_N_GenomeWideSNP_6_D02_914254.grch38.seg.v2.txt",
+                  "file_id": "08f20fcb-8415-41c6-b070-01fa9c3fb513",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                },
+                {
+                  "id": "0905662e-ae14-4807-94ef-69db108fa2ee",
+                  "data_format": "TSV",
+                  "cases": [
+                    {
+                      "case_id": "bcf2e591-9dae-440f-bd03-5f27c57db741"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "e121b871-b177-47ef-a4f1-de73cb338519.rna_seq.augmented_star_gene_counts.tsv",
+                  "file_id": "0905662e-ae14-4807-94ef-69db108fa2ee",
+                  "data_type": "Gene Expression Quantification",
+                  "analysis": {
+                    "workflow_type": "STAR - Counts"
+                  }
+                },
+                {
+                  "id": "09165f57-b0a0-445e-a961-16ac0fbf9db6",
+                  "data_format": "TXT",
+                  "cases": [
+                    {
+                      "case_id": "15340dd3-84ae-49fb-989a-eb212f3e73da"
+                    }
+                  ],
+                  "access": "open",
+                  "file_name": "IMPLY_p_TCGA_b127_144_SNP_N_GenomeWideSNP_6_B10_808534.grch38.seg.v2.txt",
+                  "file_id": "09165f57-b0a0-445e-a961-16ac0fbf9db6",
+                  "data_type": "Copy Number Segment",
+                  "analysis": {
+                    "workflow_type": "DNAcopy"
+                  }
+                }
+              ],
+              "public_only": true,
+              "origin": "public",
+              "provenance": [
+                "https://api.gdc.cancer.gov",
+                "files"
+              ],
+              "response_bytes": 38871,
+              "coverage": {
+                "endpoint": "files",
+                "offset": 0,
+                "requested_size": 100,
+                "returned_rows": 100,
+                "reported_total": 2793,
+                "ordering": "file_id:asc",
+                "id_field": "id",
+                "unique_entities": 100,
+                "duplicate_rows": 0,
+                "complete": false,
+                "limitations": [
+                  "Bounded page; completeness not established."
+                ]
+              },
+              "content_sha256": "f72cc0b4ee58ce962f7077808b424ac7018adfddd1ca56e3b38d1870023f848a"
+            }
+          }
+        ],
+        "source_mode": "fresh GDC file catalogue; actual assay acquisition/transform/readiness unavailable in this comparison"
+      },
+      "expected": {
+        "selected_id": null,
+        "unknown_scientific_status": true
+      },
+      "search_labels": {
+        "useful_ids": [
+          "b220d7b5f32ceea8628680bee116d39f777cf6d627c917aa735c139255a24164",
+          "77b95aadf8b914f197efbc59aeca2dd3cf12ceccf88847602e64f61075df86a7",
+          "820dbbc3c3cc1e6b882d7e04144eb9574a304b0530acab4d242c2b7ffdc9a967",
+          "ee40d15fd9da35916adb378369c04a51c7c35931cccbe205aacf9648c82fa93f",
+          "a7bf8c464b71c6fe9b31ac1162a36c20226dbdacd5220371a37086bdfc63ff8f",
+          "1bc2890fd34a92d7b72684bad08e8d72b4c191cd039e91db95619ac25a812194",
+          "1eb170e6c1dc490f66bedea72a84cb4eca9a5979d43804e97121f62c0c503f2d",
+          "7aa7f4bdae4306d2e6a72a1cc18d5dca21f0c460540c8c065b392a90622c0056",
+          "eec0fa3e45b5c6c2e11552125fee5dac8454f7805b80b3a5979ebd120fd0e9a6",
+          "fda366b233045967c697cc01d1aecca5826379e3f3997b127cac13bef3dcce55",
+          "773bb11fd7495184923607dd8de89422865051b5715203bba5fd8be86852f508",
+          "faa93bd810ad17d53dd2259f5520988c4b6846fd085830c8057d93fecad3e18e",
+          "efd28e8be55fb9e0d2da2c1e6414f7f46138c684e07472d04ac3cc5aa77c5edf",
+          "c754de74955bbaacc5902a2ea21e95e310f1eb6b9e36c3e171505530a27cdcdd",
+          "812c50db9579dce80cbda2a751516eb938b9bfb6869c55bb525b4c2fee368cb3",
+          "ec25e7205b154b4aa6ea9413ecc1f359516030d346e152cd99f35aedba6a254d",
+          "7be17064567cd64d5f190436690472752ff007376e847709606090f08995eb3e",
+          "22d5d210cd0bd1d1b9fd2b1c05c3b30bf055ca82c451f13f43333aaf9c7a8fcf",
+          "e1d8980769de85a8fdc2202227c7e305c27a9aa978e987409fa1293204819c0f",
+          "a304b8f4990c0e205506f8174bc334b230bf59046dcfe3683eee74a997aabf1d",
+          "7d55001ace0db0da6d31ffa54547d7a8b1f86289cbdeba1a65417c1fbf45a181",
+          "b1cebdc1cb153e61c261a7b216f6fcaf2014b57a3b7b41f9463c8b53cb766d28",
+          "d2ee600872f86f79c44acd628b98e8b0584726e97c590c1d4016ff66cd57eba7",
+          "f6c96f23cb9e93707b94aa05e5e46dd485f9ed12b4909b5e8e9723874e82e153",
+          "27eea9bf3634a99d0814374fdcac616cd107fa909e7880b7403832353c16f43a",
+          "a9da9c4585da3db24bff9f644faceff8242340239372c4937c3106272c9b10be",
+          "6e3e998b3d28ddff0a79e3d9f584be2e00508e5cf9484a33df13ccfdb8c88634",
+          "f045d6c4773f6ded4f2a4feb641867cd470527f16063f4d694ec164cd36c9185",
+          "e2292829c4af9931998ca3629f1a4903934ec0acb5f90fb072120b7f466bf17f",
+          "c8971cdeeadd9438f23d6fb988bae7a5c979e65943bf19a6d5007c78ba2fb848",
+          "6b05da38532f4d86a5b5d8b5150532d3e74c94ab62efd9ae41bc1c401102f51a",
+          "ad27c6d9197adf651fe52017f6cc41a5d965c05587a39bfddd657e5c024cab35",
+          "59206a6c8352f61c223021299ab91f6ba551374a5b29c4d4a3d900bba5946774",
+          "1469dcbf895b565a1606baca5dd578cc720cc1fc80377f1e9c7a2c2fe91c0916",
+          "483e8dba64d681f15358b3bd9b40a8cf574bbc80c1baad76513ff8819b578990",
+          "26a2bf75e3381d4ef1eb5d0d95b8aa29f8f4dda024f15bdf9bd41097e4e7b35b",
+          "d17188b767037b9ec4ae089ea250422d1bee7e700dbc161f48d34f48401c64f2",
+          "977f3c1b296482dc11b9bb8e211547d9088591492030dd05ece166a83868867b",
+          "5e96e8820971b358a4e13fe3956aab5e2a07e9a4ef9da895c55f617edb352afc",
+          "9512e46ef2dd4f2cddc07199f244add89b094d45635e22101dd1ea4c328e1128",
+          "7f488d763e99d054a1234a93b06217d548bb6622fbe0ea170e9cc1dcf26261b9",
+          "ee113034db72245a50df0fcef6d9d93e389801aa8121c9b360e98ee55a931d6d",
+          "0cf9ae7422ad8e697d0eb72a69acf8c2059cca9f73cea554b0d8e4cf400cad57",
+          "364056b0e672f0232aa5c062914104345f0816de1f929b72d33673f41332df5b",
+          "55269fa8756de2049e83f17e1880926657faeb1d00089b5f77f20f2bbd428cac",
+          "88016bd8508ef300b3f8d94f805e135a055e52d3d2bcf0f733ab1aa301067cc2",
+          "6ac3fd52f0ae389410cf651b5ed923b991ed7db87d44df1b198e99a7fd32b764",
+          "7884f9d369105cfddab3e9b490cca5ac18643be962820882fd81ddc4fd6bbde1",
+          "f5178e88cf0933372ff310abc790c8168a6c59d40a6501504cf802bea6c979e6",
+          "fd30849e839dcb99995c733906ce850d6f35f4ed952240c992664dc95bcbf7c0",
+          "1f9676cf6ea37a4be4ea1cc6d68fe678eb20fd6f1d07192a8da377ebda38d309",
+          "a5f486139e6c5bccf0108e1d27bc8096c8b3fffbb4d787c3fe2339a477746c66",
+          "c7e094133f0120587cc97a5b959550835e047a3328f427784c21c5ff8774dad4",
+          "a8b9ea11843bfe9f71abf701c859313db1545628fec4ff4df75aa4f2eb7c82e6",
+          "1f3140e0587755c18c5542045f76abbc663679d21eef61dcf9e07e607417a861",
+          "c3fa348ddd244bfeb6427cc2e5a7516f1b8043b7646c62f21953f7d274e2a704",
+          "0255f80662f2b6fa0f17a95371e592c51ad704192fc6921b3afe9f54d3acf210",
+          "6d3a332dad8a412b9eb7a44c8f4a8bbcc0b30bf8ea64c17c28580ef0be864750",
+          "751e459a3b58f3aaacaf7760e15a378bd203db22bef3965a2743c7fcc54efb2e",
+          "04a93dbb2e1ecc57c76bdbb0fa134700b286989a69769cb6a9e4c889c1ee2ac5",
+          "1cbdb8aff03167c777929b11c5bd0cd85e801acd40a718854d890954ddb41569",
+          "1824ad3e47146c221ff6076d2abb2ecdd104c0f273ba16698ab9d334f1b4eb8e",
+          "e835869f5c8dd3cf4f18576372af8b0c37382872685bd3b27a8530b816999e48",
+          "8a979810bb2ee125dace18764da5a80593fcfd9daccb466d2624a8be17a40fc7",
+          "5bb94bdad68011930e1309d36c78453ffb84744e7892b53983ec3a6a8fd6c03b",
+          "14abc4b3cd251a86613e018b4612d69a04af78408c830e8d76a68c7bfb223274",
+          "04ab03b4dceddaaaf5820d616a795747fa372a3e98c5a6ff0be1bc7d2ed3f539",
+          "137391429e727acec1a30b9c51bcbfcafbfa75d4922d1a009521e1cfd84ad138",
+          "c92e5ec11219cdbbe0d0980fc7b2cec7ee1d264f9e3d0945edc75fc6e3ec2e63",
+          "370a3cf52d220be05b12aff123613ca0eb09af80c58d1492ce405c2fb615bfcc",
+          "24c200660967b35a5bbb41817296e02944964d208b06c2b913c44935770da5a4",
+          "0059446b59d0aedc2f0e7aece2c147d12617bcfd0cc0a00924b246269ad9f901",
+          "4fff90a44d07d0184ec17f8bd65368724fc69913d689cd033d73560759fbe7e8",
+          "5d17407f20293b60bcd09bdda2c08b16e7551934aa82d3508ede1c7950004431",
+          "d694a7352e13798753365390d0604ac33918ce938cc25adb77f4ba67bc844d35",
+          "6ad7abd80beda81d39669eb5a19310cb7859a9fc4cc172830095b0bb50347916",
+          "5bfefc04b936fd597953bc9e422d5062bb73e322e029816cac972bfb619d9fae",
+          "6c4abc99d4f1cce1cfd866cd478477f4d2bc55cb385820f89fba49029ca47898",
+          "17d558310bf99d12bb3b6b88860c2d788b9df3ce01ddc0cca6a26d4c0263ff0b",
+          "9a9d09b47c711ff43e30d6182325c854363d3bf81d31351a6fd3df5d6168c1ea",
+          "766622ef44073704eb44550e86cdca5d1194bd3d9555fd68347f555d5d9935d4",
+          "200b4ec1880b818f436dd275777d5df24a6202c130b23093d6acef43a4175a00",
+          "ac0b76e82ca07d3475d107af3ef9e2efa346ff83741417f564fc09f7b992d703",
+          "41c3d5d9a145411fe602aab833d5272ba7248c2ee16b07ff1ca9c85bd56152b2",
+          "e58d54091d54c6d88228bee56eba8501adbf9e9f10fdfde4e8992e05afed7938",
+          "a43a55329d625ab7b3ea2231e104cb09a8bdfbd945692b4ecaf4f6be278f9104",
+          "77a1f3557b0cd412cce7bc174152a3792aefbc241fc7226f951d3da29872194b",
+          "b9cea1e0169bd2104003ea7eb9ee686297fdaa3daa97f963d6fd266ff660b9f1",
+          "36e36038be57a1fe1722f75f6dfe337c7eb7d2c534937f3aea967fb68b1c1da7",
+          "390b48921db006012a12fb432b213c7ab17f1a4d2d3b11371abb77f82288ee5c",
+          "aaa1c34cfbcd91a1ef69a04b7e81071db2cad652e1c05279ecd9c2fa23829147",
+          "7f9d0cc21fefa51a2d35d4767b169dadf7eaf4ba8eddfcb42be8aa08c436404e",
+          "def2cd28b104ef16d41575945239750c23b33138ecd2808a5d42d94488d229ca",
+          "2fd0588362f4a6cfb124d58d61f6aab555dddd2fdeb920e15b1dab6b41eb3c96",
+          "2270c3f87a735acf96125d8b3fdd77fda98f5cf6efacad80e45045b0f9a857c2",
+          "4e0db1a917185f3d7c9c994e80573b817c29a5443aa99c28804e8983850d6ad8",
+          "0344e0d938271fbc50625e3f06237d83b5b5b8fe15e92571dfbb60817da492da",
+          "6cef269d062f4d8a990498572948e8ea8b3c768a8ee9728aab6acb25c959af48",
+          "c3675f135b78fc740067b90ef701be86384f55a1ab83bb556bc78fd65bb7851d",
+          "ec35ca7cf8e7d8a2b7b2264318d3388586bbf20a0011a006c776376f4d63364a"
+        ]
+      },
+      "reference_url": "https://docs.gdc.cancer.gov/API/Users_Guide/Search_and_Retrieval/",
+      "label_basis": "Source-returned supported asset IDs measure candidate-generation recall only, including controlled/deferred assets. No independent scientific usefulness label.",
+      "independent_review": "pending"
+    }
+  ]
+}

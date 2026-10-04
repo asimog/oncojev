@@ -24,7 +24,7 @@ DIMENSIONS = {
         "material_global_change": "Does candidate materially change the global investigation context rather than merely rephrase it?",
     },
     "global_relation": {
-        "paraphrase": "Are left and right paraphrases of the same hypothesis AND test/scope? Independent replication is not duplication.",
+        "paraphrase": "Do left and right express equivalent scientific assertions, including effect direction, for the same investigation instance: the same estimand/test, design and participant/data-source scope? Shared biological wording or the same target population alone is insufficient. Explicitly disjoint cohorts or a proposed independent replication are distinct investigation instances. If participant/source comparability is unspecified, retain unknown.",
         "related_distinct": "Are left and right related but scientifically distinct tests or estimands?",
         "independent_replication": "Do left and right propose independent replication rather than redundant work?",
         "contradiction": "Do original left and right statements actually conflict, respecting epistemic types, populations, design and method differences?",
@@ -85,7 +85,7 @@ def semantic_questions(context: SemanticContext, identity: str, projection_id: s
             for name,instruction in DIMENSIONS[context].items())
     key=content_hash({"context":context,"identity":identity})[:16]
     return tuple(JevQuestionSpec(question_id=f"{key}:{name}",semantic_purpose=f"{context}.{name}",primitive=primitive,
-        projection_id=projection_id,question_version="literature-context-v1" if context == "literature_context" else "global-contracts-v1" if context.startswith("global_") else VERSION,
+        projection_id=projection_id,question_version="literature-context-v1" if context == "literature_context" else "global-relation-v3" if context == "global_relation" else "global-contracts-v1" if context.startswith("global_") else VERSION,
         instructions={"question":instruction,"uncertainty":"Missing information is unknown. Do not infer false from absence or operational failure."},
         criteria=criteria,known_exclusions=("Not evidence, execution permission or allocation authority.",),
         provenance=(VERSION,context)) for name,primitive,instruction,criteria in definitions)

@@ -135,4 +135,4 @@ def initial_oncolab_index() -> OncoLabIndex:
             "limitations":(*limitations,"Library-wide functionality is not exposed; exploratory arrays are not evidence." if any(r.exploratory for r in routes) else "Execution is limited to the declared typed route."),
             "execution_mode":OncoLabExecutionMode.REMOTE_API if d.capability_id=="literature.public" else d.execution_mode,
             "access_policy":OncoLabAccessPolicy.LOCAL_ONLY if local else OncoLabAccessPolicy.PUBLIC})
-    return OncoLabIndex(actual_contract(d) for d in (*descriptors, *additions)).load_verification_records()
+    return OncoLabIndex(actual_contract(d) for d in (*descriptors, *additions))

@@ -131,6 +131,25 @@ def test_real_tools_generate_and_transform_owned_alternatives_then_reopen(tmp_pa
     reopened.close()
 
 
+def test_representation_generation_retains_modalities_before_need_narrowing():
+    source = acquired([{'file_id': 'maf', 'data_type': 'Masked Somatic Mutation', 'data_format': 'MAF', 'access': 'open'},
+        {'file_id': 'cnv', 'data_type': 'Copy Number Segment', 'data_format': 'TXT', 'access': 'open'},
+        {'file_id': 'rna', 'data_type': 'Gene Expression Quantification', 'data_format': 'TSV', 'access': 'controlled',
+         'analysis': {'workflow_type': 'STAR - Counts'}}], endpoint='files')
+    # Paired data may require an assay/parser/join prerequisite. A declared need
+    # must not silently erase real source-backed options before fit assessment.
+    need = RepresentationNeed(estimand='explore paired measurements', representation='paired_data',
+        entity_key='case_id', entity_unit='case', fields={'x': 'x', 'y': 'y'})
+    result = representation_alternatives([source], [], need)
+    files = {c['file_id']: c for c in result['candidates'] if 'file_id' in c}
+    assert set(files) == {'maf', 'cnv', 'rna'}
+    assert {c['representation'] for c in files.values()} == {'mutation_events', 'cnv_segments', 'gene_summary'}
+    assert not any(c['input_ready'] for c in files.values())
+    assert files['rna']['availability'] == 'controlled_inaccessible'
+    limited = representation_alternatives([source], [], need, limit=1)
+    assert set(limited['omitted_candidate_ids']) == {c['candidate_id'] for c in files.values()}
+
+
 def test_gzip_panel_validates_excluded_rows_and_retains_source_coverage():
     import gzip
     header = 'Hugo_Symbol\tNCBI_Build\tChromosome\tStart_Position\tEnd_Position\tReference_Allele\tTumor_Seq_Allele2\tTumor_Sample_Barcode\tVariant_Classification'

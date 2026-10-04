@@ -242,11 +242,13 @@ def test_capability_index_is_bounded_and_distinguishes_metadata_from_execution(t
  index=initial_oncolab_index();matches=index.search('GDC cancer',kinds=(OncoLabKind.SOURCE,),limit=3)
  assert matches[0].capability_id=='source.gdc' and matches[0].availability.value=='available'
  assert index.count()>=100
- assert index.verification_records('source.gdc')
- assert index.describe_with_verification('source.gdc')['verification']
+ assert not index.verification_records('source.gdc')
+ assert not index.describe_with_verification('source.gdc')['verification']
  assert index.describe('jev.choice').validation_state.value=='unvalidated'
  assert OncoLabKind.JEV in index.list_kinds()
  with pytest.raises(ValueError):index.search(limit=21)
+ # Historical verification remains explicit archive inspection, never bootstrap.
+ index.load_verification_records()
  sample=index.verification_records('source.gdc')[0]
  before=len(index.verification_records('source.gdc'))
  index.load_verification_records();index.load_verification_records()

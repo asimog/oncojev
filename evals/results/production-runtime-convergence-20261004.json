@@ -1,0 +1,40 @@
+{
+  "basis_head": "5f3f4175fb346d8214782439aeae557067a71666",
+  "source_hashes": {
+    "src/__main__.py": "c1534b0089f59bc3aa30a740997bd0921ac86a9052d26dcfd2eafdbc7c24f467",
+    "src/autonomous.py": "2fa1822db08575fccadd26c288345e2583f2cf110bc588d388c02ba6407bee67",
+    "src/runtime/cycle.py": "e067e615064dac7f877fbf1faaf57443f00e563e0196bd8b1d901df1bb6ab5d2",
+    "src/runtime/pydantic_ai/contracts.py": "cc801ab7fc41b6c1f2770753908247b6b8d143e1836943d2221d753adc7bdc28",
+    "src/runtime/pydantic_ai/agents.py": "5a70b9678e40adc4deb7102284ac619f3387797d5efb4a0a614e98f079164267",
+    "src/runtime/pydantic_ai/lifecycle.py": "f0b5b2159ff1c5b1be159156f4d2505224d28935e6953f726fd072c32083c9af",
+    "src/persistence/repository.py": "c0ef9108651137301f8d1d96233a20eee40d95b0665f5d01b3f0813acb13d025",
+    "scripts/run_live_cycle.py": "237e1b68c3cdf1572595a6a07c722a5b6e8f35fbf98d53baf6bca1f61efa480e",
+    "scripts/run_live_phase3.py": "237e1b68c3cdf1572595a6a07c722a5b6e8f35fbf98d53baf6bca1f61efa480e",
+    "scripts/worker_entrypoint.py": "b6c225ec64b02701cca79e6c04aa02ac1782569f468a1c74704af0ffa65a5a02",
+    "Dockerfile": "02c080d566c82684c9ca92c85d15b50022143b3d1715288acd50b83bd45739ac"
+  },
+  "operational_routes": {
+    "python -m src cycle": "main -> service_from_environment -> AutonomousService.run_once -> run_once_async -> _run_once -> build_system -> run_cycle_async",
+    "python -m src serve": "main -> same service -> serve -> _serve_cycles -> run_once_async",
+    "container": "worker_entrypoint privilege drop -> exec -m src serve -> same route",
+    "run_live_cycle / run_live_phase3": "compatibility main -> production_main([cycle,...argv]) -> same route"
+  },
+  "authority_owners": {
+    "allocation": "Director tool validates frontier, then BlockManager.allocate; no Researcher allocation tools",
+    "researcher": "launch tool and Python fallback both call HarnessRuntime.schedule_researcher -> _run_researcher with fresh factory",
+    "canonical_state": "ResearchStateOwner and ResearchRepository; actor tools request typed transitions",
+    "measurement_admission": "typed owned inputs -> runtime heavy lease -> Science -> deterministic admission -> repository",
+    "terminal": "runtime normal/failure and interrupted recovery delegate to repository.record_terminal atomic transaction",
+    "memory_frontier_qualification": "existing ResearchMemory/global frontier/OncoLab utility and governance; no alternate production owner found"
+  },
+  "remaining_direct_allocation_scripts": "Explicit component/qualification/evaluation/export fixture consumers of existing owners, not normal operational entrypoints; retirement/caller audit remains Task 9",
+  "regressions": [
+    "old live-cycle launcher ignored supplied direction and prescribed scientific procedure",
+    "old phase3 launcher independently ran Researcher and recorded lifecycle"
+  ],
+  "checks": "134 passed in 47.23 s; architecture and diff checks pass",
+  "limits": [
+    "scripted offline contracts prove lifecycle/caller behavior, not scientific or autonomous utility",
+    "native/live/deployment qualification remains Tasks 12/13"
+  ]
+}

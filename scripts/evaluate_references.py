@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from src.config.loader import load_models_config, load_runtime_config
 from src.config.models import RuntimeMode
-from src.evals.reference import evaluate_reference_cases, load_reference_corpus, reference_consumer_adapter
+from evals.reference import evaluate_reference_cases, load_reference_corpus, reference_consumer_adapter
 from src.runtime.pydantic_ai.agents import create_agents
 
 
@@ -36,8 +36,8 @@ def main():
             stream.write(json.dumps(row) + '\n')
         print(json.dumps({'case_id': row['case_id'], 'condition': row['condition'], 'repetition': row['repetition'],
             'agreement': row['agreement'], 'failure_type': row['observations'].get('failure_type')}), flush=True)
-    from src.evals.harness import CONDITIONS
-    from src.evals.models import EvaluationCondition
+    from evals.harness import CONDITIONS
+    from evals.models import EvaluationCondition
     selected_conditions = tuple(EvaluationCondition(value) for value in args.conditions) if args.conditions else CONDITIONS
     policy = load_runtime_config(root / 'config/runtime.yaml').model_copy(update={'mode': RuntimeMode.LIVE if args.live else RuntimeMode.DETERMINISTIC})
     report = evaluate_reference_cases(cases, reference_consumer_adapter, models=load_models_config(root / 'config/models.yaml'),

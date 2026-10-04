@@ -543,3 +543,206 @@ historical. Codex Security plugin did not start because its worker requires a ma
 filesystem permission profile; no plugin result claimed. Scientific independent
 review, broader assay/inference, reusable utility and composed Task 12 proof remain
 in the plan. API testing maintenance keeps automatic research paused.
+
+## 2026-10-02 — Task 5/12: Source measurement and continuation defects
+
+Result: one bounded Director correction permits recovery from a missing cycle
+allocation while preserving refusal failure and request budgets. Descriptive source
+measurements now retain exact ScientificAttempt lifecycle/input/result records;
+literature context keeps its existing eligibility gate and unknown empty/title-only
+classification. Unsupported numeric traversal across arrays rejects InvalidAnalysis
+instead of manufacturing absent-field results. Measurement/completed-attempt writes
+are atomic; invalid, operational-failed and interrupted outcomes stay distinct.
+
+Verification: 18 final focused SDK/context/ownership/lifecycle contracts passed in
+7.70 s; all 314 invariants passed in 91.08 s. Original failing regressions remain
+under var/production-audit/. Architecture/whitespace and scoped preservation review
+support the committed change. Final native qualification resolves separately through
+var/production-audit/final-verification.json against the post-commit basis.
+
+Retained controlled provider proof: two blocks/reviews closed and reconstructed,
+history advanced 6 to 352 under the same registry, and actual source analysis drove
+a distinct next allocation. Its array-path absence conclusion is scientifically
+unqualified: requested diagnosis fields occur inside 96 source arrays. Typed
+literature context was absent. Preserve all earlier observations; no later fix
+retroactively qualifies this source archive. Task 12 scientific qualification,
+independent review and reusable utility remain in the plan.
+
+Additional completed verification (2026-10-03, committed 04deffb): source-only
+controlled replay retained a failed ModelAPIError block and a completed next block,
+each with one dossier/Delta and no unresolved inputs. History refreshed 31 to 307;
+review/memory informed the distinct next allocation. The completed block admitted
+a bounded age summary, typed unknown/insufficient_material literature context, and
+InvalidAnalysis array-path rejection. Cycle/review times: 725.89/371.56 s and
+774.09/552.37 s. ResourceBusy remains operational; no clinical utility inferred.
+Exact archived source/setup and closed-store observation resolve through
+var/task12-proof/source-context-04deffb-setup.json.
+
+Implementation: src/runtime/pydantic_ai/contracts.py, src/science/execution.py,
+their behavioral owners and corrected stale Delta H5 pin limitation. Accepted
+archived ADRs: bounded allocation correction and descriptive source attempts.
+The dated lung assessment and var/task12-proof/completed-assessments.json retain
+all eleven finished scenarios, errors, interventions, timings and limitations.
+
+## 2026-10-03 — Semantic-search retention and measured continuation
+
+Result: direct and generated hypotheses persist before semantic narrowing/failure;
+local exact duplicates retain lineage while historical equal wording preserves scope
+comparison. Existing memory retains direct tests and append-only challenge/reopen/
+revision/supersession links with unknown scientific status. Method receipts retain
+full alternatives before byte trimming; bounded representation views preserve durable
+candidate/source omissions. Existing frontier, Researcher task and evaluation owners
+remain authoritative. Accepted bounded ADR: retained semantic alternatives.
+
+Implementation: `4e47eec98bc6898236fe812b54d9b977e052f207` on baseline `83b9def`; search/scientific tools,
+contracts, memory, frontier, Researcher guidance and existing reference adapters.
+No scientific admission, process control or new persistence authority was introduced.
+
+Verification: 195 focused owning/semantic/evaluation contracts passed in 68.17 s;
+architecture checks and `git diff --check` passed. Baseline hypothesis-loss regression
+was reproduced and retained. The existing harness retained 696 offline comparisons,
+60 live five-domain observations, 18 live relations and 15 identical-projection
+repeats. Useful recall/preservation stayed 1.0; context first-choice alignment improved
+only on the generated low-overlap case. Other marginal gains were absent/unmeasured;
+contradiction and competing hypothesis alignment retained unknowns. Native probability
+variation did not change the measured search/fixed-projection categorical outcomes.
+
+Three final controlled source paths each completed two owned Researcher runs,
+dossiers and Deltas. Source-owned Pearson on 41/100 historical GDC complete pairs
+recorded an inconclusive model-conditional directional comparison, followed by a
+formal-frontier-selected duration-coverage/endpoint-prerequisite block. Reopening
+119 original envelopes preserved identity, reconstructed both completed blocks
+without unresolved inputs and validated two memory digests. Retained records and
+machine/readable results: `evals/reference/results/semantic-search-*20261003.*`;
+raw failures/provider/resource observations: `var/semantic-search-proof/`.
+
+Recommendation: ADOPT WITH LIMITATIONS. Generated labels, scripted SDK choices,
+historical source replay/prior exposure and unavailable monetary costs remain explicit.
+This proof establishes contracts/lineage, not independent scientific next-test utility,
+fresh acquisition, endpoint validity, independent replication, clinical usefulness or
+final-basis whole-environment/reusable qualification. Original scientific stores and
+previous task-log proof were preserved intact.
+
+## 2026-10-04 — Semantic-search truth audit and fresh autonomous assessment
+
+Result: production generator views/durable receipts now determine evaluated recall;
+probability, label, Python-policy and selected-choice variability are separate.
+Mixed mutation/CNV/expression alternatives retain identities before narrowing while
+remaining unready until deterministic input checks pass. Existing Noul relation v3
+clarifies equivalent assertions/same investigation instance. Existing owners,
+scientific admission, process limits and registry qualification remain authoritative.
+Implementation: scoped source/evaluation/question corrections on clean baseline
+`5f3f4175fb346d8214782439aeae557067a71666`; no architectural authority change.
+Code/test patch SHA256: `04ea13c55b1d1f5783d596c5b77072b73a0c0b38d112246b2442cf09f096f47c`.
+
+Verification: final focused tests 39 passed in 15.02 s; broader post-generator-repair
+owners 211 passed in 65.93 s before final v3 wording; final offline comparison retained
+384 contract agreements. Architecture and whitespace checks passed. Failed recall/
+modality regressions and the negative first relation variant were retained. 192 matched
+live observations exercised 96 source-bound analyses without admitting benchmark
+labels: context ordering improved only on generated cases, with no measured method/
+representation selection or outcome gain. Final explicit relation controls retained
+21 native observations; identical five-domain projections retained 15 repeats.
+
+Stock fresh autonomous service closed two blocks/reviews/dossiers/Deltas, measured
+503/585 recorded LUAD ages, admitted bounded descriptive evidence, and linked actual
+prior acquisition/attempt/evidence into its formal second allocation. The next block
+acquired exact open MAF bytes but handed off before parsing/measurement. Reopening
+all 1,216 envelopes preserved exact references, resolved every input and validated
+two latest digests. Quantile promotion remained rejected with 15 exact reasons.
+Original 119-envelope proof, canonical hashes and prior scientific records were
+verified/preserved. Rolling-log predecessor was archived intact.
+
+Retained proof: `evals/reference/results/semantic-search-assessment-20261004.*`,
+comparison/autonomous compressed record artifacts and isolated raw
+`var/semantic-search-continuation-20261004/`. Recommendation: REVISE the scientific
+benefit claim. Independent utility, meaningful challenge/replication, hypothesis
+outcome evolution and accepted reusable learning were not established. Autonomous
+proof is pre-repair testing/unbounded-work basis; costs and post-review usage remain
+unavailable, with no final-basis ordinary-budget qualification claimed.
+
+## 2026-10-04 — Jev source fixes and post-implementation bug audit
+
+Result: shared runtime measurement validation prevents empty, incomplete, duplicate,
+wrong-context/type and invalid native batches from reaching policy. Valid partial
+answers persist as failed history. Discovered method alternatives persist before
+oversized response failure; global investigation measurements carry only the current
+candidate's selected-neighbour relations and exact decisions. Optional error metadata
+cannot mask failed receipt persistence. Existing owners/admission/budgets stay intact.
+Implementation: `src/jev/client.py`, `src/runtime/pydantic_ai/contracts.py`,
+`global_tools.py`, `search_tools.py` and owning behavioral regressions on HEAD
+`5f3f4175fb346d8214782439aeae557067a71666`; patch identity in the machine audit.
+
+Verification: 231 owning offline tests passed in 83.45 s across semantic retention,
+live-adapter fixtures, representations, evaluation and persistence. One deliberate
+invalid-Score serializer warning was observed. Architecture/projection and
+`git diff --check` passed. The four reproduced bugs, initial failed regressions and
+post-change caller/receipt/policy/retention review are retained in
+`evals/reference/results/jev-implementation-audit-20261004.*` and
+`var/jev-fixes-20261004/`. No further confirmed bug was found in the reviewed Jev
+surfaces; this is not an exhaustive repository/security audit. Prior assessment
+artifacts, source fixes and scientific records were preserved; predecessor log was
+archived intact.
+
+Limits: no new provider/native whole-environment qualification or scientific utility
+claim. Initial ambient-profile test mismatch and unsupported-switch retry remain in
+raw logs; final tests use explicit `ONCOJEV_TESTING=0`. Feature-complete oncology,
+independent scientific usefulness and governed accepted reusable utility were not
+established by these source/contract corrections.
+
+## 2026-10-04 — Production Task 1: reconciled cutover decision
+
+Result: current HEAD/worktree, CLI/service/cycle/factory/bootstrap/reconstruction,
+package imports, qualification consumers, scripts/config/deployment and current
+owners were audited. Existing canonical Python lifecycle was retained. Accepted
+reconciled production/evaluation/history cutover ADR under the user's explicit
+production-convergence instruction; existing unfinished plan was archived intact
+and replaced by only remaining production tasks/gates. Decision acceptance does
+not claim implementation cutover or qualification.
+
+Verified gaps: two production OncoLab consumers import evaluation utility resolution;
+default curated catalogue loads historical/fixture verification and imports it into
+fresh institutions. One generated 1,178,174-byte result resides under installed src.
+AST inventory classified 30 scripts, including ten using task-era proof inputs.
+An isolated current-source copy imports the service without evaluation, but reusable
+consumer import fails without it; removing historical artifact bytes reproduces
+seed failure. No production code or scientific store was changed in this task.
+
+Verification: documentation/projection architecture checks and `git diff --check`
+passed; ADR/template/link/owner and scope-preservation review completed. Exact
+inventory/probes: `evals/results/production-cutover-audit-20261004.json` and
+`var/production-convergence/`. Implementation basis: HEAD
+`5f3f4175fb346d8214782439aeae557067a71666` plus preserved pre-existing source fixes.
+Original plan and displaced log entry were archived intact. No native/live/deployment
+or fresh scientific qualification was inferred; production readiness remains unproved.
+
+## 2026-10-04 — Production Task 2: fresh bootstrap and restart
+
+Result: default catalogue construction uses current curated definitions without
+loading historical verification. Agent-facing capability/external inspections expose
+exact persisted context references for fresh authored frontier grounding. Installed
+Science resolves and validates its trusted application package before confinement,
+preventing a cold import from falling back to an unrelated editable checkout.
+Existing lifecycle, qualification, evidence and resource owners were preserved.
+
+Implementation basis: HEAD `5f3f4175fb346d8214782439aeae557067a71666` plus preserved
+source fixes; exact copied source/configuration hashes in
+`var/production-convergence/bootstrap-live-corrected/manifest.json` match current
+production files. Changed owners: catalogue, runtime inspection tools and installed
+Science worker. Reproduced missing-reference and confined-import failures remain
+retained separately from corrected proof.
+
+Verification: 210 focused owner tests passed in 59.13 s with one intentional
+invalid-score warning; two expanded grounding tests passed in 3.30 s. Two ordinary
+provider-backed CLI cycles on a source copy without old stores/results/proven artifacts
+exited 0, retaining one mission/registry revision, two dossiers/Deltas and 81 fresh
+acquisitions. Restart reconstruction resolved 1,624 exact references with no errors
+or bundled historical observations. Corrected worker native contract check succeeded
+with kernel controls and cleanup verified using a retained request. Architecture and
+`git diff --check` passed. Evidence: `evals/results/clean-bootstrap-audit-20261004.json`
+and `var/production-convergence/bootstrap-live*/`.
+
+Limits: no admitted scientific evidence or scientific utility proof. The diagnostic
+native request was replayed, not autonomous science. Existing unbounded configuration
+and final-basis native/live/deployment qualification remain future Tasks 12/13.
+Current evaluation coupling remains Task 3; production readiness is not established.

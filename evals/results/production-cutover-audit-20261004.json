@@ -1,0 +1,478 @@
+{
+  "head": "5f3f4175fb346d8214782439aeae557067a71666",
+  "branch": "main",
+  "status": [
+    " M architecture.yaml",
+    " M docs/ARCHITECTURE.md",
+    " M docs/Archive/PREVIOUS_TASK_LOG.md",
+    " M docs/IMPLEMENTATION_PLAN.md",
+    " M docs/TASK_LOG.md",
+    " M evals/reference/README.md",
+    " M src/evals/reference.py",
+    " M src/jev/client.py",
+    " M src/jev/questions.py",
+    " M src/runtime/pydantic_ai/contracts.py",
+    " M src/runtime/pydantic_ai/global_tools.py",
+    " M src/runtime/pydantic_ai/search_tools.py",
+    " M src/sources/representation.py",
+    " M tests/invariants/test_representations.py",
+    " M tests/invariants/test_semantic_retention.py",
+    "?? evals/reference/results/jev-implementation-audit-20261004.json",
+    "?? evals/reference/results/jev-implementation-audit-20261004.md",
+    "?? evals/reference/results/semantic-search-assessment-20261004.json",
+    "?? evals/reference/results/semantic-search-assessment-20261004.md",
+    "?? evals/reference/results/semantic-search-autonomous-20261004.json.gz",
+    "?? evals/reference/results/semantic-search-comparisons-20261004.json.gz",
+    "?? evals/reference/semantic-continuation-v1.json",
+    "?? evals/reference/semantic-relations-v1.json",
+    "?? evals/reference/semantic-source-catalogue-v1.json"
+  ],
+  "evaluation_imports": [
+    {
+      "file": "src/evals/harness.py",
+      "line": 14,
+      "target": "src.evals.models",
+      "production": false
+    },
+    {
+      "file": "src/evals/reference.py",
+      "line": 7,
+      "target": "src.evals.harness",
+      "production": false
+    },
+    {
+      "file": "src/evals/reference.py",
+      "line": 175,
+      "target": "src.evals.whole_lab",
+      "production": false
+    },
+    {
+      "file": "src/evals/reference.py",
+      "line": 197,
+      "target": "src.evals.whole_lab",
+      "production": false
+    },
+    {
+      "file": "src/oncolab/governance.py",
+      "line": 16,
+      "target": "src.evals.reference",
+      "production": true
+    },
+    {
+      "file": "src/oncolab/reusable.py",
+      "line": 8,
+      "target": "src.evals.reference",
+      "production": true
+    }
+  ],
+  "scripts": [
+    {
+      "file": "scripts/assess_challenge_next_choice.py",
+      "description": "Reopen actual challenge history and retain a scripted, source-grounded next choice.",
+      "entrypoint": false,
+      "historical_inputs": [
+        "var/task9-proof/lung-method-challenge.json",
+        "var/task9-proof/next-choice.json"
+      ],
+      "eval_imports": [],
+      "classification": "historical evidence",
+      "disposition": "caller/replacement review before retirement; not production bootstrap"
+    },
+    {
+      "file": "scripts/assess_lung_challenge.py",
+      "description": "Explicit real-source alternative-model check; clinical interpretation unqualified.",
+      "entrypoint": false,
+      "historical_inputs": [
+        "var/task9-proof"
+      ],
+      "eval_imports": [],
+      "classification": "historical evidence",
+      "disposition": "caller/replacement review before retirement; not production bootstrap"
+    },
+    {
+      "file": "scripts/assess_lung_maf_panel.py",
+      "description": "Explicit ordinary open lung MAF acquisition and governed panel transform.",
+      "entrypoint": false,
+      "historical_inputs": [
+        "var/task5-proof"
+      ],
+      "eval_imports": [],
+      "classification": "historical evidence",
+      "disposition": "caller/replacement review before retirement; not production bootstrap"
+    },
+    {
+      "file": "scripts/assess_oncology_selection.py",
+      "description": "Explicit source-bound assessment of the frozen three-tool lung selection.",
+      "entrypoint": false,
+      "historical_inputs": [
+        "var/task8-proof"
+      ],
+      "eval_imports": [],
+      "classification": "historical evidence",
+      "disposition": "caller/replacement review before retirement; not production bootstrap"
+    },
+    {
+      "file": "scripts/assess_reusable_mean.py",
+      "description": "Real source use followed by honest promotion rejection; no invented utility.",
+      "entrypoint": false,
+      "historical_inputs": [
+        "var/task10-proof",
+        "var/task6-proof/reference-qualification-corrected.json",
+        "var/task7-proof/environment-qualification-complete.json"
+      ],
+      "eval_imports": [
+        "src.evals.reference"
+      ],
+      "classification": "historical evidence",
+      "disposition": "caller/replacement review before retirement; not production bootstrap"
+    },
+    {
+      "file": "scripts/assess_search_repair.py",
+      "description": "Matched retained-registry retrieval before/after the scoped metadata correction.",
+      "entrypoint": true,
+      "historical_inputs": [
+        "var/oncojev.sqlite3",
+        "var/task11-proof/registry-metadata.json",
+        "var/task11-proof/retrieval-before-after.json"
+      ],
+      "eval_imports": [
+        "src.evals.selection"
+      ],
+      "classification": "historical evidence",
+      "disposition": "caller/replacement review before retirement; not production bootstrap"
+    },
+    {
+      "file": "scripts/check_architecture.py",
+      "description": "Fast static integrity checks; semantic/native proof stays with its owning tests.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "required production mechanism",
+      "disposition": "production launcher/maintenance/developer setup; verify thin owner delegation"
+    },
+    {
+      "file": "scripts/evaluate_references.py",
+      "description": "Quick published-reference checks through fresh existing evaluation conditions.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [
+        "src.evals.reference",
+        "src.evals.harness",
+        "src.evals.models"
+      ],
+      "classification": "evaluation-only mechanism",
+      "disposition": "evaluation launcher; migrate primary whole-lab to black-box service observation"
+    },
+    {
+      "file": "scripts/evaluate_representation.py",
+      "description": "Evaluate retained representation alternatives with labels isolated from runtime.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [
+        "src.evals.representation"
+      ],
+      "classification": "evaluation-only mechanism",
+      "disposition": "evaluation launcher; migrate primary whole-lab to black-box service observation"
+    },
+    {
+      "file": "scripts/evaluate_selection.py",
+      "description": "Run labelled selection evaluation; provider smoke is not scientific utility.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [
+        "src.evals.selection"
+      ],
+      "classification": "evaluation-only mechanism",
+      "disposition": "evaluation launcher; migrate primary whole-lab to black-box service observation"
+    },
+    {
+      "file": "scripts/export_notebook.py",
+      "description": "Export a persisted prefix; publishing runs only in an isolated local checkout.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "required production mechanism",
+      "disposition": "export/publication utility; generated output not runtime evidence"
+    },
+    {
+      "file": "scripts/export_snapshot.py",
+      "description": "Export a deterministic research snapshot for the observability UI.\n\nRuns one fully offline scripted cycle (no provider credentials, no network) so a\nrepresentative, reproducible snapshot can be committed for the web build. This is\ntooling, not part of the runtime: Pydantic AI models are scripted here only.\n\nUsage: python scripts/export_snapshot.py [--out web/data/snapshot.json]",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "evaluation-only mechanism",
+      "disposition": "export/publication utility; generated output not runtime evidence"
+    },
+    {
+      "file": "scripts/export_verification_artifact.py",
+      "description": "Export the available historical live ledger using a fixed redaction allowlist.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "required production mechanism",
+      "disposition": "export/publication utility; generated output not runtime evidence"
+    },
+    {
+      "file": "scripts/qualify_environment_mean.py",
+      "description": "Explicit offline fresh installation/replay from a retained source lock.",
+      "entrypoint": false,
+      "historical_inputs": [
+        "var/task6-proof/reference-qualification-corrected.json",
+        "var/task7-proof"
+      ],
+      "eval_imports": [],
+      "classification": "historical evidence",
+      "disposition": "caller/replacement review before retirement; not production bootstrap"
+    },
+    {
+      "file": "scripts/qualify_local_execution.py",
+      "description": "Explicit WSL2 qualification writer. Never imports testing results into research.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "qualification artifact",
+      "disposition": "explicit qualification utility; preserve while owning boundary still needs proof"
+    },
+    {
+      "file": "scripts/qualify_reference_mean.py",
+      "description": "Explicit native reference qualification for one pinned descriptive operation.",
+      "entrypoint": true,
+      "historical_inputs": [
+        "var/task6-proof",
+        "var/task6-proof/reference-qualification.json"
+      ],
+      "eval_imports": [],
+      "classification": "historical evidence",
+      "disposition": "caller/replacement review before retirement; not production bootstrap"
+    },
+    {
+      "file": "scripts/refresh_search_metadata.py",
+      "description": "Explicit migration of the reviewed Task 11 canonical retrieval correction.",
+      "entrypoint": true,
+      "historical_inputs": [
+        "var/oncojev.sqlite3",
+        "var/task11-proof"
+      ],
+      "eval_imports": [],
+      "classification": "historical evidence",
+      "disposition": "caller/replacement review before retirement; not production bootstrap"
+    },
+    {
+      "file": "scripts/repo_index.py",
+      "description": "Read-only Python declaration queries; never imports indexed code. See AGENTS.md.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "required production mechanism",
+      "disposition": "production launcher/maintenance/developer setup; verify thin owner delegation"
+    },
+    {
+      "file": "scripts/review_reusable_history.py",
+      "description": "Re-review retained distinct source uses against current proof; never fabricate utility.",
+      "entrypoint": true,
+      "historical_inputs": [
+        "var/task10-proof/reusable-mean.json",
+        "var/task10-proof/review-current.json"
+      ],
+      "eval_imports": [
+        "src.evals.reference"
+      ],
+      "classification": "historical evidence",
+      "disposition": "caller/replacement review before retirement; not production bootstrap"
+    },
+    {
+      "file": "scripts/run_live_cycle.py",
+      "description": "Run one complete live Director -> Researcher cycle with configured agents.\n\nRequires OPENROUTER_API_KEY (Director/Researcher/Reasoner) and TYPESAFE_API_KEY\n(Jev). Credentials enter this worker process only; they are never placed in\nagent context and are never shared with the scientific sandbox.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "obsolete compatibility",
+      "disposition": "delegates service but mission prescribes tools; replace/retire after operational CLI proof"
+    },
+    {
+      "file": "scripts/run_live_phase3.py",
+      "description": "Run a bounded public OncoLab demonstration with configured agents.\n\nLoads local credentials only into this process. It never prints them or grants\nCoder child commands credential or controlled-data access. Coder workspace tools\ncannot substitute for typed acquisition or the scientific sandbox.",
+      "entrypoint": false,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "obsolete compatibility",
+      "disposition": "task-era fixed demonstration; verify callers before retirement"
+    },
+    {
+      "file": "scripts/verify_coder_container.py",
+      "description": "Verify both Coder/Code Mode roles directly on Linux, including local WSL2.\n\nThe historical filename is retained; no container runtime is invoked.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "qualification artifact",
+      "disposition": "explicit qualification utility; preserve while owning boundary still needs proof"
+    },
+    {
+      "file": "scripts/verify_coder_resources.py",
+      "description": "Direct WSL2 owning-boundary checks; fixtures never certify scientific utility.",
+      "entrypoint": false,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "qualification artifact",
+      "disposition": "explicit qualification utility; preserve while owning boundary still needs proof"
+    },
+    {
+      "file": "scripts/verify_composed_trajectory.py",
+      "description": "Explicit provider-backed Task 12 observation through the stock service.\n\nThe cycle count bounds the experiment, never an in-flight scientific procedure.\nExceptions and incomplete scientific prerequisites remain retained observations.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "evaluation-only mechanism",
+      "disposition": "evaluation launcher; migrate primary whole-lab to black-box service observation"
+    },
+    {
+      "file": "scripts/verify_installed_science.py",
+      "description": "Explicit native installed-Science qualification probes; no live providers.",
+      "entrypoint": false,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "qualification artifact",
+      "disposition": "explicit qualification utility; preserve while owning boundary still needs proof"
+    },
+    {
+      "file": "scripts/verify_local_science.py",
+      "description": "Run inside Linux: actual local backend confinement and fresh replay proof.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "qualification artifact",
+      "disposition": "explicit qualification utility; preserve while owning boundary still needs proof"
+    },
+    {
+      "file": "scripts/verify_native.py",
+      "description": "Bounded developer setup for native probes; cache entries are never qualification.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "required production mechanism",
+      "disposition": "production launcher/maintenance/developer setup; verify thin owner delegation"
+    },
+    {
+      "file": "scripts/verify_science_resources.py",
+      "description": "Native WSL owning resource probes with fixture transport, never utility proof.",
+      "entrypoint": false,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "qualification artifact",
+      "disposition": "explicit qualification utility; preserve while owning boundary still needs proof"
+    },
+    {
+      "file": "scripts/verify_scientific_artifacts.py",
+      "description": "Scoped Linux proof for retained scientific input mounts; no provider calls.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "qualification artifact",
+      "disposition": "explicit qualification utility; preserve while owning boundary still needs proof"
+    },
+    {
+      "file": "scripts/worker_entrypoint.py",
+      "description": "Prepare only the configured data root, then permanently drop worker privileges.",
+      "entrypoint": true,
+      "historical_inputs": [],
+      "eval_imports": [],
+      "classification": "required production mechanism",
+      "disposition": "production launcher/maintenance/developer setup; verify thin owner delegation"
+    }
+  ],
+  "generated_under_src": [
+    {
+      "path": "src/evals/results/f4-selection.json",
+      "bytes": 1178174
+    }
+  ],
+  "version": "production-cutover-audit-v1",
+  "date": "2026-10-04",
+  "scope": "Task 1 reconciliation only; snapshot not another active tracker",
+  "clean_dependency_probes": [
+    {
+      "omitted_source_paths": [
+        "evals"
+      ],
+      "exit_code": 0,
+      "stdout": "production import passed\n",
+      "stderr": ""
+    },
+    {
+      "omitted_source_paths": [
+        "evals",
+        "reusable-consumer"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/tmp/oncojev-cutover-audit-j18gziub/src/oncolab/reusable.py\", line 8, in <module>\n    from src.evals.reference import utility_evaluation_resolves\nModuleNotFoundError: No module named 'src.evals'\n"
+    },
+    {
+      "omitted_source_paths": [
+        "oncolab/proven/artifacts"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/tmp/oncojev-cutover-audit-q90wor39/src/oncolab/catalogue.py\", line 138, in initial_oncolab_index\n    return OncoLabIndex(actual_contract(d) for d in (*descriptors, *additions)).load_verification_records()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/oncojev-cutover-audit-q90wor39/src/oncolab/registry.py\", line 203, in load_verification_records\n    raise ValueError(f\"unresolved verification artifact: {reference.value}\")\nValueError: unresolved verification artifact: src/oncolab/proven/artifacts/initial-live-validation-2026-09-30.json\n"
+    }
+  ],
+  "relevant_dependencies": [
+    {
+      "path": "src/autonomous.py, src/__main__.py, src/runtime/cycle.py",
+      "classification": "required production mechanism",
+      "finding": "canonical service/cycle/block/fresh Researcher path already exists"
+    },
+    {
+      "path": "src/oncolab/catalogue.py, src/oncolab/execution.py",
+      "classification": "required production mechanism",
+      "finding": "current curated descriptors and typed routes are legitimate static bootstrap"
+    },
+    {
+      "path": "src/oncolab/proven/verified-executions.yaml and artifacts",
+      "classification": "historical evidence",
+      "finding": "currently loaded by default seed and imported into new institutional observations; remove automatic bootstrap use"
+    },
+    {
+      "path": "src/evals/reference.py::retain_utility_evaluation/utility_evaluation_resolves",
+      "classification": "required production mechanism",
+      "finding": "shared candidate-bound qualification producer/resolver wrongly housed with evaluation; transfer to existing OncoLab owner before package move"
+    },
+    {
+      "path": "src/evals (other comparisons, models, corpora/adapters)",
+      "classification": "evaluation-only mechanism",
+      "finding": "relocate outside installed production source; keep calling production"
+    },
+    {
+      "path": "src/evals/results/f4-selection.json",
+      "classification": "generated evaluation artifact",
+      "finding": "move out of production package after caller verification"
+    },
+    {
+      "path": "tests",
+      "classification": "test fixture",
+      "finding": "explicit controlled models/inputs are contract evidence, not runtime seed"
+    },
+    {
+      "path": "var/task*-proof and retained runtime stores",
+      "classification": "historical evidence",
+      "finding": "task scripts require some stores; preserve originals but exclude from fresh production resolution"
+    },
+    {
+      "path": "native/local verification records and current proof producers",
+      "classification": "qualification artifact",
+      "finding": "exact-basis operational proof is legitimately resolved; historical proof cannot bootstrap a new qualification"
+    },
+    {
+      "path": ".upstream provenance strings",
+      "classification": "historical evidence",
+      "finding": "metadata provenance references are not imports or required fetched runtime code; do not erase scientific provenance indiscriminately"
+    }
+  ],
+  "previous_goal_turn": "progress: source fixes and completed regression checks; this turn establishes new cutover evidence",
+  "verification": {
+    "docs_projection": "passed",
+    "diff_check": "passed",
+    "native_live_deployment": "not run by reconciliation",
+    "production_ready": false
+  }
+}

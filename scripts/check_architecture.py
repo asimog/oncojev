@@ -177,6 +177,9 @@ def check_imports(root: Path) -> None:
             if record["kind"] != "import":
                 continue
             target = record["target"]
+            if any(target == name or target.startswith(name + ".")
+                   for name in ("evals", "src.evals", "tests", "src.tests", "pytest")):
+                raise ValueError(f"production imports evaluation/test code: {relative}: {target}")
             if "upstream" in target.split("."):
                 raise ValueError(f"runtime imports upstream: {relative}")
             if len(relative.parts) > 1 and relative.parts[1] in guarded and (
@@ -185,6 +188,24 @@ def check_imports(root: Path) -> None:
                 or target.endswith(".admit_scientific_evidence")
             ):
                 raise ValueError(f"owner must not import evidence admission: {relative}")
+
+        imports = {record["binding"]: record["target"] for record in declarations(path, root)
+                   if record["kind"] == "import"}
+        def call_name(node):
+            if isinstance(node, ast.Name): return imports.get(node.id, node.id)
+            if isinstance(node, ast.Attribute): return call_name(node.value) + "." + node.attr
+            return ""
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if not isinstance(node, ast.Call): continue
+            if call_name(node.func) not in {"importlib.import_module", "__import__", "builtins.__import__"}:
+                continue
+            module = node.args[0] if node.args else next((k.value for k in node.keywords if k.arg == "name"), None)
+            if not isinstance(module, ast.Constant) or not isinstance(module.value, str):
+                raise ValueError(f"production dynamic import requires a literal module: {relative}:{node.lineno}")
+            target = module.value.lstrip(".")
+            if any(target == name or target.startswith(name + ".")
+                   for name in ("evals", "src.evals", "tests", "src.tests", "pytest")):
+                raise ValueError(f"production imports evaluation/test code: {relative}: {target}")
 
 
 def main() -> None:

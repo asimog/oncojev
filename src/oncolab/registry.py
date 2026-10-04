@@ -47,6 +47,8 @@ class IndexReceipt(BaseModel, frozen=True):
     retrieval_version: str | None = None
     continuation: str | None = None
     contract_hashes: dict[str, str] = Field(default_factory=dict)
+    scientific_need: dict | None = None
+    need_sha256: str | None = None
 
 
 class OncoLabIndex:

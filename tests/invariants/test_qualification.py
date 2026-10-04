@@ -159,7 +159,7 @@ def test_reusable_mean_requires_declared_units_complete_rows_and_unique_entities
 
 
 def test_method_utility_flags_without_independent_review_do_not_pass():
-    from src.evals.reference import retain_utility_evaluation, utility_evaluation_resolves
+    from src.oncolab.utility import retain_utility_evaluation, utility_evaluation_resolves
     store = SqliteResearchStore()
     try:
         candidate, _ = fixture(store)
@@ -264,7 +264,7 @@ def test_fixed_dispatch_does_not_execute_arbitrary_qualified_commands():
 @pytest.mark.parametrize("repetitions", [(0,), (0, 0, 0), (0, 1, 2)])
 def test_utility_declared_repeats_cannot_replace_distinct_measured_rows(repetitions):
     """Adversarial synthetic reviews prove rejection only, never scientific utility."""
-    from src.evals.reference import retain_utility_evaluation
+    from src.oncolab.utility import retain_utility_evaluation
     store = SqliteResearchStore()
     try:
         candidate, _ = fixture(store)

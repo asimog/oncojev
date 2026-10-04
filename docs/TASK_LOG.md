@@ -5,81 +5,64 @@ predecessor, newest first; append displaced entries intact to
 [Previous Task Log](Archive/PREVIOUS_TASK_LOG.md). The architecture checker rejects
 a third level-two entry. Future work belongs only in IMPLEMENTATION_PLAN.
 
-## 2026-10-03 — Semantic-search retention and measured continuation
+## 2026-10-04 — Production Task 4: canonical operational runtime
 
-Result: direct and generated hypotheses persist before semantic narrowing/failure;
-local exact duplicates retain lineage while historical equal wording preserves scope
-comparison. Existing memory retains direct tests and append-only challenge/reopen/
-revision/supersession links with unknown scientific status. Method receipts retain
-full alternatives before byte trimming; bounded representation views preserve durable
-candidate/source omissions. Existing frontier, Researcher task and evaluation owners
-remain authoritative. Accepted bounded ADR: retained semantic alternatives.
+Result: both compatibility live launchers delegate cycle/direction arguments to the
+ordinary module CLI, removing phase3's independent Researcher lifecycle and the
+live-cycle launcher's prescribed scientific procedure. CLI cycle/serve and container
+bootstrap reach the same AutonomousService composition and Python scheduler. Existing
+sync wrappers delegate to the async cycle owner. Allocation/frontier validation,
+fresh Researcher creation, state writes, deterministic admission, terminal atomicity,
+recovery, memory and qualification retain their current owners; no new coordinator.
 
-Implementation: `4e47eec98bc6898236fe812b54d9b977e052f207` on baseline `83b9def`; search/scientific tools,
-contracts, memory, frontier, Researcher guidance and existing reference adapters.
-No scientific admission, process control or new persistence authority was introduced.
+Implementation: `src/__main__.py`, `scripts/run_live_cycle.py`,
+`scripts/run_live_phase3.py` and owning entrypoint tests on HEAD
+`5f3f4175fb346d8214782439aeae557067a71666` plus preserved source/package fixes.
+No current caller of the two old scripts was found outside the new compatibility
+checks. Component/qualification/evaluation/export probes still invoke existing owners
+in explicit scopes; comprehensive script retirement remains Task 9.
 
-Verification: 195 focused owning/semantic/evaluation contracts passed in 68.17 s;
-architecture checks and `git diff --check` passed. Baseline hypothesis-loss regression
-was reproduced and retained. The existing harness retained 696 offline comparisons,
-60 live five-domain observations, 18 live relations and 15 identical-projection
-repeats. Useful recall/preservation stayed 1.0; context first-choice alignment improved
-only on the generated low-overlap case. Other marginal gains were absent/unmeasured;
-contradiction and competing hypothesis alignment retained unknowns. Native probability
-variation did not change the measured search/fixed-projection categorical outcomes.
+Verification: 134 entrypoint and persistence/lifecycle tests passed in 47.23 s,
+covering supplied direction, module/serve/worker delegation, one active Researcher,
+persistent Director, fresh local agents, terminal atomicity, recovery and shutdown
+drain. Both old launcher regressions were reproduced before replacement. Architecture
+and `git diff --check` passed. Exact caller/owner/hash inventory:
+`evals/results/production-runtime-convergence-20261004.json`; scoped raw proof in
+`var/production-convergence/runtime-owner-tests.log` and saved pre-cutover scripts.
+Prior completed bootstrap proof was archived intact.
 
-Three final controlled source paths each completed two owned Researcher runs,
-dossiers and Deltas. Source-owned Pearson on 41/100 historical GDC complete pairs
-recorded an inconclusive model-conditional directional comparison, followed by a
-formal-frontier-selected duration-coverage/endpoint-prerequisite block. Reopening
-119 original envelopes preserved identity, reconstructed both completed blocks
-without unresolved inputs and validated two memory digests. Retained records and
-machine/readable results: `evals/reference/results/semantic-search-*20261003.*`;
-raw failures/provider/resource observations: `var/semantic-search-proof/`.
+Limits: offline scripted lifecycle/caller contracts, not scientific utility,
+black-box autonomy or deployed confinement. Final native/live/deployment/scientific
+qualification remains Tasks 12/13. No scientific store or evidence was changed.
 
-Recommendation: ADOPT WITH LIMITATIONS. Generated labels, scripted SDK choices,
-historical source replay/prior exposure and unavailable monetary costs remain explicit.
-This proof establishes contracts/lineage, not independent scientific next-test utility,
-fresh acquisition, endpoint validity, independent replication, clinical usefulness or
-final-basis whole-environment/reusable qualification. Original scientific stores and
-previous task-log proof were preserved intact.
+## 2026-10-04 — Production Task 3: production/evaluation package separation
 
-## 2026-10-02 — Task 5/12: Source measurement and continuation defects
+Result: utility proof retention/resolution and its condition vocabulary moved to
+`src/oncolab/utility.py`; governance and reusable execution share that owner without
+evaluation imports. Evaluation implementation/callers moved to `evals/`; the generated
+1,178,174-byte selection report moved outside installed source with bytes/hash intact.
+The existing architecture checker rejects direct evaluation/test imports, known
+literal dynamic imports (including imported aliases), and unresolved names in those
+known dynamic-import calls. Arbitrary loader indirection is outside its static scope.
 
-Result: one bounded Director correction permits recovery from a missing cycle
-allocation while preserving refusal failure and request budgets. Descriptive source
-measurements now retain exact ScientificAttempt lifecycle/input/result records;
-literature context keeps its existing eligibility gate and unknown empty/title-only
-classification. Unsupported numeric traversal across arrays rejects InvalidAnalysis
-instead of manufacturing absent-field results. Measurement/completed-attempt writes
-are atomic; invalid, operational-failed and interrupted outcomes stay distinct.
+Implementation basis: HEAD `5f3f4175fb346d8214782439aeae557067a71666` plus prior fixes
+and owner-preserving package migration. AST comparison with the preserved pre-migration
+source proves both utility functions unchanged except the source of their exact
+condition vocabulary. Candidate/scope/application hashes, actual repetitions, failure
+checks and independent reviewer resolution remain mandatory; no proof was promoted.
 
-Verification: 18 final focused SDK/context/ownership/lifecycle contracts passed in
-7.70 s; all 314 invariants passed in 91.08 s. Original failing regressions remain
-under var/production-audit/. Architecture/whitespace and scoped preservation review
-support the committed change. Final native qualification resolves separately through
-var/production-audit/final-verification.json against the post-commit basis.
+Verification: 80 owning evaluation/qualification/retention/isolation tests passed in
+21.96 s (one intentional invalid-score warning); 50 architecture/import tests passed
+in 7.65 s. Expanded isolation tests passed 13 cases in 4.89 s. Fresh source-only and
+extracted built-wheel consumers constructed a new service/factory and exercised the
+unsupported utility producer/resolver with evaluation/history absent. The 116-file
+wheel contains neither evaluation/test packages nor the generated selection report.
+Architecture/projection and `git diff --check` passed. Exact migration/artifact/wheel
+proof: `evals/results/production-package-separation-20261004.json` and
+`var/production-convergence/package-*`. Previous completed proof was archived intact.
 
-Retained controlled provider proof: two blocks/reviews closed and reconstructed,
-history advanced 6 to 352 under the same registry, and actual source analysis drove
-a distinct next allocation. Its array-path absence conclusion is scientifically
-unqualified: requested diagnosis fields occur inside 96 source arrays. Typed
-literature context was absent. Preserve all earlier observations; no later fix
-retroactively qualifies this source archive. Task 12 scientific qualification,
-independent review and reusable utility remain in the plan.
-
-Additional completed verification (2026-10-03, committed 04deffb): source-only
-controlled replay retained a failed ModelAPIError block and a completed next block,
-each with one dossier/Delta and no unresolved inputs. History refreshed 31 to 307;
-review/memory informed the distinct next allocation. The completed block admitted
-a bounded age summary, typed unknown/insufficient_material literature context, and
-InvalidAnalysis array-path rejection. Cycle/review times: 725.89/371.56 s and
-774.09/552.37 s. ResourceBusy remains operational; no clinical utility inferred.
-Exact archived source/setup and closed-store observation resolve through
-var/task12-proof/source-context-04deffb-setup.json.
-
-Implementation: src/runtime/pydantic_ai/contracts.py, src/science/execution.py,
-their behavioral owners and corrected stale Delta H5 pin limitation. Accepted
-archived ADRs: bounded allocation correction and descriptive source attempts.
-The dated lung assessment and var/task12-proof/completed-assessments.json retain
-all eleven finished scenarios, errors, interventions, timings and limitations.
+Limits: constructor/qualification contracts and package boundaries, not whole-lab
+provider/native autonomy, scientific utility or deployment qualification. Historical
+verification archive relocation remains Task 10; final-basis qualification remains
+Tasks 12/13. Application identity changes with the package cutover; older qualification
+is not silently accepted for the new basis.

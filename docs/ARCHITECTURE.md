@@ -127,6 +127,17 @@ the existing receipt owner. The bounded decision is recorded in
 `docs/Archive/ADR/ADR_RETAINED_SEMANTIC_ALTERNATIVES.md`.
 
 Source-backed representation alternatives retain availability and unmet prerequisites.
+The source generator retains supported discovered assay modalities before need-fit
+narrowing, including inaccessible/derivable options and bounded omission identities;
+their presence grants no readiness. Global relation measurement separates equivalent
+assertions in the same investigation instance from independently replicated wording.
+Unknown participant/source scope stays unknown; relations cannot merge or admit findings.
+The shared runtime measurement boundary verifies complete question identity,
+primitive, projection/version binding and finite declared native distributions before
+policy consumption. Malformed batches keep valid partial answers as failed history,
+never frontier advancement. Global investigation projections carry only their bounded
+neighbours' measured relation results and exact call identities. Full method discovery
+receipts persist before bounded-view trimming, including when no valid view fits.
 Fixed GDC transforms support bounded open MAF/CNV, case clinical/survival fields,
 exactly linked selected-gene cohorts and one-to-one case joins. Their governed
 execution retains exact inputs, output identity, units, missingness and information
@@ -139,7 +150,10 @@ retain native distributions, observed usage, failures and unknown scientific uti
 Published held-out splits cannot establish independence from model pretraining.
 The same owner measures matched five-domain recall/preservation and fit, explicit
 unavailable classifiers, native probability versus categorical instability and
-paired Jev deltas. Generated tuning labels and controlled source replay establish
+paired Jev deltas. Generator-returned and durably retained alternatives are counted
+separately; supplied comparison IDs cannot stand in for retrieval. Native probability,
+label classification, categorical policy and selected-choice instability stay separate.
+Generated tuning labels and controlled source replay establish
 contracts/lineage only; scripted SDK source trajectories use the existing owned
 Researcher launch, completion, dossier and Delta path.
 
@@ -258,3 +272,43 @@ procedural runtime content or source provenance.
 [architecture.yaml](../architecture.yaml) projects these boundaries and agent rules
 for mechanical reference checks. It is not runtime policy or another authority;
 ENFORCED, TESTED and REVIEWED claims retain their named proof scope.
+
+The ordinary module CLI owns cycle/serve argument handling and service construction.
+The compatibility `run_live_cycle.py` and `run_live_phase3.py` launchers delegate
+one-shot execution and supplied direction to that same CLI; neither implements
+Researcher scheduling, terminal records or a prescribed scientific procedure.
+Container privilege bootstrap execs the module CLI. Component, evaluation and
+qualification probes remain scoped consumers of existing owners, not operational
+research entrypoints.
+
+Ordinary research control is need-driven and does not prescribe a source, modality,
+method or mandatory semantic call. OncoLab ScientificNeed retains question/estimand,
+population/design, information/relationship/measurement requirements, constraints
+and uncertainty before optional representation binding. Search-page IndexReceipt
+records link the complete need and hash to discovered contracts. These constraints
+are context, not satisfied prerequisites. Method readiness remains false for unbound
+representations; bound contracts still undergo actual owned-input/route checks.
+Source/method-specific procedures and validation belong to typed capabilities.
+
+Capability inspections expose exact persisted receipt references for authored
+frontier context; those references grant neither execution nor evidence authority.
+Installed Science resolves and validates its trusted application package before
+filesystem confinement; this avoids fallback to another editable checkout when
+package discovery cannot list the confined application parent.
+
+The production/evaluation/history boundary decision is accepted in
+`docs/Archive/ADR/ADR_PRODUCTION_EVALUATION_CUTOVER.md`.
+Current catalogue bootstrap uses curated capability definitions/routes without loading
+historical or fixture execution artifacts. Historical verification loading is explicit;
+existing stored observations remain reference-linked history, not fresh qualification.
+Candidate/scope/application-bound utility retention and resolution belong to
+`src/oncolab/utility.py`; production governance and reusable execution resolve that
+same mechanism without evaluation imports. Its comparison-condition vocabulary is
+shared with evaluation, preserving stored labels and independent-review/repetition
+guards. Evaluation implementation and generated results live under `evals/`, outside
+the installed `src` package. The architecture checker rejects direct evaluation/test
+imports and literal dynamic imports, including imported aliases; nonliteral calls to
+known dynamic import functions require review and are rejected. This static guard
+does not claim exhaustive runtime dependency analysis or detect arbitrary loader
+indirection. Neither package separation nor bootstrap proof establishes scientific
+utility or deployment qualification; remaining proof gates belong to IMPLEMENTATION_PLAN.

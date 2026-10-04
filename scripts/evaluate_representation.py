@@ -7,7 +7,7 @@ from pathlib import Path
 from src.config.environment import load_local_environment
 from src.config.loader import load_models_config, load_runtime_config
 from src.config.models import RuntimeMode
-from src.evals.representation import RepresentationCase, evaluate_representations
+from evals.representation import RepresentationCase, evaluate_representations
 from src.persistence.repository import ResearchRepository
 from src.persistence.store import SqliteResearchStore
 from src.persistence.records import RecordKind

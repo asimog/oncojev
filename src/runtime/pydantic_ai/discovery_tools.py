@@ -39,6 +39,8 @@ def register_discovery_tools(agent):
             kind='external_inspection',source_seq=saved.seq,payload={'source':source,'ids':[c.external_id for c in result.cards]},
             provenance='retained mutable-source metadata; not installation or scientific qualification'))
         view=result.model_dump(mode='json',exclude={'raw_json'})
+        from src.memory.service import reference
+        view['context_reference']=reference(saved).model_dump(mode='json')
         while len(canonical_bytes(view))>32768 and view['cards']:
             view['cards'].pop();view['omitted']+=1
         return view

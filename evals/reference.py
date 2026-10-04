@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
-from src.evals.harness import CONDITIONS, evaluate_condition
+from evals.harness import CONDITIONS, evaluate_condition
 from src.persistence.records import RecordKind, StoredRecord
 from src.provenance import content_hash
 
@@ -86,81 +86,6 @@ def evaluate_reference_cases(cases, adapter, *, models, policy, environment=None
             'Independent scientific label review remains pending unless explicitly bound to a reviewer record.']}
 
 
-def retain_utility_evaluation(store, candidate_id, scope, report, *, application_identity):
-    """Candidate/scope-bound operational producer; unsupported utility cannot pass."""
-    candidate = next((record for record in store.records(kind=RecordKind.SANDBOX_CANDIDATE) if record.record_id == candidate_id), None)
-    if candidate is None or not scope or not report.get('rows'): raise ValueError('resolved candidate, scope and measured comparison required')
-    relevant = [row for row in report['rows'] if row.get('observations', {}).get('candidate_id') == candidate_id
-                and row.get('observations', {}).get('scope_sha256') == content_hash(scope)]
-    if not relevant: raise ValueError('comparison does not resolve its measured candidate and scope')
-    comparison = store.append(StoredRecord(kind=RecordKind.SERVICE_EVENT, record_id=content_hash(report),
-        payload={'event_type': 'UtilityComparison', 'operational_only': True, 'comparison': report}))
-    passed = (report.get('mode') == 'live' and report.get('repeats', 0) >= 3
-        and all(row.get('independent_review') == 'reviewed' and row.get('agreement') is True for row in relevant)
-        and report.get('scientific_utility') is not None)
-    payload = {'version': 'candidate-utility-evaluation-v1', 'candidate_id': candidate_id,
-        'candidate_sha256': content_hash(candidate.payload), 'scope_sha256': content_hash(scope),
-        'application_identity': application_identity, 'status': 'passed' if passed else 'unsupported',
-        'comparison_reference': {'seq': comparison.seq, 'record_id': comparison.record_id, 'sha256': content_hash(comparison.payload)},
-        'scientific_utility': report.get('scientific_utility'), 'limitations': report.get('leakage_limits', [])}
-    if passed and not utility_evaluation_resolves(store, payload, application_identity):
-        payload['status'] = 'unsupported'
-    return store.append(StoredRecord(kind=RecordKind.UTILITY_EVALUATION, record_id=content_hash(payload), payload=payload))
-
-
-def utility_evaluation_resolves(store, payload, application_identity):
-    """A passing label alone cannot qualify a method or its clinical usefulness."""
-    from src.science.qualification import resolve_record
-    try:
-        if payload.get('version') != 'candidate-utility-evaluation-v1' or payload.get('status') != 'passed' or payload.get('application_identity') != application_identity:
-            return False
-        candidate = next(r for r in store.records(kind=RecordKind.SANDBOX_CANDIDATE) if r.record_id == payload['candidate_id'])
-        if content_hash(candidate.payload) != payload['candidate_sha256']: return False
-        reference = {**payload['comparison_reference'], 'kind': RecordKind.SERVICE_EVENT.value}
-        comparison = resolve_record(store, reference, RecordKind.SERVICE_EVENT)
-        if comparison.payload.get('event_type') != 'UtilityComparison': return False
-        report = comparison.payload['comparison']
-        relevant = [row for row in report['rows'] if row.get('observations', {}).get('candidate_id') == payload['candidate_id']
-            and row.get('observations', {}).get('scope_sha256') == payload['scope_sha256']]
-        repeats = report.get('repeats')
-        if (not relevant or report.get('mode') != 'live' or type(repeats) is not int
-                or not 3 <= repeats <= 20 or report.get('scientific_utility') is None):
-            return False
-        # A declared count does not prove stochastic repetition. Each measured
-        # candidate case/condition/memory series must contain every distinct row.
-        series = {}
-        for row in relevant:
-            case_id, condition = row.get('case_id'), row.get('condition')
-            memory, repetition = row.get('memory_alternative_limit'), row.get('repetition')
-            if (not isinstance(case_id, str) or not case_id.strip()
-                    or condition not in {value.value for value in CONDITIONS}
-                    or type(memory) is not int or memory < 0
-                    or type(repetition) is not int or not 0 <= repetition < repeats):
-                return False
-            seen = series.setdefault((case_id, condition, memory), set())
-            if repetition in seen:
-                return False
-            seen.add(repetition)
-            observed = row.get('observations', {})
-            if observed.get('failure_type') is not None or observed.get('adapter_error_type') is not None:
-                return False
-        if any(seen != set(range(repeats)) for seen in series.values()):
-            return False
-        # The reviewer record must concern this comparison, rather than upstream
-        # doctests or an unrelated published corpus annotation.
-        for row in relevant:
-            reviewer = resolve_record(store, row['review_reference'], RecordKind.SERVICE_EVENT)
-            if (row.get('agreement') is not True or row.get('independent_review') != 'reviewed'
-                or reviewer.payload.get('event_type') != 'IndependentUtilityReview'
-                or reviewer.payload.get('observations_sha256') != content_hash(row.get('observations', {}))
-                or reviewer.payload.get('corpus_sha256') != report.get('corpus_sha256')
-                or reviewer.payload.get('candidate_id') != payload['candidate_id']
-                or reviewer.payload.get('scope_sha256') != payload['scope_sha256']): return False
-        return payload.get('scientific_utility') == report['scientific_utility']
-    except (ValueError, KeyError, TypeError, StopIteration):
-        return False
-
-
 async def _reference_consumer_async(system, repository, condition, inputs, *, alternative_limit):
     """Fixed public-input operations through existing owners, with explicit unknowns."""
     import asyncio
@@ -172,7 +97,7 @@ async def _reference_consumer_async(system, repository, condition, inputs, *, al
     from src.sources.representation import RepresentationNeed, assess_retained_representation
     runtime = system.runtime
     if inputs['operation'] == 'source_trajectory':
-        from src.evals.whole_lab import observe_source_trajectory
+        from evals.whole_lab import observe_source_trajectory
         return await observe_source_trajectory(system, repository, inputs, alternative_limit=alternative_limit)
     block = runtime.manager.create('Published reference method check in lung cancer mission', 'evaluation only', ResourceAllocation(seconds=240, handoff_reserve_seconds=30))
     repository.record_block(block)
@@ -194,7 +119,7 @@ async def _reference_consumer_async(system, repository, condition, inputs, *, al
     if operation == 'search_comparison':
         observed.update(await observe_search_candidates(system, repository, inputs, block, alternative_limit=alternative_limit))
     elif operation == 'whole_lab':
-        from src.evals.whole_lab import observe_whole_lab
+        from evals.whole_lab import observe_whole_lab
         observed.update(await observe_whole_lab(system, repository, inputs, block, alternative_limit=alternative_limit))
     elif operation == 'numeric':
         spec = AnalysisSpec(analysis_id='reference', question=inputs.get('question', 'Published numerical reference'),
@@ -281,7 +206,7 @@ async def observe_search_candidates(system, repository, inputs, block, *, altern
     runtime = system.runtime
     domain = inputs['search_domain']
     candidates = inputs['candidates']
-    observed = {'retrieved_ids': [], 'retained_ids': [], 'selectable_ids': [], 'merged_pairs': [],
+    observed = {'retrieved_ids': [], 'retained_ids': [], 'selectable_ids': [], 'merged_pairs': [], 'policy_actions': {},
         'duplicate_ids': [], 'fit_by_id': {}, 'merge_mode': 'no semantic merge operation; originals retained', 'choice_mode': 'fixed matched candidates; deterministic categorical ordering',
         'reasoner_influence': 'proposal observed separately; candidate set held fixed for marginal Jev comparison'}
     runtime.persist_state(runtime.research_state.start(block.block_id, block.objective))
@@ -305,6 +230,8 @@ async def observe_search_candidates(system, repository, inputs, block, *, altern
             observed['retained_ids'] = observed['retrieved_ids'][:]
             observed['selectable_ids'] = observed['retrieved_ids'][:]
             observed['retrieval'] = context['retrieval']
+            observed['policy_actions'] = {m['frontier']['candidate_id']: m['frontier']['action']
+                for m in context.get('measurements', ()) if 'frontier' in m}
         else:
             from src.runtime.pydantic_ai.global_tools import prepare_frontier
             frontier = await prepare_frontier(runtime, inputs['query'], limit=10)
@@ -313,44 +240,81 @@ async def observe_search_candidates(system, repository, inputs, block, *, altern
             observed['retained_ids'] = list(aliases.values())
             observed['selectable_ids'] = [aliases[identity] for identity in frontier.beam]
             observed['frontier'] = frontier.model_dump(mode='json')
+            observed['policy_actions'] = {aliases[c.candidate_id]: c.status for c in frontier.candidates}
     elif domain == 'representation':
         from src.sources.models import AcquisitionRecord
+        candidates = list(candidates)
         for candidate in candidates:
             record = AcquisitionRecord.model_validate(candidate['acquisition'])
             runtime.retain_acquisition(block.block_id, record)
+        transforms = inputs.get('representation_transforms', ())
+        if len(transforms) > 2 or len({t['representation'] for t in transforms}) != len(transforms):
+            raise ValueError('at most two distinct clinical/survival reference transforms')
+        observed['transforms'] = []
+        for transform in transforms:
+            if transform['representation'] not in {'clinical', 'survival'}:
+                raise ValueError('unsupported reference transform')
+            source = next(c for c in candidates if c['id'] == transform['source_id'])
+            result = await tools['transform_gdc_representation'].function(ctx, 'derive_gdc_clinical',
+                [source['acquisition']['acquisition_id']], representation=transform['representation'])
+            record = runtime.resolve_acquisition(block.block_id, result['acquisition_id'])
+            candidates.append({'id': transform['id'], 'acquisition': record.model_dump(mode='json')})
+            observed['transforms'].append(result)
         generated = await tools['generate_representation_candidates'].function(ctx, inputs['need'],
             [AcquisitionRecord.model_validate(candidate['acquisition']).acquisition_id for candidate in candidates])
         observed['generation'] = generated
-        for candidate in candidates:
-            record = AcquisitionRecord.model_validate(candidate['acquisition'])
-            observed['retrieved_ids'].append(candidate['id']); observed['retained_ids'].append(candidate['id'])
+        aliases = {candidate['acquisition']['acquisition_id']: candidate['id'] for candidate in candidates}
+        receipt = repository.store.latest(RecordKind.METHOD_CANDIDATES, block_id=block.block_id)
+        observed['generation_record_seq'] = receipt.seq
+        observed['retained_ids'] = [aliases.get(identity, identity) for identity in
+            [c['candidate_id'] for c in receipt.payload['candidates']] + receipt.payload['omitted_candidate_ids']]
+        for candidate in generated['candidates']:
+            identity = aliases.get(candidate['candidate_id'], candidate['candidate_id'])
+            observed['retrieved_ids'].append(identity)
+            # A derivable file/transform remains an alternative; it cannot be
+            # assessed as an already acquired representation or selected to run.
+            if candidate['operation'] is not None:
+                observed['policy_actions'][identity] = 'defer'
+                continue
+            record = runtime.resolve_acquisition(block.block_id, candidate['acquisition_id'])
             from src.sources.representation import RepresentationNeed, assess_retained_representation
             checks = assess_retained_representation(record, RepresentationNeed.model_validate(inputs['need']))
             action = 'keep_alive' if checks['eligible'] else 'defer'
             if runtime.enable_jev:
                 result = await tools['assess_representation'].function(ctx, record.acquisition_id, inputs['need'])
                 action = result['frontier']['action']
-                observed['fit_by_id'][candidate['id']] = semantic_property(result['decisions'], 'sufficiency')
-            if checks['eligible'] and action not in {'defer', 'reject_retain'}: observed['selectable_ids'].append(candidate['id'])
+                observed['fit_by_id'][identity] = semantic_property(result['decisions'], 'sufficiency')
+            observed['policy_actions'][identity] = action
+            if checks['eligible'] and action not in {'defer', 'reject_retain'}: observed['selectable_ids'].append(identity)
     elif domain == 'method':
         from src.sources.models import AcquisitionRecord
         record = AcquisitionRecord.model_validate(inputs['acquisition'])
         runtime.retain_acquisition(block.block_id, record)
+        if inputs.get('derive_clinical'):
+            transformed = await tools['transform_gdc_representation'].function(ctx, 'derive_gdc_clinical',
+                [record.acquisition_id], representation='clinical')
+            record = runtime.resolve_acquisition(block.block_id, transformed['acquisition_id'])
+            observed['transform'] = transformed
         generated = await tools['generate_method_candidates'].function(ctx, inputs['need'], [record.acquisition_id], limit=8)
         observed['generation'] = generated
+        receipt = repository.store.latest(RecordKind.METHOD_CANDIDATES, block_id=block.block_id)
+        if receipt is not None:
+            observed['generation_record_seq'] = receipt.seq
+            observed['retained_ids'] = [c['capability_id'] for c in receipt.payload['candidates']]
         from src.oncolab.methods import ScientificNeed, method_inputs, method_route_checks
         representations = method_inputs([record], ScientificNeed.model_validate(inputs['need']))
-        for candidate in candidates:
-            observed['retrieved_ids'].append(candidate['id']); observed['retained_ids'].append(candidate['id'])
-            from src.oncolab.execution import check_routes
+        for candidate in generated['candidates']:
+            identity = candidate['capability_id']
+            observed['retrieved_ids'].append(identity)
             index = runtime.index_for(block.block_id)
-            checks = {'eligible': any(check['eligible'] for check in method_route_checks(index, candidate['id'], representations))}
+            checks = {'eligible': any(check['eligible'] for check in method_route_checks(index, identity, representations))}
             action = 'keep_alive' if checks['eligible'] else 'defer'
             if runtime.enable_jev:
-                result = await tools['assess_method'].function(ctx, candidate['id'], inputs['need'], [record.acquisition_id])
+                result = await tools['assess_method'].function(ctx, identity, inputs['need'], [record.acquisition_id])
                 action = result['frontier']['action']
-                observed['fit_by_id'][candidate['id']] = semantic_property(result['decisions'], 'estimand_fit')
-            if checks['eligible'] and action not in {'defer', 'reject_retain'}: observed['selectable_ids'].append(candidate['id'])
+                observed['fit_by_id'][identity] = semantic_property(result['decisions'], 'estimand_fit')
+            observed['policy_actions'][identity] = action
+            if checks['eligible'] and action not in {'defer', 'reject_retain'}: observed['selectable_ids'].append(identity)
     elif domain == 'hypothesis':
         for candidate in candidates:
             result = await tools['assess_hypothesis'].function(ctx, candidate['statement'], candidate['test'])
@@ -362,8 +326,35 @@ async def observe_search_candidates(system, repository, inputs, block, *, altern
                 observed['selectable_ids'].append(candidate['id'])
             if result.get('decisions'):
                 observed['fit_by_id'][candidate['id']] = semantic_property(result['decisions'], 'test_alignment')
+            observed['policy_actions'][candidate['id']] = result.get('frontier', {}).get('action',
+                'exact_duplicate' if result['exact_duplicate'] else 'keep_alive')
     else: raise ValueError('unsupported search domain')
     observed['selected_id'] = next(iter(observed['selectable_ids']), None)
+    if inputs.get('downstream_method') is not None:
+        if domain != 'method':
+            raise ValueError('paired source comparison requires method alternatives')
+        observed['downstream_measurement'] = None
+        if observed['selected_id'] == 'science.source-paired':
+            need = inputs['need']
+            observed['downstream_measurement'] = await tools['run_source_analysis'].function(ctx,
+                record.acquisition_id, 'reference-selected-paired', need['question'], need['population'],
+                need['estimand'], inputs['downstream_method'], need['representation_need']['fields'],
+                need['representation_need']['entity_key'], need['representation_need']['entity_unit'], need['design'])
+        else:
+            observed['downstream_unavailable'] = 'Selected catalogue alternative has no supported paired-analysis consumer in this comparison.'
+    if inputs.get('downstream_numeric_field') is not None:
+        if domain != 'representation':
+            raise ValueError('source summary comparison requires representation candidates')
+        selected = next((c for c in candidates if c['id'] == observed['selected_id']), None)
+        observed['downstream_measurement'] = await tools['measure_acquisition'].function(ctx,
+            selected['acquisition']['acquisition_id'], 'reference-selected-summary', inputs['downstream_numeric_field']) if selected else None
+    if 'downstream_measurement' in observed:
+        observed['scientific_attempts'] = [r.model_dump(mode='json') for r in
+            repository.store.records(kind=RecordKind.SCIENTIFIC_ATTEMPT, block_id=block.block_id)]
+        observed['source_acquisitions'] = [r.model_dump(mode='json') for r in
+            repository.store.records(kind=RecordKind.ACQUISITION, block_id=block.block_id)]
+        observed['representation_receipts'] = [r.model_dump(mode='json') for r in
+            repository.store.records(kind=RecordKind.REPRESENTATION_PARSE, block_id=block.block_id)]
     observed['preserved_count'] = len(set(observed['retained_ids']))
     observed['unknown_scientific_status'] = not repository.store.records(kind=RecordKind.EVIDENCE) and all(
         fragment.details.get('scientific_status') == 'unknown' for fragment in runtime.research_state.get(block.block_id).candidates
@@ -390,11 +381,16 @@ def search_metrics(observations, labels):
     low_overlap = set(labels.get('low_overlap_ids', ()))
     relations = labels.get('relation_properties', {})
     relation_observed = observations.get('relation_properties', {})
+    classified = [measured.get(identity) for identity in fits] + [relation_observed.get(key) for key in relations]
+    classifier_available = bool(measured or relation_observed)
+    nonduplicates = set(labels.get('nonduplicate_ids', ()))
     return {'useful_candidate_recall': len(useful & retrieved)/len(useful) if useful else None,
+        'durable_useful_recall': len(useful & retained)/len(useful) if useful else None,
         'selectable_useful_recall': len(useful & selectable)/len(useful) if useful else None,
         'alternative_preservation': len(retrieved & retained)/len(retrieved) if retrieved else None,
         'false_semantic_merges': len(observations.get('merged_pairs', ())) if retrieved else None,
         'duplicate_work_avoidance': len(duplicate & set(observations.get('duplicate_ids', ())))/len(duplicate) if duplicate else None,
+        'false_duplicate_rate': len(nonduplicates & set(observations.get('duplicate_ids', ())))/len(nonduplicates) if nonduplicates else None,
         'low_lexical_overlap_recall': len(low_overlap & retrieved)/len(low_overlap) if low_overlap else None,
         'fit_accuracy': sum(measured.get(identity) == expected for identity, expected in fits.items())/len(fits)
             if fits and all(measured.get(identity) is not None for identity in fits) else None,
@@ -402,6 +398,7 @@ def search_metrics(observations, labels):
         'unknown_preserved': observations.get('unknown_scientific_status'),
         'relation_accuracy': sum(relation_observed.get(key) == value for key, value in relations.items())/len(relations)
             if relations and all(relation_observed.get(key) is not None for key in relations) else None,
+        'unknown_rate': sum(value is None for value in classified)/len(classified) if classified and classifier_available else None,
         'scientific_utility': None}
 
 
@@ -424,7 +421,14 @@ def summarize_search_rows(rows):
         summaries.append({'case_id': case_id, 'condition': condition, 'memory_alternative_limit': alternative_limit,
             'metrics': [row.get('search_metrics') for row in values],
             'semantic_instability': len(set(signatures)) > 1 if len(values) > 1 and any(row['observations'].get('native_semantic_receipts') for row in values) else None,
-            'policy_instability': len({content_hash({'selected': row['observations'].get('selected_id'), 'selectable': row['observations'].get('selectable_ids'), 'fit': row['observations'].get('fit_by_id')}) for row in values}) > 1 if len(values) > 1 else None,
+            'policy_instability': len({content_hash(row['observations'].get('policy_actions', row['observations'].get('fixed_action')))
+                for row in values}) > 1 if len(values) > 1 and any('policy_actions' in row['observations'] or 'fixed_action' in row['observations'] for row in values) else None,
+            'label_classification_instability': len({content_hash({'fit': row['observations'].get('fit_by_id'),
+                'relation': row['observations'].get('relation_properties')}) for row in values}) > 1
+                if len(values) > 1 and any('fit_by_id' in row['observations'] or 'relation_properties' in row['observations'] for row in values) else None,
+            'downstream_choice_instability': len({content_hash({'selected': row['observations'].get('selected_id'),
+                'selectable': row['observations'].get('selectable_ids')}) for row in values}) > 1
+                if len(values) > 1 and any('selected_id' in row['observations'] for row in values) else None,
             'failures': sum(row['observations'].get('failure_type') is not None for row in values),
             'provider_costs': [row['observations'].get('provider_cost') for row in values]})
     deltas = []
@@ -437,7 +441,7 @@ def summarize_search_rows(rows):
         deltas.append({'case_id': row['case_id'], 'condition': row['condition'], 'baseline': baseline,
             'memory_alternative_limit': row['memory_alternative_limit'], 'repetition': row['repetition'],
             'metrics': {key: row['search_metrics'][key] - match['search_metrics'][key]
-                if type(row['search_metrics'][key]) in {float, int} and type(match['search_metrics'][key]) in {float, int} else None
+                if type(row['search_metrics'][key]) in {float, int, bool} and type(match['search_metrics'][key]) in {float, int, bool} else None
                 for key in row['search_metrics']}})
     return {'series': summaries, 'marginal_jev_deltas': deltas,
         'interpretation': 'Generated labels measure contracts only. Fixed candidates isolate measurement; Reasoner proposals do not change this matched set. Unknown is not failure or scientific rejection.'}

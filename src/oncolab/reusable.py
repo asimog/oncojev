@@ -5,7 +5,7 @@ from src.provenance import content_hash
 from src.science.qualification import resolve_record, mean_scope_valid, scientific_qualification_resolves
 from src.science.sandbox import SandboxMeasurementCandidate
 from src.runtime.verification import local_verification_passed
-from src.evals.reference import utility_evaluation_resolves
+from src.oncolab.utility import utility_evaluation_resolves
 
 
 def supported_mean_operation(candidate):

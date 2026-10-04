@@ -25,7 +25,7 @@ def main():
         utility = store.record_at(previous['utility_reference']['seq'])
         # The current application identity is recomputed by the existing runtime owner.
         # Rebind an unsupported comparison honestly; it still cannot pass.
-        from src.evals.reference import retain_utility_evaluation
+        from src.oncolab.utility import retain_utility_evaluation
         comparison = store.record_at(utility.payload['comparison_reference']['seq']).payload['comparison']
         utility = retain_utility_evaluation(store, candidate.record_id, old.scope, comparison, application_identity=runtime.institution.application)
         supporting.extend([store.latest(RecordKind.LOCAL_VERIFICATION), licence, utility])
